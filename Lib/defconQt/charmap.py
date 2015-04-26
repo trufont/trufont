@@ -41,13 +41,14 @@
 ##
 #############################################################################
 
+import math
 import os
 import representationFactories
 import unicodedata
 
 from defcon import Font
 from PyQt5.QtCore import pyqtSignal, QSize, Qt
-from PyQt5.QtGui import (QClipboard, QFont, QFontDatabase, QFontMetrics,
+from PyQt5.QtGui import (QClipboard, QDoubleValidator, QFont, QFontDatabase, QFontMetrics,
         QIcon, QIntValidator, QPainter)
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFontComboBox,
         QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QMenu, QPushButton,
@@ -92,8 +93,9 @@ class CharacterWidget(QWidget):
         self.update()
 
     def sizeHint(self):
+        # TODO: adding 2 to glyphlen is cheating, need to find how to properly compensate x_offset
         return QSize(self.columns * self.squareSize,
-                (65536 / self.columns) * self.squareSize)
+                (len(self.glyphs)+2) / self.columns * self.squareSize)
 
     '''
     def mouseMoveEvent(self, event):
@@ -272,17 +274,17 @@ class GeneralTab(QWidget):
         identLine = QFrame()
         identLine.setFrameShape(QFrame.HLine)
         
-        fileNameLabel = QLabel("Family Name:")
+        fileNameLabel = QLabel("Family name:")
         self.fileNameEdit = QLineEdit(font.info.familyName)
 
-        styleNameLabel = QLabel("Style Name:")
+        styleNameLabel = QLabel("Style name:")
         self.styleNameEdit = QLineEdit(font.info.styleName)
         
-        styleMapFamilyLabel = QLabel("Style Map Family Name:")
+        styleMapFamilyLabel = QLabel("Style map family name:")
         self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName)
-#        self.styleNameCBox = QCheckBox("Use default value")
+#        self.styleMapFamilyCBox = QCheckBox("Use default value")
 
-        styleMapStyleLabel = QLabel("Style Map Style Name:")
+        styleMapStyleLabel = QLabel("Style map style name:")
         self.styleMapStyleDrop = QComboBox()
 #        items = ["None", "Regular", "Italic", "Bold", "Bold Italic"]
         styleMapStyle = {
@@ -301,13 +303,76 @@ class GeneralTab(QWidget):
         elif sn == "bold": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold"])
         elif sn == "bold italic": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold Italic"])
         else: self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["None"])
+#        self.styleMapStyleCBox = QCheckBox("Use default value")
 
+        # TODO: give visual feedback of input data validity using QLineEdit lose focus event
+        # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/
         versionLabel = QLabel("Version:")
         self.versionMajorEdit = QLineEdit(str(font.info.versionMajor))
         self.versionMajorEdit.setValidator(QIntValidator())
         self.versionMinorEdit = QLineEdit(str(font.info.versionMinor))
         self.versionMinorEdit.setValidator(QIntValidator())
+        
+        dimensionsLabel = QLabel("Dimensions")
+        dimensionsLine = QFrame()
+        dimensionsLine.setFrameShape(QFrame.HLine)
+        
+        unitsPerEmLabel = QLabel("Units per em:")
+        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm))
+        self.unitsPerEmEdit.setValidator(QIntValidator())
+        
+        ascenderLabel = QLabel("Ascender:")
+        self.ascenderEdit = QLineEdit(str(font.info.ascender))
+        self.ascenderEdit.setValidator(QIntValidator())
+        
+        descenderLabel = QLabel("Descender:")
+        self.descenderEdit = QLineEdit(str(font.info.descender))
+        self.descenderEdit.setValidator(QIntValidator())
+        
+        xHeightLabel = QLabel("x-height:")
+        self.xHeightEdit = QLineEdit(str(font.info.xHeight))
+        self.xHeightEdit.setValidator(QIntValidator())
+        
+        capHeightLabel = QLabel("Cap height:")
+        self.capHeightEdit = QLineEdit(str(font.info.capHeight))
+        self.capHeightEdit.setValidator(QIntValidator())
+        
+        italicAngleLabel = QLabel("Italic angle:")
+        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle))
+        self.italicAngleEdit.setValidator(QDoubleValidator())
 
+        legalLabel = QLabel("Legal")
+        legalLine = QFrame()
+        legalLine.setFrameShape(QFrame.HLine)
+
+        copyrightLabel = QLabel("Copyright:")
+        self.copyrightEdit = QLineEdit(font.info.copyright)
+        
+        trademarkLabel = QLabel("Trademark:")
+        self.trademarkEdit = QLineEdit(font.info.trademark)
+        
+        licenseLabel = QLabel("License:")
+        self.licenseEdit = QLineEdit(font.info.openTypeNameLicense)
+
+        licenseURLLabel = QLabel("License URL:")
+        self.licenseURLEdit = QLineEdit(font.info.openTypeNameLicenseURL)
+        
+        partiesLabel = QLabel("Parties")
+        partiesLine = QFrame()
+        partiesLine.setFrameShape(QFrame.HLine)
+        
+        designerLabel = QLabel("Designer:")
+        self.designerEdit = QLineEdit(font.info.openTypeNameDesigner)
+        
+        designerURLLabel = QLabel("Designer URL:")
+        self.designerURLEdit = QLineEdit(font.info.openTypeNameDesignerURL)
+        
+        manufacturerLabel = QLabel("Manufacturer:")
+        self.manufacturerEdit = QLineEdit(font.info.openTypeNameManufacturer)
+
+        manufacturerURLLabel = QLabel("Manufacturer URL:")
+        self.manufacturerURLEdit = QLineEdit(font.info.openTypeNameManufacturerURL)
+        
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(identLabel)
         mainLayout.addWidget(identLine)
@@ -322,86 +387,57 @@ class GeneralTab(QWidget):
         mainLayout.addWidget(versionLabel)
         mainLayout.addWidget(self.versionMajorEdit)
         mainLayout.addWidget(self.versionMinorEdit)
+        
+        mainLayout.addWidget(dimensionsLabel)
+        mainLayout.addWidget(dimensionsLine)
+        mainLayout.addWidget(unitsPerEmLabel)
+        mainLayout.addWidget(self.unitsPerEmEdit)
+        mainLayout.addWidget(ascenderLabel)
+        mainLayout.addWidget(self.ascenderEdit)
+        mainLayout.addWidget(descenderLabel)
+        mainLayout.addWidget(self.descenderEdit)
+        mainLayout.addWidget(xHeightLabel)
+        mainLayout.addWidget(self.xHeightEdit)
+        mainLayout.addWidget(capHeightLabel)
+        mainLayout.addWidget(self.capHeightEdit)
+        mainLayout.addWidget(italicAngleLabel)
+        mainLayout.addWidget(self.italicAngleEdit)
+        
+        mainLayout.addWidget(legalLabel)
+        mainLayout.addWidget(legalLine)
+        mainLayout.addWidget(copyrightLabel)
+        mainLayout.addWidget(self.copyrightEdit)
+        mainLayout.addWidget(trademarkLabel)
+        mainLayout.addWidget(self.trademarkEdit)
+        mainLayout.addWidget(licenseLabel)
+        mainLayout.addWidget(self.licenseEdit)
+        mainLayout.addWidget(licenseURLLabel)
+        mainLayout.addWidget(self.licenseURLEdit)
+        
+        mainLayout.addWidget(partiesLabel)
+        mainLayout.addWidget(partiesLine)
+        mainLayout.addWidget(designerLabel)
+        mainLayout.addWidget(self.designerEdit)
+        mainLayout.addWidget(designerURLLabel)
+        mainLayout.addWidget(self.designerURLEdit)
+        mainLayout.addWidget(manufacturerLabel)
+        mainLayout.addWidget(self.manufacturerEdit)
+        mainLayout.addWidget(manufacturerURLLabel)
+        mainLayout.addWidget(self.manufacturerURLEdit)
         mainLayout.addStretch(1)
-        self.setLayout(mainLayout)
-
-
-class PermissionsTab(QWidget):
-    def __init__(self, fileInfo, parent=None):
-        super(PermissionsTab, self).__init__(parent)
-
-        permissionsGroup = QGroupBox("Permissions")
-
-        readable = QCheckBox("Readable")
-        if fileInfo.isReadable():
-            readable.setChecked(True)
-
-        writable = QCheckBox("Writable")
-        if fileInfo.isWritable():
-            writable.setChecked(True)
-
-        executable = QCheckBox("Executable")
-        if fileInfo.isExecutable():
-            executable.setChecked(True)
-
-        ownerGroup = QGroupBox("Ownership")
-
-        ownerLabel = QLabel("Owner")
-        ownerValueLabel = QLabel(fileInfo.owner())
-        ownerValueLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-
-        groupLabel = QLabel("Group")
-        groupValueLabel = QLabel(fileInfo.group())
-        groupValueLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-
-        permissionsLayout = QVBoxLayout()
-        permissionsLayout.addWidget(readable)
-        permissionsLayout.addWidget(writable)
-        permissionsLayout.addWidget(executable)
-        permissionsGroup.setLayout(permissionsLayout)
-
-        ownerLayout = QVBoxLayout()
-        ownerLayout.addWidget(ownerLabel)
-        ownerLayout.addWidget(ownerValueLabel)
-        ownerLayout.addWidget(groupLabel)
-        ownerLayout.addWidget(groupValueLabel)
-        ownerGroup.setLayout(ownerLayout)
-
-        mainLayout = QVBoxLayout()
-        mainLayout.addWidget(permissionsGroup)
-        mainLayout.addWidget(ownerGroup)
-        mainLayout.addStretch(1)
-        self.setLayout(mainLayout)
-
-
-class ApplicationsTab(QWidget):
-    def __init__(self, fileInfo, parent=None):
-        super(ApplicationsTab, self).__init__(parent)
-
-        topLabel = QLabel("Open with:")
-
-        applicationsListBox = QListWidget()
-        applications = []
-
-        for i in range(1, 31):
-            applications.append("Application %d" % i)
-
-        applicationsListBox.insertItems(0, applications)
-
-        alwaysCheckBox = QCheckBox()
-
-        if fileInfo.suffix():
-            alwaysCheckBox = QCheckBox("Always use this application to open "
-                    "files with the extension '%s'" % fileInfo.suffix())
-        else:
-            alwaysCheckBox = QCheckBox("Always use this application to open "
-                    "this type of file")
-
-        layout = QVBoxLayout()
-        layout.addWidget(topLabel)
-        layout.addWidget(applicationsListBox)
-        layout.addWidget(alwaysCheckBox)
-        self.setLayout(layout)
+        
+        # http://nealbuerger.com/2013/11/pyside-qvboxlayout-with-qscrollarea/
+        # Why so many layers of indirection? It might be possible to do this
+        # in a simpler way...
+        widget = QWidget()
+        widget.setLayout(mainLayout)
+        scrollArea = QScrollArea()
+        scrollArea.setWidget(widget)
+        scrollArea.setMinimumSize(170, 200)
+        vLayout = QVBoxLayout()
+        vLayout.addWidget(scrollArea)
+        
+        self.setLayout(vLayout)
 
 class MainWindow(QMainWindow):
     def __init__(self, font=Font()):
@@ -410,56 +446,12 @@ class MainWindow(QMainWindow):
         centralWidget = QWidget()
         
         self.font = font
-
-        """
-        fontLabel = QLabel("Font:")
-        self.fontCombo = QFontComboBox()
-        sizeLabel = QLabel("Size:")
-        self.sizeCombo = QComboBox()
-        styleLabel = QLabel("Style:")
-        self.styleCombo = QComboBox()
-        fontMergingLabel = QLabel("Automatic Font Merging:")
-        self.fontMerging = QCheckBox()
-        self.fontMerging.setChecked(True)
-        """
-
         self.scrollArea = QScrollArea()
         self.characterWidget = CharacterWidget(self.font)
         self.scrollArea.setWidget(self.characterWidget)
 
-        """
-        self.findStyles(self.fontCombo.currentFont())
-        self.findSizes(self.fontCombo.currentFont())
-
-        self.lineEdit = QLineEdit()
-        clipboardButton = QPushButton("&To clipboard")
-
-        self.clipboard = QApplication.clipboard()
-
-        self.fontCombo.currentFontChanged.connect(self.findStyles)
-        self.fontCombo.activated[str].connect(self.characterWidget.updateFont)
-        self.styleCombo.activated[str].connect(self.characterWidget.updateStyle)
-        self.sizeCombo.currentIndexChanged[str].connect(self.characterWidget.updateSize)
-        self.characterWidget.characterSelected.connect(self.insertCharacter)
-        clipboardButton.clicked.connect(self.updateClipboard)
-
-        controlsLayout = QHBoxLayout()
-        controlsLayout.addWidget(fontLabel)
-        controlsLayout.addWidget(self.fontCombo, 1)
-        controlsLayout.addWidget(sizeLabel)
-        controlsLayout.addWidget(self.sizeCombo, 1)
-        controlsLayout.addWidget(styleLabel)
-        controlsLayout.addWidget(self.styleCombo, 1)
-        controlsLayout.addWidget(fontMergingLabel)
-        controlsLayout.addWidget(self.fontMerging, 1)
-        controlsLayout.addStretch(1)
-
-        lineLayout = QHBoxLayout()
-        lineLayout.addWidget(self.lineEdit, 1)
-        lineLayout.addSpacing(12)
-        lineLayout.addWidget(clipboardButton)
-        """
         # TODO: make shortcuts platform-independent
+        # TODO: work out sensible shortcuts
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
@@ -469,26 +461,20 @@ class MainWindow(QMainWindow):
         fileMenu.addMenu(QMenu("Open &Recent...", self))
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, "Ctrl+S")
-        fileMenu.addAction("&Save As...", self.saveFileAs, "Ctrl+S")
+        fileMenu.addAction("Save &As...", self.saveFileAs, "Ctrl+Shift+S")
         fileMenu.addAction("E&xit", QApplication.instance().quit, "Ctrl+Q")
         
         fontMenu = QMenu("&Font", self)
         self.menuBar().addMenu(fontMenu)
         
-        fontMenu.addAction("&Font info", self.fontInfo, "Ctrl+M")
+        fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+I")
+        fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+F")
 
         helpMenu = QMenu("&Help", self)
         self.menuBar().addMenu(helpMenu)
 
         helpMenu.addAction("&About", self.about)
         helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
-
-        #centralLayout = QVBoxLayout()
-        #centralLayout.addLayout(controlsLayout)
-        #centralLayout.addWidget(self.scrollArea, 1)
-        #centralLayout.addSpacing(4)
-        #centralLayout.addLayout(lineLayout)
-        #centralWidget.setLayout(centralLayout)
 
         self.setCentralWidget(self.scrollArea)
         self.setWindowTitle(os.path.basename(self.font.path.rstrip(os.sep)))
@@ -525,12 +511,24 @@ class MainWindow(QMainWindow):
         # If a window is already opened, bring it to the front, else make another one.
         # TODO: see about calling super from the widget and del'eting the ptr to the widget
         # otherwise it doesn't get swept?
+        # Else we can just play with visibility instead of respawning, given that the window
+        # is still valid by its ref after it's been closed
         if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
            self.fontInfoWindow = TabDialog(self.font)
            self.fontInfoWindow.show()
         else:
            print(self.fontInfoWindow)
            self.fontInfoWindow.raise_()
+
+    def fontFeatures(self):
+        # TODO: see up here
+        import syntaxhighlighter
+        if not (hasattr(self, 'fontFeaturesWindow') and self.fontFeaturesWindow.isVisible()):
+           # XXX: trying to make a child window, let's see
+           self.fontFeaturesWindow = syntaxhighlighter.MainWindow(self.font.features, self)
+           self.fontFeaturesWindow.show()
+        else:
+           self.fontFeaturesWindow.raise_()
 
     def about(self):
         QMessageBox.about(self, "About Fontes",
