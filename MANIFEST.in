@@ -1,0 +1,3 @@
+include LICENSE.md
+include INSTALL.md
+recursive-include Lib *.py
