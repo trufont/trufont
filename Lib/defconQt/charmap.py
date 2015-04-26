@@ -41,13 +41,14 @@
 ##
 #############################################################################
 
+import os
 import representationFactories
 import unicodedata
 
 from defcon import Font
 from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import (QClipboard, QFont, QFontDatabase, QFontMetrics,
-        QPainter)
+        QIcon, QPainter)
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFontComboBox,
         QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QScrollArea,
         QToolTip, QVBoxLayout, QWidget)
@@ -74,6 +75,7 @@ class CharacterWidget(QWidget):
         self.columns = 11
         self.lastKey = -1
 #        self.setMouseTracking(True)
+        self.col = Qt.red
 
     def updateFont(self, fontFamily):
         self.displayFont.setFamily(fontFamily)
@@ -124,6 +126,19 @@ class CharacterWidget(QWidget):
         if event.button() == Qt.LeftButton:
             self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
             key_ch = self._chr(self.lastKey)
+            self.col = Qt.red
+
+            if unicodedata.category(key_ch) != 'Cn':
+                self.characterSelected.emit(key_ch)
+            self.update()
+        else:
+            super(CharacterWidget, self).mousePressEvent(event)
+    
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
+            key_ch = self._chr(self.lastKey)
+            self.col = Qt.green
 
             if unicodedata.category(key_ch) != 'Cn':
                 self.characterSelected.emit(key_ch)
@@ -175,7 +190,7 @@ class CharacterWidget(QWidget):
                 if key == self.lastKey:
                     painter.fillRect(column * self.squareSize + 1,
                             row * self.squareSize + 1, self.squareSize - 2,
-                            self.squareSize - 2, Qt.red)
+                            self.squareSize - 2, self.col)
 
                 key_ch = str(self._chr(key))
 #                painter.drawText(column * self.squareSize + (self.squareSize / 2) - fontMetrics.width(key_ch) / 2,
@@ -187,19 +202,19 @@ class CharacterWidget(QWidget):
 #                if key_ch not in self.displayFont: continue
 #                glyph = self.displayFont[key_ch].getRepresentation("defconQt.QPainterPath") # , width=self.squareSize, height=self.squareSize
                 # When need to move the painter so that the path draws at the right place
-                print(glyph)
+#                print(glyph)
 #                p_x,p_y,p_w,p_h = glyph.controlPointRect().getRect()
 #                print(p_h, h)
                 painter.save()
-                if self.font.info.unitsPerEm > 0: factor = self.squareSize/(self.font.info.unitsPerEm*(1+2*.125))
-                if factor != 0: print(factor)
+                if not self.font.info.unitsPerEm > 0: self.font.info.unitsPerEm = 1000
+                factor = self.squareSize/(self.font.info.unitsPerEm*(1+2*.125))
                 x_offset = (self.squareSize-self.glyphs[key].width*factor)/2
                 if x_offset < 0:
                     factor *= 1+2*x_offset/(self.glyphs[key].width*factor)
                     x_offset = 0
                 y_offset = self.font.info.descender*factor
-                print(self.glyphs[key].width)
-                print("xo: "+str(x_offset))
+#                print(self.glyphs[key].width)
+#                print("xo: "+str(x_offset))
                 painter.translate(column * self.squareSize + x_offset, row * self.squareSize + self.squareSize + y_offset)
 #                painter.setBrushOrigin((self.squareSize-self.glyphs[key].width)/2,self.font.info.descender)
 #                painter.translate(column * self.squareSize + (self.squareSize / 2) - self.glyphs[key].width / 2,
@@ -228,6 +243,7 @@ class MainWindow(QMainWindow):
         
         self.font = font
 
+        """
         fontLabel = QLabel("Font:")
         self.fontCombo = QFontComboBox()
         sizeLabel = QLabel("Size:")
@@ -237,11 +253,13 @@ class MainWindow(QMainWindow):
         fontMergingLabel = QLabel("Automatic Font Merging:")
         self.fontMerging = QCheckBox()
         self.fontMerging.setChecked(True)
+        """
 
         self.scrollArea = QScrollArea()
         self.characterWidget = CharacterWidget(self.font)
         self.scrollArea.setWidget(self.characterWidget)
 
+        """
         self.findStyles(self.fontCombo.currentFont())
         self.findSizes(self.fontCombo.currentFont())
 
@@ -272,16 +290,18 @@ class MainWindow(QMainWindow):
         lineLayout.addWidget(self.lineEdit, 1)
         lineLayout.addSpacing(12)
         lineLayout.addWidget(clipboardButton)
+        """
 
         centralLayout = QVBoxLayout()
-        centralLayout.addLayout(controlsLayout)
+        #centralLayout.addLayout(controlsLayout)
         centralLayout.addWidget(self.scrollArea, 1)
-        centralLayout.addSpacing(4)
-        centralLayout.addLayout(lineLayout)
+        #centralLayout.addSpacing(4)
+        #centralLayout.addLayout(lineLayout)
         centralWidget.setLayout(centralLayout)
 
         self.setCentralWidget(centralWidget)
-        self.setWindowTitle("Character Map")
+        self.setWindowTitle(os.path.basename(self.font.path.rstrip(os.sep)))
+        self.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"));
 
     def findStyles(self, font):
         fontDatabase = QFontDatabase()
