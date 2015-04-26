@@ -48,9 +48,9 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
         QMessageBox, QTextEdit)
 
 
-class MainWindow(QMainWindow):
+class MainEditWindow(QMainWindow):
     def __init__(self, features=None, parent=None):
-        super(MainWindow, self).__init__(parent)
+        super(MainEditWindow, self).__init__(parent)
 
         self.features = features
         self.setupFileMenu()
@@ -89,7 +89,7 @@ class MainWindow(QMainWindow):
                     text = str(text)
 
                 self.editor.setPlainText(text)
-    
+
     def save(self):
         self.editor.write(self.features)
 
@@ -97,8 +97,8 @@ class MainWindow(QMainWindow):
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
-        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
-        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
+#        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
+#        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
         fileMenu.addAction("&Save...", self.save, "Ctrl+S")
         fileMenu.addAction("E&xit", QApplication.instance().quit, "Ctrl+Q")
 
@@ -124,10 +124,10 @@ class TextEditor(QTextEdit):
         self.text = text
 
         self.highlighter = Highlighter(self.document())
-    
+
     def write(self, features):
         features.text = self.toPlainText()
-        
+
 class Highlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(Highlighter, self).__init__(parent)
