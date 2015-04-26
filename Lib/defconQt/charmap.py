@@ -48,10 +48,10 @@ import unicodedata
 from defcon import Font
 from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import (QClipboard, QFont, QFontDatabase, QFontMetrics,
-        QIcon, QPainter)
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFontComboBox,
-        QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QScrollArea,
-        QToolTip, QVBoxLayout, QWidget)
+        QIcon, QIntValidator, QPainter)
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFontComboBox,
+        QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QMenu, QPushButton,
+        QScrollArea, QTabWidget, QToolTip, QVBoxLayout, QWidget)
 
 glyphSortDescriptors = [
     dict(type="alphabetical", allowPseudoUnicode=True),
@@ -77,34 +77,17 @@ class CharacterWidget(QWidget):
 #        self.setMouseTracking(True)
         self.col = Qt.red
 
-    def updateFont(self, fontFamily):
-        self.displayFont.setFamily(fontFamily)
-        self.squareSize = max(24, QFontMetrics(self.displayFont).xHeight() * 3)
-        self.adjustSize()
+    def updateFont(self, font):
+        self.font = font
+#        self.squareSize = max(24, QFontMetrics(self.displayFont).xHeight() * 3)
+#        self.adjustSize()
+        self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
         self.update()
 
-    def updateSize(self, fontSize):
+    def updateSize(self, squareSize):
 #        fontSize, _ = fontSize.toInt()
-        self.displayFont.setPointSize(int(fontSize))
-        self.squareSize = max(24, QFontMetrics(self.displayFont).xHeight() * 3)
-        self.adjustSize()
-        self.update() 
-
-    def updateStyle(self, fontStyle):
-        fontDatabase = QFontDatabase()
-        oldStrategy = self.displayFont.styleStrategy()
-        self.displayFont = fontDatabase.font(self.displayFont.family(),
-                fontStyle, self.displayFont.pointSize())
-        self.displayFont.setStyleStrategy(oldStrategy)
-        self.squareSize = max(24, QFontMetrics(self.displayFont).xHeight() * 3)
-        self.adjustSize()
-        self.update()
-
-    def updateFontMerging(self, enable):
-        if enable:
-            self.displayFont.setStyleStrategy(QFont.PreferDefault)
-        else:
-            self.displayFont.setStyleStrategy(QFont.NoFontMerging)
+#        self.displayFont.setPointSize(int(fontSize))
+        self.squareSize = squareSize
         self.adjustSize()
         self.update()
 
@@ -205,7 +188,7 @@ class CharacterWidget(QWidget):
 #                print(glyph)
 #                p_x,p_y,p_w,p_h = glyph.controlPointRect().getRect()
 #                print(p_h, h)
-                painter.save()
+                if self.font.info.unitsPerEm is None: break
                 if not self.font.info.unitsPerEm > 0: self.font.info.unitsPerEm = 1000
                 factor = self.squareSize/(self.font.info.unitsPerEm*(1+2*.125))
                 x_offset = (self.squareSize-self.glyphs[key].width*factor)/2
@@ -215,6 +198,7 @@ class CharacterWidget(QWidget):
                 y_offset = self.font.info.descender*factor
 #                print(self.glyphs[key].width)
 #                print("xo: "+str(x_offset))
+                painter.save()
                 painter.translate(column * self.squareSize + x_offset, row * self.squareSize + self.squareSize + y_offset)
 #                painter.setBrushOrigin((self.squareSize-self.glyphs[key].width)/2,self.font.info.descender)
 #                painter.translate(column * self.squareSize + (self.squareSize / 2) - self.glyphs[key].width / 2,
@@ -234,6 +218,190 @@ class CharacterWidget(QWidget):
         except NameError:
             # Python v3.
             return chr(codepoint)
+
+class TabDialog(QDialog):
+
+    def __init__(self, font, parent=None):
+        super(TabDialog, self).__init__(parent)
+
+        # TODO: figure a proper correspondence to set and fetch widgets...
+        self.tabs = {
+            "General": 0
+        }
+
+#        fileInfo = QFileInfo(fileName)
+        self.font = font
+        self.tabWidget = QTabWidget()
+        self.tabWidget.addTab(GeneralTab(self.font), "General")
+#        tabWidget.addTab(PermissionsTab(fileInfo), "OpenType")
+#        tabWidget.addTab(ApplicationsTab(fileInfo), "PostScript")
+#        tabWidget.addTab(ApplicationsTab(fileInfo), "Miscellaneous")
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.tabWidget)
+        mainLayout.addWidget(buttonBox)
+        self.setLayout(mainLayout)
+
+        self.setWindowTitle("Font Info")
+
+    def accept(self):
+        self.font.info.familyName = self.tabWidget.widget(self.tabs["General"]).fileNameEdit.text()
+        self.font.info.styleName = self.tabWidget.widget(self.tabs["General"]).styleNameEdit.text()
+        self.font.info.styleMapFamilyName = self.tabWidget.widget(self.tabs["General"]).styleMapFamilyEdit.text()
+        sn = self.tabWidget.widget(self.tabs["General"]).styleMapStyleDrop.currentIndex()
+        print(sn)
+        if sn == 1: self.font.info.styleMapStyleName = "regular"
+        elif sn == 2: self.font.info.styleMapStyleName = "italic"
+        elif sn == 3: self.font.info.styleMapStyleName = "bold"
+        elif sn == 4: self.font.info.styleMapStyleName = "bold italic"
+        else: self.font.info.styleMapStyleName = None
+        self.font.info.versionMajor = int(self.tabWidget.widget(self.tabs["General"]).versionMajorEdit.text())
+        self.font.info.versionMinor = int(self.tabWidget.widget(self.tabs["General"]).versionMinorEdit.text())
+        super(TabDialog, self).accept()
+
+class GeneralTab(QWidget):
+    def __init__(self, font, parent=None):
+        super(GeneralTab, self).__init__(parent)
+
+        identLabel = QLabel("Identification")
+        identLine = QFrame()
+        identLine.setFrameShape(QFrame.HLine)
+        
+        fileNameLabel = QLabel("Family Name:")
+        self.fileNameEdit = QLineEdit(font.info.familyName)
+
+        styleNameLabel = QLabel("Style Name:")
+        self.styleNameEdit = QLineEdit(font.info.styleName)
+        
+        styleMapFamilyLabel = QLabel("Style Map Family Name:")
+        self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName)
+#        self.styleNameCBox = QCheckBox("Use default value")
+
+        styleMapStyleLabel = QLabel("Style Map Style Name:")
+        self.styleMapStyleDrop = QComboBox()
+#        items = ["None", "Regular", "Italic", "Bold", "Bold Italic"]
+        styleMapStyle = {
+            "None": 0,
+            "Regular": 1,
+            "Italic": 2,
+            "Bold": 3,
+            "Bold Italic": 4
+        }
+        for name,index in styleMapStyle.items():
+            self.styleMapStyleDrop.insertItem(index, name)
+        sn = font.info.styleMapStyleName
+        # TODO: index to set is statically known, should eventually get rid of dict overhead if any?
+        if sn == "regular": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Regular"])
+        elif sn == "regular italic": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Italic"])
+        elif sn == "bold": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold"])
+        elif sn == "bold italic": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold Italic"])
+        else: self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["None"])
+
+        versionLabel = QLabel("Version:")
+        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor))
+        self.versionMajorEdit.setValidator(QIntValidator())
+        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor))
+        self.versionMinorEdit.setValidator(QIntValidator())
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(identLabel)
+        mainLayout.addWidget(identLine)
+        mainLayout.addWidget(fileNameLabel)
+        mainLayout.addWidget(self.fileNameEdit)
+        mainLayout.addWidget(styleNameLabel)
+        mainLayout.addWidget(self.styleNameEdit)
+        mainLayout.addWidget(styleMapFamilyLabel)
+        mainLayout.addWidget(self.styleMapFamilyEdit)
+        mainLayout.addWidget(styleMapStyleLabel)
+        mainLayout.addWidget(self.styleMapStyleDrop)
+        mainLayout.addWidget(versionLabel)
+        mainLayout.addWidget(self.versionMajorEdit)
+        mainLayout.addWidget(self.versionMinorEdit)
+        mainLayout.addStretch(1)
+        self.setLayout(mainLayout)
+
+
+class PermissionsTab(QWidget):
+    def __init__(self, fileInfo, parent=None):
+        super(PermissionsTab, self).__init__(parent)
+
+        permissionsGroup = QGroupBox("Permissions")
+
+        readable = QCheckBox("Readable")
+        if fileInfo.isReadable():
+            readable.setChecked(True)
+
+        writable = QCheckBox("Writable")
+        if fileInfo.isWritable():
+            writable.setChecked(True)
+
+        executable = QCheckBox("Executable")
+        if fileInfo.isExecutable():
+            executable.setChecked(True)
+
+        ownerGroup = QGroupBox("Ownership")
+
+        ownerLabel = QLabel("Owner")
+        ownerValueLabel = QLabel(fileInfo.owner())
+        ownerValueLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+
+        groupLabel = QLabel("Group")
+        groupValueLabel = QLabel(fileInfo.group())
+        groupValueLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+
+        permissionsLayout = QVBoxLayout()
+        permissionsLayout.addWidget(readable)
+        permissionsLayout.addWidget(writable)
+        permissionsLayout.addWidget(executable)
+        permissionsGroup.setLayout(permissionsLayout)
+
+        ownerLayout = QVBoxLayout()
+        ownerLayout.addWidget(ownerLabel)
+        ownerLayout.addWidget(ownerValueLabel)
+        ownerLayout.addWidget(groupLabel)
+        ownerLayout.addWidget(groupValueLabel)
+        ownerGroup.setLayout(ownerLayout)
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(permissionsGroup)
+        mainLayout.addWidget(ownerGroup)
+        mainLayout.addStretch(1)
+        self.setLayout(mainLayout)
+
+
+class ApplicationsTab(QWidget):
+    def __init__(self, fileInfo, parent=None):
+        super(ApplicationsTab, self).__init__(parent)
+
+        topLabel = QLabel("Open with:")
+
+        applicationsListBox = QListWidget()
+        applications = []
+
+        for i in range(1, 31):
+            applications.append("Application %d" % i)
+
+        applicationsListBox.insertItems(0, applications)
+
+        alwaysCheckBox = QCheckBox()
+
+        if fileInfo.suffix():
+            alwaysCheckBox = QCheckBox("Always use this application to open "
+                    "files with the extension '%s'" % fileInfo.suffix())
+        else:
+            alwaysCheckBox = QCheckBox("Always use this application to open "
+                    "this type of file")
+
+        layout = QVBoxLayout()
+        layout.addWidget(topLabel)
+        layout.addWidget(applicationsListBox)
+        layout.addWidget(alwaysCheckBox)
+        self.setLayout(layout)
 
 class MainWindow(QMainWindow):
     def __init__(self, font=Font()):
@@ -291,62 +459,84 @@ class MainWindow(QMainWindow):
         lineLayout.addSpacing(12)
         lineLayout.addWidget(clipboardButton)
         """
+        # TODO: make shortcuts platform-independent
+        fileMenu = QMenu("&File", self)
+        self.menuBar().addMenu(fileMenu)
 
-        centralLayout = QVBoxLayout()
+        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
+        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
+        # TODO: add functionality
+        fileMenu.addMenu(QMenu("Open &Recent...", self))
+        fileMenu.addSeparator()
+        fileMenu.addAction("&Save", self.saveFile, "Ctrl+S")
+        fileMenu.addAction("&Save As...", self.saveFileAs, "Ctrl+S")
+        fileMenu.addAction("E&xit", QApplication.instance().quit, "Ctrl+Q")
+        
+        fontMenu = QMenu("&Font", self)
+        self.menuBar().addMenu(fontMenu)
+        
+        fontMenu.addAction("&Font info", self.fontInfo, "Ctrl+M")
+
+        helpMenu = QMenu("&Help", self)
+        self.menuBar().addMenu(helpMenu)
+
+        helpMenu.addAction("&About", self.about)
+        helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
+
+        #centralLayout = QVBoxLayout()
         #centralLayout.addLayout(controlsLayout)
-        centralLayout.addWidget(self.scrollArea, 1)
+        #centralLayout.addWidget(self.scrollArea, 1)
         #centralLayout.addSpacing(4)
         #centralLayout.addLayout(lineLayout)
-        centralWidget.setLayout(centralLayout)
+        #centralWidget.setLayout(centralLayout)
 
-        self.setCentralWidget(centralWidget)
+        self.setCentralWidget(self.scrollArea)
         self.setWindowTitle(os.path.basename(self.font.path.rstrip(os.sep)))
+        # TODO: dump the hardcoded path
         self.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"));
 
-    def findStyles(self, font):
-        fontDatabase = QFontDatabase()
-        currentItem = self.styleCombo.currentText()
-        self.styleCombo.clear()
+    def newFile(self):
+        self.font = Font()
+        self.characterWidget.updateFont(self.font)
 
-        for style in fontDatabase.styles(font.family()):
-            self.styleCombo.addItem(style)
+    def openFile(self, path=None):
+        if not path:
+            path, _ = QFileDialog.getOpenFileName(self, "Open File", '',
+                    "UFO Fonts (metainfo.plist)")
 
-        styleIndex = self.styleCombo.findText(currentItem)
-        if styleIndex == -1:
-            self.styleCombo.setCurrentIndex(0)
+        if path:
+            # TODO: error handling
+            path = os.path.dirname(path)
+            self.font = Font(path)
+            self.characterWidget.updateFont(self.font)
+
+    def saveFile(self, path=None):
+        self.font.save(path=path)
+#        self.font.path = path # done by defcon
+    
+    def saveFileAs(self):
+        path, _ = QFileDialog.getSaveFileName(self, "Save File", '',
+                "UFO Fonts (*.ufo)")
+        print(path)
+        self.saveFile(path)
+
+    
+    def fontInfo(self):
+        # If a window is already opened, bring it to the front, else make another one.
+        # TODO: see about calling super from the widget and del'eting the ptr to the widget
+        # otherwise it doesn't get swept?
+        if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
+           self.fontInfoWindow = TabDialog(self.font)
+           self.fontInfoWindow.show()
         else:
-            self.styleCombo.setCurrentIndex(styleIndex)
+           print(self.fontInfoWindow)
+           self.fontInfoWindow.raise_()
 
-    def findSizes(self, font):
-        fontDatabase = QFontDatabase()
-        currentSize = self.sizeCombo.currentText()
-        self.sizeCombo.blockSignals(True)
-        self.sizeCombo.clear()
-
-        if fontDatabase.isSmoothlyScalable(font.family(), fontDatabase.styleString(font)):
-            for size in QFontDatabase.standardSizes():
-                self.sizeCombo.addItem(str(size))
-                self.sizeCombo.setEditable(True)
-        else:
-            for size in fontDatabase.smoothSizes(font.family(), fontDatabase.styleString(font)):
-                self.sizeCombo.addItem(str(size))
-                self.sizeCombo.setEditable(False)
-
-        self.sizeCombo.blockSignals(False)
-
-        sizeIndex = self.sizeCombo.findText(currentSize)
-        if sizeIndex == -1:
-            self.sizeCombo.setCurrentIndex(max(0, self.sizeCombo.count() / 3))
-        else:
-            self.sizeCombo.setCurrentIndex(sizeIndex)
-
-    def insertCharacter(self, character):
-        self.lineEdit.insert(character)
-
-    def updateClipboard(self):
-        self.clipboard.setText(self.lineEdit.text(), QClipboard.Clipboard)
-        self.clipboard.setText(self.lineEdit.text(), QClipboard.Selection)
-
+    def about(self):
+        QMessageBox.about(self, "About Fontes",
+                "<p>The <b>Fontes</b> font editor is a new UFO-centric " \
+                "font editor that brings the robofab ecosystem to all " \
+                "main platforms, in a fast and dependency-free package.</p>")
 
 if __name__ == '__main__':
 
@@ -355,5 +545,6 @@ if __name__ == '__main__':
     representationFactories.registerAllFactories()
     app = QApplication(sys.argv)
     window = MainWindow(Font("C:\\Veloce.ufo"))
+    window.resize(565, 430)
     window.show()
     sys.exit(app.exec_())
