@@ -1,52 +1,7 @@
-#!/usr/bin/env python
-
-
-#############################################################################
-##
-## Copyright (C) 2013 Riverbank Computing Limited.
-## Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-## All rights reserved.
-##
-## This file is part of the examples of PyQt.
-##
-## $QT_BEGIN_LICENSE:BSD$
-## You may use this file under the terms of the BSD license as follows:
-##
-## "Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are
-## met:
-##   * Redistributions of source code must retain the above copyright
-##     notice, this list of conditions and the following disclaimer.
-##   * Redistributions in binary form must reproduce the above copyright
-##     notice, this list of conditions and the following disclaimer in
-##     the documentation and/or other materials provided with the
-##     distribution.
-##   * Neither the name of Nokia Corporation and its Subsidiary(-ies) nor
-##     the names of its contributors may be used to endorse or promote
-##     products derived from this software without specific prior written
-##     permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-## "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-## LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-## A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-## OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-## SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-## LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-## DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-## $QT_END_LICENSE$
-##
-#############################################################################
-
-
 from PyQt5.QtCore import QFile, QRegExp, Qt
-from PyQt5.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat
+from PyQt5.QtGui import QColor, QFont, QSyntaxHighlighter, QTextCharFormat
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
         QMessageBox, QTextEdit)
-
 
 class MainEditWindow(QMainWindow):
     def __init__(self, features=None, parent=None):
@@ -113,17 +68,22 @@ class TextEditor(QTextEdit):
     def __init__(self, text=None, parent=None):
         super(TextEditor, self).__init__(parent)
         font = QFont()
-        font.setFamily('Consolas')
-        font.setFixedPitch(True)
+        font.setFamily('CamingoCode')
         font.setPointSize(10)
+        font.setFixedPitch(True)
 
         self.setAcceptRichText(False)
         self.setPlainText(text)
         self.setFont(font)
-        # hold the ptr
-        self.text = text
 
         self.highlighter = Highlighter(self.document())
+    
+    def setFontParams(self, family='CamingoCode', ptSize=10, isMono=True):
+        font = QFont()
+        font.setFamily(family)
+        font.setPointSize(ptSize)
+        font.setFixedPitch(isMono)
+        self.setFont(font)
 
     def write(self, features):
         features.text = self.toPlainText()
@@ -133,48 +93,52 @@ class Highlighter(QSyntaxHighlighter):
         super(Highlighter, self).__init__(parent)
 
         keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(Qt.darkBlue)
+        keywordFormat.setForeground(QColor(200,50,150))
         keywordFormat.setFontWeight(QFont.Bold)
 
-        keywordPatterns = ["\\bchar\\b", "\\bclass\\b", "\\bconst\\b",
-                "\\bdouble\\b", "\\benum\\b", "\\bexplicit\\b", "\\bfriend\\b",
-                "\\binline\\b", "\\bint\\b", "\\blong\\b", "\\bnamespace\\b",
-                "\\boperator\\b", "\\bprivate\\b", "\\bprotected\\b",
-                "\\bpublic\\b", "\\bshort\\b", "\\bsignals\\b", "\\bsigned\\b",
-                "\\bslots\\b", "\\bstatic\\b", "\\bstruct\\b",
-                "\\btemplate\\b", "\\btypedef\\b", "\\btypename\\b",
-                "\\bunion\\b", "\\bunsigned\\b", "\\bvirtual\\b", "\\bvoid\\b",
-                "\\bvolatile\\b"]
+        keywordPatterns = ["\\bAscender\\b", "\\bAttach\\b", "\\bCapHeight\\b", "\\bCaretOffset\\b", "\\bCodePageRange\\b",
+            "\\bDescender\\b", "\\bFontRevision\\b", "\\bGlyphClassDef\\b", "\\bHorizAxis.BaseScriptList\\b",
+            "\\bHorizAxis.BaseTagList\\b", "\\bHorizAxis.MinMax\\b", "\\bIgnoreBaseGlyphs\\b", "\\bIgnoreLigatures\\b",
+            "\\bIgnoreMarks\\b", "\\bLigatureCaretByDev\\b", "\\bLigatureCaretByIndex\\b", "\\bLigatureCaretByPos\\b",
+            "\\bLineGap\\b", "\\bMarkAttachClass\\b", "\\bMarkAttachmentType\\b", "\\bNULL\\b", "\\bPanose\\b", "\\bRightToLeft\\b",
+            "\\bTypoAscender\\b", "\\bTypoDescender\\b", "\\bTypoLineGap\\b", "\\bUnicodeRange\\b", "\\bUseMarkFilteringSet\\b",
+            "\\bVendor\\b", "\\bVertAdvanceY\\b", "\\bVertAxis.BaseScriptList\\b", "\\bVertAxis.BaseTagList\\b",
+            "\\bVertAxis.MinMax\\b", "\\bVertOriginY\\b", "\\bVertTypoAscender\\b", "\\bVertTypoDescender\\b",
+            "\\bVertTypoLineGap\\b", "\\bXHeight\\b", "\\banchorDef\\b", "\\banchor\\b", "\\banonymous\\b", "\\banon\\b",
+            "\\bby\\b", "\\bcontour\\b", "\\bcursive\\b", "\\bdevice\\b", "\\benumerate\\b", "\\benum\\b", "\\bexclude_dflt\\b",
+            "\\bfeatureNames\\b", "\\bfeature\\b", "\\bfrom\\b", "\\bignore\\b", "\\binclude_dflt\\b", "\\binclude\\b",
+            "\\blanguagesystem\\b", "\\blanguage\\b", "\\blookupflag\\b", "\\blookup\\b", "\\bmarkClass\\b", "\\bmark\\b",
+            "\\bnameid\\b", "\\bname\\b", "\\bparameters\\b", "\\bposition\\b", "\\bpos\\b", "\\brequired\\b", "\\breversesub\\b",
+            "\\brsub\\b", "\\bscript\\b", "\\bsizemenuname\\b", "\\bsubstitute\\b", "\\bsubtable\\b", "\\bsub\\b", "\\btable\\b",
+            "\\buseExtension\\b", "\\bvalueRecordDef\\b", "\\bwinAscent\\b", "\\bwinDescent\\b"]
 
-        self.highlightingRules = [(QRegExp(pattern), keywordFormat)
-                for pattern in keywordPatterns]
+        self.highlightingRules = [(QRegExp("(" + "|".join(keywordPatterns) + ")"), keywordFormat)]
+
+        singleLineCommentFormat = QTextCharFormat()
+        singleLineCommentFormat.setForeground(Qt.darkGray)
+        self.highlightingRules.append((QRegExp("#[^\n]*"),
+                singleLineCommentFormat))
 
         classFormat = QTextCharFormat()
         classFormat.setFontWeight(QFont.Bold)
-        classFormat.setForeground(Qt.darkMagenta)
-        self.highlightingRules.append((QRegExp("\\bQ[A-Za-z]+\\b"),
+        classFormat.setForeground(QColor(30,150,220))
+        self.highlightingRules.append((QRegExp("@[A-Za-z0-9_.]+"),
                 classFormat))
+#        self.multiLineCommentFormat = QTextCharFormat()
+#        self.multiLineCommentFormat.setForeground(Qt.red)
 
-        singleLineCommentFormat = QTextCharFormat()
-        singleLineCommentFormat.setForeground(Qt.red)
-        self.highlightingRules.append((QRegExp("//[^\n]*"),
-                singleLineCommentFormat))
+#        quotationFormat = QTextCharFormat()
+#        quotationFormat.setForeground(Qt.darkGreen)
+#        self.highlightingRules.append((QRegExp("\".*\""), quotationFormat))
 
-        self.multiLineCommentFormat = QTextCharFormat()
-        self.multiLineCommentFormat.setForeground(Qt.red)
+#        functionFormat = QTextCharFormat()
+#        functionFormat.setFontItalic(True)
+#        functionFormat.setForeground(Qt.blue)
+#        self.highlightingRules.append((QRegExp("\\b[A-Za-z0-9_]+(?=\\()"),
+#                functionFormat))
 
-        quotationFormat = QTextCharFormat()
-        quotationFormat.setForeground(Qt.darkGreen)
-        self.highlightingRules.append((QRegExp("\".*\""), quotationFormat))
-
-        functionFormat = QTextCharFormat()
-        functionFormat.setFontItalic(True)
-        functionFormat.setForeground(Qt.blue)
-        self.highlightingRules.append((QRegExp("\\b[A-Za-z0-9_]+(?=\\()"),
-                functionFormat))
-
-        self.commentStartExpression = QRegExp("/\\*")
-        self.commentEndExpression = QRegExp("\\*/")
+#        self.commentStartExpression = QRegExp("/\\*")
+#        self.commentEndExpression = QRegExp("\\*/")
 
     def highlightBlock(self, text):
         for pattern, format in self.highlightingRules:
@@ -187,6 +151,7 @@ class Highlighter(QSyntaxHighlighter):
 
         self.setCurrentBlockState(0)
 
+        '''
         startIndex = 0
         if self.previousBlockState() != 1:
             startIndex = self.commentStartExpression.indexIn(text)
@@ -204,7 +169,7 @@ class Highlighter(QSyntaxHighlighter):
                     self.multiLineCommentFormat)
             startIndex = self.commentStartExpression.indexIn(text,
                     startIndex + commentLength);
-
+        '''
 
 if __name__ == '__main__':
 

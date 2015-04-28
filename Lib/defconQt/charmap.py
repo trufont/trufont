@@ -1,46 +1,3 @@
-#!/usr/bin/env python
-
-
-#############################################################################
-##
-## Copyright (C) 2013 Riverbank Computing Limited.
-## Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-## All rights reserved.
-##
-## This file is part of the examples of PyQt.
-##
-## $QT_BEGIN_LICENSE:BSD$
-## You may use this file under the terms of the BSD license as follows:
-##
-## "Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are
-## met:
-##   * Redistributions of source code must retain the above copyright
-##     notice, this list of conditions and the following disclaimer.
-##   * Redistributions in binary form must reproduce the above copyright
-##     notice, this list of conditions and the following disclaimer in
-##     the documentation and/or other materials provided with the
-##     distribution.
-##   * Neither the name of Nokia Corporation and its Subsidiary(-ies) nor
-##     the names of its contributors may be used to endorse or promote
-##     products derived from this software without specific prior written
-##     permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-## "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-## LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-## A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-## OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-## SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-## LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-## DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-## $QT_END_LICENSE$
-##
-#############################################################################
-
 import math
 import os
 import representationFactories
@@ -65,7 +22,7 @@ glyphSortDescriptors = [
 
 class CharacterWidget(QWidget):
 
-    characterSelected = pyqtSignal(str)
+    #characterSelected = pyqtSignal(str)
 
     def __init__(self, font, parent=None):
         super(CharacterWidget, self).__init__(parent)
@@ -93,7 +50,8 @@ class CharacterWidget(QWidget):
         self.update()
 
     def sizeHint(self):
-        # TODO: adding 2 to glyphlen is cheating, need to find how to properly compensate x_offset
+        # TODO: adding 2 to glyphlen is cheating, need to find how to properly compensate y_offset
+        # But why does it even have to be? Does Qt take the origin the painting as the basis for size calculation? Likely...
         return QSize(self.columns * self.squareSize,
                 (len(self.glyphs)+2) / self.columns * self.squareSize)
 
@@ -110,11 +68,13 @@ class CharacterWidget(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            key_ch = self._chr(self.lastKey)
+            #key_ch = self._chr(self.lastKey)
             self.col = Qt.red
 
+            """
             if unicodedata.category(key_ch) != 'Cn':
                 self.characterSelected.emit(key_ch)
+            """
             self.update()
         else:
             super(CharacterWidget, self).mousePressEvent(event)
@@ -122,11 +82,13 @@ class CharacterWidget(QWidget):
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            key_ch = self._chr(self.lastKey)
+            #key_ch = self._chr(self.lastKey)
             self.col = Qt.green
 
+            """
             if unicodedata.category(key_ch) != 'Cn':
                 self.characterSelected.emit(key_ch)
+            """
             self.update()
         else:
             super(CharacterWidget, self).mousePressEvent(event)
@@ -158,8 +120,6 @@ class CharacterWidget(QWidget):
                             row * self.squareSize + 1, self.squareSize - 2,
                             self.squareSize - 2, self.col)
 
-                key_ch = str(self._chr(key))
-
                 if key > len(self.glyphs)-1: break
                 glyph = self.glyphs[key].getRepresentation("defconQt.QPainterPath")
                 if self.font.info.unitsPerEm is None: break
@@ -175,15 +135,6 @@ class CharacterWidget(QWidget):
                 painter.scale(factor, -factor)
                 painter.fillPath(glyph, Qt.black)
                 painter.restore()
-
-    @staticmethod
-    def _chr(codepoint):
-        try:
-            # Python v2.
-            return unichr(codepoint)
-        except NameError:
-            # Python v3.
-            return chr(codepoint)
 
 class MainWindow(QMainWindow):
     def __init__(self, font=Font()):
@@ -263,7 +214,7 @@ class MainWindow(QMainWindow):
         # is still valid by its ref after it's been closed
         from fontinfo import TabDialog
         if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
-           self.fontInfoWindow = TabDialog(self.font)
+           self.fontInfoWindow = TabDialog(self.font, self)
            self.fontInfoWindow.show()
         else:
            print(self.fontInfoWindow)
@@ -282,20 +233,19 @@ class MainWindow(QMainWindow):
         # TODO: see up here
         from spacecenter import MainSpaceWindow
         if not (hasattr(self, 'spaceCenterWindow') and self.spaceCenterWindow.isVisible()):
-           # XXX: trying to make a child window, let's see
-           self.spaceCenterWindow = MainSpaceWindow(self.font, "Hiyazee")
-           self.spaceCenterWindow.show()
+            # XXX: trying to make a child window, let's see
+            self.spaceCenterWindow = MainSpaceWindow(self.font, "Hiyazee")
+            self.spaceCenterWindow.show()
         else:
-           self.spaceCenterWindow.raise_()
+            self.spaceCenterWindow.raise_()
 
     def about(self):
-        QMessageBox.about(self, "About Fontes",
-                "<p>The <b>Fontes</b> font editor is a new UFO-centric " \
-                "font editor that brings the robofab ecosystem to all " \
-                "main platforms, in a fast and dependency-free package.</p>")
+        QMessageBox.about(self, "About Me",
+                "<p>I am a new UFO-centric font editor and I aim to bring the <b>robofab</b> " \
+                "ecosystem to all main operating systems, in a fast and dependency-free " \
+                "package.</p>")
 
 if __name__ == '__main__':
-
     import sys
 
     representationFactories.registerAllFactories()

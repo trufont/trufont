@@ -1,116 +1,32 @@
-#!/usr/bin/env python
-
-
-#############################################################################
-##
-## Copyright (C) 2013 Riverbank Computing Limited.
-## Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-## All rights reserved.
-##
-## This file is part of the examples of PyQt.
-##
-## $QT_BEGIN_LICENSE:BSD$
-## You may use this file under the terms of the BSD license as follows:
-##
-## "Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are
-## met:
-##   * Redistributions of source code must retain the above copyright
-##     notice, this list of conditions and the following disclaimer.
-##   * Redistributions in binary form must reproduce the above copyright
-##     notice, this list of conditions and the following disclaimer in
-##     the documentation and/or other materials provided with the
-##     distribution.
-##   * Neither the name of Nokia Corporation and its Subsidiary(-ies) nor
-##     the names of its contributors may be used to endorse or promote
-##     products derived from this software without specific prior written
-##     permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-## "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-## LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-## A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-## OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-## SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-## LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-## DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-## $QT_END_LICENSE$
-##
-#############################################################################
-
-
-from math import cos, pi, sin
-
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QAbstractTableModel, QSize, Qt
 from PyQt5.QtGui import (QBrush, QColor, QFont, QLinearGradient, QPainter,
         QPainterPath, QPalette, QPen)
 from PyQt5.QtWidgets import (QApplication, QComboBox, QGridLayout, QLabel,
-        QMainWindow, QSizePolicy, QSpinBox, QWidget)
+        QMainWindow, QTableView, QTableWidget, QTableWidgetItem, QVBoxLayout, QSizePolicy, QSpinBox, QWidget)
 
-class MainSpaceWindow(QMainWindow):
+class MainSpaceWindow(QWidget):
     def __init__(self, font, string, height=400, parent=None):
         super(MainSpaceWindow, self).__init__(parent)
 
         self.height = height
         self.font = font
         self.string = string
-#        self.setupHelpMenu()
         self.canvas = GlyphsCanvas(self.font, self.string, self.height, self)
-#        self.resize(600,500)
+        self.resize(600,500)
+        self.table = SpaceTable(self.font, self.string, self)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.canvas)
+        layout.addWidget(self.table)
+        self.setLayout(layout)
 
-        self.setCentralWidget(self.canvas)
         self.setWindowTitle("Space center")
-
-    def about(self):
-        QMessageBox.about(self, "About Syntax Highlighter",
-                "<p>The <b>Syntax Highlighter</b> example shows how to " \
-                "perform simple syntax highlighting by subclassing the " \
-                "QSyntaxHighlighter class and describing highlighting " \
-                "rules using regular expressions.</p>")
-
-    def newFile(self):
-        self.editor.clear()
-
-    def openFile(self, path=None):
-        if not path:
-            path, _ = QFileDialog.getOpenFileName(self, "Open File", '',
-                    "C++ Files (*.cpp *.h)")
-
-        if path:
-            inFile = QFile(path)
-            if inFile.open(QFile.ReadOnly | QFile.Text):
-                text = inFile.readAll()
-
-                try:
-                    # Python v3.
-                    text = str(text, encoding='ascii')
-                except TypeError:
-                    # Python v2.
-                    text = str(text)
-
-                self.editor.setPlainText(text)
-
-    def save(self):
-        self.editor.write(self.features)
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
-#        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
-#        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
         fileMenu.addAction("&Save...", self.save, "Ctrl+S")
         fileMenu.addAction("E&xit", QApplication.instance().quit, "Ctrl+Q")
-
-    def setupHelpMenu(self):
-        helpMenu = QMenu("&Help", self)
-        self.menuBar().addMenu(helpMenu)
-
-        helpMenu.addAction("&About", self.about)
-        helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
 
 class GlyphsCanvas(QWidget):
     def __init__(self, font, string, height, parent=None):
@@ -120,40 +36,16 @@ class GlyphsCanvas(QWidget):
         self.string = string
 
         self.height = height
+        self.width = 500
         self.padding = 30
-
-        self.penWidth = 1
-        self.rotationAngle = 0
-        self.setBackgroundRole(QPalette.Base)
 
     '''
     def minimumSizeHint(self):
         return QSize(50, 50)
+    '''
 
     def sizeHint(self):
-        return QSize(100, 100)
-
-    def setFillRule(self, rule):
-        self.path.setFillRule(rule)
-        self.update()
-
-    def setFillGradient(self, color1, color2):
-        self.fillColor1 = color1
-        self.fillColor2 = color2
-        self.update()
-
-    def setPenWidth(self, width):
-        self.penWidth = width
-        self.update()
-
-    def setPenColor(self, color):
-        self.penColor = color
-        self.update()
-
-    def setRotationAngle(self, degrees):
-        self.rotationAngle = degrees
-        self.update()
-    '''
+        return QSize(self.width, self.height)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -163,9 +55,6 @@ class GlyphsCanvas(QWidget):
         factor = self.height/(self.font.info.unitsPerEm*(1+2*.125))
         painter.save()
         painter.translate(self.padding, self.height+self.font.info.descender*factor)
-#        painter.scale(self.width() / 100.0, self.height() / 100.0)
-#        painter.rotate(-self.rotationAngle)
-#        painter.translate(-50.0, -50.0)
 
         width = 0
         for c in self.string:
@@ -178,10 +67,9 @@ class GlyphsCanvas(QWidget):
             painter.translate(self.font[c].width*factor, 0)
             width += self.font[c].width*factor
         painter.restore()
+        self.width = width
 #        painter.fillRect(0, 0, width, self.height, Qt.white)
 #        self.sizeHint(offset) whatever
-
-#        for index, char in enumerate(self.string):
 
     '''
         painter.setPen(
@@ -194,6 +82,37 @@ class GlyphsCanvas(QWidget):
         painter.drawPath(self.path)
     '''
 
+class SpaceTable(QTableWidget):
+    def __init__(self, font, glyphs="", parent=None):
+        self.font = font
+        self.glyphs = glyphs
+        super(SpaceTable, self).__init__(4, len(self.glyphs), parent)
+        data = [None, "Width", "Left", "Right"]
+        for index, item in enumerate(data):
+            cell = QTableWidgetItem(item)
+            # don't set ItemIsEditable
+            cell.setFlags(Qt.ItemIsEnabled)
+            self.setItem(index, 0, cell)
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()
+        self.fillGlyphs(self.font, self.glyphs)
+
+    """
+    # Does not seem to work...
+    def maximumSizeHint(self):
+        return QSize(None, self.rowHeight(0)*4)
+    """
+
+    def fillGlyphs(self, font, glyphs):
+        self.setColumnCount(len(glyphs)+1)
+        dropped = 0
+        for index, glyph in enumerate(glyphs):
+            if glyph not in font: dropped += 1; continue
+            self.setItem(0, index+1, QTableWidgetItem(font[glyph].name)) # also find glyph by name or abstracted by input area?
+            self.setItem(1, index+1, QTableWidgetItem(str(font[glyph].width)))
+            self.setItem(2, index+1, QTableWidgetItem(str(font[glyph].leftMargin)))
+            self.setItem(3, index+1, QTableWidgetItem(str(font[glyph].rightMargin)))
+        self.setColumnCount(len(glyphs)+1-dropped)
 
 if __name__ == '__main__':
 
