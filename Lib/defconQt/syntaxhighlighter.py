@@ -4,24 +4,17 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
         QMessageBox, QTextEdit)
 
 class MainEditWindow(QMainWindow):
-    def __init__(self, features=None, parent=None):
+    def __init__(self, font=None, parent=None):
         super(MainEditWindow, self).__init__(parent)
 
-        self.features = features
+        self.font = font
         self.setupFileMenu()
 #        self.setupHelpMenu()
-        self.editor = TextEditor(features.text, self)
+        self.editor = TextEditor(self.font.features.text, self)
         self.resize(600,500)
 
         self.setCentralWidget(self.editor)
-        self.setWindowTitle("Font features")
-
-    def about(self):
-        QMessageBox.about(self, "About Syntax Highlighter",
-                "<p>The <b>Syntax Highlighter</b> example shows how to " \
-                "perform simple syntax highlighting by subclassing the " \
-                "QSyntaxHighlighter class and describing highlighting " \
-                "rules using regular expressions.</p>")
+        self.setWindowTitle("Font features", font)
 
     def newFile(self):
         self.editor.clear()
@@ -44,9 +37,17 @@ class MainEditWindow(QMainWindow):
                     text = str(text)
 
                 self.editor.setPlainText(text)
+                self.setWindowTitle("Font features")
+    
+    def setWindowTitle(self, title, font=None):
+        if font is not None: suffix = " – " + self.font.info.familyName + " " + self.font.info.styleName
+        super(MainEditWindow, self).setWindowTitle(title + suffix)
 
     def save(self):
         self.editor.write(self.features)
+    
+    def quit(self):
+        self.close()
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
@@ -55,14 +56,7 @@ class MainEditWindow(QMainWindow):
 #        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
 #        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
         fileMenu.addAction("&Save...", self.save, "Ctrl+S")
-        fileMenu.addAction("E&xit", QApplication.instance().quit, "Ctrl+Q")
-
-    def setupHelpMenu(self):
-        helpMenu = QMenu("&Help", self)
-        self.menuBar().addMenu(helpMenu)
-
-        helpMenu.addAction("&About", self.about)
-        helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
+        fileMenu.addAction("E&xit", self.quit, "Ctrl+Q")
 
 class TextEditor(QTextEdit):
     def __init__(self, text=None, parent=None):
@@ -88,12 +82,32 @@ class TextEditor(QTextEdit):
     def write(self, features):
         features.text = self.toPlainText()
 
+    '''
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            content = self.toPlainText()
+            cur_pos = self.textCursor().position()
+            if (content[cur_pos-1] == "{"):
+                #print(content[:cur_pos+1])
+                #print(content[cur_pos+1:])
+                # Probably does not handle CR properly
+                newtext = content[:cur_pos+1] + "    \n" + content[cur_pos+1:]
+                #print(newtext)
+                self.setPlainText(newtext)
+                self.textCursor().setPosition(cur_pos+5)
+        else:
+            super(TextEditor, self).keyPressEvent(event)
+    '''
+
+    def insertSpaces(self, text):
+        print(text[-1])
+
 class Highlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(Highlighter, self).__init__(parent)
 
         keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(QColor(200,50,150))
+        keywordFormat.setForeground(QColor(30,150,220))
         keywordFormat.setFontWeight(QFont.Bold)
 
         keywordPatterns = ["\\bAscender\\b", "\\bAttach\\b", "\\bCapHeight\\b", "\\bCaretOffset\\b", "\\bCodePageRange\\b",
@@ -121,7 +135,7 @@ class Highlighter(QSyntaxHighlighter):
 
         classFormat = QTextCharFormat()
         classFormat.setFontWeight(QFont.Bold)
-        classFormat.setForeground(QColor(30,150,220))
+        classFormat.setForeground(QColor(200,50,150))
         self.highlightingRules.append((QRegExp("@[A-Za-z0-9_.]+"),
                 classFormat))
 #        self.multiLineCommentFormat = QTextCharFormat()

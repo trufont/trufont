@@ -21,7 +21,6 @@ glyphSortDescriptors = [
 ]
 
 class CharacterWidget(QWidget):
-
     #characterSelected = pyqtSignal(str)
 
     def __init__(self, font, parent=None):
@@ -32,7 +31,7 @@ class CharacterWidget(QWidget):
         self.squareSize = 48
         self.columns = 11
         self.lastKey = -1
-#        self.setMouseTracking(True)
+        self.setMouseTracking(True)
         self.col = Qt.red
 
     def updateFont(self, font):
@@ -43,10 +42,8 @@ class CharacterWidget(QWidget):
         self.update()
 
     def updateSize(self, squareSize):
-#        fontSize, _ = fontSize.toInt()
-#        self.displayFont.setPointSize(int(fontSize))
         self.squareSize = squareSize
-        self.adjustSize()
+        self.adjustSize() # Is this needed? The goal is to fit the cells to the widget, not the other way around
         self.update()
 
     def sizeHint(self):
@@ -55,15 +52,18 @@ class CharacterWidget(QWidget):
         return QSize(self.columns * self.squareSize,
                 (len(self.glyphs)+2) / self.columns * self.squareSize)
 
-    '''
     def mouseMoveEvent(self, event):
-        widgetPosition = self.mapFromGlobal(event.globalPos())
-        key = (widgetPosition.y() // self.squareSize) * self.columns + widgetPosition.x() // self.squareSize
+        if event.modifiers() & Qt.ControlModifier:
+            widgetPosition = self.mapFromGlobal(event.globalPos())
+            key = (widgetPosition.y() // self.squareSize) * self.columns + widgetPosition.x() // self.squareSize
+            uni = self.glyphs[key].unicode
+            char = chr(self.glyphs[key].unicode) if uni is not None else "?"
 
-        # http://stackoverflow.com/questions/6598554/is-there-any-way-to-insert-qpixmap-object-in-html
-        text = '<p>Character: <span style="font-size: 24pt; font-family: %s">%s</span><p>Value: 0x%x' % (QFont().family(), self._chr(key), key)
-        QToolTip.showText(event.globalPos(), text, self)
-    '''
+            # http://stackoverflow.com/questions/6598554/is-there-any-way-to-insert-qpixmap-object-in-html
+            text = '<p align="center" style="font-size: 36pt; font-family: %s">%s</p>' % (QFont().family(), char)
+            if uni is not None:
+                text += '<p>U+%04x<p>' % self.glyphs[key].unicode
+            QToolTip.showText(event.globalPos(), text, self)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -92,6 +92,11 @@ class CharacterWidget(QWidget):
             self.update()
         else:
             super(CharacterWidget, self).mousePressEvent(event)
+
+    '''
+    def resizeEvent(self, event):
+        self.columns = event.rect().right() // self.squareSize
+    '''
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -140,8 +145,6 @@ class MainWindow(QMainWindow):
     def __init__(self, font=Font()):
         super(MainWindow, self).__init__()
 
-        centralWidget = QWidget()
-
         self.font = font
         self.scrollArea = QScrollArea()
         self.characterWidget = CharacterWidget(self.font)
@@ -155,11 +158,11 @@ class MainWindow(QMainWindow):
         fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
         fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
         # TODO: add functionality
-        fileMenu.addMenu(QMenu("Open &Recent...", self))
+        #fileMenu.addMenu(QMenu("Open &Recent...", self))
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, "Ctrl+S")
         fileMenu.addAction("Save &As...", self.saveFileAs, "Ctrl+Shift+S")
-        fileMenu.addAction("E&xit", QApplication.instance().quit, "Ctrl+Q")
+        fileMenu.addAction("E&xit", self.saveAndExit, "Ctrl+Q")
 
         fontMenu = QMenu("&Font", self)
         self.menuBar().addMenu(fontMenu)
@@ -168,6 +171,7 @@ class MainWindow(QMainWindow):
         fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+F")
         fontMenu.addSeparator()
         fontMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Y")
+        fontMenu.addAction("&Glyph view", self.glyphView, "Ctrl+G")
 
         helpMenu = QMenu("&Help", self)
         self.menuBar().addMenu(helpMenu)
@@ -204,6 +208,10 @@ class MainWindow(QMainWindow):
                 "UFO Fonts (*.ufo)")
         print(path)
         self.saveFile(path)
+    
+    def saveAndExit(self):
+        # TODO: check if font changed
+        QApplication.instance().quit()
 
 
     def fontInfo(self):
@@ -212,35 +220,47 @@ class MainWindow(QMainWindow):
         # otherwise it doesn't get swept?
         # Else we can just play with visibility instead of respawning, given that the window
         # is still valid by its ref after it's been closed
-        from fontinfo import TabDialog
+        from fontInfo import TabDialog
         if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
            self.fontInfoWindow = TabDialog(self.font, self)
            self.fontInfoWindow.show()
         else:
-           print(self.fontInfoWindow)
+           # Should data be rewind if user calls font info while one is open?
+           # I'd say no, but this has yet to be settled.
            self.fontInfoWindow.raise_()
 
     def fontFeatures(self):
         # TODO: see up here
-        from syntaxhighlighter import MainEditWindow
+        from syntaxHighlighter import MainEditWindow
         if not (hasattr(self, 'fontFeaturesWindow') and self.fontFeaturesWindow.isVisible()):
-           self.fontFeaturesWindow = MainEditWindow(self.font.features)
+           self.fontFeaturesWindow = MainEditWindow(self.font, self)
            self.fontFeaturesWindow.show()
         else:
            self.fontFeaturesWindow.raise_()
 
     def spaceCenter(self):
         # TODO: see up here
-        from spacecenter import MainSpaceWindow
+        from spaceCenter import MainSpaceWindow
         if not (hasattr(self, 'spaceCenterWindow') and self.spaceCenterWindow.isVisible()):
-            # XXX: trying to make a child window, let's see
-            self.spaceCenterWindow = MainSpaceWindow(self.font, "Hiyazee")
+            # XXX: window collapses when passing self as parent...
+            self.spaceCenterWindow = MainSpaceWindow(self.font, "Hiyazee otaHawa.")
             self.spaceCenterWindow.show()
         else:
             self.spaceCenterWindow.raise_()
 
+    def glyphView(self):
+        # TODO: see up here
+        from svgViewer import MainGfxWindow
+        if not (hasattr(self, 'glyphViewWindow') and self.glyphViewWindow.isVisible()):
+            # XXX: window collapses when passing self as parent...
+            self.glyphViewWindow = MainGfxWindow(self.font["a"], self)
+            self.glyphViewWindow.show()
+        else:
+            self.glyphViewWindow.raise_()
+
     def about(self):
         QMessageBox.about(self, "About Me",
+                "<h3>About Me</h3>" \
                 "<p>I am a new UFO-centric font editor and I aim to bring the <b>robofab</b> " \
                 "ecosystem to all main operating systems, in a fast and dependency-free " \
                 "package.</p>")
@@ -248,7 +268,11 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     import sys
 
+    #from pycallgraph import PyCallGraph
+    #from pycallgraph.output import GraphvizOutput
+
     representationFactories.registerAllFactories()
+    #with PyCallGraph(output=GraphvizOutput()):
     app = QApplication(sys.argv)
     window = MainWindow(Font("C:\\Veloce.ufo"))
     window.resize(565, 430)

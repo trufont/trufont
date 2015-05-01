@@ -1,5 +1,6 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QDoubleValidator, QIntValidator
-from PyQt5.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QFrame, QLabel, QLineEdit, QScrollArea, QTabWidget, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 class TabDialog(QDialog):
 
@@ -32,34 +33,95 @@ class TabDialog(QDialog):
         self.setWindowTitle("Font Info")
 
     def accept(self):
-        self.font.info.familyName = self.tabWidget.widget(self.tabs["General"]).fileNameEdit.text()
-        self.font.info.styleName = self.tabWidget.widget(self.tabs["General"]).styleNameEdit.text()
-        self.font.info.styleMapFamilyName = self.tabWidget.widget(self.tabs["General"]).styleMapFamilyEdit.text()
-        sn = self.tabWidget.widget(self.tabs["General"]).styleMapStyleDrop.currentIndex()
-        print(sn)
-        if sn == 1: self.font.info.styleMapStyleName = "regular"
-        elif sn == 2: self.font.info.styleMapStyleName = "italic"
-        elif sn == 3: self.font.info.styleMapStyleName = "bold"
-        elif sn == 4: self.font.info.styleMapStyleName = "bold italic"
-        else: self.font.info.styleMapStyleName = None
-        self.font.info.versionMajor = int(self.tabWidget.widget(self.tabs["General"]).versionMajorEdit.text())
-        self.font.info.versionMinor = int(self.tabWidget.widget(self.tabs["General"]).versionMinorEdit.text())
+        self.tabWidget.widget(self.tabs["General"]).writeValues(self.font)
         super(TabDialog, self).accept()
 
 class GeneralTab(QWidget):
     def __init__(self, font, parent=None):
         super(GeneralTab, self).__init__(parent)
+        mainLayout = QGridLayout()
 
-        identLabel = QLabel("Identification")
-        identLine = QFrame()
-        identLine.setFrameShape(QFrame.HLine)
-
-        fileNameLabel = QLabel("Family name:")
-        self.fileNameEdit = QLineEdit(font.info.familyName)
-
+        familyNameLabel = QLabel("Family name:")
+        self.familyNameEdit = QLineEdit(font.info.familyName)
         styleNameLabel = QLabel("Style name:")
         self.styleNameEdit = QLineEdit(font.info.styleName)
+        
+        mainLayout.addWidget(familyNameLabel, 0, 0)
+        mainLayout.addWidget(self.familyNameEdit, 0, 1, 1, 3)
+        mainLayout.addWidget(styleNameLabel, 0, 4)
+        mainLayout.addWidget(self.styleNameEdit, 0, 5)
 
+        designerLabel = QLabel("Designer:")
+        self.designerEdit = QLineEdit(font.info.openTypeNameDesigner)
+
+        mainLayout.addWidget(designerLabel, 1, 0)
+        mainLayout.addWidget(self.designerEdit, 1, 1, 1, 5)
+
+        designerURLLabel = QLabel("Designer URL:")
+        self.designerURLEdit = QLineEdit(font.info.openTypeNameDesignerURL)
+
+        mainLayout.addWidget(designerURLLabel, 2, 0)
+        mainLayout.addWidget(self.designerURLEdit, 2, 1, 1, 5)
+
+        manufacturerLabel = QLabel("Manufacturer:")
+        self.manufacturerEdit = QLineEdit(font.info.openTypeNameManufacturer)
+        
+        mainLayout.addWidget(manufacturerLabel, 3, 0)
+        mainLayout.addWidget(self.manufacturerEdit, 3, 1, 1, 5)
+
+        manufacturerURLLabel = QLabel("Manufacturer URL:")
+        self.manufacturerURLEdit = QLineEdit(font.info.openTypeNameManufacturerURL)
+        
+        mainLayout.addWidget(manufacturerURLLabel, 4, 0)
+        mainLayout.addWidget(self.manufacturerURLEdit, 4, 1, 1, 5)
+        
+        copyrightLabel = QLabel("Copyright:")
+        self.copyrightEdit = QLineEdit(font.info.copyright)
+        
+        mainLayout.addWidget(copyrightLabel, 5, 0)
+        mainLayout.addWidget(self.copyrightEdit, 5, 1, 1, 5)
+        
+        # TODO: give visual feedback of input data validity using QLineEdit lose focus event
+        # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/
+        versionLabel = QLabel("Version:")
+        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor))
+        self.versionMajorEdit.setAlignment(Qt.AlignRight)
+        self.versionMajorEdit.setValidator(QIntValidator())
+        versionDotLabel = QLabel(".")
+        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor).zfill(3))
+        self.versionMinorEdit.setValidator(QIntValidator())
+        
+        mainLayout.addWidget(versionLabel, 6, 0)
+        mainLayout.addWidget(self.versionMajorEdit, 6, 1)
+        mainLayout.addWidget(versionDotLabel, 6, 2)
+        mainLayout.addWidget(self.versionMinorEdit, 6, 3)
+        
+        unitsPerEmLabel = QLabel("Units per em:")
+        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm))
+        self.unitsPerEmEdit.setValidator(QIntValidator())
+        
+        mainLayout.addWidget(unitsPerEmLabel, 6, 4)
+        mainLayout.addWidget(self.unitsPerEmEdit, 6, 5)
+        
+        licenseLabel = QLabel("License:")
+        self.licenseEdit = QLineEdit(font.info.openTypeNameLicense)
+        
+        mainLayout.addWidget(licenseLabel, 7, 0)
+        mainLayout.addWidget(self.licenseEdit, 7, 1, 1, 5)
+
+        licenseURLLabel = QLabel("License URL:")
+        self.licenseURLEdit = QLineEdit(font.info.openTypeNameLicenseURL)
+        
+        mainLayout.addWidget(licenseURLLabel, 8, 0)
+        mainLayout.addWidget(self.licenseURLEdit, 8, 1, 1, 5)
+        
+        trademarkLabel = QLabel("Trademark:")
+        self.trademarkEdit = QLineEdit(font.info.trademark)
+        
+        mainLayout.addWidget(trademarkLabel, 9, 0)
+        mainLayout.addWidget(self.trademarkEdit, 9, 1, 1, 5)
+        
+        """
         styleMapFamilyLabel = QLabel("Style map family name:")
         self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName)
 #        self.styleMapFamilyCBox = QCheckBox("Use default value")
@@ -85,22 +147,6 @@ class GeneralTab(QWidget):
         else: self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["None"])
 #        self.styleMapStyleCBox = QCheckBox("Use default value")
 
-        # TODO: give visual feedback of input data validity using QLineEdit lose focus event
-        # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/
-        versionLabel = QLabel("Version:")
-        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor))
-        self.versionMajorEdit.setValidator(QIntValidator())
-        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor))
-        self.versionMinorEdit.setValidator(QIntValidator())
-
-        dimensionsLabel = QLabel("Dimensions")
-        dimensionsLine = QFrame()
-        dimensionsLine.setFrameShape(QFrame.HLine)
-
-        unitsPerEmLabel = QLabel("Units per em:")
-        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm))
-        self.unitsPerEmEdit.setValidator(QIntValidator())
-
         ascenderLabel = QLabel("Ascender:")
         self.ascenderEdit = QLineEdit(str(font.info.ascender))
         self.ascenderEdit.setValidator(QIntValidator())
@@ -120,101 +166,30 @@ class GeneralTab(QWidget):
         italicAngleLabel = QLabel("Italic angle:")
         self.italicAngleEdit = QLineEdit(str(font.info.italicAngle))
         self.italicAngleEdit.setValidator(QDoubleValidator())
+        """
 
-        legalLabel = QLabel("Legal")
-        legalLine = QFrame()
-        legalLine.setFrameShape(QFrame.HLine)
-
-        copyrightLabel = QLabel("Copyright:")
-        self.copyrightEdit = QLineEdit(font.info.copyright)
-
-        trademarkLabel = QLabel("Trademark:")
-        self.trademarkEdit = QLineEdit(font.info.trademark)
-
-        licenseLabel = QLabel("License:")
-        self.licenseEdit = QLineEdit(font.info.openTypeNameLicense)
-
-        licenseURLLabel = QLabel("License URL:")
-        self.licenseURLEdit = QLineEdit(font.info.openTypeNameLicenseURL)
-
-        partiesLabel = QLabel("Parties")
-        partiesLine = QFrame()
-        partiesLine.setFrameShape(QFrame.HLine)
-
-        designerLabel = QLabel("Designer:")
-        self.designerEdit = QLineEdit(font.info.openTypeNameDesigner)
-
-        designerURLLabel = QLabel("Designer URL:")
-        self.designerURLEdit = QLineEdit(font.info.openTypeNameDesignerURL)
-
-        manufacturerLabel = QLabel("Manufacturer:")
-        self.manufacturerEdit = QLineEdit(font.info.openTypeNameManufacturer)
-
-        manufacturerURLLabel = QLabel("Manufacturer URL:")
-        self.manufacturerURLEdit = QLineEdit(font.info.openTypeNameManufacturerURL)
-
-        mainLayout = QVBoxLayout()
-        mainLayout.addWidget(identLabel)
-        mainLayout.addWidget(identLine)
-        mainLayout.addWidget(fileNameLabel)
-        mainLayout.addWidget(self.fileNameEdit)
-        mainLayout.addWidget(styleNameLabel)
-        mainLayout.addWidget(self.styleNameEdit)
-        mainLayout.addWidget(styleMapFamilyLabel)
-        mainLayout.addWidget(self.styleMapFamilyEdit)
-        mainLayout.addWidget(styleMapStyleLabel)
-        mainLayout.addWidget(self.styleMapStyleDrop)
-        mainLayout.addWidget(versionLabel)
-        mainLayout.addWidget(self.versionMajorEdit)
-        mainLayout.addWidget(self.versionMinorEdit)
-
-        mainLayout.addWidget(dimensionsLabel)
-        mainLayout.addWidget(dimensionsLine)
-        mainLayout.addWidget(unitsPerEmLabel)
-        mainLayout.addWidget(self.unitsPerEmEdit)
-        mainLayout.addWidget(ascenderLabel)
-        mainLayout.addWidget(self.ascenderEdit)
-        mainLayout.addWidget(descenderLabel)
-        mainLayout.addWidget(self.descenderEdit)
-        mainLayout.addWidget(xHeightLabel)
-        mainLayout.addWidget(self.xHeightEdit)
-        mainLayout.addWidget(capHeightLabel)
-        mainLayout.addWidget(self.capHeightEdit)
-        mainLayout.addWidget(italicAngleLabel)
-        mainLayout.addWidget(self.italicAngleEdit)
-
-        mainLayout.addWidget(legalLabel)
-        mainLayout.addWidget(legalLine)
-        mainLayout.addWidget(copyrightLabel)
-        mainLayout.addWidget(self.copyrightEdit)
-        mainLayout.addWidget(trademarkLabel)
-        mainLayout.addWidget(self.trademarkEdit)
-        mainLayout.addWidget(licenseLabel)
-        mainLayout.addWidget(self.licenseEdit)
-        mainLayout.addWidget(licenseURLLabel)
-        mainLayout.addWidget(self.licenseURLEdit)
-
-        mainLayout.addWidget(partiesLabel)
-        mainLayout.addWidget(partiesLine)
-        mainLayout.addWidget(designerLabel)
-        mainLayout.addWidget(self.designerEdit)
-        mainLayout.addWidget(designerURLLabel)
-        mainLayout.addWidget(self.designerURLEdit)
-        mainLayout.addWidget(manufacturerLabel)
-        mainLayout.addWidget(self.manufacturerEdit)
-        mainLayout.addWidget(manufacturerURLLabel)
-        mainLayout.addWidget(self.manufacturerURLEdit)
-        mainLayout.addStretch(1)
-
-        # http://nealbuerger.com/2013/11/pyside-qvboxlayout-with-qscrollarea/
-        # Why so many layers of indirection? It might be possible to do this
-        # in a simpler way...
-        widget = QWidget()
-        widget.setLayout(mainLayout)
-        scrollArea = QScrollArea()
-        scrollArea.setWidget(widget)
-        scrollArea.setMinimumSize(170, 200)
-        vLayout = QVBoxLayout()
-        vLayout.addWidget(scrollArea)
-
-        self.setLayout(vLayout)
+        self.setLayout(mainLayout)
+    
+    def writeValues(self, font):
+        font.info.familyName = self.familyNameEdit.text()
+        font.info.styleName = self.styleNameEdit.text()
+        font.info.openTypeNameDesigner = self.designerEdit.text()
+        font.info.openTypeNameDesignerURL = self.designerURLEdit.text()
+        font.info.openTypeNameManufacturer = self.manufacturerEdit.text()
+        font.info.openTypeNameManufacturerURL = self.manufacturerURLEdit.text()
+        font.info.copyright = self.copyrightEdit.text()
+        font.info.versionMajor = int(self.versionMajorEdit.text())
+        font.info.versionMinor = int(self.versionMinorEdit.text())
+        font.info.unitsPerEm = int(self.unitsPerEmEdit.text())
+        font.info.openTypeNameLicense = self.licenseEdit.text()
+        font.info.openTypeNameLicenseURL = self.licenseURLEdit.text()
+        font.info.trademark = self.trademarkEdit.text()
+        """
+        font.info.styleMapFamilyName = self.styleMapFamilyEdit.text()
+        sn = self.styleMapStyleDrop.currentIndex()
+        if sn == 1: font.info.styleMapStyleName = "regular"
+        elif sn == 2: font.info.styleMapStyleName = "italic"
+        elif sn == 3: font.info.styleMapStyleName = "bold"
+        elif sn == 4: font.info.styleMapStyleName = "bold italic"
+        else: font.info.styleMapStyleName = None
+        """
