@@ -34,8 +34,6 @@ class CharacterWidget(QWidget):
 
     def updateFont(self, font):
         self.font = font
-#        self.squareSize = max(24, QFontMetrics(self.displayFont).xHeight() * 3)
-#        self.adjustSize()
         self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
         self.update()
 
@@ -88,8 +86,8 @@ class CharacterWidget(QWidget):
             # # http://stackoverflow.com/questions/6598554/is-there-any-way-to-insert-qpixmap-object-in-html
             # text = '<p align="center" style="font-size: 36pt; font-family: %s">%s</p>' % (QFont().family(), char)
             # if uni is not None:
-                # text += '<p>U+%04x<p>' % self.glyphs[key].unicode
-                # text += '<p>%s<p>' % unicodedata.name(chr(self.glyphs[key].unicode))
+                # more = ['<p>U+%04x<p>' % self.glyphs[key].unicode, '<p>%s<p>' % unicodedata.name(chr(self.glyphs[key].unicode))]
+                # text = text.join(more)
             # QToolTip.showText(event.globalPos(), text, self)
         else:
             super(CharacterWidget, self).mouseMoveEvent(event)
@@ -110,8 +108,10 @@ class CharacterWidget(QWidget):
             super(CharacterWidget, self).mousePressEvent(event)
 
     '''
+    # TODO: try now that adjustSize is called
     def resizeEvent(self, event):
         self.columns = event.size().width() // self.squareSize
+        self.adjustSize()
     '''
 
     def paintEvent(self, event):
@@ -278,8 +278,7 @@ class MainWindow(QMainWindow):
         QToolTip.showText(QCursor.pos(), text, self)
     
     def _selectionChanged(self, count, glyph):
-        prefix = glyph + " " if count <= 1 else ""
-        self.selectionLabel.setText(prefix + "(" + str(count) + " selected)")
+        self.selectionLabel.setText("%s%s%s%d %s" % (glyph, " " if count <= 1 else "", "(", count, "selected)"))
 
     def _squareSizeChanged(self):
         self.characterWidget.updateSize(self.sqSizeSlider.value())

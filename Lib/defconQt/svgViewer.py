@@ -130,6 +130,7 @@ class SvgView(QGraphicsView):
         self._glyph = None
 
         self.setScene(QGraphicsScene(self))
+        # XXX: this should allow us to move the view but doesn't happen...
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
@@ -206,8 +207,6 @@ class SvgView(QGraphicsView):
         # start point
         if self._showOnCurvePoints and outlineData["startPoints"]:
             startWidth = startHeight = self.roundPosition(startPointSize)# * self._inverseScale)
-            print("Morsay")
-            print(startWidth)
             startHalf = startWidth / 2.0
             path = QPainterPath()
             for point, angle in outlineData["startPoints"]:
@@ -242,9 +241,6 @@ class SvgView(QGraphicsView):
             path = QPainterPath()
             for point in outlineData["offCurvePoints"]:
                 x, y = point["point"]
-                print(x,y)
-                print(offWidth, offHeight)
-                print()
                 points.append((x, y))
                 x = self.roundPosition(x - offHalf)
                 y = self.roundPosition(y - offHalf)
@@ -359,11 +355,9 @@ class SvgView(QGraphicsView):
         s.setSceneRect(self.outlineItem.boundingRect().adjusted(-10, -10, 10, 10))
     
     def roundPosition(self, value):
-        print("ROUND  " + str(value))
         value = value * self._scale
         value = round(value) - .5
         value = value * self._inverseScale
-        print("ROUND2 " + str(value))
         return value
     
     def setGlyph(self, font, glyph):

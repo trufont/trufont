@@ -23,7 +23,7 @@ class MainSpaceWindow(QWidget):
         self.setLayout(layout)
         self.resize(600,500)
 
-        self.setWindowTitle("Space center – " + self.font.info.familyName + " " + self.font.info.styleName)
+        self.setWindowTitle("%s%s%s%s" % ("Space center – ", self.font.info.familyName, " ", self.font.info.styleName))
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)

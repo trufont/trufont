@@ -40,8 +40,9 @@ class MainEditWindow(QMainWindow):
                 self.setWindowTitle("Font features")
     
     def setWindowTitle(self, title, font=None):
-        if font is not None: suffix = " – " + self.font.info.familyName + " " + self.font.info.styleName
-        super(MainEditWindow, self).setWindowTitle(title + suffix)
+        if font is not None: puts = "%s%s%s%s%s" % ((title, " – ", self.font.info.familyName, " ", self.font.info.styleName)
+        else: puts = title
+        super(MainEditWindow, self).setWindowTitle(puts)
 
     def save(self):
         self.editor.write(self.features)
@@ -192,7 +193,7 @@ class Highlighter(QSyntaxHighlighter):
             "\\brsub\\b", "\\bscript\\b", "\\bsizemenuname\\b", "\\bsubstitute\\b", "\\bsubtable\\b", "\\bsub\\b", "\\btable\\b",
             "\\buseExtension\\b", "\\bvalueRecordDef\\b", "\\bwinAscent\\b", "\\bwinDescent\\b"]
 
-        self.highlightingRules = [(QRegExp("(" + "|".join(keywordPatterns) + ")"), keywordFormat)]
+        self.highlightingRules = [(QRegExp("%s%s%s" % ("(", "|".join(keywordPatterns), ")")), keywordFormat)]
 
         singleLineCommentFormat = QTextCharFormat()
         singleLineCommentFormat.setForeground(Qt.darkGray)
