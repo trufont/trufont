@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QFile, QRegExp, Qt
-from PyQt5.QtGui import QColor, QFont, QSyntaxHighlighter, QTextCharFormat
+from PyQt5.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCharFormat
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
-        QMessageBox, QTextEdit)
+        QMessageBox, QPlainTextEdit, QWidget)
 
 class MainEditWindow(QMainWindow):
     def __init__(self, font=None, parent=None):
@@ -58,7 +58,18 @@ class MainEditWindow(QMainWindow):
         fileMenu.addAction("&Save...", self.save, "Ctrl+S")
         fileMenu.addAction("E&xit", self.quit, "Ctrl+Q")
 
-class TextEditor(QTextEdit):
+class LineNumberArea(QWidget):
+    def __init__(self,editor):
+        self.codeEditor = editor
+        super(LineNumberArea, self).__init__(editor)
+
+    def sizeHint(self):
+        return QSize(self.codeEditor.lineNumberAreaWidth(), 0)
+
+    def paintEvent(self, event):
+        self.codeEditor.lineNumberAreaPaintEvent(event)
+        
+class TextEditor(QPlainTextEdit):
     def __init__(self, text=None, parent=None):
         super(TextEditor, self).__init__(parent)
         font = QFont()
@@ -66,11 +77,13 @@ class TextEditor(QTextEdit):
         font.setPointSize(10)
         font.setFixedPitch(True)
 
-        self.setAcceptRichText(False)
         self.setPlainText(text)
         self.setFont(font)
 
         self.highlighter = Highlighter(self.document())
+        self.lineNumbers = LineNumberArea(self)
+        self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
+        self.updateRequest.connect(self.updateLineNumberArea)
     
     def setFontParams(self, family='CamingoCode', ptSize=10, isMono=True):
         font = QFont()
@@ -81,6 +94,59 @@ class TextEditor(QTextEdit):
 
     def write(self, features):
         features.text = self.toPlainText()
+        
+    def lineNumberAreaPaintEvent(self, event):
+        painter = QPainter(self.lineNumbers)
+        painter.fillRect(event.rect(), QColor(230, 230, 230))
+        d = event.rect().topRight()
+        a = event.rect().bottomRight()
+        painter.setPen(Qt.darkGray)
+        painter.drawLine(d.x(), d.y(), a.x(), a.y())
+        painter.setPen(Qt.black)
+        painter.setFont(self.font())
+        
+        block = self.firstVisibleBlock()
+        blockNumber = block.blockNumber();
+        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
+        bottom = top + int(self.blockBoundingRect(block).height())
+        
+        while block.isValid() and top <= event.rect().bottom():
+            if block.isVisible() and bottom >= event.rect().top():
+                number = str(blockNumber + 1)
+                painter.drawText(4, top, self.lineNumbers.width() - 8, 
+                    self.fontMetrics().height(),
+                    Qt.AlignRight, number)
+            block = block.next()
+            top = bottom
+            bottom = top + int(self.blockBoundingRect(block).height())
+            blockNumber += 1
+    
+    def lineNumberAreaWidth(self):
+        digits = 1
+        top = max(1, self.blockCount())
+        while (top >= 10):
+            top /= 10
+            digits += 1
+        return 10 + self.fontMetrics().width('9') * digits
+    
+    def updateLineNumberArea(self, rect, dy):
+        
+        if dy:
+            self.lineNumbers.scroll(0, dy);
+        else:
+            self.lineNumbers.update(0, rect.y(), 
+                self.lineNumbers.width(), rect.height())
+
+        if rect.contains(self.viewport().rect()):
+            self.updateLineNumberAreaWidth(0)
+    
+    def updateLineNumberAreaWidth(self, newBlockCount):
+        self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
+    
+    def resizeEvent(self, event):
+        super(TextEditor, self).resizeEvent(event)
+        cr = self.contentsRect()
+        self.lineNumbers.setGeometry(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height())
 
     '''
     def keyPressEvent(self, event):

@@ -8,13 +8,13 @@ from PyQt5.QtSvg import QGraphicsSvgItem
 
 
 class MainGfxWindow(QMainWindow):
-    def __init__(self, glyph=None, parent=None):
+    def __init__(self, font=None, glyph=None, parent=None):
         super(MainGfxWindow, self).__init__(parent)
 
         self.currentPath = ''
 
         self.view = SvgView()
-        self.view.setGlyph(glyph)
+        self.view.setGlyph(font, glyph)
 
         fileMenu = QMenu("&File", self)
         openAction = fileMenu.addAction("&Open...")
@@ -153,14 +153,31 @@ class SvgView(QGraphicsView):
         p.drawTiledPixmap(self.viewport().rect(),
                 self.backgroundBrush().texture())
         p.restore()
+        
+    def addOutlines(self):
+        s = self.scene()
+        #painter = QPainter(self.viewport())
+        #painter.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
+        #painter.scale(1, -1)
+        #painter.setRenderHint(QPainter.Antialiasing)
+        # outlines
+        path = self._glyph.getRepresentation("defconQt.QPainterPath")
+        s.addPath(path, brush=QBrush(Qt.black))
+        # components
+        '''
+        path = self._glyph.getRepresentation("defconAppKit.OnlyComponentsNSBezierPath")
+        self._componentFillColor.set()
+        path.fill()
+        '''
 
-    def drawPoints(self):
+    def addPoints(self):
         # work out appropriate sizes and
         # skip if the glyph is too small
-        painter = QPainter(self.viewport())
-        painter.translate(0, self.height())
-        painter.scale(1, -1)
-        #painter.translate(0, 400)
+        s = self.scene()
+        #painter = QPainter(self.viewport())
+        #painter.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
+        #painter.scale(1, -1)
+        #painter.setRenderHint(QPainter.Antialiasing)
         pointSize = 1000#self._impliedPointSize
         if pointSize > 550:
             startPointSize = 21
@@ -188,7 +205,9 @@ class SvgView(QGraphicsView):
         points = []
         # start point
         if self._showOnCurvePoints and outlineData["startPoints"]:
-            startWidth = startHeight = self.roundPosition(startPointSize * self._inverseScale)
+            startWidth = startHeight = self.roundPosition(startPointSize)# * self._inverseScale)
+            print("Morsay")
+            print(startWidth)
             startHalf = startWidth / 2.0
             path = QPainterPath()
             for point, angle in outlineData["startPoints"]:
@@ -203,7 +222,8 @@ class SvgView(QGraphicsView):
                     path.addEllipse(x-startHalf, y-startHalf, startWidth, startHeight)
             #self._startPointColor.set()
             #path.fill()
-            painter.fillPath(path, Qt.blue)
+            #painter.fillPath(path, Qt.blue)
+            s.addPath(path, brush=QBrush(Qt.blue))
         # off curve
         if self._showOffCurvePoints and outlineData["offCurvePoints"]:
             # lines
@@ -213,30 +233,36 @@ class SvgView(QGraphicsView):
                 path.lineTo(*point2)
             #self._bezierHandleColor.set()
             #path.setLineWidth_(1.0 * self._inverseScale)
-            painter.drawPath(path)
+            #painter.setPen(QPen(Qt.black, 1.0 * self._inverseScale))
+            # painter.drawPath(path)
+            s.addPath(path, Qt.black)
             # points
-            offWidth = offHeight = self.roundPosition(offCurvePointSize * self._inverseScale)
+            offWidth = offHeight = self.roundPosition(offCurvePointSize)# * self._inverseScale)
             offHalf = offWidth / 2.0
             path = QPainterPath()
             for point in outlineData["offCurvePoints"]:
                 x, y = point["point"]
+                print(x,y)
+                print(offWidth, offHeight)
+                print()
                 points.append((x, y))
                 x = self.roundPosition(x - offHalf)
                 y = self.roundPosition(y - offHalf)
                 path.addEllipse(x, y, offWidth, offHeight)
-            #path.setLineWidth_(3.0 * self._inverseScale)
+            #path.setLineWidth_(3.0#* self._inverseScale)
             #self._pointStrokeColor.set()
-            painter.drawPath(path)
+            #s.addPath(path, QPen(QBrush(Qt.darkGray), 3.0))
             #self._backgroundColor.set()
-            painter.fillPath(path, Qt.green)
+            s.addPath(path, brush=QBrush(Qt.green))
             #self._pointColor.set()
             #path.setLineWidth_(1.0 * self._inverseScale)
+            s.addPath(path, QPen(QBrush(Qt.black), 1.0))
             #path.stroke()
         # on curve
         if self._showOnCurvePoints and outlineData["onCurvePoints"]:
-            width = height = self.roundPosition(onCurvePointSize * self._inverseScale)
+            width = height = self.roundPosition(onCurvePointSize)# * self._inverseScale)
             half = width / 2.0
-            smoothWidth = smoothHeight = self.roundPosition(onCurveSmoothPointSize * self._inverseScale)
+            smoothWidth = smoothHeight = self.roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
             smoothHalf = smoothWidth / 2.0
             path = QPainterPath()
             for point in outlineData["onCurvePoints"]:
@@ -252,9 +278,11 @@ class SvgView(QGraphicsView):
                     path.addRect(x, y, width, height)
             #self._pointStrokeColor.set()
             #path.setLineWidth_(3.0 * self._inverseScale)
-            painter.drawPath(path)
+            # painter.drawPath(path)
+            s.addPath(path, Qt.black)
             #self._pointColor.set()
-            painter.fillPath(path, Qt.red)
+            # painter.fillPath(path, Qt.red)
+            s.addPath(path, brush=QBrush(Qt.red))
         # text
         """
         if self._showPointCoordinates and coordinateSize:
@@ -281,9 +309,9 @@ class SvgView(QGraphicsView):
         s = self.scene()
         s.clear()
         self.resetTransform()
-        self.scale(1, -1)
+        #self.scale(1, -1)
         
-        s.addPath(path, brush=QBrush(Qt.gray))
+        #s.addPath(path, brush=QBrush(Qt.gray))
         #s.setSceneRect(path.boundingRect().adjusted(-10, -10, 10, 10))
 
     def openFile(self, svg_file):
@@ -331,18 +359,26 @@ class SvgView(QGraphicsView):
         s.setSceneRect(self.outlineItem.boundingRect().adjusted(-10, -10, 10, 10))
     
     def roundPosition(self, value):
+        print("ROUND  " + str(value))
         value = value * self._scale
         value = round(value) - .5
         value = value * self._inverseScale
+        print("ROUND2 " + str(value))
         return value
     
-    def setGlyph(self, glyph):
+    def setGlyph(self, font, glyph):
+        self._font = font
         self._glyph = glyph
         self._inverseScale = 0.1
-        self._scale = 1.0
+        self._scale = 10
         self._showOffCurvePoints = True
         self._showOnCurvePoints = True
-        self.openPath(glyph.getRepresentation("defconQt.QPainterPath"))
+        
+        self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
+        self.scale(1, -1)
+        self.addOutlines()
+        self.addPoints()
+        #self.openPath(glyph.getRepresentation("defconQt.QPainterPath"))
 
     def setRenderer(self, renderer):
         self.renderer = renderer
@@ -380,7 +416,8 @@ class SvgView(QGraphicsView):
             p.drawImage(0, 0, self.image)
         else:
             super(SvgView, self).paintEvent(event)
-            self.drawPoints()
+            #self.drawOutlines()
+            #self.drawPoints()
 
     def wheelEvent(self, event):
         factor = pow(1.2, event.angleDelta().y() / 120.0)

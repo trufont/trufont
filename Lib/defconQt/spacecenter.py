@@ -75,21 +75,22 @@ class GlyphsCanvas(QWidget):
         painter.fillRect(0, 0, self.width(), self.height(), Qt.white)
         painter.translate(self.padding, self.ptSize+self.font.info.descender*self.scale)
 
-        cur_width = self.padding
+        cur_width = 0
         for c in self.string:
-            if c not in self.font: continue
+            glyph = self.font.unicodeData.glyphNameForUnicode(ord(c))
+            if glyph not in self.font: continue
             # line wrapping
-            if cur_width + self.font[c].width*self.scale + self.padding > self.width():
+            if cur_width + self.font[glyph].width*self.scale + self.padding > self.width():
                 painter.translate(-cur_width+self.padding, self.ptSize)
-                cur_width = self.font[c].width*self.scale
+                cur_width = self.font[glyph].width*self.scale
             else:
-                cur_width += self.font[c].width*self.scale
-            glyph = self.font[c].getRepresentation("defconQt.QPainterPath")
+                cur_width += self.font[glyph].width*self.scale
+            glyphPath = self.font[glyph].getRepresentation("defconQt.QPainterPath")
             painter.save()
             painter.scale(self.scale, -self.scale)
-            painter.fillPath(glyph, Qt.black)
+            painter.fillPath(glyphPath, Qt.black)
             painter.restore()
-            painter.translate(self.font[c].width*self.scale, 0)
+            painter.translate(self.font[glyph].width*self.scale, 0)
 
     '''
         painter.setPen(
@@ -103,23 +104,24 @@ class GlyphsCanvas(QWidget):
     '''
 
 class SpaceTable(QTableWidget):
-    def __init__(self, font, glyphs="", parent=None):
+    def __init__(self, font, string="", parent=None):
         self.font = font
-        self.glyphs = glyphs
-        super(SpaceTable, self).__init__(4, len(self.glyphs), parent)
+        self.string = string
+        super(SpaceTable, self).__init__(4, len(self.string), parent)
         data = [None, "Width", "Left", "Right"]
         for index, item in enumerate(data):
             cell = QTableWidgetItem(item)
             # don't set ItemIsEditable
             cell.setFlags(Qt.ItemIsEnabled)
             self.setItem(index, 0, cell)
+        self.setColumnWidth(0, .6*self.columnWidth(0))
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
         # always show a scrollbar to fix layout
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.resizeRowsToContents()
         self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed))
-        self.fillGlyphs(self.font, self.glyphs)
+        self.fillGlyphs(self.font, self.string)
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
 
     def sizeHint(self):
@@ -130,24 +132,30 @@ class SpaceTable(QTableWidget):
         height += margins.top() + margins.bottom()
         return QSize(self.width(), height)
 
-    def fillGlyphs(self, font, glyphs):
-        '''
-        def glyphTableWidgetItem(content):
+    def fillGlyphs(self, font, string):
+        def glyphTableWidgetItem(content, blockEdition=False):
+            if content is not None: content = str(content)
             item = QTableWidgetItem(content)
-            item.setTextAlignment(Qt.AlignCenter)
+            if content is None or blockEdition:
+                # don't set ItemIsEditable
+                item.setFlags(Qt.ItemIsEnabled)
+            #item.setTextAlignment(Qt.AlignCenter)
             return item
-        '''
-        self.setColumnCount(len(glyphs)+1)
+
+        self.setColumnCount(len(string)+1)
         dropped = 0
-        for index, glyph in enumerate(glyphs):
+        for index, char in enumerate(string):
+            glyph = font.unicodeData.glyphNameForUnicode(ord(char))
+            i = index-dropped+1
             if glyph not in font: dropped += 1; continue
             # TODO: should glyph name edit really be permitted here?
             # TODO: also find glyphs by /name or should be abstracted by input area or main object?
-            self.setItem(0, index-dropped+1, QTableWidgetItem(font[glyph].name))
-            self.setItem(1, index-dropped+1, QTableWidgetItem(str(font[glyph].width)))
-            self.setItem(2, index-dropped+1, QTableWidgetItem(str(font[glyph].leftMargin)))
-            self.setItem(3, index-dropped+1, QTableWidgetItem(str(font[glyph].rightMargin)))
-        self.setColumnCount(len(glyphs)+1-dropped)
+            self.setItem(0, i, glyphTableWidgetItem(font[glyph].name, True))
+            self.setItem(1, i, glyphTableWidgetItem(font[glyph].width))
+            self.setItem(2, i, glyphTableWidgetItem(font[glyph].leftMargin))
+            self.setItem(3, i, glyphTableWidgetItem(font[glyph].rightMargin))
+            self.setColumnWidth(i, .7*self.columnWidth(i))
+        self.setColumnCount(len(string)+1-dropped)
     
     def wheelEvent(self, event):
         cur = self.horizontalScrollBar().value()

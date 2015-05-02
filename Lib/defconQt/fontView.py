@@ -4,12 +4,9 @@ import representationFactories
 import unicodedata
 
 from defcon import Font
-from PyQt5.QtCore import pyqtSignal, QSize, Qt
-from PyQt5.QtGui import (QClipboard, QFont, QFontDatabase, QFontMetrics,
-        QIcon, QPainter)
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialogButtonBox, QFileDialog, QFontComboBox,
-        QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QMenu, QPushButton,
-        QScrollArea, QTabWidget, QToolTip, QVBoxLayout, QWidget)
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 glyphSortDescriptors = [
     dict(type="alphabetical", allowPseudoUnicode=True),
@@ -21,18 +18,19 @@ glyphSortDescriptors = [
 ]
 
 class CharacterWidget(QWidget):
-    #characterSelected = pyqtSignal(str)
+    characterSelected = pyqtSignal(int, str)
 
-    def __init__(self, font, parent=None):
+    def __init__(self, font, squareSize=48, parent=None):
         super(CharacterWidget, self).__init__(parent)
 
         self.font = font
         self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
-        self.squareSize = 48
+        self.squareSize = squareSize
         self.columns = 11
         self.lastKey = -1
-        self.setMouseTracking(True)
-        self.col = Qt.red
+        self.moveKey = -1
+        #self.setMouseTracking(True)
+        self.col = QColor.fromRgbF(.2, .3, .7, .15)
 
     def updateFont(self, font):
         self.font = font
@@ -47,55 +45,73 @@ class CharacterWidget(QWidget):
         self.update()
 
     def sizeHint(self):
-        # TODO: adding 2 to glyphlen is cheating, need to find how to properly compensate y_offset
-        # But why does it even have to be? Does Qt take the origin the painting as the basis for size calculation? Likely...
         return QSize(self.columns * self.squareSize,
-                (len(self.glyphs)+2) / self.columns * self.squareSize)
-
-    def mouseMoveEvent(self, event):
-        if event.modifiers() & Qt.ControlModifier:
-            widgetPosition = self.mapFromGlobal(event.globalPos())
-            key = (widgetPosition.y() // self.squareSize) * self.columns + widgetPosition.x() // self.squareSize
-            uni = self.glyphs[key].unicode
-            char = chr(self.glyphs[key].unicode) if uni is not None else "?"
-
-            # http://stackoverflow.com/questions/6598554/is-there-any-way-to-insert-qpixmap-object-in-html
-            text = '<p align="center" style="font-size: 36pt; font-family: %s">%s</p>' % (QFont().family(), char)
-            if uni is not None:
-                text += '<p>U+%04x<p>' % self.glyphs[key].unicode
-            QToolTip.showText(event.globalPos(), text, self)
+                math.ceil(len(self.glyphs) / self.columns) * self.squareSize)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            #key_ch = self._chr(self.lastKey)
-            self.col = Qt.red
-
-            """
-            if unicodedata.category(key_ch) != 'Cn':
-                self.characterSelected.emit(key_ch)
-            """
+            self.moveKey = -1
+            if self.lastKey > len(self.glyphs)-1: return
+            
+            self.col = QColor.fromRgbF(.2, .3, .7, .15)
+            uniValue = self.glyphs[self.lastKey].unicode
+            showName = uniValue is None or unicodedata.category(chr(uniValue)) == 'Zs'
+            self.characterSelected.emit(1, chr(uniValue) if not showName else self.glyphs[self.lastKey].name)
+            event.accept()
             self.update()
         else:
             super(CharacterWidget, self).mousePressEvent(event)
+    
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.LeftButton:
+            moveKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
+            event.accept()
+            if (moveKey == self.lastKey and self.moveKey != -1):
+                self.moveKey = -1
+                # code duplication :(
+                uniValue = self.glyphs[self.lastKey].unicode
+                showName = uniValue is None or unicodedata.category(chr(uniValue)) == 'Zs'
+                self.characterSelected.emit(1, chr(uniValue) if not showName else self.glyphs[self.lastKey].name)
+            elif moveKey > len(self.glyphs)-1 \
+                or not (moveKey != self.lastKey and moveKey != self.moveKey): return
+            else:
+                self.moveKey = moveKey
+                self.characterSelected.emit(abs(self.moveKey - self.lastKey)+1, "")
+            self.update()
+        # elif event.modifiers() & Qt.ControlModifier:
+            # widgetPosition = self.mapFromGlobal(event.globalPos())
+            # key = (widgetPosition.y() // self.squareSize) * self.columns + widgetPosition.x() // self.squareSize
+            # uni = self.glyphs[key].unicode
+            # char = chr(self.glyphs[key].unicode) if uni is not None else "?"
 
+            # # http://stackoverflow.com/questions/6598554/is-there-any-way-to-insert-qpixmap-object-in-html
+            # text = '<p align="center" style="font-size: 36pt; font-family: %s">%s</p>' % (QFont().family(), char)
+            # if uni is not None:
+                # text += '<p>U+%04x<p>' % self.glyphs[key].unicode
+                # text += '<p>%s<p>' % unicodedata.name(chr(self.glyphs[key].unicode))
+            # QToolTip.showText(event.globalPos(), text, self)
+        else:
+            super(CharacterWidget, self).mouseMoveEvent(event)
+    
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            event.accept()
+        else:
+            super(CharacterWidget, self).mouseReleaseEvent(event)
+   
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            #key_ch = self._chr(self.lastKey)
             self.col = Qt.green
 
-            """
-            if unicodedata.category(key_ch) != 'Cn':
-                self.characterSelected.emit(key_ch)
-            """
             self.update()
         else:
             super(CharacterWidget, self).mousePressEvent(event)
 
     '''
     def resizeEvent(self, event):
-        self.columns = event.rect().right() // self.squareSize
+        self.columns = event.size().width() // self.squareSize
     '''
 
     def paintEvent(self, event):
@@ -109,23 +125,51 @@ class CharacterWidget(QWidget):
         beginColumn = redrawRect.left() // self.squareSize
         endColumn = redrawRect.right() // self.squareSize
 
+        # selection code
+        firstKey = min(self.lastKey, self.moveKey)
+        lastKey = max(self.lastKey, self.moveKey)
+        minKeyInViewport = beginRow * self.columns + beginColumn
+        select = False
+        if firstKey != -1 and firstKey < minKeyInViewport and lastKey > minKeyInViewport:
+            select = True
+        
+        # if firstKey == -1:
+            # column = lastKey % self.columns
+            # row = lastKey // self.columns
+            # painter.fillRect(column * self.squareSize + 1,
+                                # row * self.squareSize + 1, self.squareSize - 2,
+                                # self.squareSize - 2, self.col)
+        # else:
+            # row_d = firstKey // self.columns
+            # row_a = lastKey // self.columns
+            # for row in range(row_d, row_a+1):
+                # col_d = firstKey % self.columns if row == row_d else 0
+                # col_a = lastKey % self.columns if row == row_a else self.columns
+                # for column in range(col_d, col_a+1):
+                        # painter.fillRect(column * self.squareSize + 1,
+                                # row * self.squareSize + 1, self.squareSize - 2,
+                                # self.squareSize - 2, self.col)
+
         painter.setPen(Qt.gray)
         for row in range(beginRow, endRow + 1):
             for column in range(beginColumn, endColumn + 1):
+                key = row * self.columns + column
+                if key > len(self.glyphs)-1: break
+
                 painter.drawRect(column * self.squareSize,
                         row * self.squareSize, self.squareSize,
                         self.squareSize)
 
-        for row in range(beginRow, endRow + 1):
-            for column in range(beginColumn, endColumn + 1):
-                key = row * self.columns + column
-
-                if key == self.lastKey:
+                # selection code
+                if key == firstKey:
+                    select = not select
+                if select or (key == self.lastKey and self.moveKey == -1):
                     painter.fillRect(column * self.squareSize + 1,
                             row * self.squareSize + 1, self.squareSize - 2,
                             self.squareSize - 2, self.col)
+                    if key == lastKey and self.moveKey != -1:
+                        select = not select
 
-                if key > len(self.glyphs)-1: break
                 glyph = self.glyphs[key].getRepresentation("defconQt.QPainterPath")
                 if self.font.info.unitsPerEm is None: break
                 if not self.font.info.unitsPerEm > 0: self.font.info.unitsPerEm = 1000
@@ -140,6 +184,7 @@ class CharacterWidget(QWidget):
                 painter.scale(factor, -factor)
                 painter.fillPath(glyph, Qt.black)
                 painter.restore()
+        
 
 class MainWindow(QMainWindow):
     def __init__(self, font=Font()):
@@ -147,7 +192,8 @@ class MainWindow(QMainWindow):
 
         self.font = font
         self.scrollArea = QScrollArea()
-        self.characterWidget = CharacterWidget(self.font)
+        squareSize = 48
+        self.characterWidget = CharacterWidget(self.font, squareSize, self)
         self.scrollArea.setWidget(self.characterWidget)
 
         # TODO: make shortcuts platform-independent
@@ -178,6 +224,20 @@ class MainWindow(QMainWindow):
 
         helpMenu.addAction("&About", self.about)
         helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
+        
+        self.sqSizeSlider = QSlider(Qt.Horizontal)
+        self.sqSizeSlider.setMinimum(24)
+        self.sqSizeSlider.setMaximum(96)
+        #sz = self.sqSizeSlider.sizeHint()
+        #self.sqSizeSlider.setSize(.7*sz.width(), sz.height())
+        self.sqSizeSlider.setValue(squareSize)
+        self.sqSizeSlider.sliderMoved.connect(self._tipValue)
+        self.sqSizeSlider.valueChanged.connect(self._squareSizeChanged)
+        self.selectionLabel = QLabel()
+        self.selectionLabel.setFixedWidth(self.selectionLabel.fontMetrics().width('M') * 15)
+        self.characterWidget.characterSelected.connect(self._selectionChanged)
+        self.statusBar().addPermanentWidget(self.sqSizeSlider)
+        self.statusBar().addWidget(self.selectionLabel)
 
         self.setCentralWidget(self.scrollArea)
         self.setWindowTitle(os.path.basename(self.font.path.rstrip(os.sep)))
@@ -212,7 +272,23 @@ class MainWindow(QMainWindow):
     def saveAndExit(self):
         # TODO: check if font changed
         QApplication.instance().quit()
+    
+    def _tipValue(self):
+        text = str(self.sqSizeSlider.value())
+        QToolTip.showText(QCursor.pos(), text, self)
+    
+    def _selectionChanged(self, count, glyph):
+        prefix = glyph + " " if count <= 1 else ""
+        self.selectionLabel.setText(prefix + "(" + str(count) + " selected)")
 
+    def _squareSizeChanged(self):
+        self.characterWidget.updateSize(self.sqSizeSlider.value())
+
+    """
+    def resizeEvent(self, event):
+        super(MainWindow, self).resizeEvent(event)
+        self.characterWidget.resizeEvent(event)
+    """
 
     def fontInfo(self):
         # If a window is already opened, bring it to the front, else make another one.
@@ -253,7 +329,7 @@ class MainWindow(QMainWindow):
         from svgViewer import MainGfxWindow
         if not (hasattr(self, 'glyphViewWindow') and self.glyphViewWindow.isVisible()):
             # XXX: window collapses when passing self as parent...
-            self.glyphViewWindow = MainGfxWindow(self.font["a"], self)
+            self.glyphViewWindow = MainGfxWindow(self.font, self.font["a"], self)
             self.glyphViewWindow.show()
         else:
             self.glyphViewWindow.raise_()
@@ -274,7 +350,7 @@ if __name__ == '__main__':
     representationFactories.registerAllFactories()
     #with PyCallGraph(output=GraphvizOutput()):
     app = QApplication(sys.argv)
-    window = MainWindow(Font("C:\\Veloce.ufo"))
+    window = MainWindow(Font("C:\\CharterNova-Regular.ufo"))
     window.resize(565, 430)
     window.show()
     sys.exit(app.exec_())
