@@ -158,6 +158,8 @@ def OutlineInformationFactory(glyph, font):
 
 _factories = {
     "defconQt.QPainterPath" : QPainterPathFactory,
+    "defconQt.OnlyComponentsQPainterPath" : OnlyComponentsQPainterPathFactory,
+    "defconQt.NoComponentsQPainterPath" : NoComponentsQPainterPathFactory,
     "defconQt.OutlineInformation" : OutlineInformationFactory,
     #"defconQt.GlyphCell" : GlyphCellFactory,
 }

@@ -19,12 +19,14 @@ glyphSortDescriptors = [
 
 class CharacterWidget(QWidget):
     characterSelected = pyqtSignal(int, str)
+    glyphOpened = pyqtSignal(str)
 
-    def __init__(self, font, squareSize=48, parent=None):
+    def __init__(self, font, squareSize=48, scrollArea=None, parent=None):
         super(CharacterWidget, self).__init__(parent)
 
         self.font = font
         self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
+        self.scrollArea = scrollArea
         self.squareSize = squareSize
         self.columns = 11
         self.lastKey = -1
@@ -37,10 +39,16 @@ class CharacterWidget(QWidget):
         self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
         self.update()
 
-    def updateSize(self, squareSize):
-        self.squareSize = squareSize
-        self.adjustSize() # Is this needed? The goal is to fit the cells to the widget, not the other way around
-        self.update()
+    def _sizeEvent(self, width, squareSize=None):
+        # TODO: Still some horizontal scrollbar appearing, should disable it entirely
+        if self.scrollArea is not None: sw = self.scrollArea.verticalScrollBar().width() + self.scrollArea.contentsMargins().right()
+        else: sw = 0
+        if squareSize is not None: self.squareSize = squareSize
+        columns = (width - sw) // self.squareSize
+        if not columns > 0: return
+        self.columns = columns
+        self.adjustSize()
+        #super(CharacterWidget, self).resizeEvent(event)
 
     def sizeHint(self):
         return QSize(self.columns * self.squareSize,
@@ -81,7 +89,7 @@ class CharacterWidget(QWidget):
             # widgetPosition = self.mapFromGlobal(event.globalPos())
             # key = (widgetPosition.y() // self.squareSize) * self.columns + widgetPosition.x() // self.squareSize
             # uni = self.glyphs[key].unicode
-            # char = chr(self.glyphs[key].unicode) if uni is not None else "?"
+            # char = chr(self.glyphs[key].unicode) if uni is not None else chr(0xFFFD)
 
             # # http://stackoverflow.com/questions/6598554/is-there-any-way-to-insert-qpixmap-object-in-html
             # text = '<p align="center" style="font-size: 36pt; font-family: %s">%s</p>' % (QFont().family(), char)
@@ -91,28 +99,15 @@ class CharacterWidget(QWidget):
             # QToolTip.showText(event.globalPos(), text, self)
         else:
             super(CharacterWidget, self).mouseMoveEvent(event)
-    
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            event.accept()
-        else:
-            super(CharacterWidget, self).mouseReleaseEvent(event)
    
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            self.col = Qt.green
-
-            self.update()
+            key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
+            if key != self.lastKey: return
+            event.accept()
+            self.glyphOpened.emit(self.glyphs[key].name)
         else:
             super(CharacterWidget, self).mousePressEvent(event)
-
-    '''
-    # TODO: try now that adjustSize is called
-    def resizeEvent(self, event):
-        self.columns = event.size().width() // self.squareSize
-        self.adjustSize()
-    '''
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -132,23 +127,6 @@ class CharacterWidget(QWidget):
         select = False
         if firstKey != -1 and firstKey < minKeyInViewport and lastKey > minKeyInViewport:
             select = True
-        
-        # if firstKey == -1:
-            # column = lastKey % self.columns
-            # row = lastKey // self.columns
-            # painter.fillRect(column * self.squareSize + 1,
-                                # row * self.squareSize + 1, self.squareSize - 2,
-                                # self.squareSize - 2, self.col)
-        # else:
-            # row_d = firstKey // self.columns
-            # row_a = lastKey // self.columns
-            # for row in range(row_d, row_a+1):
-                # col_d = firstKey % self.columns if row == row_d else 0
-                # col_a = lastKey % self.columns if row == row_a else self.columns
-                # for column in range(col_d, col_a+1):
-                        # painter.fillRect(column * self.squareSize + 1,
-                                # row * self.squareSize + 1, self.squareSize - 2,
-                                # self.squareSize - 2, self.col)
 
         painter.setPen(Qt.gray)
         for row in range(beginRow, endRow + 1):
@@ -191,9 +169,11 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.font = font
+        # TODO: have the scrollarea be part of the widget itself?
+        # or better yet, switch to QGraphicsScene
         self.scrollArea = QScrollArea()
         squareSize = 48
-        self.characterWidget = CharacterWidget(self.font, squareSize, self)
+        self.characterWidget = CharacterWidget(self.font, squareSize, self.scrollArea, self)
         self.scrollArea.setWidget(self.characterWidget)
 
         # TODO: make shortcuts platform-independent
@@ -240,6 +220,7 @@ class MainWindow(QMainWindow):
         self.statusBar().addWidget(self.selectionLabel)
 
         self.setCentralWidget(self.scrollArea)
+        self.characterWidget.glyphOpened.connect(self._glyphOpened)
         self.setWindowTitle(os.path.basename(self.font.path.rstrip(os.sep)))
         # TODO: dump the hardcoded path
         self.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"));
@@ -277,17 +258,20 @@ class MainWindow(QMainWindow):
         text = str(self.sqSizeSlider.value())
         QToolTip.showText(QCursor.pos(), text, self)
     
+    def _glyphOpened(self, name):
+        from svgViewer import MainGfxWindow
+        self.glyphViewWindow = MainGfxWindow(self.font, self.font[name], self)
+        self.glyphViewWindow.show()
+    
     def _selectionChanged(self, count, glyph):
         self.selectionLabel.setText("%s%s%s%d %s" % (glyph, " " if count <= 1 else "", "(", count, "selected)"))
 
     def _squareSizeChanged(self):
-        self.characterWidget.updateSize(self.sqSizeSlider.value())
+        self.characterWidget._sizeEvent(self.width(), self.sqSizeSlider.value())
 
-    """
     def resizeEvent(self, event):
+        if self.isVisible(): self.characterWidget._sizeEvent(event.size().width())
         super(MainWindow, self).resizeEvent(event)
-        self.characterWidget.resizeEvent(event)
-    """
 
     def fontInfo(self):
         # If a window is already opened, bring it to the front, else make another one.

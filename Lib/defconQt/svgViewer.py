@@ -11,14 +11,10 @@ class MainGfxWindow(QMainWindow):
     def __init__(self, font=None, glyph=None, parent=None):
         super(MainGfxWindow, self).__init__(parent)
 
-        self.currentPath = ''
-
         self.view = SvgView()
         self.view.setGlyph(font, glyph)
 
         fileMenu = QMenu("&File", self)
-        openAction = fileMenu.addAction("&Open...")
-        openAction.setShortcut("Ctrl+O")
         quitAction = fileMenu.addAction("E&xit")
         quitAction.setShortcut("Ctrl+Q")
 
@@ -51,14 +47,6 @@ class MainGfxWindow(QMainWindow):
         self.imageAction = rendererMenu.addAction("&Image")
         self.imageAction.setCheckable(True)
 
-        if QGLFormat.hasOpenGL():
-            rendererMenu.addSeparator()
-            self.highQualityAntialiasingAction = rendererMenu.addAction("&High Quality Antialiasing")
-            self.highQualityAntialiasingAction.setEnabled(False)
-            self.highQualityAntialiasingAction.setCheckable(True)
-            self.highQualityAntialiasingAction.setChecked(False)
-            self.highQualityAntialiasingAction.toggled.connect(self.view.setHighQualityAntialiasing)
-
         rendererGroup = QActionGroup(self)
         rendererGroup.addAction(self.nativeAction)
 
@@ -69,48 +57,17 @@ class MainGfxWindow(QMainWindow):
 
         self.menuBar().addMenu(rendererMenu)
 
-        openAction.triggered.connect(self.openFile)
-        quitAction.triggered.connect(QApplication.instance().quit)
+        quitAction.triggered.connect(self.close)
         rendererGroup.triggered.connect(self.setRenderer)
 
         self.setCentralWidget(self.view)
         self.setWindowTitle("Glyph view")
 
-    def openFile(self, path=None):
-        if not path:
-            path, _ = QFileDialog.getOpenFileName(self, "Open SVG File",
-                    self.currentPath, "SVG files (*.svg *.svgz *.svg.gz)")
-
-        if path:
-            svg_file = QFile(path)
-            if not svg_file.exists():
-                QMessageBox.critical(self, "Open SVG File",
-                        "Could not open file '%s'." % path)
-
-                self.outlineAction.setEnabled(False)
-                self.backgroundAction.setEnabled(False)
-                return
-
-            self.view.openFile(svg_file)
-
-            if not path.startswith(':/'):
-                self.currentPath = path
-                self.setWindowTitle("%s - SVGViewer" % self.currentPath)
-
-            self.outlineAction.setEnabled(True)
-            self.backgroundAction.setEnabled(True)
-
-            self.resize(self.view.sizeHint() + QSize(80, 80 + self.menuBar().height()))
-
     def setRenderer(self, action):
-        if QGLFormat.hasOpenGL():
-            self.highQualityAntialiasingAction.setEnabled(False)
-
         if action == self.nativeAction:
             self.view.setRenderer(SvgView.Native)
         elif action == self.glAction:
             if QGLFormat.hasOpenGL():
-                self.highQualityAntialiasingAction.setEnabled(True)
                 self.view.setRenderer(SvgView.OpenGL)
         elif action == self.imageAction:
             self.view.setRenderer(SvgView.Image)
@@ -123,16 +80,34 @@ class SvgView(QGraphicsView):
         super(SvgView, self).__init__(parent)
 
         self.renderer = SvgView.Native
-        self.svgItem = None
-        self.backgroundItem = None
-        self.outlineItem = None
-        self.image = QImage()
+        self._font = None
         self._glyph = None
+        self._impliedPointSize = 1000
+        self._pointSize = None
+        
+        self._inverseScale = 0.1
+        self._scale = 10
+        self._noPointSizePadding = 200
+        self._bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
+        self._drawStroke = True
+        self._showOffCurvePoints = True
+        self._showOnCurvePoints = True
+        self._bezierHandleColor = QColor.fromRgbF(1, 1, 1, .2)
+        self._startPointColor = QColor.fromRgbF(1, 1, 1, .2)#Qt.blue
+        self._backgroundColor = Qt.white#Qt.green
+        self._offCurvePointColor = QColor.fromRgbF(.6, .6, .6, 1)#Qt.black
+        self._onCurvePointColor = self._offCurvePointColor#Qt.red
+        self._pointStrokeColor = QColor.fromRgbF(1, 1, 1, 1)#Qt.darkGray
+        self._fillColor = QColor.fromRgbF(0, 0, 0, .4)#Qt.gray
+        self._componentFillColor = QColor.fromRgbF(.2, .2, .3, .4)#Qt.darkGray
 
         self.setScene(QGraphicsScene(self))
         # XXX: this should allow us to move the view but doesn't happen...
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        # TODO: only set this for moving tool, also set bounding box...
         self.setDragMode(QGraphicsView.ScrollHandDrag)
+        # This rewinds view when scrolling, needed for check-board background
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         
         self.setRenderHint(QPainter.Antialiasing)
@@ -148,38 +123,77 @@ class SvgView(QGraphicsView):
 
         self.setBackgroundBrush(QBrush(tilePixmap))
 
-    def drawBackground(self, p, rect):
+    def _getGlyphWidthHeight(self):
+        if self._glyph.bounds:
+            left, bottom, right, top = self._glyph.bounds
+        else:
+            left = right = bottom = top = 0
+        left = min((0, left))
+        right = max((right, self._glyph.width))
+        bottom = self._font.info.descender
+        top = max((self._font.info.capHeight, self._font.info.ascender, self._font.info.unitsPerEm + self._font.info.descender))
+        width = abs(left) + right
+        height = -bottom + top
+        return width, height
+
+    def _calcScale(self):
+        if self.parent() is None:
+            return
+        if self._pointSize is None:
+            visibleHeight = self.parent().height()
+            fitHeight = visibleHeight
+            glyphWidth, glyphHeight = self._getGlyphWidthHeight()
+            glyphHeight += self._noPointSizePadding * 2
+            self._scale = fitHeight / glyphHeight
+        else:
+            self._scale = self._pointSize / float(self._font.info.unitsPerEm)
+        if self._scale <= 0:
+            self._scale = .01
+        self._inverseScale = 1.0 / self._scale
+        self._impliedPointSize = self._font.info.unitsPerEm * self._scale
+
+    def drawBackground(self, painter):
+        painter.fillRect(self.viewport().rect(), self._backgroundColor)
+        '''
         p.save()
         p.resetTransform()
         p.drawTiledPixmap(self.viewport().rect(),
                 self.backgroundBrush().texture())
         p.restore()
+        '''
+    
+    def drawBlues(self, painter):
+        width = self.viewport().width()# * self._inverseScale
+        font = self._glyph.getParent()
+        #painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        if font is None:
+            return
+        attrs = ["postscriptBlueValues", "postscriptOtherBlues"]
+        for attr in attrs:
+            values = getattr(font.info, attr)
+            if not values:
+                continue
+            yMins = [i for index, i in enumerate(values) if not index % 2]
+            yMaxs = [i for index, i in enumerate(values) if index % 2]
+            for yMin, yMax in zip(yMins, yMaxs):
+                painter.fillRect(0, yMin, width, yMax - yMin, QBrush(self._bluesColor))
         
-    def addOutlines(self):
-        s = self.scene()
-        #painter = QPainter(self.viewport())
-        #painter.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
-        #painter.scale(1, -1)
-        #painter.setRenderHint(QPainter.Antialiasing)
+    def drawOutlines(self, painter):
+        painter.save()
         # outlines
-        path = self._glyph.getRepresentation("defconQt.QPainterPath")
-        s.addPath(path, brush=QBrush(Qt.black))
+        path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
+        painter.setBrush(QBrush(self._fillColor))
+        painter.drawPath(path)
         # components
-        '''
-        path = self._glyph.getRepresentation("defconAppKit.OnlyComponentsNSBezierPath")
-        self._componentFillColor.set()
-        path.fill()
-        '''
+        path = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
+        painter.setBrush(QBrush(self._componentFillColor))
+        painter.drawPath(path)
+        painter.restore()
 
-    def addPoints(self):
+    def drawPoints(self, painter):
         # work out appropriate sizes and
         # skip if the glyph is too small
-        s = self.scene()
-        #painter = QPainter(self.viewport())
-        #painter.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
-        #painter.scale(1, -1)
-        #painter.setRenderHint(QPainter.Antialiasing)
-        pointSize = 1000#self._impliedPointSize
+        pointSize = self._impliedPointSize
         if pointSize > 550:
             startPointSize = 21
             offCurvePointSize = 5
@@ -214,15 +228,13 @@ class SvgView(QGraphicsView):
                 if angle is not None:
                     path.moveTo(x, y)
                     path.arcTo(x-startHalf, y-startHalf, 2*startHalf, 2*startHalf, angle-90, -180)
-                    #path.appendBezierPathWithArcWithCenter_radius_startAngle_endAngle_clockwise_(
-                    #    (x, y), startHalf, angle-90, angle+90, True)
                     path.closeSubpath()
                 else:
                     path.addEllipse(x-startHalf, y-startHalf, startWidth, startHeight)
-            #self._startPointColor.set()
-            #path.fill()
-            #painter.fillPath(path, Qt.blue)
-            s.addPath(path, brush=QBrush(Qt.blue))
+            painter.save()
+            painter.setBrush(QBrush(self._startPointColor))
+            painter.drawPath(path)
+            painter.restore()
         # off curve
         if self._showOffCurvePoints and outlineData["offCurvePoints"]:
             # lines
@@ -230,11 +242,10 @@ class SvgView(QGraphicsView):
             for point1, point2 in outlineData["bezierHandles"]:
                 path.moveTo(*point1)
                 path.lineTo(*point2)
-            #self._bezierHandleColor.set()
-            #path.setLineWidth_(1.0 * self._inverseScale)
-            #painter.setPen(QPen(Qt.black, 1.0 * self._inverseScale))
-            # painter.drawPath(path)
-            s.addPath(path, Qt.black)
+            painter.save()
+            painter.setPen(QPen(self._bezierHandleColor, 1.0))
+            painter.drawPath(path)
+            painter.restore()
             # points
             offWidth = offHeight = self.roundPosition(offCurvePointSize)# * self._inverseScale)
             offHalf = offWidth / 2.0
@@ -245,15 +256,19 @@ class SvgView(QGraphicsView):
                 x = self.roundPosition(x - offHalf)
                 y = self.roundPosition(y - offHalf)
                 path.addEllipse(x, y, offWidth, offHeight)
-            #path.setLineWidth_(3.0#* self._inverseScale)
-            #self._pointStrokeColor.set()
-            #s.addPath(path, QPen(QBrush(Qt.darkGray), 3.0))
-            #self._backgroundColor.set()
-            s.addPath(path, brush=QBrush(Qt.green))
-            #self._pointColor.set()
-            #path.setLineWidth_(1.0 * self._inverseScale)
-            s.addPath(path, QPen(QBrush(Qt.black), 1.0))
-            #path.stroke()
+            if self._drawStroke:
+                painter.save()
+                painter.setPen(QPen(self._pointStrokeColor, 3.0))
+                painter.drawPath(path)
+                painter.restore()
+            painter.save()
+            painter.setBrush(QBrush(self._backgroundColor))
+            painter.drawPath(path)
+            painter.restore()
+            painter.save()
+            painter.setPen(QPen(self._offCurvePointColor, 1.0))
+            painter.drawPath(path)
+            painter.restore()
         # on curve
         if self._showOnCurvePoints and outlineData["onCurvePoints"]:
             width = height = self.roundPosition(onCurvePointSize)# * self._inverseScale)
@@ -272,13 +287,15 @@ class SvgView(QGraphicsView):
                     x = self.roundPosition(x - half)
                     y = self.roundPosition(y - half)
                     path.addRect(x, y, width, height)
-            #self._pointStrokeColor.set()
-            #path.setLineWidth_(3.0 * self._inverseScale)
-            # painter.drawPath(path)
-            s.addPath(path, Qt.black)
-            #self._pointColor.set()
-            # painter.fillPath(path, Qt.red)
-            s.addPath(path, brush=QBrush(Qt.red))
+            if self._drawStroke:
+                painter.save()
+                painter.setPen(QPen(self._pointStrokeColor, 3.0))
+                painter.drawPath(path)
+                painter.restore()
+            painter.save()
+            painter.setBrush(QBrush(self._onCurvePointColor))
+            painter.drawPath(path)
+            painter.restore()
         # text
         """
         if self._showPointCoordinates and coordinateSize:
@@ -299,60 +316,6 @@ class SvgView(QGraphicsView):
                 text = "%d  %d" % (x, y)
                 self._drawTextAtPoint(text, attributes, (posX, posY), 3)
         """
-
-    def openPath(self, path):
-        if path is None: return
-        s = self.scene()
-        s.clear()
-        self.resetTransform()
-        #self.scale(1, -1)
-        
-        #s.addPath(path, brush=QBrush(Qt.gray))
-        #s.setSceneRect(path.boundingRect().adjusted(-10, -10, 10, 10))
-
-    def openFile(self, svg_file):
-        if not svg_file.exists():
-            return
-
-        s = self.scene()
-
-        if self.backgroundItem:
-            drawBackground = self.backgroundItem.isVisible()
-        else:
-            drawBackground = False
-
-        if self.outlineItem:
-            drawOutline = self.outlineItem.isVisible()
-        else:
-            drawOutline = True
-
-        s.clear()
-        self.resetTransform()
-
-        self.svgItem = QGraphicsSvgItem(svg_file.fileName())
-        self.svgItem.setFlags(QGraphicsItem.ItemClipsToShape)
-        self.svgItem.setCacheMode(QGraphicsItem.NoCache)
-        self.svgItem.setZValue(0)
-
-        self.backgroundItem = QGraphicsRectItem(self.svgItem.boundingRect())
-        self.backgroundItem.setBrush(Qt.white)
-        self.backgroundItem.setPen(QPen(Qt.NoPen))
-        self.backgroundItem.setVisible(drawBackground)
-        self.backgroundItem.setZValue(-1)
-
-        self.outlineItem = QGraphicsRectItem(self.svgItem.boundingRect())
-        outline = QPen(Qt.black, 2, Qt.DashLine)
-        outline.setCosmetic(True)
-        self.outlineItem.setPen(outline)
-        self.outlineItem.setBrush(QBrush(Qt.NoBrush))
-        self.outlineItem.setVisible(drawOutline)
-        self.outlineItem.setZValue(1)
-
-        s.addItem(self.backgroundItem)
-        s.addItem(self.svgItem)
-        s.addItem(self.outlineItem)
-
-        s.setSceneRect(self.outlineItem.boundingRect().adjusted(-10, -10, 10, 10))
     
     def roundPosition(self, value):
         value = value * self._scale
@@ -363,16 +326,8 @@ class SvgView(QGraphicsView):
     def setGlyph(self, font, glyph):
         self._font = font
         self._glyph = glyph
-        self._inverseScale = 0.1
-        self._scale = 10
-        self._showOffCurvePoints = True
-        self._showOnCurvePoints = True
-        
-        self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
-        self.scale(1, -1)
-        self.addOutlines()
-        self.addPoints()
-        #self.openPath(glyph.getRepresentation("defconQt.QPainterPath"))
+        #self.scene().setSceneRect(*self._glyph.bounds)
+        self.scene().setSceneRect(0, self._font.info.ascender, self._glyph.width, self._font.info.unitsPerEm)
 
     def setRenderer(self, renderer):
         self.renderer = renderer
@@ -383,11 +338,6 @@ class SvgView(QGraphicsView):
         else:
             self.setViewport(QWidget())
 
-    def setHighQualityAntialiasing(self, highQualityAntialiasing):
-        if QGLFormat.hasOpenGL():
-            self.setRenderHint(QPainter.HighQualityAntialiasing,
-                    highQualityAntialiasing)
-
     def setViewBackground(self, enable):
         if self.backgroundItem:
             self.backgroundItem.setVisible(enable)
@@ -397,6 +347,17 @@ class SvgView(QGraphicsView):
             self.outlineItem.setVisible(enable)
 
     def paintEvent(self, event):
+        scene = self.scene()
+        painter = QPainter(self.viewport())
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
+        painter.scale(1, -1)
+        self.drawBackground(painter)
+        self.drawBlues(painter)
+        self.drawOutlines(painter)
+        self.drawPoints(painter)
+    
+        '''
         if self.renderer == SvgView.Image:
             if self.image.size() != self.viewport().size():
                 self.image = QImage(self.viewport().size(),
@@ -410,12 +371,20 @@ class SvgView(QGraphicsView):
             p.drawImage(0, 0, self.image)
         else:
             super(SvgView, self).paintEvent(event)
-            #self.drawOutlines()
-            #self.drawPoints()
+        '''
 
     def wheelEvent(self, event):
         factor = pow(1.2, event.angleDelta().y() / 120.0)
-        self.scale(factor, factor)
+        
+        #self.setTransformationAnchor(QGraphicsView.NoAnchor)
+        #self.setResizeAnchor(QGraphicsView.NoAnchor)
+        #oldPos = self.mapToScene(event.pos())
+        #self._calcScale()
+        #self._setFrame()
+        #self.scale(factor, factor)
+        #newPos = self.mapToScene(event.pos())
+        #delta = newPos - oldPos
+        #self.translate(delta.x(), delta.y())
         event.accept()
 
 
