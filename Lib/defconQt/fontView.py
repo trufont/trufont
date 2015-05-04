@@ -119,6 +119,9 @@ class CharacterWidget(QWidget):
         endRow = redrawRect.bottom() // self.squareSize
         beginColumn = redrawRect.left() // self.squareSize
         endColumn = redrawRect.right() // self.squareSize
+        
+        painter.drawLine(redrawRect.left(), redrawRect.top(), redrawRect.left(), redrawRect.bottom())
+        painter.drawLine(0, 0, redrawRect.right(), 0)
 
         # selection code
         firstKey = min(self.lastKey, self.moveKey)
@@ -134,9 +137,10 @@ class CharacterWidget(QWidget):
                 key = row * self.columns + column
                 if key > len(self.glyphs)-1: break
 
-                painter.drawRect(column * self.squareSize,
-                        row * self.squareSize, self.squareSize,
-                        self.squareSize)
+                rightEdgeX = column * self.squareSize + self.squareSize
+                bottomEdgeY = row * self.squareSize + self.squareSize
+                painter.drawLine(rightEdgeX, row * self.squareSize + 1, rightEdgeX, bottomEdgeY)
+                painter.drawLine(rightEdgeX, bottomEdgeY, column * self.squareSize + 1, bottomEdgeY)
 
                 # selection code
                 if key == firstKey:
