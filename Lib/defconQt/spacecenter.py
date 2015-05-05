@@ -24,7 +24,7 @@ class MainSpaceWindow(QWidget):
         layout.setSpacing(0)
         self.setLayout(layout)
         self.resize(600,500)
-        self.toolbar.comboBox.lineEdit().editingFinished.connect(self.canvas._pointSizeChanged)
+        self.toolbar.comboBox.currentIndexChanged[str].connect(self.canvas._pointSizeChanged)
         self.toolbar.textField.textEdited.connect(self.canvas._textChanged)
         self.toolbar.textField.textEdited.connect(self.table._textChanged)
         self.table.cellChanged.connect(self.canvas._metricsChanged)
@@ -163,6 +163,8 @@ class SpaceTable(QTableWidget):
         self.fillGlyphs()
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
+        # TODO: insvestigate changing cell color as in robofont
+        # http://stackoverflow.com/a/13926342/2037879
 
     def _textChanged(self, newText):
         self.string = newText

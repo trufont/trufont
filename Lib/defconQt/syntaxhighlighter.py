@@ -15,29 +15,6 @@ class MainEditWindow(QMainWindow):
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle("Font features", font)
-
-    def newFile(self):
-        self.editor.clear()
-
-    def openFile(self, path=None):
-        if not path:
-            path, _ = QFileDialog.getOpenFileName(self, "Open File", '',
-                    "C++ Files (*.cpp *.h)")
-
-        if path:
-            inFile = QFile(path)
-            if inFile.open(QFile.ReadOnly | QFile.Text):
-                text = inFile.readAll()
-
-                try:
-                    # Python v3.
-                    text = str(text, encoding='ascii')
-                except TypeError:
-                    # Python v2.
-                    text = str(text)
-
-                self.editor.setPlainText(text)
-                self.setWindowTitle("Font features")
     
     def setWindowTitle(self, title, font=None):
         if font is not None: puts = "%s%s%s%s%s" % (title, " – ", self.font.info.familyName, " ", self.font.info.styleName)
@@ -46,9 +23,6 @@ class MainEditWindow(QMainWindow):
 
     def save(self):
         self.editor.write(self.features)
-    
-    def quit(self):
-        self.close()
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
@@ -57,7 +31,7 @@ class MainEditWindow(QMainWindow):
 #        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
 #        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
         fileMenu.addAction("&Save...", self.save, "Ctrl+S")
-        fileMenu.addAction("E&xit", self.quit, "Ctrl+Q")
+        fileMenu.addAction("E&xit", self.close, "Ctrl+Q")
 
 class LineNumberArea(QWidget):
     def __init__(self,editor):
@@ -131,7 +105,6 @@ class TextEditor(QPlainTextEdit):
         return 10 + self.fontMetrics().width('9') * digits
     
     def updateLineNumberArea(self, rect, dy):
-        
         if dy:
             self.lineNumbers.scroll(0, dy);
         else:

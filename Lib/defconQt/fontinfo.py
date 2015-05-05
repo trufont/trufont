@@ -16,9 +16,9 @@ class TabDialog(QDialog):
         self.font = font
         self.tabWidget = QTabWidget()
         self.tabWidget.addTab(GeneralTab(self.font), "General")
-#        tabWidget.addTab(PermissionsTab(fileInfo), "OpenType")
-#        tabWidget.addTab(ApplicationsTab(fileInfo), "PostScript")
-#        tabWidget.addTab(ApplicationsTab(fileInfo), "Miscellaneous")
+        self.tabWidget.addTab(NextTab(self.font), "Metrics")
+#        self.tabWidget.addTab(ApplicationsTab(fileInfo), "PostScript")
+#        self.tabWidget.addTab(ApplicationsTab(fileInfo), "Miscellaneous")
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
 
@@ -120,53 +120,6 @@ class GeneralTab(QWidget):
         
         mainLayout.addWidget(trademarkLabel, 9, 0)
         mainLayout.addWidget(self.trademarkEdit, 9, 1, 1, 5)
-        
-        """
-        styleMapFamilyLabel = QLabel("Style map family name:")
-        self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName)
-#        self.styleMapFamilyCBox = QCheckBox("Use default value")
-
-        styleMapStyleLabel = QLabel("Style map style name:")
-        self.styleMapStyleDrop = QComboBox()
-#        items = ["None", "Regular", "Italic", "Bold", "Bold Italic"]
-        styleMapStyle = {
-            "None": 0,
-            "Regular": 1,
-            "Italic": 2,
-            "Bold": 3,
-            "Bold Italic": 4
-        }
-        for name,index in styleMapStyle.items():
-            self.styleMapStyleDrop.insertItem(index, name)
-        sn = font.info.styleMapStyleName
-        # TODO: index to set is statically known, should eventually get rid of dict overhead if any?
-        if sn == "regular": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Regular"])
-        elif sn == "regular italic": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Italic"])
-        elif sn == "bold": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold"])
-        elif sn == "bold italic": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold Italic"])
-        else: self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["None"])
-#        self.styleMapStyleCBox = QCheckBox("Use default value")
-
-        ascenderLabel = QLabel("Ascender:")
-        self.ascenderEdit = QLineEdit(str(font.info.ascender))
-        self.ascenderEdit.setValidator(QIntValidator())
-
-        descenderLabel = QLabel("Descender:")
-        self.descenderEdit = QLineEdit(str(font.info.descender))
-        self.descenderEdit.setValidator(QIntValidator())
-
-        xHeightLabel = QLabel("x-height:")
-        self.xHeightEdit = QLineEdit(str(font.info.xHeight))
-        self.xHeightEdit.setValidator(QIntValidator())
-
-        capHeightLabel = QLabel("Cap height:")
-        self.capHeightEdit = QLineEdit(str(font.info.capHeight))
-        self.capHeightEdit.setValidator(QIntValidator())
-
-        italicAngleLabel = QLabel("Italic angle:")
-        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle))
-        self.italicAngleEdit.setValidator(QDoubleValidator())
-        """
 
         self.setLayout(mainLayout)
     
@@ -193,3 +146,72 @@ class GeneralTab(QWidget):
         elif sn == 4: font.info.styleMapStyleName = "bold italic"
         else: font.info.styleMapStyleName = None
         """
+
+class NextTab(QWidget):
+    def __init__(self, font, parent=None):
+        super(NextTab, self).__init__(parent)
+        mainLayout = QGridLayout()
+
+        styleMapFamilyLabel = QLabel("Style map family name:")
+        self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName)
+#        self.styleMapFamilyCBox = QCheckBox("Use default value")
+
+        styleMapStyleLabel = QLabel("Style map style name:")
+        self.styleMapStyleDrop = QComboBox()
+#        items = ["None", "Regular", "Italic", "Bold", "Bold Italic"]
+        styleMapStyle = {
+            "None": 0,
+            "Regular": 1,
+            "Italic": 2,
+            "Bold": 3,
+            "Bold Italic": 4
+        }
+        for name,index in styleMapStyle.items():
+            self.styleMapStyleDrop.insertItem(index, name)
+        sn = font.info.styleMapStyleName
+        # TODO: index to set is statically known, should eventually get rid of dict overhead if any?
+        if sn == "regular": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Regular"])
+        elif sn == "regular italic": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Italic"])
+        elif sn == "bold": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold"])
+        elif sn == "bold italic": self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["Bold Italic"])
+        else: self.styleMapStyleDrop.setCurrentIndex(styleMapStyle["None"])
+#        self.styleMapStyleCBox = QCheckBox("Use default value")
+
+        mainLayout.addWidget(styleMapFamilyLabel, 0, 0)
+        mainLayout.addWidget(self.styleMapFamilyEdit, 0, 1, 1, 3)
+        mainLayout.addWidget(styleMapStyleLabel, 0, 4)
+        mainLayout.addWidget(self.styleMapStyleDrop, 0, 5)
+
+        ascenderLabel = QLabel("Ascender:")
+        self.ascenderEdit = QLineEdit(str(font.info.ascender))
+        self.ascenderEdit.setValidator(QIntValidator())
+
+        descenderLabel = QLabel("Descender:")
+        self.descenderEdit = QLineEdit(str(font.info.descender))
+        self.descenderEdit.setValidator(QIntValidator())
+
+        italicAngleLabel = QLabel("Italic angle:")
+        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle))
+        self.italicAngleEdit.setValidator(QDoubleValidator())
+        
+        mainLayout.addWidget(ascenderLabel, 1, 0)
+        mainLayout.addWidget(self.ascenderEdit, 1, 1)
+        mainLayout.addWidget(descenderLabel, 1, 2)
+        mainLayout.addWidget(self.descenderEdit, 1, 3)
+        mainLayout.addWidget(italicAngleLabel, 1, 4)
+        mainLayout.addWidget(self.italicAngleEdit, 1, 5)
+
+        xHeightLabel = QLabel("x-height:")
+        self.xHeightEdit = QLineEdit(str(font.info.xHeight))
+        self.xHeightEdit.setValidator(QIntValidator())
+
+        capHeightLabel = QLabel("Cap height:")
+        self.capHeightEdit = QLineEdit(str(font.info.capHeight))
+        self.capHeightEdit.setValidator(QIntValidator())
+        
+        mainLayout.addWidget(xHeightLabel, 2, 0)
+        mainLayout.addWidget(self.xHeightEdit, 2, 1)
+        mainLayout.addWidget(capHeightLabel, 2, 2)
+        mainLayout.addWidget(self.capHeightEdit, 2, 3)
+        
+        self.setLayout(mainLayout)
