@@ -84,11 +84,11 @@ class GeneralTab(QWidget):
         # TODO: give visual feedback of input data validity using QLineEdit lose focus event
         # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/
         versionLabel = QLabel("Version:")
-        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor))
+        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor or ''))
         self.versionMajorEdit.setAlignment(Qt.AlignRight)
         self.versionMajorEdit.setValidator(QIntValidator())
         versionDotLabel = QLabel(".")
-        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor).zfill(3))
+        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor or ''))#.zfill(3))
         self.versionMinorEdit.setValidator(QIntValidator())
         
         mainLayout.addWidget(versionLabel, 6, 0)
@@ -97,7 +97,7 @@ class GeneralTab(QWidget):
         mainLayout.addWidget(self.versionMinorEdit, 6, 3)
         
         unitsPerEmLabel = QLabel("Units per em:")
-        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm))
+        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm or ''))
         self.unitsPerEmEdit.setValidator(QIntValidator())
         
         mainLayout.addWidget(unitsPerEmLabel, 6, 4)
@@ -137,15 +137,6 @@ class GeneralTab(QWidget):
         font.info.openTypeNameLicense = self.licenseEdit.text()
         font.info.openTypeNameLicenseURL = self.licenseURLEdit.text()
         font.info.trademark = self.trademarkEdit.text()
-        """
-        font.info.styleMapFamilyName = self.styleMapFamilyEdit.text()
-        sn = self.styleMapStyleDrop.currentIndex()
-        if sn == 1: font.info.styleMapStyleName = "regular"
-        elif sn == 2: font.info.styleMapStyleName = "italic"
-        elif sn == 3: font.info.styleMapStyleName = "bold"
-        elif sn == 4: font.info.styleMapStyleName = "bold italic"
-        else: font.info.styleMapStyleName = None
-        """
 
 class NextTab(QWidget):
     def __init__(self, font, parent=None):
@@ -183,15 +174,15 @@ class NextTab(QWidget):
         mainLayout.addWidget(self.styleMapStyleDrop, 0, 5)
 
         ascenderLabel = QLabel("Ascender:")
-        self.ascenderEdit = QLineEdit(str(font.info.ascender))
+        self.ascenderEdit = QLineEdit(str(font.info.ascender or ''))
         self.ascenderEdit.setValidator(QIntValidator())
 
         descenderLabel = QLabel("Descender:")
-        self.descenderEdit = QLineEdit(str(font.info.descender))
+        self.descenderEdit = QLineEdit(str(font.info.descender or ''))
         self.descenderEdit.setValidator(QIntValidator())
 
         italicAngleLabel = QLabel("Italic angle:")
-        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle))
+        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle or ''))
         self.italicAngleEdit.setValidator(QDoubleValidator())
         
         mainLayout.addWidget(ascenderLabel, 1, 0)
@@ -202,11 +193,11 @@ class NextTab(QWidget):
         mainLayout.addWidget(self.italicAngleEdit, 1, 5)
 
         xHeightLabel = QLabel("x-height:")
-        self.xHeightEdit = QLineEdit(str(font.info.xHeight))
+        self.xHeightEdit = QLineEdit(str(font.info.xHeight or ''))
         self.xHeightEdit.setValidator(QIntValidator())
 
         capHeightLabel = QLabel("Cap height:")
-        self.capHeightEdit = QLineEdit(str(font.info.capHeight))
+        self.capHeightEdit = QLineEdit(str(font.info.capHeight or ''))
         self.capHeightEdit.setValidator(QIntValidator())
         
         mainLayout.addWidget(xHeightLabel, 2, 0)
@@ -215,3 +206,12 @@ class NextTab(QWidget):
         mainLayout.addWidget(self.capHeightEdit, 2, 3)
         
         self.setLayout(mainLayout)
+        
+    def writeValues(self, font):
+        font.info.styleMapFamilyName = self.styleMapFamilyEdit.text()
+        sn = self.styleMapStyleDrop.currentIndex()
+        if sn == 1: font.info.styleMapStyleName = "regular"
+        elif sn == 2: font.info.styleMapStyleName = "italic"
+        elif sn == 3: font.info.styleMapStyleName = "bold"
+        elif sn == 4: font.info.styleMapStyleName = "bold italic"
+        else: font.info.styleMapStyleName = None

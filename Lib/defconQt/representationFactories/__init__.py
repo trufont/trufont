@@ -83,10 +83,17 @@ class OutlineInformationPen(AbstractPointPen):
         self._rawPointData = []
         self._rawComponentData = []
         self._bezierHandleData = []
+        self.index = 0
 
     def getData(self):
-        data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[], bezierHandles=[], anchors=[], components=self._rawComponentData)
+        data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[], bezierHandles=[], anchors=[], lastSubpathPoints=[], components=self._rawComponentData)
+
         for contour in self._rawPointData:
+            if type(contour) is str:
+                print("Hill")
+                data["lastSubpathPoints"].append(self.index)
+                self.index += 1
+                continue
             # anchor
             if len(contour) == 1 and contour[0]["name"] is not None:
                 anchor = contour[0]
@@ -96,8 +103,11 @@ class OutlineInformationPen(AbstractPointPen):
                 haveFirst = False
                 for pointIndex, point in enumerate(contour):
                     if point["segmentType"] is None:
-                        data["offCurvePoints"].append(point)
+                        print("OffCurve")
+                        data["offCurvePoints"].append((point, self.index, not haveFirst))
+                        self.index += 1
                         # look for handles
+                        # TODO: calculate this when drawing
                         back = contour[pointIndex - 1]
                         forward = contour[(pointIndex + 1) % len(contour)]
                         if back["segmentType"] in ("curve", "line"):
@@ -111,7 +121,9 @@ class OutlineInformationPen(AbstractPointPen):
                             if p1 != p2:
                                 data["bezierHandles"].append((p1, p2))
                     else:
-                        data["onCurvePoints"].append(point)
+                        data["onCurvePoints"].append((point, self.index, not haveFirst))
+                        print("OnCurve")
+                        self.index += 1
                         # catch first point
                         if not haveFirst:
                             haveFirst = True
@@ -137,7 +149,8 @@ class OutlineInformationPen(AbstractPointPen):
         self._rawPointData.append([])
 
     def endPath(self):
-        pass
+        # TODO: appending a string may not be the most elegant thing to do
+        self._rawPointData.append("Subpath")
 
     def addPoint(self, pt, segmentType=None, smooth=False, name=None, **kwargs):
         d = dict(point=pt, segmentType=segmentType, smooth=smooth, name=name)

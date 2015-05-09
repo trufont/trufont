@@ -56,6 +56,7 @@ class TextEditor(QPlainTextEdit):
         self.setFont(font)
 
         self.highlighter = Highlighter(self.document())
+        # TODO: get rid of jitter on opening
         self.lineNumbers = LineNumberArea(self)
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)

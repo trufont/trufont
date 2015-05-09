@@ -37,6 +37,12 @@ class CharacterWidget(QWidget):
     def updateFont(self, font):
         self.font = font
         self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
+        self.adjustSize()
+        self.update()
+    
+    def updateGlyphs(self):
+        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), glyphSortDescriptors)]
+        self.adjustSize()
         self.update()
 
     def _sizeEvent(self, width, squareSize=None):
@@ -199,9 +205,9 @@ class MainWindow(QMainWindow):
 
         fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+I")
         fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+F")
+        fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+U")
         fontMenu.addSeparator()
         fontMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Y")
-        fontMenu.addAction("&Glyph view", self.glyphView, "Ctrl+G")
 
         helpMenu = QMenu("&Help", self)
         self.menuBar().addMenu(helpMenu)
@@ -227,10 +233,12 @@ class MainWindow(QMainWindow):
         self.characterWidget.glyphOpened.connect(self._glyphOpened)
         self.setWindowTitle(os.path.basename(self.font.path.rstrip(os.sep)))
         # TODO: dump the hardcoded path
-        self.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"));
+        #self.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"))
 
     def newFile(self):
+        # TODO: ask for save before leaving
         self.font = Font()
+        self.setWindowTitle("Untitled.ufo")
         self.characterWidget.updateFont(self.font)
 
     def openFile(self, path=None):
@@ -249,10 +257,10 @@ class MainWindow(QMainWindow):
 #        self.font.path = path # done by defcon
 
     def saveFileAs(self):
-        path, _ = QFileDialog.getSaveFileName(self, "Save File", '',
+        path, ok = QFileDialog.getSaveFileName(self, "Save File", '',
                 "UFO Fonts (*.ufo)")
-        print(path)
-        self.saveFile(path)
+        if ok:
+            self.saveFile(path)
     
     def saveAndExit(self):
         # TODO: check if font changed
@@ -303,23 +311,20 @@ class MainWindow(QMainWindow):
 
     def spaceCenter(self):
         # TODO: see up here
+        # TODO: show selection in a space center, rewind selection if we raise window (rf)
         from spaceCenter import MainSpaceWindow
         if not (hasattr(self, 'spaceCenterWindow') and self.spaceCenterWindow.isVisible()):
-            # XXX: window collapses when passing self as parent...
-            self.spaceCenterWindow = MainSpaceWindow(self.font, "Hiyazee otaHawa.")
+            self.spaceCenterWindow = MainSpaceWindow(self.font, "Hiyazee otaHawa.", parent=self)
             self.spaceCenterWindow.show()
         else:
             self.spaceCenterWindow.raise_()
-
-    def glyphView(self):
-        # TODO: see up here
-        from svgViewer import MainGfxWindow
-        if not (hasattr(self, 'glyphViewWindow') and self.glyphViewWindow.isVisible()):
-            # XXX: window collapses when passing self as parent...
-            self.glyphViewWindow = MainGfxWindow(self.font, self.font["a"], self)
-            self.glyphViewWindow.show()
-        else:
-            self.glyphViewWindow.raise_()
+    
+    def addGlyph(self):
+        gName, ok = QInputDialog.getText(self, "Add glyph", "Name of the glyph:")
+        # Not overwriting existing glyphs. Should it warn in this case? (rf)
+        if ok and gName != '':
+            self.font.newGlyph(gName)
+            self.characterWidget.updateGlyphs()
 
     def about(self):
         QMessageBox.about(self, "About Me",
@@ -337,6 +342,8 @@ if __name__ == '__main__':
     representationFactories.registerAllFactories()
     #with PyCallGraph(output=GraphvizOutput()):
     app = QApplication(sys.argv)
+    # TODO: http://stackoverflow.com/a/21330349/2037879
+    app.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"))
     window = MainWindow(Font("C:\\CharterNova-Regular.ufo"))
     window.resize(565, 430)
     window.show()
