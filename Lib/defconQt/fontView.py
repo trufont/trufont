@@ -238,6 +238,11 @@ class MainWindow(QMainWindow):
     def newFile(self):
         # TODO: ask for save before leaving
         self.font = Font()
+        self.font.info.upm = 1000
+        self.font.info.ascender = 750
+        self.font.info.descender = -250
+        self.font.info.capHeight = 750
+        self.font.info.xHeight = 500
         self.setWindowTitle("Untitled.ufo")
         self.characterWidget.updateFont(self.font)
 
@@ -286,7 +291,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).resizeEvent(event)
 
     def fontInfo(self):
-        # If a window is already opened, bring it to the front, else make another one.
+        # If a window is already opened, bring it to the front, else spawn one.
         # TODO: see about calling super from the widget and del'eting the ptr to the widget
         # otherwise it doesn't get swept?
         # Else we can just play with visibility instead of respawning, given that the window

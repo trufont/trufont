@@ -1,7 +1,8 @@
-from PyQt5.QtCore import QFile, QRectF, QSize, Qt
+import math
+from PyQt5.QtCore import QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPixmap, QPen
 from PyQt5.QtWidgets import (QActionGroup, QApplication, QFileDialog,
-        QGraphicsItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
+        QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
         QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
 from PyQt5.QtOpenGL import QGL, QGLFormat, QGLWidget
 from PyQt5.QtSvg import QGraphicsSvgItem
@@ -72,38 +73,199 @@ class MainGfxWindow(QMainWindow):
             self.view.setRenderer(SvgView.Image)
 
 # TODO: make QAbstractShapeItem as derive ellipse and rect, or just do path
-class OnCurvePointItem(QGraphicsRectItem):
-    def __init__(self, x, y, width, height, pointX, pointY, pointIndex, otherPointIndex=None,
-            startPointObject=None, pen=None, brush=None, parent=None):
-        super(OnCurvePointItem, self).__init__(x, y, width, height, parent)
+class OffCurvePointItem(QGraphicsEllipseItem):
+    def __init__(self, x, y, width, height, pointX, pointY, pen=None, brush=None, parent=None):
+        super(OffCurvePointItem, self).__init__(x, y, width, height, parent)
+        # since we have a parent, setPos must be relative to it
+        self.setPos(pointX, pointY) # TODO: abstract and use pointX-self.parent().pos().x()
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
-        # TODO: stop doing this and go back to mouse events
+        # TODO: stop doing this and go back to mouse events –> won't permit multiple selection
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         if pen is not None: self._pen = pen; self.setPen(pen)
         if brush is not None: self.setBrush(brush)
         
         self._pointX = pointX
         self._pointY = pointY
+    
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionHasChanged:
+            self.parentItem()._CPMoved(value)
+        return QGraphicsItem.itemChange(self, change, value)
+        
+    # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
+    def paint(self, painter, option, widget):
+        newOption = QStyleOptionGraphicsItem(option)
+        newOption.state = QStyle.State_None
+        super(OffCurvePointItem, self).paint(painter, newOption, widget)
+        if (option.state & QStyle.State_Selected):
+            pen = self.pen()
+            pen.setColor(Qt.red)
+            #pen.setWidth
+            self.setPen(pen)
+        else:
+            self.setPen(self._pen)
+
+class OnCurveSmoothPointItem(QGraphicsEllipseItem):
+    def __init__(self, x, y, width, height, pointX, pointY, pointIndex, otherPointIndex=None,
+            startPointObject=None, pen=None, brush=None, parent=None):
+        super(OnCurveSmoothPointItem, self).__init__(x, y, width, height, parent)
+        self.setPos(pointX, pointY)
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        if pen is not None: self._pen = pen; self.setPen(pen)
+        if brush is not None: self.setBrush(brush)
+
+        self._pointIndex = pointIndex
+        # For the start point we must handle two instrs: the moveTo which is the initial start
+        # point of the path and the last lineTo/curveTo which is the closing segment
+        self._otherPointIndex = otherPointIndex
+        self._startPointObject = startPointObject
+        self._isSmooth = True
+        
+    
+    """
+    def mouseMoveEvent(self, event):
+        super(OnCurveSmoothPointItem, self).mouseMoveEvent(event)
+        path = self.scene()._outlineItem.path()
+        newX = self._pointX+self.pos().x()
+        newY = self._pointY+self.pos().y()
+        path.setElementPositionAt(self._pointIndex, newX, newY)
+        if self._otherPointIndex is not None:
+            path.setElementPositionAt(self._otherPointIndex, newX, newY)
+            # TODO: the angle ought to be recalculated
+            # maybe make it disappear on move and recalc when releasing
+            # what does rf do here?
+            if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
+        if self._prevCP is not None: self._prevCP.setPos(self.pos())
+        if self._nextCP is not None: self._nextCP.setPos(self.pos())
+        self.scene()._outlineItem.setPath(path)
+        #self.scene().update()
+    """
+    
+    def _CPMoved(self, newValue):
+        if not self._isSmooth: return
+        selected, propagate = None, None
+        children = self.childItems()
+        # nodes are at even positions
+        for index, child in enumerate(children[::2]): # TODO: filter instead?
+            if child.isSelected(): # eventually use isUnderMouse() is we implement multiple point selection
+                selected = index * 2
+            else:
+                propagate = index * 2
+        if selected is None: return
+        curValue = children[selected].pos()
+        line = children[selected+1].line()
+        children[selected+1].setLine(line.x1(), line.y1(), newValue.x(), newValue.y())
+        if propagate is None: return
+        xDiff = newValue.x() - curValue.x()
+        yDiff = newValue.y() - curValue.y()
+        opposedAngle = math.atan2(yDiff, xDiff)
+        targetLen = children[selected+1].line().length()+children[propagate+1].line().length()
+        tmpLine = QLineF(newValue, QPointF(0, 0))
+        tmpLine.setLength(targetLen)
+        children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges, False)
+        children[propagate].setPos(tmpLine.x2(), tmpLine.y2())
+        children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        children[propagate+1].setLine(line.x1(), line.y1(), tmpLine.x2(), tmpLine.y2())
+            
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionHasChanged:
+            if self.scene() is None: return QGraphicsItem.itemChange(self, change, value)
+            path = self.scene()._outlineItem.path()
+            '''
+            for i in range(path.elementCount()):
+                elem = path.elementAt(i)
+                if elem.isCurveTo(): kind = "curve"
+                elif elem.isLineTo(): kind = "line"
+                else: kind = "move"
+                print("{}: {} {}".format(kind, elem.x, elem.y))
+            print()
+            '''
+            # TODO: if we're snapped to int round self.pos to int
+            path.setElementPositionAt(self._pointIndex, self.pos().x(), self.pos().y())
+            if self._otherPointIndex is not None:
+                path.setElementPositionAt(self._otherPointIndex, self.pos().x(), self.pos().y())
+                # TODO: the angle ought to be recalculated
+                # maybe make it disappear on move and recalc when releasing
+                # what does rf do here?
+                if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
+            # TODO: handle single-handle points
+            if len(self.childItems()) > 2:
+                nextPos = self.childItems()[2].pos()
+                path.setElementPositionAt(self._pointIndex+1, self.pos().x()+nextPos.x(), self.pos().y()+nextPos.y())
+            self.scene()._outlineItem.setPath(path)
+        return QGraphicsItem.itemChange(self, change, value)
+    
+    # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
+    def paint(self, painter, option, widget):
+        newOption = QStyleOptionGraphicsItem(option)
+        newOption.state = QStyle.State_None
+        super(OnCurveSmoothPointItem, self).paint(painter, newOption, widget)
+        if (option.state & QStyle.State_Selected):
+            pen = self.pen()
+            pen.setColor(Qt.red)
+            #pen.setWidth
+            self.setPen(pen)
+        else:
+            self.setPen(self._pen)
+
+class OnCurvePointItem(QGraphicsRectItem):
+    def __init__(self, x, y, width, height, pointX, pointY, pointIndex, otherPointIndex=None,
+            startPointObject=None, pen=None, brush=None, parent=None):
+        super(OnCurvePointItem, self).__init__(x, y, width, height, parent)
+        self.setPos(pointX, pointY)
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        # TODO: stop doing this and go back to mouse events
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        if pen is not None: self._pen = pen; self.setPen(pen)
+        if brush is not None: self.setBrush(brush)
+
         self._pointIndex = pointIndex
         # For the start point we must handle two instrs: the moveTo which is the initial start
         # point of the path and the last lineTo/curveTo which is the closing segment
         self._otherPointIndex = otherPointIndex
         self._startPointObject = startPointObject
     
-    """
+    '''
     def mouseMoveEvent(self, event):
-        pos = event.pos()
-        print(pos)
         super(OnCurvePointItem, self).mouseMoveEvent(event)
         path = self.scene()._outlineItem.path()
-        path.setElementPositionAt(0, pos.x(), pos.y())
+        newX = self._pointX+self.pos().x()
+        newY = self._pointY+self.pos().y()
+        path.setElementPositionAt(self._pointIndex, newX, newY)
+        if self._otherPointIndex is not None:
+            path.setElementPositionAt(self._otherPointIndex, newX, newY)
+            # TODO: the angle ought to be recalculated
+            # maybe make it disappear on move and recalc when releasing
+            # what does rf do here?
+            if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
+        if self._prevCP is not None: self._prevCP.setPos(self.pos())
+        if self._nextCP is not None: self._nextCP.setPos(self.pos())
         self.scene()._outlineItem.setPath(path)
         #self.scene().update()
-    """
+    '''
     
+    def _CPMoved(self, newValue):
+        #if not self._isSmooth: return
+        selected, propagate = None, None
+        children = self.childItems()
+        # nodes are at even positions
+        for index, child in enumerate(children[::2]): # TODO: filter instead?
+            if child.isSelected(): # eventually use isUnderMouse() is we implement multiple point selection
+                selected = index * 2
+            else:
+                propagate = index * 2
+        if selected is None: return
+        line = children[selected+1].line()
+        children[selected+1].setLine(line.x1(), line.y1(), newValue.x(), newValue.y())
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
+            if self.scene() is None: return QGraphicsItem.itemChange(self, change, value)
             path = self.scene()._outlineItem.path()
             """
             for i in range(path.elementCount()):
@@ -115,15 +277,20 @@ class OnCurvePointItem(QGraphicsRectItem):
             print()
             """
             # TODO: if we're snapped to int round self.pos to int
-            newX = self._pointX+self.pos().x()
-            newY = self._pointY+self.pos().y()
-            path.setElementPositionAt(self._pointIndex, newX, newY)
+            #newX = self._pointX+self.pos().x()
+            #newY = self._pointY+self.pos().y()
+            path.setElementPositionAt(self._pointIndex, self.pos().x(), self.pos().y())
             if self._otherPointIndex is not None:
-                path.setElementPositionAt(self._otherPointIndex, newX, newY)
+                path.setElementPositionAt(self._otherPointIndex, self.pos().x(), self.pos().y())
                 # TODO: the angle ought to be recalculated
                 # maybe make it disappear on move and recalc when releasing
                 # what does rf do here?
-                self._startPointObject.setPos(self.pos())
+                if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
+            #for child in self.childItems():
+                #child._translate(self.pos())
+                #newCPX = child._pointX+child.pos().x()
+                #newCPY = child._pointY+child.pos().y()
+                #child._handle.setLine(newX, newY, newCPX, newCPY)
             self.scene()._outlineItem.setPath(path)
         return QGraphicsItem.itemChange(self, change, value)
     
@@ -180,7 +347,7 @@ class SvgView(QGraphicsView):
         self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
         self.scale(1, -1)
         self.addBackground()
-        #self.addBlues()
+        self.addBlues()
         self.addOutlines()
         self.addPoints()
 
@@ -225,171 +392,6 @@ class SvgView(QGraphicsView):
             self._scale = .01
         self._inverseScale = 1.0 / self._scale
         self._impliedPointSize = self._font.info.unitsPerEm * self._scale
-
-    def drawBackground_(self, painter):
-        painter.fillRect(QRectF(self.viewport().rect()), self._backgroundColor)
-        '''
-        p.save()
-        p.resetTransform()
-        p.drawTiledPixmap(self.viewport().rect(),
-                self.backgroundBrush().texture())
-        p.restore()
-        '''
-    
-    def drawBlues(self, painter):
-        width = self.width()# * self._inverseScale
-        font = self._glyph.getParent()
-        #painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-        if font is None:
-            return
-        attrs = ["postscriptBlueValues", "postscriptOtherBlues"]
-        for attr in attrs:
-            values = getattr(font.info, attr)
-            if not values:
-                continue
-            yMins = [i for index, i in enumerate(values) if not index % 2]
-            yMaxs = [i for index, i in enumerate(values) if index % 2]
-            for yMin, yMax in zip(yMins, yMaxs):
-                painter.fillRect(0, yMin, width, yMax - yMin, QBrush(self._bluesColor))
-        
-    def drawOutlines(self, painter):
-        painter.save()
-        # outlines
-        path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-        painter.setBrush(QBrush(self._fillColor))
-        painter.drawPath(path)
-        # components
-        path = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
-        painter.setBrush(QBrush(self._componentFillColor))
-        painter.drawPath(path)
-        painter.restore()
-
-    def drawPoints(self, painter):
-        # work out appropriate sizes and
-        # skip if the glyph is too small
-        pointSize = self._impliedPointSize
-        if pointSize > 550:
-            startPointSize = 21
-            offCurvePointSize = 5
-            onCurvePointSize = 6
-            onCurveSmoothPointSize = 7
-        elif pointSize > 250:
-            startPointSize = 15
-            offCurvePointSize = 3
-            onCurvePointSize = 4
-            onCurveSmoothPointSize = 5
-        elif pointSize > 175:
-            startPointSize = 9
-            offCurvePointSize = 1
-            onCurvePointSize = 2
-            onCurveSmoothPointSize = 3
-        else:
-            return
-        if pointSize > 250:
-            coordinateSize = 9
-        else:
-            coordinateSize = 0
-        # use the data from the outline representation
-        outlineData = self._glyph.getRepresentation("defconQt.OutlineInformation")
-        points = []
-        # start point
-        if self._showOnCurvePoints and outlineData["startPoints"]:
-            startWidth = startHeight = self.roundPosition(startPointSize)# * self._inverseScale)
-            startHalf = startWidth / 2.0
-            path = QPainterPath()
-            for point, angle in outlineData["startPoints"]:
-                x, y = point
-                if angle is not None:
-                    path.moveTo(x, y)
-                    path.arcTo(x-startHalf, y-startHalf, 2*startHalf, 2*startHalf, angle-90, -180)
-                    path.closeSubpath()
-                else:
-                    path.addEllipse(x-startHalf, y-startHalf, startWidth, startHeight)
-            painter.save()
-            painter.setBrush(QBrush(self._startPointColor))
-            painter.drawPath(path)
-            painter.restore()
-        # off curve
-        if self._showOffCurvePoints and outlineData["offCurvePoints"]:
-            # lines
-            path = QPainterPath()
-            for point1, point2 in outlineData["bezierHandles"]:
-                path.moveTo(*point1)
-                path.lineTo(*point2)
-            painter.save()
-            painter.setPen(QPen(self._bezierHandleColor, 1.0))
-            painter.drawPath(path)
-            painter.restore()
-            # points
-            offWidth = offHeight = self.roundPosition(offCurvePointSize)# * self._inverseScale)
-            offHalf = offWidth / 2.0
-            path = QPainterPath()
-            for point in outlineData["offCurvePoints"]:
-                x, y = point["point"]
-                points.append((x, y))
-                x = self.roundPosition(x - offHalf)
-                y = self.roundPosition(y - offHalf)
-                path.addEllipse(x, y, offWidth, offHeight)
-            if self._drawStroke:
-                painter.save()
-                painter.setPen(QPen(self._pointStrokeColor, 3.0))
-                painter.drawPath(path)
-                painter.restore()
-            painter.save()
-            painter.setBrush(QBrush(self._backgroundColor))
-            painter.drawPath(path)
-            painter.restore()
-            painter.save()
-            painter.setPen(QPen(self._offCurvePointColor, 1.0))
-            painter.drawPath(path)
-            painter.restore()
-        # on curve
-        if self._showOnCurvePoints and outlineData["onCurvePoints"]:
-            width = height = self.roundPosition(onCurvePointSize)# * self._inverseScale)
-            half = width / 2.0
-            smoothWidth = smoothHeight = self.roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
-            smoothHalf = smoothWidth / 2.0
-            path = QPainterPath()
-            for point in outlineData["onCurvePoints"]:
-                x, y = point["point"]
-                points.append((x, y))
-                if point["smooth"]:
-                    x = self.roundPosition(x - smoothHalf)
-                    y = self.roundPosition(y - smoothHalf)
-                    path.addEllipse(x, y, smoothWidth, smoothHeight)
-                else:
-                    x = self.roundPosition(x - half)
-                    y = self.roundPosition(y - half)
-                    path.addRect(x, y, width, height)
-            if self._drawStroke:
-                painter.save()
-                painter.setPen(QPen(self._pointStrokeColor, 3.0))
-                painter.drawPath(path)
-                painter.restore()
-            painter.save()
-            painter.setBrush(QBrush(self._onCurvePointColor))
-            painter.drawPath(path)
-            painter.restore()
-        # text
-        """
-        if self._showPointCoordinates and coordinateSize:
-            fontSize = 9 * self._inverseScale
-            attributes = {
-                NSFontAttributeName : NSFont.systemFontOfSize_(fontSize),
-                NSForegroundColorAttributeName : self._pointCoordinateColor
-            }
-            for x, y in points:
-                posX = x
-                posY = y
-                x = round(x, 1)
-                if int(x) == x:
-                    x = int(x)
-                y = round(y, 1)
-                if int(y) == y:
-                    y = int(y)
-                text = "%d  %d" % (x, y)
-                self._drawTextAtPoint(text, attributes, (posX, posY), 3)
-        """
         
     def addBackground(self):
         s = self.scene()
@@ -451,6 +453,61 @@ class SvgView(QGraphicsView):
         outlineData = self._glyph.getRepresentation("defconQt.OutlineInformation")
         points = [] # TODO: remove this unless we need it # useful for text drawing, add it
         startObjects = []
+        offWidth = offHeight = self.roundPosition(offCurvePointSize)# * self._inverseScale)
+        offHalf = offWidth / 2.0
+        width = height = self.roundPosition(onCurvePointSize)# * self._inverseScale)
+        half = width / 2.0
+        smoothWidth = smoothHeight = self.roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
+        smoothHalf = smoothWidth / 2.0
+        if outlineData["onCurvePoints"]:
+            spIndex = 0
+            for onCurve in outlineData["onCurvePoints"]:
+                # on curve
+                x, y = onCurve.x, onCurve.y
+                points.append((x, y))
+                lastPointInSubpath = None
+                startObject = None
+                item = None
+                if onCurve.isFirst:
+                    lastPointInSubpath = outlineData["lastSubpathPoints"][spIndex]
+                    spIndex += 1
+                    #startObject = startObjects.pop(0)
+
+                if onCurve.isSmooth:
+                    rx = self.roundPosition(x - smoothHalf)
+                    ry = self.roundPosition(y - smoothHalf)
+                    item = OnCurveSmoothPointItem(-smoothHalf, -smoothHalf, smoothWidth, smoothHeight, x, y,
+                        onCurve.contourIndex, lastPointInSubpath, startObject,
+                        QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+                    s.addItem(item)
+                else:
+                    rx = self.roundPosition(x - half)
+                    ry = self.roundPosition(y - half)
+                    item = OnCurvePointItem(-half, -half, width, height, x, y, onCurve.contourIndex,
+                        lastPointInSubpath, startObject,
+                        QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+                    s.addItem(item)
+                # off curve
+                for CP in [onCurve.prevCP, onCurve.nextCP]:
+                    if CP:
+                        cx, cy = CP
+                        # line
+                        #lineObj = None
+                        #if x != onCurve.x or y != onCurve.y:
+                        # point
+                        points.append((cx, cy))
+                        rx = self.roundPosition(cx - offHalf)
+                        ry = self.roundPosition(cy - offHalf)
+                        CPObject = OffCurvePointItem(-offHalf, -offHalf, offWidth, offHeight, cx-x, cy-y,
+                            QPen(self._offCurvePointColor, 1.0), QBrush(self._backgroundColor), item)
+                        lineObj = QGraphicsLineItem(0, 0, cx - x, cy - y, item)
+                        lineObj.setPen(QPen(self._bezierHandleColor, 1.0))
+                        #s.addItem(CPObject)
+                        #s.addEllipse(x, y, offWidth, offHeight,
+                        #    QPen(self._offCurvePointColor, 1.0), QBrush(self._backgroundColor))
+                
+                    
+        '''
         # start point
         if self._showOnCurvePoints and outlineData["startPoints"]:
             startWidth = startHeight = self.roundPosition(startPointSize)# * self._inverseScale)
@@ -471,23 +528,27 @@ class SvgView(QGraphicsView):
                     startObjects.append(item)
             #s.addPath(path, QPen(Qt.NoPen), brush=QBrush(self._startPointColor))
         # off curve
+        from collections import defaultdict
+        offCurveIndex = defaultdict(lambda: defaultdict(dict))
         if self._showOffCurvePoints and outlineData["offCurvePoints"]:
             # lines
-            for point1, point2 in outlineData["bezierHandles"]:
+            for point1, point2, index, onCurveParentIndex in outlineData["bezierHandles"]:
                 path = QPainterPath()
                 path.moveTo(*point1)
                 path.lineTo(*point2)
-                s.addPath(path, QPen(self._bezierHandleColor, 1.0))
+                prevOrNext = index < onCurveParentIndex
+                offCurveIndex[onCurveParentIndex][prevOrNext]["bez"] = s.addPath(path, QPen(self._bezierHandleColor, 1.0))
             # points
             offWidth = offHeight = self.roundPosition(offCurvePointSize)# * self._inverseScale)
             offHalf = offWidth / 2.0
             #path = QPainterPath()
-            for point, index, isFirst in outlineData["offCurvePoints"]:
+            for point, index, onCurveParentIndex in outlineData["offCurvePoints"]:
                 x, y = point["point"]
                 points.append((x, y))
                 x = self.roundPosition(x - offHalf)
                 y = self.roundPosition(y - offHalf)
-                item = s.addEllipse(x, y, offWidth, offHeight,
+                prevOrNext = index < onCurveParentIndex
+                offCurveIndex[onCurveParentIndex][prevOrNext]["off"] = s.addEllipse(x, y, offWidth, offHeight,
                     QPen(self._offCurvePointColor, 1.0), QBrush(self._backgroundColor))
                 item.setFlag(QGraphicsItem.ItemIsMovable)
             #if self._drawStroke:
@@ -524,8 +585,17 @@ class SvgView(QGraphicsView):
                                 break
                         startObject = startObjects.pop(0)
 
+                    try: prevBez = offCurveIndex[index][True]["bez"]
+                    except KeyError: prevBez = None
+                    try: prevCP = offCurveIndex[index][True]["off"]
+                    except KeyError: prevCP = None
+                    try: nextBez = offCurveIndex[index][False]["bez"]
+                    except KeyError: nextBez = None
+                    try: nextCP = offCurveIndex[index][False]["off"]
+                    except KeyError: nextCP = None
                     item = OnCurvePointItem(rx, ry, width, height, x, y, index, lastPointInSubpath,
-                        startObject, QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+                        startObject, prevBez, prevCP, nextBez, nextCP,
+                        QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
                     s.addItem(item)
                     #item = s.addRect(x, y, width, height,
                     #    QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
@@ -536,6 +606,25 @@ class SvgView(QGraphicsView):
             #myRect = s.addPath(path, QPen(Qt.NoPen), brush=)
             #myRect.setFlag(QGraphicsItem.ItemIsSelectable)
             #myRect.setFlag(QGraphicsItem.ItemIsMovable
+        # text
+        if self._showPointCoordinates and coordinateSize:
+            fontSize = 9 * self._inverseScale
+            attributes = {
+                NSFontAttributeName : NSFont.systemFontOfSize_(fontSize),
+                NSForegroundColorAttributeName : self._pointCoordinateColor
+            }
+            for x, y in points:
+                posX = x
+                posY = y
+                x = round(x, 1)
+                if int(x) == x:
+                    x = int(x)
+                y = round(y, 1)
+                if int(y) == y:
+                    y = int(y)
+                text = "%d  %d" % (x, y)
+                self._drawTextAtPoint(text, attributes, (posX, posY), 3)
+        '''
 
     def roundPosition(self, value):
         value = value * self._scale

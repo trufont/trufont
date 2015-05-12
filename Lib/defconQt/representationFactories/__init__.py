@@ -14,6 +14,7 @@ def QPainterPathFactory(glyph, font):
 #
 #from defconQt.representationFactories.glyphviewFactory import NoComponentsQPainterPathFactory, OnlyComponentsQPainterPathFactory, OutlineInformationFactory
 #
+from collections import namedtuple
 import math
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen
@@ -87,10 +88,11 @@ class OutlineInformationPen(AbstractPointPen):
 
     def getData(self):
         data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[], bezierHandles=[], anchors=[], lastSubpathPoints=[], components=self._rawComponentData)
-
+        CPoint = namedtuple('Point', ['x', 'y', 'contourIndex', 'isSmooth', 'isFirst', 'prevCP', 'nextCP'])
+        
         for contour in self._rawPointData:
             if type(contour) is str:
-                print("Hill")
+                print("PING")
                 data["lastSubpathPoints"].append(self.index)
                 self.index += 1
                 continue
@@ -102,31 +104,24 @@ class OutlineInformationPen(AbstractPointPen):
             else:
                 haveFirst = False
                 for pointIndex, point in enumerate(contour):
-                    if point["segmentType"] is None:
-                        print("OffCurve")
-                        data["offCurvePoints"].append((point, self.index, not haveFirst))
-                        self.index += 1
-                        # look for handles
-                        # TODO: calculate this when drawing
+                    if point["segmentType"] is not None:
+                        #data["onCurvePoints"].append((point, self.index, not haveFirst))
+                        
                         back = contour[pointIndex - 1]
                         forward = contour[(pointIndex + 1) % len(contour)]
-                        if back["segmentType"] in ("curve", "line"):
-                            p1 = back["point"]
-                            p2 = point["point"]
-                            if p1 != p2:
-                                data["bezierHandles"].append((p1, p2))
-                        elif forward["segmentType"] in ("curve", "line"):
-                            p1 = forward["point"]
-                            p2 = point["point"]
-                            if p1 != p2:
-                                data["bezierHandles"].append((p1, p2))
-                    else:
-                        data["onCurvePoints"].append((point, self.index, not haveFirst))
-                        print("OnCurve")
-                        self.index += 1
+                        prevCP, nextCP = None, None
+                        if back["segmentType"] is None:
+                            prevCP = back["point"]
+                        if forward["segmentType"] is None:
+                            nextCP = forward["point"]
+                        x, y = point["point"]
+                        pt = CPoint(x, y, self.index, point["smooth"], not haveFirst, prevCP, nextCP)
+                        data["onCurvePoints"].append(pt)
                         # catch first point
                         if not haveFirst:
+                            print("PONG")
                             haveFirst = True
+                            '''
                             nextOn = None
                             for nextPoint in contour[pointIndex:] + contour[:pointIndex]:
                                 #if nextPoint["segmentType"] is None:
@@ -143,6 +138,33 @@ class OutlineInformationPen(AbstractPointPen):
                                 yDiff = y2 - y1
                                 angle = round(math.atan2(yDiff, xDiff) * 180 / math.pi, 3)
                             data["startPoints"].append((point["point"], angle))
+                            '''
+                        self.index += 1
+                    else:
+                        self.index += 1
+                        
+                    '''
+                    else:
+                        onCurveParent = self.index+1
+                        print("OffCurve")
+                        # look for handles
+                        # TODO: calculate this when drawing
+                        back = contour[pointIndex - 1]
+                        forward = contour[(pointIndex + 1) % len(contour)]
+                        if back["segmentType"] in ("curve", "line"):
+                            onCurveParent = self.index-1
+                            p1 = back["point"]
+                            p2 = point["point"]
+                            if p1 != p2:
+                                data["bezierHandles"].append((p1, p2, self.index, onCurveParent))
+                        elif forward["segmentType"] in ("curve", "line"):
+                            p1 = forward["point"]
+                            p2 = point["point"]
+                            if p1 != p2:
+                                data["bezierHandles"].append((p1, p2, self.index, onCurveParent))
+                        data["offCurvePoints"].append((point, self.index, onCurveParent))
+                        self.index += 1
+                    '''
         return data
 
     def beginPath(self):
