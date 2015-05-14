@@ -92,7 +92,6 @@ class OutlineInformationPen(AbstractPointPen):
         
         for contour in self._rawPointData:
             if type(contour) is str:
-                print("PING")
                 data["lastSubpathPoints"].append(self.index)
                 self.index += 1
                 continue
@@ -104,11 +103,9 @@ class OutlineInformationPen(AbstractPointPen):
             else:
                 haveFirst = False
                 for pointIndex, point in enumerate(contour):
+                    back = contour[pointIndex - 1]
+                    forward = contour[(pointIndex + 1) % len(contour)]
                     if point["segmentType"] is not None:
-                        #data["onCurvePoints"].append((point, self.index, not haveFirst))
-                        
-                        back = contour[pointIndex - 1]
-                        forward = contour[(pointIndex + 1) % len(contour)]
                         prevCP, nextCP = None, None
                         if back["segmentType"] is None:
                             prevCP = back["point"]
@@ -119,7 +116,6 @@ class OutlineInformationPen(AbstractPointPen):
                         data["onCurvePoints"].append(pt)
                         # catch first point
                         if not haveFirst:
-                            print("PONG")
                             haveFirst = True
                             '''
                             nextOn = None
@@ -141,7 +137,21 @@ class OutlineInformationPen(AbstractPointPen):
                             '''
                         self.index += 1
                     else:
+                        '''
+                        if back["segmentType"] is not None:
+                            onCurveNeighbor = back
+                        elif forward["segmentType"] is not None:
+                            onCurveNeighbor = forward
+                        else:
+                            print("Whoops")
+                            continue
+                        # QPainterPath elides no-op moveTo's, so do the same when indexing here
+                        if onCurveNeighbor["point"] == point["point"]:
+                            print("Skipped: {}".format(self.index))
+                            continue
+                        '''
                         self.index += 1
+                            
                         
                     '''
                     else:
