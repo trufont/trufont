@@ -167,6 +167,7 @@ class OnCurveSmoothPointItem(QGraphicsEllipseItem):
                 elemIndex = self._pointIndex-1
             else:
                 elemIndex = self._pointIndex+1
+        if elemIndex < 0: return
         path.setElementPositionAt(elemIndex, self.pos().x()+newValue.x(), self.pos().y()+newValue.y())
         if not self._isSmooth or propagate is None: self.scene()._outlineItem.setPath(path); return
         xDiff = newValue.x() - curValue.x()
@@ -179,6 +180,7 @@ class OnCurveSmoothPointItem(QGraphicsEllipseItem):
         children[propagate].setPos(tmpLine.x2(), tmpLine.y2())
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         children[propagate+1].setLine(line.x1(), line.y1(), tmpLine.x2(), tmpLine.y2())
+        if self._pointIndex+propagate-1 < 0: return
         path.setElementPositionAt(self._pointIndex+propagate-1, self.pos().x()+tmpLine.x2(), self.pos().y()+tmpLine.y2())
         self.scene()._outlineItem.setPath(path)
 
@@ -186,15 +188,6 @@ class OnCurveSmoothPointItem(QGraphicsEllipseItem):
         if change == QGraphicsItem.ItemPositionHasChanged:
             if self.scene() is None: return QGraphicsItem.itemChange(self, change, value)
             path = self.scene()._outlineItem.path()
-            '''
-            for i in range(path.elementCount()):
-                elem = path.elementAt(i)
-                if elem.isCurveTo(): kind = "curve"
-                elif elem.isLineTo(): kind = "line"
-                else: kind = "move"
-                print("{}: {} {}".format(kind, elem.x, elem.y))
-            print()
-            '''
             # TODO: if we're snapped to int round self.pos to int
             path.setElementPositionAt(self._pointIndex, self.pos().x(), self.pos().y())
             if self._otherPointIndex is not None:
@@ -205,10 +198,12 @@ class OnCurveSmoothPointItem(QGraphicsEllipseItem):
                 if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
             if len(self.childItems()) > 2:
                 prevPos = self.childItems()[0].pos()
+                if self._pointIndex-1 < 0: return QGraphicsItem.itemChange(self, change, value)
                 path.setElementPositionAt(self._pointIndex-1, self.pos().x()+prevPos.x(), self.pos().y()+prevPos.y())
                 nextPos = self.childItems()[2].pos()
                 path.setElementPositionAt(self._pointIndex+1, self.pos().x()+nextPos.x(), self.pos().y()+nextPos.y())
             else:
+                if len(self.childItems()) < 1: self.scene()._outlineItem.setPath(path); return QGraphicsItem.itemChange(self, change, value)
                 pos = self.childItems()[0].pos()
                 index = 0
                 '''
@@ -224,30 +219,12 @@ class OnCurveSmoothPointItem(QGraphicsEllipseItem):
                 elemIndex = self._pointIndex-2
                 # XXX: need to handle things per subpath to be able to modulo
                 # Also, not < 0 but < minPointInSubpath
-                if elemIndex < 0: return
+                if elemIndex < 0: return QGraphicsItem.itemChange(self, change, value)
                 if path.elementAt(elemIndex).isCurveTo():
                     index = self._pointIndex-1
                 else:
                     index = self._pointIndex+1
-                '''
-                elif path.elementAt(self._pointIndex-1).isCurveTo():
-                    print("CurveTo before!")
-                elif path.elementAt(self._pointIndex-1).isLineTo():
-                    print("LineTo before!")
-                else:
-                    print(path.elementAt(self._pointIndex-1).type)
-                if path.elementAt(self._pointIndex+1).isCurveTo():
-                    index = self._pointIndex+1
-                    print("CurveTo after!")
-                if path.elementAt(self._pointIndex+1).isMoveTo():
-                    print("MoveTo after!")
-                elif path.elementAt(self._pointIndex+1).isLineTo():
-                    print("LineTo after!")
-                else:
-                    index = self._pointIndex+1
-                print()
-                print("INDEX: {}".format(index))
-                '''
+                if index < 0: return QGraphicsItem.itemChange(self, change, value)
                 path.setElementPositionAt(index, self.pos().x()+pos.x(), self.pos().y()+pos.y())
             self.scene()._outlineItem.setPath(path)
         return QGraphicsItem.itemChange(self, change, value)
@@ -260,7 +237,6 @@ class OnCurveSmoothPointItem(QGraphicsEllipseItem):
         if (option.state & QStyle.State_Selected):
             pen = self.pen()
             pen.setColor(Qt.red)
-            #pen.setWidth
             self.setPen(pen)
         else:
             self.setPen(self._pen)
@@ -328,6 +304,7 @@ class OnCurvePointItem(QGraphicsRectItem):
                 elemIndex = self._pointIndex-1
             else:
                 elemIndex = self._pointIndex+1
+            if elemIndex < 0: return
         path.setElementPositionAt(elemIndex, self.pos().x()+newValue.x(), self.pos().y()+newValue.y())
         self.scene()._outlineItem.setPath(path)
         #if not self._isSmooth: return
@@ -355,11 +332,36 @@ class OnCurvePointItem(QGraphicsRectItem):
                 # maybe make it disappear on move and recalc when releasing
                 # what does rf do here?
                 if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
-            #for child in self.childItems():
-                #child._translate(self.pos())
-                #newCPX = child._pointX+child.pos().x()
-                #newCPY = child._pointY+child.pos().y()
-                #child._handle.setLine(newX, newY, newCPX, newCPY)
+            if len(self.childItems()) > 2:
+                prevPos = self.childItems()[0].pos()
+                if self._pointIndex-1 < 0: return QGraphicsItem.itemChange(self, change, value)
+                path.setElementPositionAt(self._pointIndex-1, self.pos().x()+prevPos.x(), self.pos().y()+prevPos.y())
+                nextPos = self.childItems()[2].pos()
+                path.setElementPositionAt(self._pointIndex+1, self.pos().x()+nextPos.x(), self.pos().y()+nextPos.y())
+            else:
+                if len(self.childItems()) < 1: self.scene()._outlineItem.setPath(path); return QGraphicsItem.itemChange(self, change, value)
+                pos = self.childItems()[0].pos()
+                index = 0
+                '''
+                for i in range(path.elementCount()):
+                    elem = path.elementAt(i)
+                    if elem.isCurveTo(): kind = "curve"
+                    elif elem.isLineTo(): kind = "line"
+                    else: kind = "move"
+                    print("{} {}: {} {}".format(i, kind, elem.x, elem.y))
+                print()
+                print(self._pointIndex)
+                '''
+                elemIndex = self._pointIndex-2
+                # XXX: need to handle things per subpath to be able to modulo
+                # Also, not < 0 but < minPointInSubpath
+                if elemIndex < 0: return QGraphicsItem.itemChange(self, change, value)
+                if path.elementAt(elemIndex).isCurveTo():
+                    index = self._pointIndex-1
+                else:
+                    index = self._pointIndex+1
+                if index < 0: return QGraphicsItem.itemChange(self, change, value)
+                path.setElementPositionAt(index, self.pos().x()+pos.x(), self.pos().y()+pos.y())
             self.scene()._outlineItem.setPath(path)
         return QGraphicsItem.itemChange(self, change, value)
     
