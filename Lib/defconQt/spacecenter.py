@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QAbstractTableModel, QSize, Qt
-from PyQt5.QtGui import (QBrush, QColor, QFont, QLinearGradient, QPainter,
+from PyQt5.QtGui import (QBrush, QColor, QFont, QKeySequence, QLinearGradient, QPainter,
         QPainterPath, QPalette, QPen)
 from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QGridLayout, QLabel, QLineEdit,
         QMainWindow, QScrollArea, QTableView, QTableWidget, QTableWidgetItem, QVBoxLayout, QSizePolicy, QSpinBox, QToolBar, QWidget)
@@ -36,8 +36,8 @@ class MainSpaceWindow(QWidget):
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
-        fileMenu.addAction("&Save...", self.save, "Ctrl+S")
-        fileMenu.addAction("E&xit", self.close, "Ctrl+Q")
+        fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
+        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
     
     def close(self):
         self.font.info.removeObserver(self, "Info.Changed")
@@ -97,10 +97,10 @@ class MainSpaceWindow(QWidget):
             glyphNames.append("".join(compileStack))
         return glyphNames
     
-    def _subscribeToGlyphsText(self,newText):
+    def _subscribeToGlyphsText(self, newText):
         glyphs = []
         glyphNames = self.textToGlyphNames(newText)
-        # TODO: lexer
+
         for gName in glyphNames:
             if gName not in self.font: continue
             glyphs.append(self.font[gName])
@@ -253,7 +253,7 @@ class SpaceTable(QTableWidget):
         self.fillGlyphs()
         self.resizeRowsToContents()
         self.cellChanged.connect(self._cellEdited)
-        self.selectionMode(QAbstractItemView.SingleSelection)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
         # TODO: investigate changing cell color as in robofont
@@ -281,14 +281,17 @@ class SpaceTable(QTableWidget):
             glyph.rightMargin = item
         # defcon callbacks do the update
     
+    '''
+    # This won't help...
     def keyPressEvent(self, event):
         # We don't want to stop edition on enter, so
         # update the canvas and don't propagate the event
-        if event.keys() & Qt.Enter_Key:
+        if event.key() == Qt.Key_Enter:
             self._cellEdited()
             event.accept()
             return
         super(SpaceTable, self).keyPressEvent(event)
+    '''
 
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879
@@ -312,7 +315,7 @@ class SpaceTable(QTableWidget):
 
         self.setColumnCount(len(self.glyphs)+1)
         for index, glyph in enumerate(self.glyphs):
-            # TODO: should glyph name edit really be permitted here?
+            # TODO: see about allowing glyph name edit here
             self.setItem(0, index+1, glyphTableWidgetItem(glyph.name, True))
             self.setItem(1, index+1, glyphTableWidgetItem(glyph.width))
             self.setItem(2, index+1, glyphTableWidgetItem(glyph.leftMargin))

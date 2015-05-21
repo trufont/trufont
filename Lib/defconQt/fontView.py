@@ -191,14 +191,14 @@ class MainWindow(QMainWindow):
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
-        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
-        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
+        fileMenu.addAction("&New...", self.newFile, QKeySequence.New)
+        fileMenu.addAction("&Open...", self.openFile, QKeySequence.Open)
         # TODO: add functionality
         #fileMenu.addMenu(QMenu("Open &Recent...", self))
         fileMenu.addSeparator()
-        fileMenu.addAction("&Save", self.saveFile, "Ctrl+S")
-        fileMenu.addAction("Save &As...", self.saveFileAs, "Ctrl+Shift+S")
-        fileMenu.addAction("E&xit", self.saveAndExit, "Ctrl+Q")
+        fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
+        fileMenu.addAction("Save &As...", self.saveFileAs, QKeySequence.SaveAs)
+        fileMenu.addAction("E&xit", self.saveAndExit, QKeySequence.Quit)
 
         fontMenu = QMenu("&Font", self)
         self.menuBar().addMenu(fontMenu)

@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QFile, QRegExp, Qt
-from PyQt5.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCharFormat
+from PyQt5.QtGui import QColor, QFont, QKeySequence, QPainter, QSyntaxHighlighter, QTextCharFormat
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
         QMessageBox, QPlainTextEdit, QWidget)
 
@@ -28,10 +28,10 @@ class MainEditWindow(QMainWindow):
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
-#        fileMenu.addAction("&New...", self.newFile, "Ctrl+N")
-#        fileMenu.addAction("&Open...", self.openFile, "Ctrl+O")
-        fileMenu.addAction("&Save...", self.save, "Ctrl+S")
-        fileMenu.addAction("E&xit", self.close, "Ctrl+Q")
+#        fileMenu.addAction("&New...", self.newFile, QKeySequence.New)
+#        fileMenu.addAction("&Open...", self.openFile, QKeySequence.Open)
+        fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
+        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
 class LineNumberArea(QWidget):
     def __init__(self,editor):

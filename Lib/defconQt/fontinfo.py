@@ -12,7 +12,6 @@ class TabDialog(QDialog):
             "General": 0
         }
 
-#        fileInfo = QFileInfo(fileName)
         self.font = font
         self.tabWidget = QTabWidget()
         self.tabWidget.addTab(GeneralTab(self.font), "General")
