@@ -60,13 +60,50 @@ class MainSpaceWindow(QWidget):
         self.table._glyphsChanged(self.glyphs)
         self.table.blockSignals(False)
     
-    def _subscribeToGlyphsText(self, newText):
+    # Tal Leming. Edited.
+    def textToGlyphNames(self, text):
+        # escape //
+        text = text.replace("//", "/slash ")
+        #
+        glyphNames = []
+        compileStack = None
+        for c in text:
+            # start a glyph name compile.
+            if c == "/":
+                # finishing a previous compile.
+                if compileStack is not None:
+                    # only add the compile if something has been added to the stack.
+                    if compileStack:
+                        glyphNames.append("".join(compileStack))
+                # reset the stack.
+                compileStack = []
+            # adding to or ending a glyph name compile.
+            elif compileStack is not None:
+                # space. conclude the glyph name compile.
+                if c == " ":
+                    # only add the compile if something has been added to the stack.
+                    if compileStack:
+                        glyphNames.append("".join(compileStack))
+                    compileStack = None
+                # add the character to the stack.
+                else:
+                    compileStack.append(c)
+            # adding a character that needs to be converted to a glyph name.
+            else:
+                glyphName = self.font.unicodeData.glyphNameForUnicode(ord(c))
+                glyphNames.append(glyphName)
+        # catch remaining compile.
+        if compileStack is not None and compileStack:
+            glyphNames.append("".join(compileStack))
+        return glyphNames
+    
+    def _subscribeToGlyphsText(self,newText):
         glyphs = []
+        glyphNames = self.textToGlyphNames(newText)
         # TODO: lexer
-        for c in newText:
-            name = self.font.unicodeData.glyphNameForUnicode(ord(c))
-            if name not in self.font: continue
-            glyphs.append(self.font[name])
+        for gName in glyphNames:
+            if gName not in self.font: continue
+            glyphs.append(self.font[gName])
         self.glyphs = glyphs
 
         handledGlyphs = set()
@@ -145,9 +182,11 @@ class GlyphsCanvas(QWidget):
     
     def wheelEvent(self, event):
         # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
-        # see how rf behaves
+        # see how rf behaves -> scaling factor grows with sz it seems
+        # TODO: forbid negative/zero(?) pointSizes
         decay = event.angleDelta().y() / 120.0
         newPointSize = self.ptSize + int(decay) * 10
+        # TODO: send notification to parent and do all the fuss there
         self._pointSizeChanged(newPointSize)
         
         comboBox = self.parent().toolbar.comboBox
@@ -214,6 +253,7 @@ class SpaceTable(QTableWidget):
         self.fillGlyphs()
         self.resizeRowsToContents()
         self.cellChanged.connect(self._cellEdited)
+        self.selectionMode(QAbstractItemView.SingleSelection)
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
         # TODO: investigate changing cell color as in robofont
@@ -240,6 +280,15 @@ class SpaceTable(QTableWidget):
         elif row == 3:
             glyph.rightMargin = item
         # defcon callbacks do the update
+    
+    def keyPressEvent(self, event):
+        # We don't want to stop edition on enter, so
+        # update the canvas and don't propagate the event
+        if event.keys() & Qt.Enter_Key:
+            self._cellEdited()
+            event.accept()
+            return
+        super(SpaceTable, self).keyPressEvent(event)
 
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879

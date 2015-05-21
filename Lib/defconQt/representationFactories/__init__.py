@@ -84,17 +84,14 @@ class OutlineInformationPen(AbstractPointPen):
         self._rawPointData = []
         self._rawComponentData = []
         self._bezierHandleData = []
+        self.cIndex = 0
         self.index = 0
 
     def getData(self):
-        data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[], bezierHandles=[], anchors=[], lastSubpathPoints=[], components=self._rawComponentData)
-        CPoint = namedtuple('Point', ['x', 'y', 'contourIndex', 'isSmooth', 'isFirst', 'prevCP', 'nextCP'])
+        data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[], bezierHandles=[], anchors=[], components=self._rawComponentData)
+        CPoint = namedtuple('Point', ['x', 'y', 'contourIndex', 'pointIndex', 'isSmooth', 'isFirst', 'prevCP', 'nextCP'])
         
         for contour in self._rawPointData:
-            if type(contour) is str:
-                data["lastSubpathPoints"].append(self.index)
-                self.index += 1
-                continue
             # anchor
             if len(contour) == 1 and contour[0]["name"] is not None:
                 anchor = contour[0]
@@ -112,7 +109,7 @@ class OutlineInformationPen(AbstractPointPen):
                         if forward["segmentType"] is None:
                             nextCP = forward["point"]
                         x, y = point["point"]
-                        pt = CPoint(x, y, self.index, point["smooth"], not haveFirst, prevCP, nextCP)
+                        pt = CPoint(x, y, self.cIndex, self.index, point["smooth"], not haveFirst, prevCP, nextCP)
                         data["onCurvePoints"].append(pt)
                         # catch first point
                         if not haveFirst:
@@ -175,14 +172,15 @@ class OutlineInformationPen(AbstractPointPen):
                         data["offCurvePoints"].append((point, self.index, onCurveParent))
                         self.index += 1
                     '''
+            self.index = 0
+            self.cIndex += 1
         return data
 
     def beginPath(self):
         self._rawPointData.append([])
 
     def endPath(self):
-        # TODO: appending a string may not be the most elegant thing to do
-        self._rawPointData.append("Subpath")
+        pass
 
     def addPoint(self, pt, segmentType=None, smooth=False, name=None, **kwargs):
         d = dict(point=pt, segmentType=segmentType, smooth=smooth, name=name)
