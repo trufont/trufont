@@ -67,9 +67,7 @@ class CharacterWidget(QWidget):
             if self.lastKey > len(self.glyphs)-1: return
             
             self.col = QColor.fromRgbF(.2, .3, .7, .15)
-            uniValue = self.glyphs[self.lastKey].unicode
-            showName = uniValue is None or unicodedata.category(chr(uniValue)) == 'Zs'
-            self.characterSelected.emit(1, chr(uniValue) if not showName else self.glyphs[self.lastKey].name)
+            self.characterSelected.emit(1, self.glyphs[self.lastKey].name)
             event.accept()
             self.update()
         else:
@@ -81,10 +79,7 @@ class CharacterWidget(QWidget):
             event.accept()
             if (moveKey == self.lastKey and self.moveKey != -1):
                 self.moveKey = -1
-                # code duplication :(
-                uniValue = self.glyphs[self.lastKey].unicode
-                showName = uniValue is None or unicodedata.category(chr(uniValue)) == 'Zs'
-                self.characterSelected.emit(1, chr(uniValue) if not showName else self.glyphs[self.lastKey].name)
+                self.characterSelected.emit(1, self.glyphs[self.lastKey].name)
             elif moveKey > len(self.glyphs)-1 \
                 or not (moveKey != self.lastKey and moveKey != self.moveKey): return
             else:
@@ -179,9 +174,10 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self.font = font
+        self.font.addObserver(self, "_fontChanged", "Font.Changed")
         # TODO: have the scrollarea be part of the widget itself?
         # or better yet, switch to QGraphicsScene
-        self.scrollArea = QScrollArea()
+        self.scrollArea = QScrollArea(self)
         squareSize = 48
         self.characterWidget = CharacterWidget(self.font, squareSize, self.scrollArea, self)
         self.scrollArea.setWidget(self.characterWidget)
@@ -198,7 +194,7 @@ class MainWindow(QMainWindow):
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
         fileMenu.addAction("Save &As...", self.saveFileAs, QKeySequence.SaveAs)
-        fileMenu.addAction("E&xit", self.saveAndExit, QKeySequence.Quit)
+        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
         fontMenu = QMenu("&Font", self)
         self.menuBar().addMenu(fontMenu)
@@ -215,15 +211,14 @@ class MainWindow(QMainWindow):
         helpMenu.addAction("&About", self.about)
         helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
         
-        self.sqSizeSlider = QSlider(Qt.Horizontal)
+        self.sqSizeSlider = QSlider(Qt.Horizontal, self)
         self.sqSizeSlider.setMinimum(24)
         self.sqSizeSlider.setMaximum(96)
         #sz = self.sqSizeSlider.sizeHint()
         #self.sqSizeSlider.setSize(.7*sz.width(), sz.height())
         self.sqSizeSlider.setValue(squareSize)
-        self.sqSizeSlider.sliderMoved.connect(self._tipValue)
         self.sqSizeSlider.valueChanged.connect(self._squareSizeChanged)
-        self.selectionLabel = QLabel()
+        self.selectionLabel = QLabel(self)
         self.selectionLabel.setFixedWidth(self.selectionLabel.fontMetrics().width('M') * 15)
         self.characterWidget.characterSelected.connect(self._selectionChanged)
         self.statusBar().addPermanentWidget(self.sqSizeSlider)
@@ -267,24 +262,27 @@ class MainWindow(QMainWindow):
         if ok:
             self.saveFile(path)
     
-    def saveAndExit(self):
+    def close(self):
         # TODO: check if font changed
+        self.font.removeObserver(self, "Font.Changed")
         QApplication.instance().quit()
     
-    def _tipValue(self):
-        text = str(self.sqSizeSlider.value())
-        QToolTip.showText(QCursor.pos(), text, self)
-    
+    def _fontChanged(self, event):
+        self.characterWidget.update()
+
     def _glyphOpened(self, name):
         from svgViewer import MainGfxWindow
-        self.glyphViewWindow = MainGfxWindow(self.font, self.font[name], self)
-        self.glyphViewWindow.show()
+        glyphViewWindow = MainGfxWindow(self.font, self.font[name], self)
+        glyphViewWindow.setAttribute(Qt.WA_DeleteOnClose)
+        glyphViewWindow.show()
     
     def _selectionChanged(self, count, glyph):
         self.selectionLabel.setText("%s%s%s%d %s" % (glyph, " " if count <= 1 else "", "(", count, "selected)"))
 
     def _squareSizeChanged(self):
-        self.characterWidget._sizeEvent(self.width(), self.sqSizeSlider.value())
+        val = self.sqSizeSlider.value()
+        self.characterWidget._sizeEvent(self.width(), val)
+        QToolTip.showText(QCursor.pos(), str(val), self)
 
     def resizeEvent(self, event):
         if self.isVisible(): self.characterWidget._sizeEvent(event.size().width())
@@ -292,10 +290,9 @@ class MainWindow(QMainWindow):
 
     def fontInfo(self):
         # If a window is already opened, bring it to the front, else spawn one.
-        # TODO: see about calling super from the widget and del'eting the ptr to the widget
-        # otherwise it doesn't get swept?
-        # Else we can just play with visibility instead of respawning, given that the window
-        # is still valid by its ref after it's been closed
+        # TODO: see about using widget.setAttribute(Qt.WA_DeleteOnClose) otherwise
+        # it seems we're just leaking memory after each close... (both raise_ and
+        # show allocate memory instead of using the hidden widget it seems)
         from fontInfo import TabDialog
         if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
            self.fontInfoWindow = TabDialog(self.font, self)

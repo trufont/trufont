@@ -38,84 +38,84 @@ class TabDialog(QDialog):
 class GeneralTab(QWidget):
     def __init__(self, font, parent=None):
         super(GeneralTab, self).__init__(parent)
-        mainLayout = QGridLayout()
+        mainLayout = QGridLayout(self)
 
-        familyNameLabel = QLabel("Family name:")
-        self.familyNameEdit = QLineEdit(font.info.familyName)
-        styleNameLabel = QLabel("Style name:")
-        self.styleNameEdit = QLineEdit(font.info.styleName)
+        familyNameLabel = QLabel("Family name:", self)
+        self.familyNameEdit = QLineEdit(font.info.familyName, self)
+        styleNameLabel = QLabel("Style name:", self)
+        self.styleNameEdit = QLineEdit(font.info.styleName, self)
         
         mainLayout.addWidget(familyNameLabel, 0, 0)
         mainLayout.addWidget(self.familyNameEdit, 0, 1, 1, 3)
         mainLayout.addWidget(styleNameLabel, 0, 4)
         mainLayout.addWidget(self.styleNameEdit, 0, 5)
 
-        designerLabel = QLabel("Designer:")
-        self.designerEdit = QLineEdit(font.info.openTypeNameDesigner)
+        designerLabel = QLabel("Designer:", self)
+        self.designerEdit = QLineEdit(font.info.openTypeNameDesigner, self)
 
         mainLayout.addWidget(designerLabel, 1, 0)
         mainLayout.addWidget(self.designerEdit, 1, 1, 1, 5)
 
-        designerURLLabel = QLabel("Designer URL:")
-        self.designerURLEdit = QLineEdit(font.info.openTypeNameDesignerURL)
+        designerURLLabel = QLabel("Designer URL:", self)
+        self.designerURLEdit = QLineEdit(font.info.openTypeNameDesignerURL, self)
 
         mainLayout.addWidget(designerURLLabel, 2, 0)
         mainLayout.addWidget(self.designerURLEdit, 2, 1, 1, 5)
 
-        manufacturerLabel = QLabel("Manufacturer:")
-        self.manufacturerEdit = QLineEdit(font.info.openTypeNameManufacturer)
+        manufacturerLabel = QLabel("Manufacturer:", self)
+        self.manufacturerEdit = QLineEdit(font.info.openTypeNameManufacturer, self)
         
         mainLayout.addWidget(manufacturerLabel, 3, 0)
         mainLayout.addWidget(self.manufacturerEdit, 3, 1, 1, 5)
 
-        manufacturerURLLabel = QLabel("Manufacturer URL:")
-        self.manufacturerURLEdit = QLineEdit(font.info.openTypeNameManufacturerURL)
+        manufacturerURLLabel = QLabel("Manufacturer URL:", self)
+        self.manufacturerURLEdit = QLineEdit(font.info.openTypeNameManufacturerURL, self)
         
         mainLayout.addWidget(manufacturerURLLabel, 4, 0)
         mainLayout.addWidget(self.manufacturerURLEdit, 4, 1, 1, 5)
         
-        copyrightLabel = QLabel("Copyright:")
-        self.copyrightEdit = QLineEdit(font.info.copyright)
+        copyrightLabel = QLabel("Copyright:", self)
+        self.copyrightEdit = QLineEdit(font.info.copyright, self)
         
         mainLayout.addWidget(copyrightLabel, 5, 0)
         mainLayout.addWidget(self.copyrightEdit, 5, 1, 1, 5)
         
         # TODO: give visual feedback of input data validity using QLineEdit lose focus event
         # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/
-        versionLabel = QLabel("Version:")
-        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor or ''))
+        versionLabel = QLabel("Version:", self)
+        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor or ''), self)
         self.versionMajorEdit.setAlignment(Qt.AlignRight)
-        self.versionMajorEdit.setValidator(QIntValidator())
-        versionDotLabel = QLabel(".")
-        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor or ''))#.zfill(3))
-        self.versionMinorEdit.setValidator(QIntValidator())
+        self.versionMajorEdit.setValidator(QIntValidator(self))
+        versionDotLabel = QLabel(".", self)
+        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor or ''), self)#.zfill(3))
+        self.versionMinorEdit.setValidator(QIntValidator(self))
         
         mainLayout.addWidget(versionLabel, 6, 0)
         mainLayout.addWidget(self.versionMajorEdit, 6, 1)
         mainLayout.addWidget(versionDotLabel, 6, 2)
         mainLayout.addWidget(self.versionMinorEdit, 6, 3)
         
-        unitsPerEmLabel = QLabel("Units per em:")
-        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm or ''))
-        self.unitsPerEmEdit.setValidator(QIntValidator())
+        unitsPerEmLabel = QLabel("Units per em:", self)
+        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm or ''), self)
+        self.unitsPerEmEdit.setValidator(QIntValidator(self))
         
         mainLayout.addWidget(unitsPerEmLabel, 6, 4)
         mainLayout.addWidget(self.unitsPerEmEdit, 6, 5)
         
-        licenseLabel = QLabel("License:")
-        self.licenseEdit = QLineEdit(font.info.openTypeNameLicense)
+        licenseLabel = QLabel("License:", self)
+        self.licenseEdit = QLineEdit(font.info.openTypeNameLicense, self)
         
         mainLayout.addWidget(licenseLabel, 7, 0)
         mainLayout.addWidget(self.licenseEdit, 7, 1, 1, 5)
 
-        licenseURLLabel = QLabel("License URL:")
-        self.licenseURLEdit = QLineEdit(font.info.openTypeNameLicenseURL)
+        licenseURLLabel = QLabel("License URL:", self)
+        self.licenseURLEdit = QLineEdit(font.info.openTypeNameLicenseURL, self)
         
         mainLayout.addWidget(licenseURLLabel, 8, 0)
         mainLayout.addWidget(self.licenseURLEdit, 8, 1, 1, 5)
         
-        trademarkLabel = QLabel("Trademark:")
-        self.trademarkEdit = QLineEdit(font.info.trademark)
+        trademarkLabel = QLabel("Trademark:", self)
+        self.trademarkEdit = QLineEdit(font.info.trademark, self)
         
         mainLayout.addWidget(trademarkLabel, 9, 0)
         mainLayout.addWidget(self.trademarkEdit, 9, 1, 1, 5)
@@ -142,12 +142,12 @@ class NextTab(QWidget):
         super(NextTab, self).__init__(parent)
         mainLayout = QGridLayout()
 
-        styleMapFamilyLabel = QLabel("Style map family name:")
-        self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName)
-#        self.styleMapFamilyCBox = QCheckBox("Use default value")
+        styleMapFamilyLabel = QLabel("Style map family name:", self)
+        self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName, self)
+#        self.styleMapFamilyCBox = QCheckBox("Use default value", self)
 
-        styleMapStyleLabel = QLabel("Style map style name:")
-        self.styleMapStyleDrop = QComboBox()
+        styleMapStyleLabel = QLabel("Style map style name:", self)
+        self.styleMapStyleDrop = QComboBox(self)
 #        items = ["None", "Regular", "Italic", "Bold", "Bold Italic"]
         styleMapStyle = {
             "None": 0,
@@ -172,17 +172,17 @@ class NextTab(QWidget):
         mainLayout.addWidget(styleMapStyleLabel, 0, 4)
         mainLayout.addWidget(self.styleMapStyleDrop, 0, 5)
 
-        ascenderLabel = QLabel("Ascender:")
-        self.ascenderEdit = QLineEdit(str(font.info.ascender or ''))
-        self.ascenderEdit.setValidator(QIntValidator())
+        ascenderLabel = QLabel("Ascender:", self)
+        self.ascenderEdit = QLineEdit(str(font.info.ascender or ''), self)
+        self.ascenderEdit.setValidator(QIntValidator(self))
 
-        descenderLabel = QLabel("Descender:")
-        self.descenderEdit = QLineEdit(str(font.info.descender or ''))
-        self.descenderEdit.setValidator(QIntValidator())
+        descenderLabel = QLabel("Descender:", self)
+        self.descenderEdit = QLineEdit(str(font.info.descender or ''), self)
+        self.descenderEdit.setValidator(QIntValidator(self))
 
-        italicAngleLabel = QLabel("Italic angle:")
-        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle or ''))
-        self.italicAngleEdit.setValidator(QDoubleValidator())
+        italicAngleLabel = QLabel("Italic angle:", self)
+        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle or ''), self)
+        self.italicAngleEdit.setValidator(QDoubleValidator(self))
         
         mainLayout.addWidget(ascenderLabel, 1, 0)
         mainLayout.addWidget(self.ascenderEdit, 1, 1)
@@ -191,13 +191,13 @@ class NextTab(QWidget):
         mainLayout.addWidget(italicAngleLabel, 1, 4)
         mainLayout.addWidget(self.italicAngleEdit, 1, 5)
 
-        xHeightLabel = QLabel("x-height:")
-        self.xHeightEdit = QLineEdit(str(font.info.xHeight or ''))
-        self.xHeightEdit.setValidator(QIntValidator())
+        xHeightLabel = QLabel("x-height:", self)
+        self.xHeightEdit = QLineEdit(str(font.info.xHeight or ''), self)
+        self.xHeightEdit.setValidator(QIntValidator(self))
 
-        capHeightLabel = QLabel("Cap height:")
-        self.capHeightEdit = QLineEdit(str(font.info.capHeight or ''))
-        self.capHeightEdit.setValidator(QIntValidator())
+        capHeightLabel = QLabel("Cap height:", self)
+        self.capHeightEdit = QLineEdit(str(font.info.capHeight or ''), self)
+        self.capHeightEdit.setValidator(QIntValidator(self))
         
         mainLayout.addWidget(xHeightLabel, 2, 0)
         mainLayout.addWidget(self.xHeightEdit, 2, 1)

@@ -1,8 +1,8 @@
-from PyQt5.QtCore import QAbstractTableModel, QSize, Qt
+from PyQt5.QtCore import QAbstractTableModel, QEvent, QSize, Qt
 from PyQt5.QtGui import (QBrush, QColor, QFont, QKeySequence, QLinearGradient, QPainter,
         QPainterPath, QPalette, QPen)
 from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QGridLayout, QLabel, QLineEdit,
-        QMainWindow, QScrollArea, QTableView, QTableWidget, QTableWidgetItem, QVBoxLayout, QSizePolicy, QSpinBox, QToolBar, QWidget)
+        QMainWindow, QScrollArea, QStyledItemDelegate, QTableView, QTableWidget, QTableWidgetItem, QVBoxLayout, QSizePolicy, QSpinBox, QToolBar, QWidget)
 
 defaultPointSize = 150
 
@@ -136,8 +136,8 @@ pointSizes = [50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500]
 class FontToolBar(QToolBar):
     def __init__(self, string, pointSize, parent=None):
         super(FontToolBar, self).__init__(parent)
-        self.textField = QLineEdit(string)
-        self.comboBox = QComboBox()
+        self.textField = QLineEdit(string, self)
+        self.comboBox = QComboBox(self)
         self.comboBox.setEditable(True)
         for p in pointSizes:
             self.comboBox.addItem(str(p))
@@ -183,9 +183,9 @@ class GlyphsCanvas(QWidget):
     def wheelEvent(self, event):
         # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
         # see how rf behaves -> scaling factor grows with sz it seems
-        # TODO: forbid negative/zero(?) pointSizes
         decay = event.angleDelta().y() / 120.0
         newPointSize = self.ptSize + int(decay) * 10
+        if newPointSize <= 0: return
         # TODO: send notification to parent and do all the fuss there
         self._pointSizeChanged(newPointSize)
         
@@ -193,6 +193,7 @@ class GlyphsCanvas(QWidget):
         comboBox.blockSignals(True)
         comboBox.setEditText(str(newPointSize))
         comboBox.blockSignals(False)
+        event.accept()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -227,10 +228,33 @@ class GlyphsCanvas(QWidget):
         painter.drawPath(self.path)
     '''
 
+class GlyphCellItemDelegate(QStyledItemDelegate):
+    def eventFilter(self, editor, event):
+        if event.type() == QEvent.KeyPress:
+            chg = None
+            count = event.count()
+            if event.key() == Qt.Key_Up:
+                chg = count
+            elif event.key() == Qt.Key_Down:
+                chg = -count
+            elif not event.key() == Qt.Key_Return:
+                return False
+            if chg is not None:
+                if event.modifiers() & Qt.AltModifier:
+                    return False
+                cur = int(editor.text())
+                editor.setText(str(cur+chg))
+            self.commitData.emit(editor)
+            editor.selectAll()
+            return True
+        return False
+
 class SpaceTable(QTableWidget):
     def __init__(self, glyphs, parent=None):
         self.glyphs = glyphs
         super(SpaceTable, self).__init__(4, len(glyphs)+1, parent)
+        self.setAttribute(Qt.WA_KeyCompression)
+        self.setItemDelegate(GlyphCellItemDelegate(self))
         # XXX: dunno why but without updating col count
         # scrollbar reports incorrect height...
         # fillGlyphs() will change this value back

@@ -1,7 +1,7 @@
 import math
 from PyQt5.QtCore import QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
-from PyQt5.QtWidgets import (QActionGroup, QApplication, QFileDialog,
+from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QFileDialog,
         QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
         QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
 from PyQt5.QtOpenGL import QGL, QGLFormat, QGLWidget
@@ -11,6 +11,7 @@ from PyQt5.QtSvg import QGraphicsSvgItem
 class MainGfxWindow(QMainWindow):
     def __init__(self, font=None, glyph=None, parent=None):
         super(MainGfxWindow, self).__init__(parent)
+        self.setAttribute(Qt.WA_KeyCompression)
 
         self.view = GlyphView(font, glyph, self)
 
@@ -18,6 +19,27 @@ class MainGfxWindow(QMainWindow):
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
         self.menuBar().addMenu(fileMenu)
+        
+        toolsMenu = QMenu("&Tools", self)
+        
+        self.selectTool = QAction("&Selection", toolsMenu)
+        self.selectTool.setCheckable(True)
+        self.selectTool.toggled.connect(self.view.setSceneSelection)
+        toolsMenu.addAction(self.selectTool)
+
+        self.drawingTool = QAction("&Drawing", toolsMenu)#toolsMenu.addAction("&Drawing")
+        self.drawingTool.setCheckable(True)
+        self.drawingTool.toggled.connect(self.view.setSceneDrawing)
+        toolsMenu.addAction(self.drawingTool)
+        
+        self.toolsGroup = QActionGroup(self)#toolsMenu.addAction("&Selection")
+        self.toolsGroup.addAction(self.selectTool)
+        self.toolsGroup.addAction(self.drawingTool)
+        self.selectTool.setChecked(True)
+        
+        #self.toolsGroup.toggled.connect(self.view.setSceneSelection)
+
+        self.menuBar().addMenu(toolsMenu)
 
         viewMenu = QMenu("&View", self)
         self.backgroundAction = viewMenu.addAction("&Background")
@@ -102,7 +124,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
         super(OffCurvePointItem, self).paint(painter, newOption, widget)
-        if (option.state & QStyle.State_Selected):
+        if option.state & QStyle.State_Selected:
             pen = self.pen()
             pen.setColor(Qt.red)
             self.setPen(pen)
@@ -187,13 +209,31 @@ class OnCurvePointItem(QGraphicsPathItem):
             for prevContour in glyph[:cIndex]:
                 index += len(prevContour)+1 # +1 for the moveTo to next contour
             path.setElementPositionAt(index+self._pointIndex, self.pos().x(), self.pos().y())
-            if self._pointIndex == 0:
-                path.setElementPositionAt(index+len(self._contour), self.pos().x(), self.pos().y())
+            print("Open" if self._contour.open else "Closed")
+            print(self._pointIndex)
+            print(len(self._contour))
+            if self._pointIndex == 0 and len(self._contour) > 1:
+                path.setElementPositionAt(index+self._pointIndex+len(self._contour), self.pos().x(), self.pos().y())
                 # TODO: the angle ought to be recalculated
                 # maybe make it disappear on move and recalc when releasing
                 # what does rf do here?
                 #if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
-
+            '''
+            for i in range(path.elementCount()):
+                elem = path.elementAt(i)
+                if elem.isCurveTo(): kind = "curve"
+                elif elem.isLineTo(): kind = "line"
+                else: kind = "move"
+                print("{} {}: {} {}".format(i, kind, elem.x, elem.y))
+            print()
+            print(self._pointIndex)
+            '''
+            for cont in glyph:
+                print()
+                for pt in cont:
+                    print(pt)
+            print()
+            
             if len(self.childItems()) < 1: self.scene()._outlineItem.setPath(path); return QGraphicsItem.itemChange(self, change, value)
             elif len(self.childItems()) > 2:
                 prevPos = self.childItems()[0].pos()
@@ -207,16 +247,6 @@ class OnCurvePointItem(QGraphicsPathItem):
             else:
                 pos = self.childItems()[0].pos()
                 ptIndex = 0
-                '''
-                for i in range(path.elementCount()):
-                    elem = path.elementAt(i)
-                    if elem.isCurveTo(): kind = "curve"
-                    elif elem.isLineTo(): kind = "line"
-                    else: kind = "move"
-                    print("{} {}: {} {}".format(i, kind, elem.x, elem.y))
-                print()
-                print(self._pointIndex)
-                '''
                 if path.elementAt(index+(self._pointIndex-2) % len(self._contour)).isCurveTo():
                     ptIndex = self._pointIndex-1
                 else:
@@ -227,12 +257,22 @@ class OnCurvePointItem(QGraphicsPathItem):
             self.scene()._outlineItem.setPath(path)
         return QGraphicsItem.itemChange(self, change, value)
     
+    def mouseDoubleClickEvent(self, event):
+        # TODO: stream
+        x, y, width, height = -3, -3, 6, 6
+        self._isSmooth = not self._isSmooth
+        self._contour[self._pointIndex].smooth = self._isSmooth
+        path = QPainterPath()
+        if self._isSmooth: path.addEllipse(x, y, width, height)
+        else: path.addRect(x, y, width, height)
+        self.setPath(path)
+    
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
-        if (option.state & QStyle.State_Selected):
+        if option.state & QStyle.State_Selected:
             pen = self.pen()
             pen.setColor(Qt.red)
             self.setPen(pen)
@@ -240,16 +280,19 @@ class OnCurvePointItem(QGraphicsPathItem):
             self.setPen(self._pen)
 
 class GlyphScene(QGraphicsScene):
+    # TODO: implement key multiplex in a set()
+    # http://stackoverflow.com/a/10568233/2037879
     def keyPressEvent(self, event):
         key = event.key()
+        count = event.count()
         if key == Qt.Key_Left:
-            x,y = -1,0
+            x,y = -count,0
         elif key == Qt.Key_Up:
-            x,y = 0,1
+            x,y = 0,count
         elif key == Qt.Key_Right:
-            x,y = 1,0
+            x,y = count,0
         elif key == Qt.Key_Down:
-            x,y = 0,-1
+            x,y = 0,-count
         else:
             super(GlyphScene, self).keyPressEvent(event)
             return
@@ -259,9 +302,86 @@ class GlyphScene(QGraphicsScene):
         for item in self.selectedItems():
             # TODO: isinstance might be slow to use here, we might want to make a selectedMoveBy
             # function in items that calls moveBy for onCurve, noops for offCurve
-            if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): continue
+            if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): print("yea"); continue
             item.moveBy(x,y)
         event.accept()
+    
+    def mousePressEvent(self, event):
+        # TODO: store this in scene
+        if not self.views()[0]._drawingTool: super(GlyphScene, self).mousePressEvent(event); return
+        # TODO: stream
+        half, width, height = 3, 6, 6
+        touched = self.itemAt(event.scenePos(), self.views()[0].transform())
+        sel = self.selectedItems()
+        x, y = event.scenePos().x(), event.scenePos().y()
+        # XXX: not sure why isinstance does not work here
+        # contour.open is there in case we tackle extension from first point.
+        # what does rf do here?
+        if len(sel) == 1 and (type(sel[0]) is OnCurvePointItem) and sel[0]._contour.open \
+              and (sel[0]._pointIndex == len(sel[0]._contour)-1):# or sel[0]._pointIndex == 0):
+            from fontTools.pens.qtPen import QtPen
+            close = False
+            path = self._outlineItem.path()
+            pointIndex = len(sel[0]._contour)
+            '''
+            if touched: print(isinstance(touched, OnCurvePointItem))
+            if (touched and isinstance(touched, OnCurvePointItem)):
+                print(sel[0]._contour[0])
+                print(type(sel[0]._contour[0]))
+                print(touched)
+                print(type(touched))
+                print(sel[0]._contour[0] == touched)
+            '''
+            if (touched and isinstance(touched, OnCurvePointItem)) and touched._pointIndex == 0 \
+                  and touched._contour.open and sel[0]._contour == touched._contour:
+                close = True
+                x, y = touched.pos().x(), touched.pos().y()
+                #path.lineTo()#path.closeSubpath()
+            elif touched and isinstance(touched, OnCurvePointItem):
+                super(GlyphScene, self).mousePressEvent(event)
+                return
+            else:
+                #sel[0]._contour.addPoint((x,y), "line")
+                item = OnCurvePointItem(-half, -half, width, height, x, y, False, 
+                            sel[0]._contour, pointIndex, QPen(Qt.black, 1.5), QBrush(Qt.white))#QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+                self.addItem(item)
+            #pen = QtPen(None, path)
+            #pen.lineTo((x,y))
+            path.lineTo(x, y)
+            if close: path.closeSubpath()
+            self._outlineItem.setPath(path)
+            if not close:
+                print("ADDLINE")
+                sel[0]._contour.addPoint((x,y), "line")
+                event.accept()
+        elif not (touched and isinstance(touched, OnCurvePointItem)):
+            '''
+            from fontTools.pens.qtPen import QtPen
+            from defcon.objects.contour import Contour
+            pen = self.views()[0]._glyph.getPen()
+            # XXX: scrap tuples
+            print("old contour len", len(self.views()[0]._glyph))
+            self.views()[0]._glyph.appendContour(Contour())
+            pen.lineTo((x, y))
+            print("new contour len", len(self.views()[0]._glyph))
+            '''
+            
+            path = self._outlineItem.path()
+            #pen = QtPen(None, path)
+            path.moveTo(x, y)
+            self._outlineItem.setPath(path)
+
+            from defcon.objects.contour import Contour
+            nextC = Contour()
+            self.views()[0]._glyph.appendContour(nextC)
+            print("ADDMOVE")
+            nextC.addPoint((x,y), "move")
+
+            item = OnCurvePointItem(-half, -half, width, height, x, y, False, 
+                        self.views()[0]._glyph[-1], 0, QPen(Qt.black, 1.5), QBrush(Qt.white))#QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+            self.addItem(item)
+            event.accept()
+        super(GlyphScene, self).mousePressEvent(event)
 
 class GlyphView(QGraphicsView):
     Native, OpenGL, Image = range(3)
@@ -275,6 +395,8 @@ class GlyphView(QGraphicsView):
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
         self._impliedPointSize = 1000
         self._pointSize = None
+        
+        self._drawingTool = False
         
         self._inverseScale = 0.1
         self._scale = 10
@@ -536,6 +658,16 @@ class GlyphView(QGraphicsView):
             else:
                 self.setDragMode(QGraphicsView.RubberBandDrag)
         super(GlyphView, self).mousePressEvent(event)
+    
+    def setSceneDrawing(self):
+        #self.parent().drawingTool.setChecked(True)
+        #self.parent().selectTool.setChecked(False)
+        self._drawingTool = True
+    
+    def setSceneSelection(self):
+        #self.parent().drawingTool.setChecked(False)
+        #self.parent().selectTool.setChecked(True)
+        self._drawingTool = False
     
     # Lock/release handdrag does not seem to work…
     '''

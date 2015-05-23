@@ -34,15 +34,14 @@ class MainEditWindow(QMainWindow):
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
 class LineNumberArea(QWidget):
-    def __init__(self,editor):
-        self.codeEditor = editor
+    def __init__(self, editor):
         super(LineNumberArea, self).__init__(editor)
 
     def sizeHint(self):
-        return QSize(self.codeEditor.lineNumberAreaWidth(), 0)
+        return QSize(self.parent().lineNumberAreaWidth(), 0)
 
     def paintEvent(self, event):
-        self.codeEditor.lineNumberAreaPaintEvent(event)
+        self.parent().lineNumberAreaPaintEvent(event)
         
 class TextEditor(QPlainTextEdit):
     def __init__(self, text=None, parent=None):
