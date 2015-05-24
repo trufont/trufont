@@ -328,7 +328,7 @@ class MainWindow(QMainWindow):
         self.characterWidget.update()
 
     def _glyphOpened(self, name):
-        from svgViewer import MainGfxWindow
+        from glyphView import MainGfxWindow
         glyphViewWindow = MainGfxWindow(self.font, self.font[name], self)
         glyphViewWindow.setAttribute(Qt.WA_DeleteOnClose)
         glyphViewWindow.show()
