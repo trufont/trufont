@@ -217,17 +217,6 @@ class GlyphsCanvas(QWidget):
             painter.restore()
             painter.translate(glyph.width*self.scale, 0)
 
-    '''
-        painter.setPen(
-                QPen(self.penColor, self.penWidth, Qt.SolidLine, Qt.RoundCap,
-                        Qt.RoundJoin))
-        gradient = QLinearGradient(0, 0, 0, 100)
-        gradient.setColorAt(0.0, self.fillColor1)
-        gradient.setColorAt(1.0, self.fillColor2)
-        painter.setBrush(QBrush(gradient))
-        painter.drawPath(self.path)
-    '''
-
 class GlyphCellItemDelegate(QStyledItemDelegate):
     def eventFilter(self, editor, event):
         if event.type() == QEvent.KeyPress:

@@ -14,9 +14,9 @@ class MainEditWindow(QMainWindow):
         self.resize(600,500)
 
         self.setCentralWidget(self.editor)
-        self.setWindowTitle("Font features")
+        self.setWindowTitle("Font features", self.font)
     
-    def setWindowTitle(self, title, font=self.font):
+    def setWindowTitle(self, title, font):
         if font is not None: puts = "%s%s%s%s%s" % (title, " – ", self.font.info.familyName, " ", self.font.info.styleName)
         else: puts = title
         super(MainEditWindow, self).setWindowTitle(puts)
