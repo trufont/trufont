@@ -81,7 +81,7 @@ class MainGfxWindow(QMainWindow):
         rendererGroup.triggered.connect(self.setRenderer)
 
         self.setCentralWidget(self.view)
-        self.setWindowTitle("Glyph view")
+        self.setWindowTitle(glyph.name, font)
     
     def close(self):
         self.view._glyph.removeObserver(self, "Glyph.Changed")
@@ -98,6 +98,11 @@ class MainGfxWindow(QMainWindow):
                 self.view.setRenderer(GlyphView.OpenGL)
         elif action == self.imageAction:
             self.view.setRenderer(GlyphView.Image)
+
+    def setWindowTitle(self, title, font=None):
+        if font is not None: puts = "%s%s%s%s%s" % (title, " – ", font.info.familyName, " ", font.info.styleName)
+        else: puts = title
+        super(MainGfxWindow, self).setWindowTitle(puts)
 
 class OffCurvePointItem(QGraphicsEllipseItem):
     def __init__(self, x, y, width, height, pointX, pointY, pen=None, brush=None, parent=None):
@@ -168,7 +173,8 @@ class OnCurvePointItem(QGraphicsPathItem):
         index = 0
         cIndex = glyph.contourIndex(self._contour)
         for prevContour in glyph[:cIndex]:
-            index += len(prevContour)+1 # +1 for the moveTo to next contour
+            index += len(prevContour) # +1 for the moveTo to next contour
+            if not prevContour.open: index += 1
         if len(children) > 2:
             elemIndex = self._pointIndex+selected-1
         else:
@@ -207,11 +213,9 @@ class OnCurvePointItem(QGraphicsPathItem):
             index = 0
             cIndex = glyph.contourIndex(self._contour)
             for prevContour in glyph[:cIndex]:
-                index += len(prevContour)+1 # +1 for the moveTo to next contour
+                index += len(prevContour) # +1 for the moveTo to next contour
+                if not prevContour.open: index += 1
             path.setElementPositionAt(index+self._pointIndex, self.pos().x(), self.pos().y())
-            print("Open" if self._contour.open else "Closed")
-            print(self._pointIndex)
-            print(len(self._contour))
             if self._pointIndex == 0 and len(self._contour) > 1:
                 path.setElementPositionAt(index+self._pointIndex+len(self._contour), self.pos().x(), self.pos().y())
                 # TODO: the angle ought to be recalculated
@@ -228,11 +232,6 @@ class OnCurvePointItem(QGraphicsPathItem):
             print()
             print(self._pointIndex)
             '''
-            for cont in glyph:
-                print()
-                for pt in cont:
-                    print(pt)
-            print()
             
             if len(self.childItems()) < 1: self.scene()._outlineItem.setPath(path); return QGraphicsItem.itemChange(self, change, value)
             elif len(self.childItems()) > 2:
@@ -318,63 +317,38 @@ class GlyphScene(QGraphicsScene):
         # contour.open is there in case we tackle extension from first point.
         # what does rf do here?
         if len(sel) == 1 and (type(sel[0]) is OnCurvePointItem) and sel[0]._contour.open \
-              and (sel[0]._pointIndex == len(sel[0]._contour)-1):# or sel[0]._pointIndex == 0):
-            from fontTools.pens.qtPen import QtPen
+              and (sel[0]._pointIndex == len(sel[0]._contour)-1):
             close = False
             path = self._outlineItem.path()
             pointIndex = len(sel[0]._contour)
-            '''
-            if touched: print(isinstance(touched, OnCurvePointItem))
-            if (touched and isinstance(touched, OnCurvePointItem)):
-                print(sel[0]._contour[0])
-                print(type(sel[0]._contour[0]))
-                print(touched)
-                print(type(touched))
-                print(sel[0]._contour[0] == touched)
-            '''
             if (touched and isinstance(touched, OnCurvePointItem)) and touched._pointIndex == 0 \
-                  and touched._contour.open and sel[0]._contour == touched._contour:
+                  and sel[0]._contour == touched._contour:
                 close = True
                 x, y = touched.pos().x(), touched.pos().y()
-                #path.lineTo()#path.closeSubpath()
             elif touched and isinstance(touched, OnCurvePointItem):
                 super(GlyphScene, self).mousePressEvent(event)
                 return
             else:
-                #sel[0]._contour.addPoint((x,y), "line")
                 item = OnCurvePointItem(-half, -half, width, height, x, y, False, 
                             sel[0]._contour, pointIndex, QPen(Qt.black, 1.5), QBrush(Qt.white))#QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
                 self.addItem(item)
-            #pen = QtPen(None, path)
-            #pen.lineTo((x,y))
             path.lineTo(x, y)
             if close: path.closeSubpath()
             self._outlineItem.setPath(path)
             if not close:
-                print("ADDLINE")
                 sel[0]._contour.addPoint((x,y), "line")
                 event.accept()
+            else:
+                # Changing the first point from move to line/curve will cycle and so close the contour
+                sel[0]._contour[0].segmentType = "line"
         elif not (touched and isinstance(touched, OnCurvePointItem)):
-            '''
-            from fontTools.pens.qtPen import QtPen
-            from defcon.objects.contour import Contour
-            pen = self.views()[0]._glyph.getPen()
-            # XXX: scrap tuples
-            print("old contour len", len(self.views()[0]._glyph))
-            self.views()[0]._glyph.appendContour(Contour())
-            pen.lineTo((x, y))
-            print("new contour len", len(self.views()[0]._glyph))
-            '''
-            
             path = self._outlineItem.path()
-            #pen = QtPen(None, path)
             path.moveTo(x, y)
             self._outlineItem.setPath(path)
 
             from defcon.objects.contour import Contour
             nextC = Contour()
             self.views()[0]._glyph.appendContour(nextC)
-            print("ADDMOVE")
             nextC.addPoint((x,y), "move")
 
             item = OnCurvePointItem(-half, -half, width, height, x, y, False, 

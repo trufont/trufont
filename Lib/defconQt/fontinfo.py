@@ -29,7 +29,7 @@ class TabDialog(QDialog):
         mainLayout.addWidget(buttonBox)
         self.setLayout(mainLayout)
 
-        self.setWindowTitle("Font Info")
+        self.setWindowTitle("%s%s%s%s" % ("Font Info – ", self.font.info.familyName, " ", self.font.info.styleName))
 
     def accept(self):
         self.tabWidget.widget(self.tabs["General"]).writeValues(self.font)

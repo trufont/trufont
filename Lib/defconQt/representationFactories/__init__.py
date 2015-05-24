@@ -3,10 +3,12 @@ from defcon.objects.glyph import addRepresentationFactory
 #from defconQt.representationFactories.qPainterPathFactory import QPainterPathFactory
 #
 from fontTools.pens.qtPen import QtPen
+from PyQt5.QtCore import Qt
 
 def QPainterPathFactory(glyph, font):
     pen = QtPen(font)
     glyph.draw(pen)
+    pen.path.setFillRule(Qt.WindingFill)
     return pen.path
 
 #from defconQt.representationFactories.glyphCellFactory import GlyphCellFactory
@@ -19,6 +21,7 @@ import math
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
+from PyQt5.QtCore import Qt
 from robofab.pens.pointPen import AbstractPointPen
 
 
@@ -29,6 +32,7 @@ from robofab.pens.pointPen import AbstractPointPen
 def NoComponentsQPainterPathFactory(glyph, font):
     pen = NoComponentsQtPen(font)
     glyph.draw(pen)
+    pen.path.setFillRule(Qt.WindingFill)
     return pen.path
 
 class NoComponentsQtPen(QtPen):
@@ -43,6 +47,7 @@ class NoComponentsQtPen(QtPen):
 def OnlyComponentsQPainterPathFactory(glyph, font):
     pen = OnlyComponentsQtPen(font)
     glyph.draw(pen)
+    pen.path.setFillRule(Qt.WindingFill)
     return pen.path
 
 class OnlyComponentsQtPen(BasePen):
