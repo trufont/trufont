@@ -54,11 +54,15 @@ class MainSpaceWindow(QWidget):
         self.table.blockSignals(False)
     
     def _textChanged(self, newText):
-        self.setGlyphs(newText)
+        # unsubscribe from the old glyphs
+        self._unsubscribeFromGlyphs()
+        # subscribe to the new glyphs
+        self._subscribeToGlyphsText(newText)
+        # set the records into the view
         self.canvas._glyphsChanged(self.glyphs)
-        self.table.blockSignals(True)
+        #self.table.blockSignals(True) # XXX: needed?
         self.table._glyphsChanged(self.glyphs)
-        self.table.blockSignals(False)
+        #self.table.blockSignals(False)
     
     # Tal Leming. Edited.
     def textToGlyphNames(self, text):
@@ -104,6 +108,9 @@ class MainSpaceWindow(QWidget):
         for gName in glyphNames:
             if gName not in self.font: continue
             glyphs.append(self.font[gName])
+        self._subscribeToGlyphs(glyphs)
+    
+    def _subscribeToGlyphs(self, glyphs):
         self.glyphs = glyphs
 
         handledGlyphs = set()
@@ -122,11 +129,17 @@ class MainSpaceWindow(QWidget):
             glyph.removeObserver(self, "Glyph.Changed")
         #self.glyphs = None
 
-    def setGlyphs(self, string):
+    def setGlyphs(self, glyphs):
         # unsubscribe from the old glyphs
         self._unsubscribeFromGlyphs()
         # subscribe to the new glyphs
-        self._subscribeToGlyphsText(string)
+        self._subscribeToGlyphs(glyphs)
+        glyphNames = []
+        for glyph in glyphs:
+            glyphNames.append(chr(glyph.unicode) if glyph.unicode else "".join(("/", glyph.name, " ")))
+        self.toolbar.textField.blockSignals(True) # XXX: needed?
+        self.toolbar.textField.setText("".join(glyphNames))
+        self.toolbar.textField.blockSignals(False)
         # set the records into the view
         self.canvas._glyphsChanged(self.glyphs)
         self.table._glyphsChanged(self.glyphs)
@@ -150,6 +163,8 @@ class GlyphsCanvas(QWidget):
     def __init__(self, font, glyphs, pointSize=defaultPointSize, parent=None):
         super(GlyphsCanvas, self).__init__(parent)
 
+        self.ascender = font.info.ascender
+        if self.ascender is None: self.ascender = 750
         self.descender = font.info.descender
         if self.descender is None: self.descender = 250
         self.upm = font.info.unitsPerEm
@@ -160,7 +175,7 @@ class GlyphsCanvas(QWidget):
         self.padding = 10
 
     def calculateScale(self):
-        scale = self.ptSize / float(self.upm)
+        scale = self.ptSize / self.upm
         if scale < .01: scale = 0.01
         self.scale = scale
     
@@ -200,7 +215,7 @@ class GlyphsCanvas(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(0, 0, self.width(), self.height(), Qt.white)
         # TODO: should padding be added for the right boundary as well? I'd say no but not sure
-        painter.translate(self.padding, self.padding+self.ptSize+self.descender*self.scale)
+        painter.translate(self.padding, self.padding+self.ascender*self.scale)
 
         cur_width = 0
         for glyph in self.glyphs:
@@ -293,18 +308,6 @@ class SpaceTable(QTableWidget):
         elif row == 3:
             glyph.rightMargin = item
         # defcon callbacks do the update
-    
-    '''
-    # This won't help...
-    def keyPressEvent(self, event):
-        # We don't want to stop edition on enter, so
-        # update the canvas and don't propagate the event
-        if event.key() == Qt.Key_Enter:
-            self._cellEdited()
-            event.accept()
-            return
-        super(SpaceTable, self).keyPressEvent(event)
-    '''
 
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879

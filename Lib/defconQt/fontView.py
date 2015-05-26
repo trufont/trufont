@@ -39,9 +39,11 @@ class CharacterWidget(QWidget):
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.squareSize = squareSize
         self.columns = 10
+        self._selection = set()
         self.lastKey = -1
         self.moveKey = -1
-        #self.setMouseTracking(True)
+        
+        self.setFocusPolicy(Qt.ClickFocus)
 
     def updateFont(self, font):
         self.font = font
@@ -66,14 +68,47 @@ class CharacterWidget(QWidget):
     def sizeHint(self):
         return QSize(self.columns * self.squareSize,
                 math.ceil(len(self.glyphs) / self.columns) * self.squareSize)
+    
+    # TODO: eventually get rid of the signal
+    def computeCharacterSelected(self):
+        lKey, mKey = self.lastKey, self.moveKey
+        mKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
+        lKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
+        if lKey == -1:
+            elements = set()
+        elif lKey > mKey:
+            elements = set(range(mKey, lKey+1))
+        else:
+            elements = set(range(lKey, mKey+1))
+        elements ^= self._selection
+        if len(elements)>1: self.characterSelected.emit(len(elements), "")
+        elif len(elements)>0: self.characterSelected.emit(1, self.glyphs[elements.pop()].name)
+        else: self.characterSelected.emit(0, "")
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_A and event.modifiers() & Qt.ControlModifier:
+            self._selection = set(range(len(self.glyphs)))
+            self.computeCharacterSelected()
+            self.update()
+            event.accept()
+        else:
+            super(CharacterWidget, self).keyPressEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.lastKey = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            self.moveKey = -1
-            if self.lastKey > len(self.glyphs)-1: return
-
-            self.characterSelected.emit(1, self.glyphs[self.lastKey].name)
+            key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
+            if key > len(self.glyphs)-1: return
+            modifiers = event.modifiers()
+            if modifiers & Qt.ShiftModifier and len(self._selection)==1:
+                self.lastKey = self._selection.pop()
+                self.moveKey = key
+            else:
+                self.lastKey = key
+                self.moveKey = self.lastKey
+            if not modifiers & Qt.ControlModifier:
+                self._selection = set()
+            
+            self.computeCharacterSelected()
             event.accept()
             self.update()
         else:
@@ -81,36 +116,41 @@ class CharacterWidget(QWidget):
     
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
-            moveKey = (event.y() // self.squareSize) * self.columns + min(event.x() // self.squareSize, self.columns-1)
+            key = (event.y() // self.squareSize) * self.columns + min(event.x() // self.squareSize, self.columns-1)
+            if key > len(self.glyphs)-1: return
+            self.moveKey = key
+            
+            self.computeCharacterSelected()
             event.accept()
-            if (moveKey == self.lastKey and self.moveKey != -1):
-                self.moveKey = -1
-                self.characterSelected.emit(1, self.glyphs[self.lastKey].name)
-            elif moveKey > len(self.glyphs)-1 \
-                or not (moveKey != self.lastKey and moveKey != self.moveKey): return
-            else:
-                self.moveKey = moveKey
-                self.characterSelected.emit(abs(self.moveKey - self.lastKey)+1, "")
             self.update()
-        # elif event.modifiers() & Qt.ControlModifier:
-            # widgetPosition = self.mapFromGlobal(event.globalPos())
-            # key = (widgetPosition.y() // self.squareSize) * self.columns + widgetPosition.x() // self.squareSize
-            # uni = self.glyphs[key].unicode
-            # char = chr(self.glyphs[key].unicode) if uni is not None else chr(0xFFFD)
-
-            # # http://stackoverflow.com/questions/6598554/is-there-any-way-to-insert-qpixmap-object-in-html
-            # text = '<p align="center" style="font-size: 36pt; font-family: %s">%s</p>' % (QFont().family(), char)
-            # if uni is not None:
-                # more = ['<p>U+%04x<p>' % self.glyphs[key].unicode, '<p>%s<p>' % unicodedata.name(chr(self.glyphs[key].unicode))]
-                # text = text.join(more)
-            # QToolTip.showText(event.globalPos(), text, self)
         else:
             super(CharacterWidget, self).mouseMoveEvent(event)
+    
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            lastKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
+            moveKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
+            if event.modifiers() & Qt.ControlModifier:
+                if moveKey > lastKey:
+                    self._selection ^= set(range(lastKey, moveKey+1))
+                else:
+                    self._selection ^= set(range(moveKey, lastKey+1))
+            else:
+                if moveKey > lastKey:
+                    self._selection = set(range(lastKey, moveKey+1))
+                else:
+                    self._selection = set(range(moveKey, lastKey+1))
+            self.lastKey = -1
+            self.moveKey = -1
+            event.accept()
+            self.update()
+        else:
+            super(CharacterWidget, self).mouseReleaseEvent(event)
    
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            key = (event.y() // self.squareSize) * self.columns + min(event.x() // self.squareSize, self.columns-1)
-            if key != self.lastKey: return
+            key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
+            if key > len(self.glyphs)-1: event.ignore(); return
             event.accept()
             self.glyphOpened.emit(self.glyphs[key].name)
         else:
@@ -131,12 +171,16 @@ class CharacterWidget(QWidget):
         painter.drawLine(0, 0, redrawRect.right(), 0)
 
         # selection code
-        firstKey = min(self.lastKey, self.moveKey)
-        lastKey = max(self.lastKey, self.moveKey)
-        minKeyInViewport = beginRow * self.columns + beginColumn
-        select = False
-        if firstKey != -1 and firstKey < minKeyInViewport and lastKey > minKeyInViewport:
-            select = True
+        if self.moveKey != -1:
+            if self.moveKey > self.lastKey:
+                curSelection = set(range(self.lastKey, self.moveKey+1))
+            else:
+                curSelection = set(range(self.moveKey, self.lastKey+1))
+        elif self.lastKey != -1: # XXX: necessary?
+            curSelection = {self.lastKey}
+        else:
+            curSelection = set()
+        curSelection ^= self._selection
             
         gradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
         gradient.setColorAt(0.0, cellHeaderBaseColor)
@@ -180,16 +224,12 @@ class CharacterWidget(QWidget):
                 painter.drawLine(rightEdgeX, row * self.squareSize + 1, rightEdgeX, bottomEdgeY)
                 painter.drawLine(rightEdgeX, bottomEdgeY, column * self.squareSize + 1, bottomEdgeY)
 
-                painter.setRenderHint(QPainter.Antialiasing, False)
                 # selection code
-                if key == firstKey:
-                    select = not select
-                if select or (key == self.lastKey and self.moveKey == -1):
+                painter.setRenderHint(QPainter.Antialiasing, False)
+                if key in curSelection:
                     painter.fillRect(column * self.squareSize + 1,
                             row * self.squareSize + 1, self.squareSize - 3,
                             self.squareSize - 3, cellSelectionColor)
-                    if key == lastKey and self.moveKey != -1:
-                        select = not select
                 painter.setRenderHint(QPainter.Antialiasing)
 
                 glyph = self.glyphs[key].getRepresentation("defconQt.QPainterPath")
@@ -321,7 +361,7 @@ class MainWindow(QMainWindow):
                 event.accept()
             elif ret == QMessageBox.No:
                 event.accept()
-            elif ret == QMessageBox.Cancel:
+            else: #if ret == QMessageBox.Cancel:
                 event.ignore()
     
     def _fontChanged(self, event):
@@ -334,7 +374,8 @@ class MainWindow(QMainWindow):
         glyphViewWindow.show()
     
     def _selectionChanged(self, count, glyph):
-        self.selectionLabel.setText("%s%s%s%d %s" % (glyph, " " if count <= 1 else "", "(", count, "selected)"))
+        if count == 0: self.selectionLabel.setText("")
+        else: self.selectionLabel.setText("%s%s%s%d %s" % (glyph, " " if count <= 1 else "", "(", count, "selected)"))
 
     def _squareSizeChanged(self):
         val = self.sqSizeSlider.value()
@@ -377,10 +418,15 @@ class MainWindow(QMainWindow):
         # TODO: show selection in a space center, rewind selection if we raise window (rf)
         from spaceCenter import MainSpaceWindow
         if not (hasattr(self, 'spaceCenterWindow') and self.spaceCenterWindow.isVisible()):
-            self.spaceCenterWindow = MainSpaceWindow(self.font, "Hiyazee otaHawa.", parent=self)
+            self.spaceCenterWindow = MainSpaceWindow(self.font, parent=self)
             self.spaceCenterWindow.show()
         else:
             self.spaceCenterWindow.raise_()
+        if self.characterWidget._selection:
+            glyphs = []
+            for item in sorted(self.characterWidget._selection):
+                glyphs.append(self.characterWidget.glyphs[item])
+            self.spaceCenterWindow.setGlyphs(glyphs)
     
     def addGlyph(self):
         gName, ok = QInputDialog.getText(self, "Add glyph", "Name of the glyph:")
