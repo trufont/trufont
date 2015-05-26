@@ -44,7 +44,7 @@ class MainSpaceWindow(QWidget):
         self._unsubscribeFromGlyphs()
         super(MainSpaceWindow, self).close()
     
-    def _fontInfoChanged(self):
+    def _fontInfoChanged(self, event):
         self.canvas.update()
     
     def _glyphChanged(self, event):

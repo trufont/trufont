@@ -313,7 +313,7 @@ class MainWindow(QMainWindow):
     def newFile(self):
         # TODO: ask for save before leaving
         self.font = Font()
-        self.font.info.upm = 1000
+        self.font.info.unitsPerEm = 1000
         self.font.info.ascender = 750
         self.font.info.descender = -250
         self.font.info.capHeight = 750

@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QDate, QDateTime, QTime, Qt
 from PyQt5.QtGui import QDoubleValidator, QIntValidator
-from PyQt5.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QScrollArea, QTabWidget, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 class TabDialog(QDialog):
 
@@ -9,7 +9,8 @@ class TabDialog(QDialog):
 
         # TODO: figure a proper correspondence to set and fetch widgets...
         self.tabs = {
-            "General": 0
+            "General": 0,
+            "Metrics": 1
         }
 
         self.font = font
@@ -33,6 +34,7 @@ class TabDialog(QDialog):
 
     def accept(self):
         self.tabWidget.widget(self.tabs["General"]).writeValues(self.font)
+        self.tabWidget.widget(self.tabs["Metrics"]).writeValues(self.font)
         super(TabDialog, self).accept()
 
 class GeneralTab(QWidget):
@@ -83,24 +85,41 @@ class GeneralTab(QWidget):
         # TODO: give visual feedback of input data validity using QLineEdit lose focus event
         # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/
         versionLabel = QLabel("Version:", self)
-        self.versionMajorEdit = QLineEdit(str(font.info.versionMajor or ''), self)
+        versionMajor = str(font.info.versionMajor) if font.info.versionMajor is not None else ''
+        self.versionMajorEdit = QLineEdit(versionMajor, self)
         self.versionMajorEdit.setAlignment(Qt.AlignRight)
         self.versionMajorEdit.setValidator(QIntValidator(self))
         versionDotLabel = QLabel(".", self)
-        self.versionMinorEdit = QLineEdit(str(font.info.versionMinor or ''), self)#.zfill(3))
+        versionMinor = str(font.info.versionMinor) if font.info.versionMinor is not None else ''
+        self.versionMinorEdit = QLineEdit(versionMinor, self)
         self.versionMinorEdit.setValidator(QIntValidator(self))
         
         mainLayout.addWidget(versionLabel, 6, 0)
         mainLayout.addWidget(self.versionMajorEdit, 6, 1)
         mainLayout.addWidget(versionDotLabel, 6, 2)
         mainLayout.addWidget(self.versionMinorEdit, 6, 3)
+
+        dateCreatedLabel = QLabel("Date created:", self)
+        dateTime = QDateTime()
+        #dateTime.fromString(font.info.openTypeHeadCreated, "yyyy/MM/dd hh:mm:ss") # XXX: why does this not work?
+        dateCreated = font.info.openTypeHeadCreated
+        if dateCreated:
+            parse = dateCreated.split(" ")
+            if len(parse) == 2:
+                date = parse[0].split("/")
+                date = QDate(*(int(val) for val in date))
+                dateTime.setDate(date)
+                time = parse[1].split(":")
+                time = QTime(*(int(val) for val in time))
+                dateTime.setTime(time)
+        if not dateCreated:
+            cur = QDateTime.currentDateTime()
+            dateTime.setDate(cur.date())
+            dateTime.setTime(cur.time())
+        self.dateCreatedEdit = QDateTimeEdit(dateTime, self)
         
-        unitsPerEmLabel = QLabel("Units per em:", self)
-        self.unitsPerEmEdit = QLineEdit(str(font.info.unitsPerEm or ''), self)
-        self.unitsPerEmEdit.setValidator(QIntValidator(self))
-        
-        mainLayout.addWidget(unitsPerEmLabel, 6, 4)
-        mainLayout.addWidget(self.unitsPerEmEdit, 6, 5)
+        mainLayout.addWidget(dateCreatedLabel, 6, 4)
+        mainLayout.addWidget(self.dateCreatedEdit, 6, 5)
         
         licenseLabel = QLabel("License:", self)
         self.licenseEdit = QLineEdit(font.info.openTypeNameLicense, self)
@@ -130,9 +149,11 @@ class GeneralTab(QWidget):
         font.info.openTypeNameManufacturer = self.manufacturerEdit.text()
         font.info.openTypeNameManufacturerURL = self.manufacturerURLEdit.text()
         font.info.copyright = self.copyrightEdit.text()
-        font.info.versionMajor = int(self.versionMajorEdit.text())
-        font.info.versionMinor = int(self.versionMinorEdit.text())
-        font.info.unitsPerEm = int(self.unitsPerEmEdit.text())
+        versionMajor = self.versionMajorEdit.text()
+        font.info.versionMajor = int(versionMajor) if versionMajor else None
+        versionMinor = self.versionMinorEdit.text()
+        font.info.versionMinor = int(versionMinor) if versionMinor else None
+        font.info.openTypeHeadCreated = self.dateCreatedEdit.dateTime().toString("yyyy/MM/dd hh:mm:ss")
         font.info.openTypeNameLicense = self.licenseEdit.text()
         font.info.openTypeNameLicenseURL = self.licenseURLEdit.text()
         font.info.trademark = self.trademarkEdit.text()
@@ -173,36 +194,48 @@ class NextTab(QWidget):
         mainLayout.addWidget(self.styleMapStyleDrop, 0, 5)
 
         ascenderLabel = QLabel("Ascender:", self)
-        self.ascenderEdit = QLineEdit(str(font.info.ascender or ''), self)
+        ascender = str(font.info.ascender) if font.info.ascender is not None else ''
+        self.ascenderEdit = QLineEdit(ascender, self)
         self.ascenderEdit.setValidator(QIntValidator(self))
 
         descenderLabel = QLabel("Descender:", self)
-        self.descenderEdit = QLineEdit(str(font.info.descender or ''), self)
+        descender = str(font.info.descender) if font.info.descender is not None else ''
+        self.descenderEdit = QLineEdit(descender, self)
         self.descenderEdit.setValidator(QIntValidator(self))
-
-        italicAngleLabel = QLabel("Italic angle:", self)
-        self.italicAngleEdit = QLineEdit(str(font.info.italicAngle or ''), self)
-        self.italicAngleEdit.setValidator(QDoubleValidator(self))
+        
+        unitsPerEmLabel = QLabel("Units per em:", self)
+        unitsPerEm = str(font.info.unitsPerEm) if font.info.unitsPerEm is not None else ''
+        self.unitsPerEmEdit = QLineEdit(unitsPerEm, self)
+        self.unitsPerEmEdit.setValidator(QIntValidator(self))
         
         mainLayout.addWidget(ascenderLabel, 1, 0)
         mainLayout.addWidget(self.ascenderEdit, 1, 1)
         mainLayout.addWidget(descenderLabel, 1, 2)
         mainLayout.addWidget(self.descenderEdit, 1, 3)
-        mainLayout.addWidget(italicAngleLabel, 1, 4)
-        mainLayout.addWidget(self.italicAngleEdit, 1, 5)
+        mainLayout.addWidget(unitsPerEmLabel, 1, 4)
+        mainLayout.addWidget(self.unitsPerEmEdit, 1, 5)
 
         xHeightLabel = QLabel("x-height:", self)
-        self.xHeightEdit = QLineEdit(str(font.info.xHeight or ''), self)
+        xHeight = str(font.info.xHeight) if font.info.xHeight is not None else ''
+        self.xHeightEdit = QLineEdit(xHeight, self)
         self.xHeightEdit.setValidator(QIntValidator(self))
 
         capHeightLabel = QLabel("Cap height:", self)
-        self.capHeightEdit = QLineEdit(str(font.info.capHeight or ''), self)
+        capHeight = str(font.info.capHeight) if font.info.capHeight is not None else ''
+        self.capHeightEdit = QLineEdit(capHeight, self)
         self.capHeightEdit.setValidator(QIntValidator(self))
+
+        italicAngleLabel = QLabel("Italic angle:", self)
+        italicAngle = str(font.info.italicAngle) if font.info.italicAngle is not None else ''
+        self.italicAngleEdit = QLineEdit(italicAngle, self)
+        self.italicAngleEdit.setValidator(QDoubleValidator(self))
         
         mainLayout.addWidget(xHeightLabel, 2, 0)
         mainLayout.addWidget(self.xHeightEdit, 2, 1)
         mainLayout.addWidget(capHeightLabel, 2, 2)
         mainLayout.addWidget(self.capHeightEdit, 2, 3)
+        mainLayout.addWidget(italicAngleLabel, 2, 4)
+        mainLayout.addWidget(self.italicAngleEdit, 2, 5)
         
         self.setLayout(mainLayout)
         
@@ -214,3 +247,15 @@ class NextTab(QWidget):
         elif sn == 3: font.info.styleMapStyleName = "bold"
         elif sn == 4: font.info.styleMapStyleName = "bold italic"
         else: font.info.styleMapStyleName = None
+        ascender = self.ascenderEdit.text()
+        font.info.ascender = int(ascender) if ascender else None
+        descender = self.descenderEdit.text()
+        font.info.descender = int(descender) if descender else None
+        unitsPerEm = self.unitsPerEmEdit.text()
+        font.info.unitsPerEm = int(unitsPerEm) if unitsPerEm else None
+        xHeight = self.xHeightEdit.text()
+        font.info.xHeight = int(xHeight) if xHeight else None
+        capHeight = self.capHeightEdit.text()
+        font.info.capHeight = int(capHeight) if capHeight else None
+        italicAngle = self.italicAngleEdit.text()
+        font.info.italicAngle = float(italicAngle) if italicAngle else None

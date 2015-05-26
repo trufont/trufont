@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QFile, QRegExp, Qt
-from PyQt5.QtGui import QColor, QFont, QKeySequence, QPainter, QSyntaxHighlighter, QTextCharFormat
+from PyQt5.QtGui import QColor, QFont, QKeySequence, QPainter, QSyntaxHighlighter, QTextCharFormat, QTextCursor
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
         QMessageBox, QPlainTextEdit, QWidget)
 
@@ -51,14 +51,14 @@ class TextEditor(QPlainTextEdit):
         font.setPointSize(10)
         font.setFixedPitch(True)
 
-        self.setPlainText(text)
-        self.setFont(font)
-
+        self._indent = "    "
         self.highlighter = Highlighter(self.document())
-        # TODO: get rid of jitter on opening
         self.lineNumbers = LineNumberArea(self)
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)
+        
+        self.setPlainText(text)
+        self.setFont(font)
     
     def setFontParams(self, family='CamingoCode', ptSize=10, isMono=True):
         font = QFont()
@@ -77,7 +77,7 @@ class TextEditor(QPlainTextEdit):
         a = event.rect().bottomRight()
         painter.setPen(Qt.darkGray)
         painter.drawLine(d.x(), d.y(), a.x(), a.y())
-        painter.setPen(Qt.black)
+        painter.setPen(QColor(100, 100, 100))
         painter.setFont(self.font())
         
         block = self.firstVisibleBlock()
@@ -102,6 +102,8 @@ class TextEditor(QPlainTextEdit):
         while (top >= 10):
             top /= 10
             digits += 1
+        # Avoid too frequent geometry changes
+        if digits < 3: digits = 3
         return 10 + self.fontMetrics().width('9') * digits
     
     def updateLineNumberArea(self, rect, dy):
@@ -122,25 +124,27 @@ class TextEditor(QPlainTextEdit):
         cr = self.contentsRect()
         self.lineNumbers.setGeometry(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height())
 
-    '''
+    # TODO: add closing bracket and feature name
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return:
-            content = self.toPlainText()
-            cur_pos = self.textCursor().position()
-            if (content[cur_pos-1] == "{"):
-                #print(content[:cur_pos+1])
-                #print(content[cur_pos+1:])
-                # Probably does not handle CR properly
-                newtext = content[:cur_pos+1] + "    \n" + content[cur_pos+1:]
-                #print(newtext)
-                self.setPlainText(newtext)
-                self.textCursor().setPosition(cur_pos+5)
+            cursor = self.textCursor()
+            indentLvl = 0
+            cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+            if cursor.selectedText() == '{': indentLvl += 1
+            cursor.select(QTextCursor.LineUnderCursor)
+            lineLength = len(cursor.selectedText()) // len(self._indent)
+            cursor.movePosition(QTextCursor.StartOfLine)
+            while (lineLength > 0):
+                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self._indent))
+                if cursor.selectedText() == self._indent:
+                    indentLvl += 1
+                cursor.movePosition(QTextCursor.NoMove)
+                lineLength -= 1
+            cursor.movePosition(QTextCursor.EndOfLine)
+            super(TextEditor, self).keyPressEvent(event)
+            cursor.insertText("".join((self._indent for _ in range(indentLvl))))
         else:
             super(TextEditor, self).keyPressEvent(event)
-    '''
-
-    def insertSpaces(self, text):
-        print(text[-1])
 
 class Highlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
@@ -178,21 +182,6 @@ class Highlighter(QSyntaxHighlighter):
         classFormat.setForeground(QColor(200,50,150))
         self.highlightingRules.append((QRegExp("@[A-Za-z0-9_.]+"),
                 classFormat))
-#        self.multiLineCommentFormat = QTextCharFormat()
-#        self.multiLineCommentFormat.setForeground(Qt.red)
-
-#        quotationFormat = QTextCharFormat()
-#        quotationFormat.setForeground(Qt.darkGreen)
-#        self.highlightingRules.append((QRegExp("\".*\""), quotationFormat))
-
-#        functionFormat = QTextCharFormat()
-#        functionFormat.setFontItalic(True)
-#        functionFormat.setForeground(Qt.blue)
-#        self.highlightingRules.append((QRegExp("\\b[A-Za-z0-9_]+(?=\\()"),
-#                functionFormat))
-
-#        self.commentStartExpression = QRegExp("/\\*")
-#        self.commentEndExpression = QRegExp("\\*/")
 
     def highlightBlock(self, text):
         for pattern, format in self.highlightingRules:
@@ -204,26 +193,6 @@ class Highlighter(QSyntaxHighlighter):
                 index = expression.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
-
-        '''
-        startIndex = 0
-        if self.previousBlockState() != 1:
-            startIndex = self.commentStartExpression.indexIn(text)
-
-        while startIndex >= 0:
-            endIndex = self.commentEndExpression.indexIn(text, startIndex)
-
-            if endIndex == -1:
-                self.setCurrentBlockState(1)
-                commentLength = len(text) - startIndex
-            else:
-                commentLength = endIndex - startIndex + self.commentEndExpression.matchedLength()
-
-            self.setFormat(startIndex, commentLength,
-                    self.multiLineCommentFormat)
-            startIndex = self.commentStartExpression.indexIn(text,
-                    startIndex + commentLength);
-        '''
 
 if __name__ == '__main__':
 
