@@ -9,9 +9,8 @@ class MainEditWindow(QMainWindow):
 
         self.font = font
         self.setupFileMenu()
-#        self.setupHelpMenu()
         self.editor = TextEditor(self.font.features.text, self)
-        self.resize(600,500)
+        self.resize(600, 500)
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle("Font features", self.font)
@@ -28,8 +27,6 @@ class MainEditWindow(QMainWindow):
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
-#        fileMenu.addAction("&New...", self.newFile, QKeySequence.New)
-#        fileMenu.addAction("&Open...", self.openFile, QKeySequence.Open)
         fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
@@ -124,15 +121,35 @@ class TextEditor(QPlainTextEdit):
         cr = self.contentsRect()
         self.lineNumbers.setGeometry(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height())
 
-    # TODO: add closing bracket and feature name
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return:
             cursor = self.textCursor()
             indentLvl = 0
+            newBlock = False
             cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
-            if cursor.selectedText() == '{': indentLvl += 1
+            if cursor.selectedText() == '{':
+                indentLvl += 1
+                # We don't add a closing tag if there is text right below because
+                # in that case the user might just be looking to add a new line
+                ok = cursor.movePosition(QTextCursor.Down)
+                if ok:
+                    cursor.select(QTextCursor.LineUnderCursor)
+                    if cursor.selectedText().strip() == '':
+                        newBlock = True
+                    cursor.movePosition(QTextCursor.Up)
+                else: newBlock = True
             cursor.select(QTextCursor.LineUnderCursor)
             lineLength = len(cursor.selectedText()) // len(self._indent)
+            if newBlock:
+                txt = cursor.selectedText().lstrip(" ").split(" ")
+                if len(txt) > 1:
+                    if len(txt) < 3 and txt[-1][-1] == '{':
+                        feature = txt[-1][:-1]
+                    else:
+                        feature = txt[1]
+                else:
+                    feature = None
+                
             cursor.movePosition(QTextCursor.StartOfLine)
             while (lineLength > 0):
                 cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self._indent))
@@ -142,7 +159,15 @@ class TextEditor(QPlainTextEdit):
                 lineLength -= 1
             cursor.movePosition(QTextCursor.EndOfLine)
             super(TextEditor, self).keyPressEvent(event)
-            cursor.insertText("".join((self._indent for _ in range(indentLvl))))
+            newLineSpace = "".join((self._indent for _ in range(indentLvl)))
+            cursor.insertText(newLineSpace)
+            if newBlock:
+                super(TextEditor, self).keyPressEvent(event)
+                newLineSpace = "".join((newLineSpace[:-len(self._indent)], "} ", feature, ";"))
+                cursor.insertText(newLineSpace)
+                cursor.movePosition(QTextCursor.Up)
+                cursor.movePosition(QTextCursor.EndOfLine)
+                self.setTextCursor(cursor)
         else:
             super(TextEditor, self).keyPressEvent(event)
 
@@ -151,7 +176,7 @@ class Highlighter(QSyntaxHighlighter):
         super(Highlighter, self).__init__(parent)
 
         keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(QColor(30,150,220))
+        keywordFormat.setForeground(QColor(30, 150, 220))
         keywordFormat.setFontWeight(QFont.Bold)
 
         keywordPatterns = ["\\bAscender\\b", "\\bAttach\\b", "\\bCapHeight\\b", "\\bCaretOffset\\b", "\\bCodePageRange\\b",
@@ -179,7 +204,7 @@ class Highlighter(QSyntaxHighlighter):
 
         classFormat = QTextCharFormat()
         classFormat.setFontWeight(QFont.Bold)
-        classFormat.setForeground(QColor(200,50,150))
+        classFormat.setForeground(QColor(200, 50, 150))
         self.highlightingRules.append((QRegExp("@[A-Za-z0-9_.]+"),
                 classFormat))
 
