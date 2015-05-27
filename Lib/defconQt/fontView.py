@@ -406,7 +406,7 @@ class MainWindow(QMainWindow):
 
     def fontFeatures(self):
         # TODO: see up here
-        from syntaxHighlighter import MainEditWindow
+        from featureTextEditor import MainEditWindow
         if not (hasattr(self, 'fontFeaturesWindow') and self.fontFeaturesWindow.isVisible()):
            self.fontFeaturesWindow = MainEditWindow(self.font, self)
            self.fontFeaturesWindow.show()
