@@ -60,9 +60,7 @@ class MainSpaceWindow(QWidget):
         self._subscribeToGlyphsText(newText)
         # set the records into the view
         self.canvas._glyphsChanged(self.glyphs)
-        #self.table.blockSignals(True) # XXX: needed?
         self.table._glyphsChanged(self.glyphs)
-        #self.table.blockSignals(False)
     
     # Tal Leming. Edited.
     def textToGlyphNames(self, text):
@@ -137,9 +135,7 @@ class MainSpaceWindow(QWidget):
         glyphNames = []
         for glyph in glyphs:
             glyphNames.append(chr(glyph.unicode) if glyph.unicode else "".join(("/", glyph.name, " ")))
-        self.toolbar.textField.blockSignals(True) # XXX: needed?
         self.toolbar.textField.setText("".join(glyphNames))
-        self.toolbar.textField.blockSignals(False)
         # set the records into the view
         self.canvas._glyphsChanged(self.glyphs)
         self.table._glyphsChanged(self.glyphs)
@@ -290,7 +286,9 @@ class SpaceTable(QTableWidget):
     def _glyphsChanged(self, newGlyphs):
         self.glyphs = newGlyphs
         # TODO: we don't need to reallocate cells, split alloc and fill
+        self.blockSignals(True)
         self.fillGlyphs()
+        self.blockSignals(False)
     
     def _cellEdited(self, row, col):
         if row == 0 or col == 0: return
