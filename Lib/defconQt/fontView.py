@@ -16,6 +16,9 @@ glyphSortDescriptors = [
     dict(type="suffix", allowPseudoUnicode=True),
     dict(type="decompositionBase", allowPseudoUnicode=True)
 ]
+cannedDesign = [
+    dict(type="cannedDesign", allowPseudoUnicode=True)
+]
 
 cellGridColor = QColor(130, 130, 130)
 cellHeaderBaseColor = QColor(230, 230, 230)
@@ -34,7 +37,8 @@ class CharacterWidget(QWidget):
         super(CharacterWidget, self).__init__(parent)
 
         self.font = font
-        self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
+        #self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
+        self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), cannedDesign)]
         self.scrollArea = scrollArea
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.squareSize = squareSize
@@ -156,6 +160,7 @@ class CharacterWidget(QWidget):
         else:
             super(CharacterWidget, self).mousePressEvent(event)
 
+    # TODO: see if more of this process can be delegated to a factory
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -185,6 +190,9 @@ class CharacterWidget(QWidget):
         gradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
         gradient.setColorAt(0.0, cellHeaderBaseColor)
         gradient.setColorAt(1.0, cellHeaderLineColor)
+        #markGradient = QRadialGradient(self.squareSize/2, GlyphCellHeaderHeight/2,
+        #      self.squareSize-GlyphCellHeaderHeight, self.squareSize/2, self.squareSize)
+        markGradient = QLinearGradient(0, 0, 0, self.squareSize-GlyphCellHeaderHeight)
 
         for row in range(beginRow, endRow + 1):
             for column in range(beginColumn, endColumn + 1):
@@ -195,6 +203,19 @@ class CharacterWidget(QWidget):
                 painter.translate(column * self.squareSize, row * self.squareSize)
                 # background
                 painter.fillRect(0, 0, self.squareSize, self.squareSize, Qt.white)
+                glyph = self.glyphs[key]
+                if "public.markColor" in glyph.lib:
+                    colorStr = glyph.lib["public.markColor"].split(",")
+                    if len(colorStr) == 4:
+                        comp = []
+                        for c in colorStr:
+                            comp.append(float(c.strip()))
+                        markColor = QColor.fromRgbF(*comp)
+                        markGradient.setColorAt(1.0, markColor)
+                        markGradient.setColorAt(0.0, markColor.lighter(125))
+                        painter.fillRect(0, GlyphCellHeaderHeight, self.squareSize,
+                              self.squareSize - GlyphCellHeaderHeight, QBrush(markGradient))
+                
                 # header gradient
                 painter.fillRect(0, 0, self.squareSize,
                       GlyphCellHeaderHeight, QBrush(gradient))
@@ -352,14 +373,17 @@ class MainWindow(QMainWindow):
         
     def closeEvent(self, event):
         if self.font.dirty:
-            closeDialog = QMessageBox(QMessageBox.Question, "Save your work?", "Will you save, dear",
-                  QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel, self)
+            title = "Me"
+            body = "%s%s%s" % ("Do you want to save the changes you made to “", os.path.basename(self.font.path.rstrip(os.sep)), "”?")
+            closeDialog = QMessageBox(QMessageBox.Question, title, body,
+                  QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
+            closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
             closeDialog.setModal(True)
             ret = closeDialog.exec_()
-            if ret == QMessageBox.Yes:
+            if ret == QMessageBox.Save:
                 self.saveFile()
                 event.accept()
-            elif ret == QMessageBox.No:
+            elif ret == QMessageBox.Discard:
                 event.accept()
             else: #if ret == QMessageBox.Cancel:
                 event.ignore()

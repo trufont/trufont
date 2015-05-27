@@ -1,6 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/">
 	<file>resources/icon.png</file>
+    <file>resources/ic_settings_24px.svg</file>
 </qresource>
 </RCC>
 

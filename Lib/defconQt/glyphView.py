@@ -388,34 +388,27 @@ class GlyphView(QGraphicsView):
         self._fillColor = QColor.fromRgbF(0, 0, 0, .4)#Qt.gray
         self._componentFillColor = QColor.fromRgbF(.2, .2, .3, .4)#Qt.darkGray
 
+        self.setBackgroundBrush(QBrush(Qt.lightGray))
         self.setScene(GlyphScene(self))
         #self.scene().setSceneRect(0, self._font.info.ascender, self._glyph.width, self._font.info.unitsPerEm)
+        
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setDragMode(QGraphicsView.RubberBandDrag)
-        # This rewinds view when scrolling, needed for check-board background
-        #self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         
         self.setRenderHint(QPainter.Antialiasing)
-        self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
+        #self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
         self.scale(1, -1)
         self.addBackground()
         self.addBlues()
         self.addOutlines()
         self.addPoints()
-
-        # Prepare background check-board pattern.
-        """
-        tilePixmap = QPixmap(64, 64)
-        tilePixmap.fill(Qt.white)
-        tilePainter = QPainter(tilePixmap)
-        color = QColor(220, 220, 220)
-        tilePainter.fillRect(0, 0, 32, 32, color)
-        tilePainter.fillRect(32, 32, 32, 32, color)
-        tilePainter.end()
-        """
-
-        #self.setBackgroundBrush(QBrush(tilePixmap))
+        
+        
+        #self.fitInView(0, self._font.info.descender, self._glyph.width, self._font.info.unitsPerEm, Qt.KeepAspectRatio)
+        #sc = self.height()/self.scene().height()
+        #self.scale(sc, sc);
+        self.scene().setSceneRect(-1500, -1500, 3000, 3000)
     
     def _glyphChanged(self, event):
         pass
@@ -458,7 +451,9 @@ class GlyphView(QGraphicsView):
         
     def addBackground(self):
         s = self.scene()
-        s.addRect(QRectF(self.viewport().rect()), QPen(Qt.NoPen), QBrush(self._backgroundColor))
+        width = self._glyph.width
+        item = s.addRect(0, self._font.info.descender, width, self._font.info.unitsPerEm, QPen(Qt.NoPen), QBrush(self._backgroundColor))
+        self.centerOn(item)
     
     def addBlues(self):
         s = self.scene()
@@ -674,17 +669,29 @@ class GlyphView(QGraphicsView):
         #self._calcScale()
         #self._setFrame()
         self.scale(factor, factor)
-        '''
+        
+        scale = self.transform().m11()
+        if scale < .3 or scale > 1: scale = 1
+        offCurvePointSize = 5 / scale
+        onCurvePointSize = 6 / scale
+        onCurveSmoothPointSize = 7 / scale
         for item in self.scene().items():
             if isinstance(item, OnCurvePointItem):
                 path = QPainterPath()
-                onCurvePointSize = 10 / self.transform().m11()
-                width = height = self.roundPosition(onCurvePointSize)# * self._inverseScale)
-                half = width / 2.0
-                path.addEllipse(-half, -half, width, height)
+                if item._isSmooth:
+                    width = height = self.roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
+                    half = width / 2.0
+                    path.addEllipse(-half, -half, width, height)
+                else:
+                    width = height = self.roundPosition(onCurvePointSize)# * self._inverseScale)
+                    half = width / 2.0
+                    path.addRect(-half, -half, width, height)
                 item.setPath(path)
-                #item.setTransform(self.transform().inverted()[0])
-        '''
+            elif isinstance(item, OffCurvePointItem):
+                width = height = self.roundPosition(offCurvePointSize)# * self._inverseScale)
+                half = width / 2.0
+                item.setRect(-half, -half, width, height)
+
         self.update()
         event.accept()
 
