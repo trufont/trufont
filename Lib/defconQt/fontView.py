@@ -51,12 +51,12 @@ class CharacterWidget(QWidget):
 
     def updateFont(self, font):
         self.font = font
-        self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
+        self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), cannedDesign)]
         self.adjustSize()
         self.update()
     
     def updateGlyphs(self):
-        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), glyphSortDescriptors)]
+        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), cannedDesign)]
         self.adjustSize()
         self.update()
 
@@ -307,6 +307,7 @@ class MainWindow(QMainWindow):
         fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+U")
         fontMenu.addSeparator()
         fontMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Y")
+        fontMenu.addAction("&Groups window", self.fontGroups, "Ctrl+G")
 
         helpMenu = QMenu("&Help", self)
         self.menuBar().addMenu(helpMenu)
@@ -374,7 +375,11 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         if self.font.dirty:
             title = "Me"
-            body = "%s%s%s" % ("Do you want to save the changes you made to “", os.path.basename(self.font.path.rstrip(os.sep)), "”?")
+            if self.font.path is not None:
+                currentFont = os.path.basename(self.font.path.rstrip(os.sep))
+            else:
+                currentFont = "Untitled.ufo"
+            body = "%s%s%s" % ("Do you want to save the changes you made to “", currentFont, "”?")
             closeDialog = QMessageBox(QMessageBox.Question, title, body,
                   QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
             closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
@@ -452,11 +457,21 @@ class MainWindow(QMainWindow):
                 glyphs.append(self.characterWidget.glyphs[item])
             self.spaceCenterWindow.setGlyphs(glyphs)
     
+    def fontGroups(self):
+        # TODO: see up here
+        from groupsView import GroupsWindow
+        if not (hasattr(self, 'fontGroupsWindow') and self.fontGroupsWindow.isVisible()):
+           self.fontGroupsWindow = GroupsWindow(self.font, self)
+           self.fontGroupsWindow.show()
+        else:
+           self.fontGroupsWindow.raise_()
+    
     def addGlyph(self):
         gName, ok = QInputDialog.getText(self, "Add glyph", "Name of the glyph:")
         # Not overwriting existing glyphs. Should it warn in this case? (rf)
         if ok and gName != '':
             self.font.newGlyph(gName)
+            self.font[gName].width = 500
             self.characterWidget.updateGlyphs()
 
     def about(self):

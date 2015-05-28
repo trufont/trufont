@@ -10,13 +10,15 @@ class TabDialog(QDialog):
         # TODO: figure a proper correspondence to set and fetch widgets...
         self.tabs = {
             "General": 0,
-            "Metrics": 1
+            "Metrics": 1,
+            "OpenType": 2
         }
 
         self.font = font
         self.tabWidget = QTabWidget()
         self.tabWidget.addTab(GeneralTab(self.font), "General")
-        self.tabWidget.addTab(NextTab(self.font), "Metrics")
+        self.tabWidget.addTab(MetricsTab(self.font), "Metrics")
+#        self.tabWidget.addTab(ApplicationsTab(fileInfo), "OpenType")
 #        self.tabWidget.addTab(ApplicationsTab(fileInfo), "PostScript")
 #        self.tabWidget.addTab(ApplicationsTab(fileInfo), "Miscellaneous")
 
@@ -158,9 +160,9 @@ class GeneralTab(QWidget):
         font.info.openTypeNameLicenseURL = self.licenseURLEdit.text()
         font.info.trademark = self.trademarkEdit.text()
 
-class NextTab(QWidget):
+class MetricsTab(QWidget):
     def __init__(self, font, parent=None):
-        super(NextTab, self).__init__(parent)
+        super(MetricsTab, self).__init__(parent)
         mainLayout = QGridLayout()
 
         styleMapFamilyLabel = QLabel("Style map family name:", self)

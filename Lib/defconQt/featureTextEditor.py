@@ -19,15 +19,36 @@ class MainEditWindow(QMainWindow):
         if font is not None: puts = "%s%s%s%s%s" % (title, " – ", self.font.info.familyName, " ", self.font.info.styleName)
         else: puts = title
         super(MainEditWindow, self).setWindowTitle(puts)
+    
+    def closeEvent(self, event):
+        if self.editor.document().isModified():
+            closeDialog = QMessageBox(QMessageBox.Question, "Me", "Save your changes?",
+                  QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
+            closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
+            closeDialog.setModal(True)
+            ret = closeDialog.exec_()
+            if ret == QMessageBox.Save:
+                self.save()
+                event.accept()
+            elif ret == QMessageBox.Discard:
+                event.accept()
+            else:
+                event.ignore()
+    
+    def reload(self):
+        self.font.reloadFeatures()
+        self.editor.setPlainText(self.font.features.text)
 
     def save(self):
-        self.editor.write(self.features)
+        self.editor.write(self.font.features.text)
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
         self.menuBar().addMenu(fileMenu)
 
         fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
+        fileMenu.addSeparator()
+        fileMenu.addAction("Reload from UFO", self.reload)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
 class LineNumberArea(QWidget):
@@ -120,26 +141,43 @@ class TextEditor(QPlainTextEdit):
         super(TextEditor, self).resizeEvent(event)
         cr = self.contentsRect()
         self.lineNumbers.setGeometry(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height())
+    
+    def findLineIndentLevel(self, cursor):
+        indent = 0
+        cursor.select(QTextCursor.LineUnderCursor)
+        lineLength = len(cursor.selectedText()) // len(self._indent)
+        cursor.movePosition(QTextCursor.StartOfLine)
+        while (lineLength > 0):
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self._indent))
+            if cursor.selectedText() == self._indent:
+                indent += 1
+            cursor.movePosition(QTextCursor.NoMove)
+            lineLength -= 1
+        cursor.movePosition(QTextCursor.EndOfLine)
+        return indent
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return:
             cursor = self.textCursor()
-            indentLvl = 0
+            indentLvl = self.findLineIndentLevel(cursor)
             newBlock = False
+
             cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
             if cursor.selectedText() == '{':
-                indentLvl += 1
-                # We don't add a closing tag if there is text right below because
-                # in that case the user might just be looking to add a new line
+                # We don't add a closing tag if there is text right below with the same
+                # indentation level because in that case the user might just be looking
+                # to add a new line
                 ok = cursor.movePosition(QTextCursor.Down)
                 if ok:
+                    downIndentLvl = self.findLineIndentLevel(cursor)
                     cursor.select(QTextCursor.LineUnderCursor)
-                    if cursor.selectedText().strip() == '':
+                    if cursor.selectedText().strip() == '' or downIndentLvl <= indentLvl:
                         newBlock = True
                     cursor.movePosition(QTextCursor.Up)
                 else: newBlock = True
+                indentLvl += 1
+
             cursor.select(QTextCursor.LineUnderCursor)
-            lineLength = len(cursor.selectedText()) // len(self._indent)
             if newBlock:
                 txt = cursor.selectedText().lstrip(" ").split(" ")
                 if len(txt) > 1:
@@ -149,15 +187,8 @@ class TextEditor(QPlainTextEdit):
                         feature = txt[1]
                 else:
                     feature = None
-                
-            cursor.movePosition(QTextCursor.StartOfLine)
-            while (lineLength > 0):
-                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self._indent))
-                if cursor.selectedText() == self._indent:
-                    indentLvl += 1
-                cursor.movePosition(QTextCursor.NoMove)
-                lineLength -= 1
             cursor.movePosition(QTextCursor.EndOfLine)
+
             super(TextEditor, self).keyPressEvent(event)
             newLineSpace = "".join((self._indent for _ in range(indentLvl)))
             cursor.insertText(newLineSpace)
@@ -168,6 +199,17 @@ class TextEditor(QPlainTextEdit):
                 cursor.movePosition(QTextCursor.Up)
                 cursor.movePosition(QTextCursor.EndOfLine)
                 self.setTextCursor(cursor)
+        elif event.key() == Qt.Key_Tab:
+            cursor = self.textCursor()
+            cursor.insertText(self._indent)
+        elif event.key() == Qt.Key_Backspace:
+            cursor = self.textCursor()
+            cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor,
+                  len(self._indent))
+            if cursor.selectedText() == self._indent:
+                cursor.removeSelectedText()
+            else:
+                super(TextEditor, self).keyPressEvent(event)
         else:
             super(TextEditor, self).keyPressEvent(event)
 

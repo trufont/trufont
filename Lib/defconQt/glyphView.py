@@ -408,7 +408,7 @@ class GlyphView(QGraphicsView):
         #self.fitInView(0, self._font.info.descender, self._glyph.width, self._font.info.unitsPerEm, Qt.KeepAspectRatio)
         #sc = self.height()/self.scene().height()
         #self.scale(sc, sc);
-        self.scene().setSceneRect(-1500, -1500, 3000, 3000)
+        self.scene().setSceneRect(-1000, -1000, 3000, 3000)
     
     def _glyphChanged(self, event):
         pass
