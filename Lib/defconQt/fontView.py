@@ -73,6 +73,12 @@ class CharacterWidget(QWidget):
         return QSize(self.columns * self.squareSize,
                 math.ceil(len(self.glyphs) / self.columns) * self.squareSize)
     
+    def markSelection(self, color):
+        for key in self._selection:
+            glyph = self.glyphs[key]
+            glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
+        self.update()
+    
     # TODO: eventually get rid of the signal
     def computeCharacterSelected(self):
         lKey, mKey = self.lastKey, self.moveKey
@@ -155,6 +161,9 @@ class CharacterWidget(QWidget):
         if event.button() == Qt.LeftButton:
             key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
             if key > len(self.glyphs)-1: event.ignore(); return
+            self._selection -= {key}
+            self.lastKey = key
+            self.moveKey = self.lastKey
             event.accept()
             self.glyphOpened.emit(self.glyphs[key].name)
         else:
@@ -298,9 +307,28 @@ class MainWindow(QMainWindow):
         fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
+        selectionMenu = QMenu("&Selection", self)
+        self.menuBar().addMenu(selectionMenu)
+        
+        markColorMenu = QMenu("Mark color", self)
+        pixmap = QPixmap(24, 24)
+        red = markColorMenu.addAction("Red", self.colorFill)
+        pixmap.fill(Qt.red)
+        red.setIcon(QIcon(pixmap))
+        red.setData(QColor(Qt.red))
+        yellow = markColorMenu.addAction("Yellow", self.colorFill)
+        pixmap.fill(Qt.yellow)
+        yellow.setIcon(QIcon(pixmap))
+        yellow.setData(QColor(Qt.yellow))
+        green = markColorMenu.addAction("Green", self.colorFill)
+        pixmap.fill(Qt.green)
+        green.setIcon(QIcon(pixmap))
+        green.setData(QColor(Qt.green))
+        selectionMenu.addMenu(markColorMenu)
+
         fontMenu = QMenu("&Font", self)
         self.menuBar().addMenu(fontMenu)
-
+        
         # TODO: work out sensible shortcuts
         fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+I")
         fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+F")
@@ -392,6 +420,10 @@ class MainWindow(QMainWindow):
                 event.accept()
             else: #if ret == QMessageBox.Cancel:
                 event.ignore()
+    
+    def colorFill(self):
+        action = self.sender()
+        self.characterWidget.markSelection(action.data())
     
     def _fontChanged(self, event):
         self.characterWidget.update()

@@ -28,6 +28,7 @@ class GroupsWindow(QWidget):
         # XXX: perf?
         index = self.groupsList.indexFromItem(cur)
         newKey = cur.text()
-        self.font.groups[newKey] = self.font.groups.pop(self.groups[index])
+        self.font.groups[newKey] = self.font.groups[self.groups[index]]
+        del self.font.groups[self.groups[index]]
         self.groups[index] = newKey
         #print(self.groupsList.currentItem().text())

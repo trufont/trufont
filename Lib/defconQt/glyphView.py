@@ -1,11 +1,10 @@
-import math
-from PyQt5.QtCore import QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
-from PyQt5.QtGui import QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
-from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QFileDialog,
-        QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
-        QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
+from math import copysign
+from PyQt5.QtCore import *#QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
+from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
+from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
+        #QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
+        #QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
 from PyQt5.QtOpenGL import QGL, QGLFormat, QGLWidget
-from PyQt5.QtSvg import QGraphicsSvgItem
 
 
 class MainGfxWindow(QMainWindow):
@@ -22,22 +21,18 @@ class MainGfxWindow(QMainWindow):
         
         toolsMenu = QMenu("&Tools", self)
         
-        self.selectTool = QAction("&Selection", toolsMenu)
+        self.selectTool = toolsMenu.addAction("&Selection")
         self.selectTool.setCheckable(True)
         self.selectTool.toggled.connect(self.view.setSceneSelection)
-        toolsMenu.addAction(self.selectTool)
 
-        self.drawingTool = QAction("&Drawing", toolsMenu)#toolsMenu.addAction("&Drawing")
+        self.drawingTool = toolsMenu.addAction("&Drawing")
         self.drawingTool.setCheckable(True)
         self.drawingTool.toggled.connect(self.view.setSceneDrawing)
-        toolsMenu.addAction(self.drawingTool)
         
-        self.toolsGroup = QActionGroup(self)#toolsMenu.addAction("&Selection")
+        self.toolsGroup = QActionGroup(self)
         self.toolsGroup.addAction(self.selectTool)
         self.toolsGroup.addAction(self.drawingTool)
         self.selectTool.setChecked(True)
-        
-        #self.toolsGroup.toggled.connect(self.view.setSceneSelection)
 
         self.menuBar().addMenu(toolsMenu)
 
@@ -104,20 +99,36 @@ class MainGfxWindow(QMainWindow):
         else: puts = title
         super(MainGfxWindow, self).setWindowTitle(puts)
 
+def roundPosition(value):
+    value = value * 10#self._scale
+    value = round(value) - .5
+    value = value * .1#self._inverseScale
+    return value
+
+# TODO: proper size scaling mechanism
+offCurvePointSize = 7#5
+onCurvePointSize = 8#6
+onCurveSmoothPointSize = 9#7
+offWidth = offHeight = roundPosition(offCurvePointSize)# * self._inverseScale)
+offHalf = offWidth / 2.0
+onWidth = onHeight = roundPosition(onCurvePointSize)# * self._inverseScale)
+onHalf = onWidth / 2.0
+smoothWidth = smoothHeight = roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
+smoothHalf = smoothWidth / 2.0
+pointSelectionColor = Qt.red
+
 class OffCurvePointItem(QGraphicsEllipseItem):
-    def __init__(self, x, y, width, height, pointX, pointY, pen=None, brush=None, parent=None):
-        super(OffCurvePointItem, self).__init__(x, y, width, height, parent)
+    def __init__(self, x, y, pen=None, brush=None, parent=None):
+        super(OffCurvePointItem, self).__init__(-offHalf, -offHalf, offWidth, offHeight, parent)
         # since we have a parent, setPos must be relative to it
-        self.setPos(pointX, pointY) # TODO: abstract and use pointX-self.parent().pos().x()
+        self.setPos(x, y) # TODO: abstract and use pointX-self.parent().pos().x()
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         # TODO: stop doing this and go back to mouse events –> won't permit multiple selection
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        if pen is not None: self._pen = pen; self.setPen(pen)
+        if pen is not None: self.setPen(pen)
+        self._penColor = self.pen().color()
         if brush is not None: self.setBrush(brush)
-        
-        self._pointX = pointX
-        self._pointY = pointY
     
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
@@ -128,31 +139,47 @@ class OffCurvePointItem(QGraphicsEllipseItem):
     def paint(self, painter, option, widget):
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
-        super(OffCurvePointItem, self).paint(painter, newOption, widget)
+        pen = self.pen()
         if option.state & QStyle.State_Selected:
-            pen = self.pen()
-            pen.setColor(Qt.red)
-            self.setPen(pen)
+            pen.setColor(pointSelectionColor)
         else:
-            self.setPen(self._pen)
+            pen.setColor(self._penColor)
+        self.setPen(pen)
+        '''
+        painter.save()
+        transform = painter.transform()
+        scaleX = copysign(1.0, transform.m11())
+        scaleY = copysign(1.0, transform.m22())
+        transform.setMatrix(scaleX, transform.m12(), transform.m13(), transform.m21(),
+            scaleY, transform.m23(), transform.m31(), transform.m32(), transform.m33())
+        painter.setTransform(transform)
+        '''
+        super(OffCurvePointItem, self).paint(painter, newOption, widget)
+        #painter.restore()
 
 class OnCurvePointItem(QGraphicsPathItem):
-    def __init__(self, x, y, width, height, pointX, pointY, isSmooth, contour, pointIndex,
-            pen=None, brush=None, parent=None):
-        path = QPainterPath()
-        if isSmooth: path.addEllipse(x, y, width, height)
-        else: path.addRect(x, y, width, height)
-        super(OnCurvePointItem, self).__init__(path, parent)
-        self.setPos(pointX, pointY)
-        self.setFlag(QGraphicsItem.ItemIsMovable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        if pen is not None: self._pen = pen; self.setPen(pen)
-        if brush is not None: self.setBrush(brush)
-
+    def __init__(self, x, y, isSmooth, contour, pointIndex, pen=None, brush=None, parent=None):
+        super(OnCurvePointItem, self).__init__(parent)
         self._contour = contour
         self._pointIndex = pointIndex
         self._isSmooth = isSmooth
+
+        self.setPointPath()
+        self.setPos(x, y)
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        if pen is not None: self.setPen(pen)
+        self._penColor = self.pen().color()
+        if brush is not None: self.setBrush(brush)
+    
+    def setPointPath(self):
+        path = QPainterPath()
+        if self._isSmooth:
+            path.addEllipse(-smoothHalf, -smoothHalf, smoothWidth, smoothHeight)
+        else:
+            path.addRect(-onHalf, -onHalf, onWidth, onHeight)
+        self.setPath(path)
     
     def _CPMoved(self, newValue):
         selected, propagate = None, None
@@ -257,26 +284,31 @@ class OnCurvePointItem(QGraphicsPathItem):
         return QGraphicsItem.itemChange(self, change, value)
     
     def mouseDoubleClickEvent(self, event):
-        # TODO: stream
-        x, y, width, height = -3, -3, 6, 6
         self._isSmooth = not self._isSmooth
         self._contour[self._pointIndex].smooth = self._isSmooth
-        path = QPainterPath()
-        if self._isSmooth: path.addEllipse(x, y, width, height)
-        else: path.addRect(x, y, width, height)
-        self.setPath(path)
+        self.setPointPath()
     
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
-        super(OnCurvePointItem, self).paint(painter, newOption, widget)
+        pen = self.pen()
         if option.state & QStyle.State_Selected:
-            pen = self.pen()
-            pen.setColor(Qt.red)
-            self.setPen(pen)
+            pen.setColor(pointSelectionColor)
         else:
-            self.setPen(self._pen)
+            pen.setColor(self._penColor)
+        self.setPen(pen)
+        '''
+        painter.save()
+        transform = painter.transform()
+        scaleX = copysign(1.0, transform.m11())
+        scaleY = copysign(1.0, transform.m22())
+        transform.setMatrix(scaleX, transform.m12(), transform.m13(), transform.m21(),
+            scaleY, transform.m23(), transform.m31(), transform.m32(), transform.m33())
+        painter.setTransform(transform)
+        '''
+        super(OnCurvePointItem, self).paint(painter, newOption, widget)
+        #painter.restore()
 
 class GlyphScene(QGraphicsScene):
     # TODO: implement key multiplex in a set()
@@ -299,7 +331,7 @@ class GlyphScene(QGraphicsScene):
             super(GlyphScene, self).keyPressEvent(event)
             return
         for item in self.selectedItems():
-            # TODO: isinstance might be slow to use here, we might want to make a selectedMoveBy
+            # TODO: if isinstance turns out to be slow, we might want to make a selectedMoveBy
             # function in items that calls moveBy for onCurve, noops for offCurve
             if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): print("yea"); continue
             item.moveBy(x,y)
@@ -329,8 +361,8 @@ class GlyphScene(QGraphicsScene):
                 super(GlyphScene, self).mousePressEvent(event)
                 return
             else:
-                item = OnCurvePointItem(-half, -half, width, height, x, y, False, 
-                            sel[0]._contour, pointIndex, QPen(Qt.black, 1.5), QBrush(Qt.white))#QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+                item = OnCurvePointItem(x, y, False, sel[0]._contour, pointIndex,
+                    QPen(Qt.black, 1.5), QBrush(Qt.white))#QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
                 self.addItem(item)
             path.lineTo(x, y)
             if close: path.closeSubpath()
@@ -351,8 +383,8 @@ class GlyphScene(QGraphicsScene):
             self.views()[0]._glyph.appendContour(nextC)
             nextC.addPoint((x,y), "move")
 
-            item = OnCurvePointItem(-half, -half, width, height, x, y, False, 
-                        self.views()[0]._glyph[-1], 0, QPen(Qt.black, 1.5), QBrush(Qt.white))#QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+            item = OnCurvePointItem(x, y, False, self.views()[0]._glyph[-1], 0,
+                QPen(Qt.black, 1.5), QBrush(Qt.white))#QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
             self.addItem(item)
             event.accept()
         super(GlyphScene, self).mousePressEvent(event)
@@ -408,7 +440,7 @@ class GlyphView(QGraphicsView):
         #self.fitInView(0, self._font.info.descender, self._glyph.width, self._font.info.unitsPerEm, Qt.KeepAspectRatio)
         #sc = self.height()/self.scene().height()
         #self.scale(sc, sc);
-        self.scene().setSceneRect(-1000, -1000, 3000, 3000)
+        #self.scene().setSceneRect(-1000, -1000, 3000, 3000)
     
     def _glyphChanged(self, event):
         pass
@@ -452,8 +484,9 @@ class GlyphView(QGraphicsView):
     def addBackground(self):
         s = self.scene()
         width = self._glyph.width
-        item = s.addRect(0, self._font.info.descender, width, self._font.info.unitsPerEm, QPen(Qt.NoPen), QBrush(self._backgroundColor))
-        self.centerOn(item)
+        s.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
+        item = s.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(self._backgroundColor))
+        self.centerOn(width/2, self._font.info.descender+self._font.info.unitsPerEm/2)
     
     def addBlues(self):
         s = self.scene()
@@ -476,8 +509,8 @@ class GlyphView(QGraphicsView):
         s = self.scene()
         # outlines
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-        self.scene()._outlineItem = s.addPath(path, brush=QBrush(self._fillColor))
-        self.scene()._glyphObject = self._glyph
+        s._outlineItem = s.addPath(path, brush=QBrush(self._fillColor))
+        s._glyphObject = self._glyph
         # components
         path = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
         s.addPath(path, brush=QBrush(self._componentFillColor))
@@ -504,10 +537,12 @@ class GlyphView(QGraphicsView):
             onCurveSmoothPointSize = 3
         else:
             return
+        '''
         if pointSize > 250:
             coordinateSize = 9
         else:
             coordinateSize = 0
+        '''
         # use the data from the outline representation
         outlineData = self._glyph.getRepresentation("defconQt.OutlineInformation")
         points = [] # TODO: remove this unless we need it # useful for text drawing, add it
@@ -523,32 +558,19 @@ class GlyphView(QGraphicsView):
                 # on curve
                 x, y = onCurve.x, onCurve.y
                 points.append((x, y))
-                if onCurve.isSmooth:
-                    rx = self.roundPosition(x - smoothHalf)
-                    ry = self.roundPosition(y - smoothHalf)
-                    item = OnCurvePointItem(-smoothHalf, -smoothHalf, smoothWidth, smoothHeight, x, y,
-                        onCurve.isSmooth, self._glyph[onCurve.contourIndex], onCurve.pointIndex,
-                        QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
-                    s.addItem(item)
-                else:
-                    rx = self.roundPosition(x - half)
-                    ry = self.roundPosition(y - half)
-                    item = OnCurvePointItem(-half, -half, width, height, x, y, onCurve.isSmooth, 
-                        self._glyph[onCurve.contourIndex], onCurve.pointIndex,
-                        QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
-                    s.addItem(item)
+                item = OnCurvePointItem(x, y, onCurve.isSmooth, self._glyph[onCurve.contourIndex],
+                    onCurve.pointIndex, QPen(self._pointStrokeColor, 1.5), QBrush(self._onCurvePointColor))
+                s.addItem(item)
                 # off curve
                 for CP in [onCurve.prevCP, onCurve.nextCP]:
                     if CP:
                         cx, cy = CP
                         # point
                         points.append((cx, cy))
-                        rx = self.roundPosition(cx - offHalf)
-                        ry = self.roundPosition(cy - offHalf)
-                        CPObject = OffCurvePointItem(-offHalf, -offHalf, offWidth, offHeight, cx-x, cy-y,
-                            QPen(self._offCurvePointColor, 1.0), QBrush(self._backgroundColor), item)
+                        CPObject = OffCurvePointItem(cx-x, cy-y, QPen(self._offCurvePointColor, 1.0),
+                            QBrush(self._backgroundColor), item)
                         # line
-                        lineObj = QGraphicsLineItem(0, 0, cx - x, cy - y, item)
+                        lineObj = QGraphicsLineItem(0, 0, cx-x, cy-y, item)
                         lineObj.setPen(QPen(self._bezierHandleColor, 1.0))
                     
         '''
@@ -629,13 +651,9 @@ class GlyphView(QGraphicsView):
         super(GlyphView, self).mousePressEvent(event)
     
     def setSceneDrawing(self):
-        #self.parent().drawingTool.setChecked(True)
-        #self.parent().selectTool.setChecked(False)
         self._drawingTool = True
     
     def setSceneSelection(self):
-        #self.parent().drawingTool.setChecked(False)
-        #self.parent().selectTool.setChecked(True)
         self._drawingTool = False
     
     # Lock/release handdrag does not seem to work…
@@ -669,12 +687,11 @@ class GlyphView(QGraphicsView):
         #self._calcScale()
         #self._setFrame()
         self.scale(factor, factor)
-        
         scale = self.transform().m11()
-        if scale < .3 or scale > 1: scale = 1
-        offCurvePointSize = 5 / scale
-        onCurvePointSize = 6 / scale
-        onCurveSmoothPointSize = 7 / scale
+        #if scale < .3 or scale > 1: scale = 1
+        offCurvePointSize = 7 / scale#5 / scale
+        onCurvePointSize = 8 / scale#6 / scale
+        onCurveSmoothPointSize = 9 / scale#7 / scale
         for item in self.scene().items():
             if isinstance(item, OnCurvePointItem):
                 path = QPainterPath()
@@ -687,10 +704,12 @@ class GlyphView(QGraphicsView):
                     half = width / 2.0
                     path.addRect(-half, -half, width, height)
                 item.setPath(path)
+                item.setPen(QPen(Qt.white, 1.5 / scale))
             elif isinstance(item, OffCurvePointItem):
                 width = height = self.roundPosition(offCurvePointSize)# * self._inverseScale)
                 half = width / 2.0
                 item.setRect(-half, -half, width, height)
+                item.setPen(QPen(Qt.white, 1.0 / scale))
 
         self.update()
         event.accept()

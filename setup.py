@@ -34,11 +34,11 @@ except:
 
 setup(name="defconQt",
     version="0.1",
-    description="A set of QT interface objects for working with font data.",
+    description="A set of Qt interface objects for working with font data.",
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
 #    url="",
-    license="GNU GPL v3",
+    license="GNU LGPL 2.1/GNU GPL v3",
     # TODO: populate
     packages=["defconQt"],
     package_dir={"":"Lib"}

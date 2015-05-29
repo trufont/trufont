@@ -65,7 +65,7 @@ class TextEditor(QPlainTextEdit):
     def __init__(self, text=None, parent=None):
         super(TextEditor, self).__init__(parent)
         font = QFont()
-        font.setFamily('CamingoCode')
+        font.setFamily('Roboto Mono')
         font.setPointSize(10)
         font.setFixedPitch(True)
 
