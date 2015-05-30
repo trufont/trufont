@@ -4,13 +4,13 @@
 
 Dependencies:
 
-- [Behdad Esfahbod’s fontTools]
-- [Adrien Tétar’s fork of robofab, python3 branch]
-- [Adrien Tétar’s fork of defcon, python3 branch]
+- [Behdad Esfahbodâ€™s fontTools]
+- [Adrien TÃ©tarâ€™s fork of robofab, python3 branch]
+- [Adrien TÃ©tarâ€™s fork of defcon, python3 branch]
 
-[Behdad Esfahbod’s fontTools]: https://github.com/behdad/fonttools
-[Adrien Tétar’s fork of robofab, python3 branch]: https://github.com/adrientetar/robofab
-[Adrien Tétar’s fork of defcon, python3 branch]: https://github.com/adrientetar/defcon
+[Behdad Esfahbodâ€™s fontTools]: https://github.com/behdad/fonttools
+[Adrien TÃ©tarâ€™s fork of robofab, python3 branch]: https://github.com/adrientetar/robofab
+[Adrien TÃ©tarâ€™s fork of defcon, python3 branch]: https://github.com/adrientetar/defcon
 
 Run:
 

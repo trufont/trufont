@@ -167,7 +167,7 @@ class FontToolBar(QToolBar):
 
         self.configBar = QPushButton(self)
         self.configBar.setFlat(True)
-        self.configBar.setIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\ic_settings_24px.svg"))
+        self.configBar.setIcon(QIcon("resources/ic_settings_24px.svg"))
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px");
         self.toolsMenu = QMenu(self)
         wrapLines = self.toolsMenu.addAction("Wrap lines", self.wrapLines)

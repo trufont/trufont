@@ -516,6 +516,13 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     import sys
 
+    if len(sys.argv) < 2:
+         ufoFile = "C:\\CharterNova-Regular.ufo"
+#        print('Usage: %s INPUTFILE' % sys.argv[0])
+#        sys.exit(1)
+    else:
+         ufoFile = sys.argv[1]
+
     #from pycallgraph import PyCallGraph
     #from pycallgraph.output import GraphvizOutput
 
@@ -523,8 +530,8 @@ if __name__ == '__main__':
     #with PyCallGraph(output=GraphvizOutput()):
     app = QApplication(sys.argv)
     # TODO: http://stackoverflow.com/a/21330349/2037879
-    app.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"))
-    window = MainWindow(Font("C:\\CharterNova-Regular.ufo"))
+    app.setWindowIcon(QIcon("resources/icon.png"))
+    window = MainWindow(Font(ufoFile))
     window.resize(605, 430)
     window.show()
     sys.exit(app.exec_())

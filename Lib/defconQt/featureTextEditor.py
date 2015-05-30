@@ -64,10 +64,9 @@ class LineNumberArea(QWidget):
 class TextEditor(QPlainTextEdit):
     def __init__(self, text=None, parent=None):
         super(TextEditor, self).__init__(parent)
-        font = QFont()
-        font.setFamily('Roboto Mono')
-        font.setPointSize(10)
-        font.setFixedPitch(True)
+        # https://gist.github.com/murphyrandle/2921575
+        font = QFont('Roboto Mono', 10)
+        #font.setFixedPitch(True)
 
         self._indent = "    "
         self.highlighter = Highlighter(self.document())
@@ -78,11 +77,9 @@ class TextEditor(QPlainTextEdit):
         self.setPlainText(text)
         self.setFont(font)
     
-    def setFontParams(self, family='CamingoCode', ptSize=10, isMono=True):
-        font = QFont()
-        font.setFamily(family)
-        font.setPointSize(ptSize)
-        font.setFixedPitch(isMono)
+    def setFontParams(self, family='Roboto Mono', ptSize=10, isMono=True):
+        font = QFont(family, ptSize)
+        #font.setFixedPitch(isMono)
         self.setFont(font)
 
     def write(self, features):
