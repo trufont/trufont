@@ -148,7 +148,10 @@ class TextEditor(QPlainTextEdit):
             cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self._indent))
             if cursor.selectedText() == self._indent:
                 indent += 1
-            cursor.movePosition(QTextCursor.NoMove)
+            else: break
+            # Now move the anchor back to the position()
+            #cursor.movePosition(QTextCursor.NoMove) # shouldn't NoMove work here?
+            cursor.setPosition(cursor.position())
             lineLength -= 1
         cursor.movePosition(QTextCursor.EndOfLine)
         return indent
@@ -210,6 +213,22 @@ class TextEditor(QPlainTextEdit):
         else:
             super(TextEditor, self).keyPressEvent(event)
 
+keywordPatterns = ["\\bAscender\\b", "\\bAttach\\b", "\\bCapHeight\\b", "\\bCaretOffset\\b", "\\bCodePageRange\\b",
+    "\\bDescender\\b", "\\bFontRevision\\b", "\\bGlyphClassDef\\b", "\\bHorizAxis.BaseScriptList\\b",
+    "\\bHorizAxis.BaseTagList\\b", "\\bHorizAxis.MinMax\\b", "\\bIgnoreBaseGlyphs\\b", "\\bIgnoreLigatures\\b",
+    "\\bIgnoreMarks\\b", "\\bLigatureCaretByDev\\b", "\\bLigatureCaretByIndex\\b", "\\bLigatureCaretByPos\\b",
+    "\\bLineGap\\b", "\\bMarkAttachClass\\b", "\\bMarkAttachmentType\\b", "\\bNULL\\b", "\\bPanose\\b", "\\bRightToLeft\\b",
+    "\\bTypoAscender\\b", "\\bTypoDescender\\b", "\\bTypoLineGap\\b", "\\bUnicodeRange\\b", "\\bUseMarkFilteringSet\\b",
+    "\\bVendor\\b", "\\bVertAdvanceY\\b", "\\bVertAxis.BaseScriptList\\b", "\\bVertAxis.BaseTagList\\b",
+    "\\bVertAxis.MinMax\\b", "\\bVertOriginY\\b", "\\bVertTypoAscender\\b", "\\bVertTypoDescender\\b",
+    "\\bVertTypoLineGap\\b", "\\bXHeight\\b", "\\banchorDef\\b", "\\banchor\\b", "\\banonymous\\b", "\\banon\\b",
+    "\\bby\\b", "\\bcontour\\b", "\\bcursive\\b", "\\bdevice\\b", "\\benumerate\\b", "\\benum\\b", "\\bexclude_dflt\\b",
+    "\\bfeatureNames\\b", "\\bfeature\\b", "\\bfrom\\b", "\\bignore\\b", "\\binclude_dflt\\b", "\\binclude\\b",
+    "\\blanguagesystem\\b", "\\blanguage\\b", "\\blookupflag\\b", "\\blookup\\b", "\\bmarkClass\\b", "\\bmark\\b",
+    "\\bnameid\\b", "\\bname\\b", "\\bparameters\\b", "\\bposition\\b", "\\bpos\\b", "\\brequired\\b", "\\breversesub\\b",
+    "\\brsub\\b", "\\bscript\\b", "\\bsizemenuname\\b", "\\bsubstitute\\b", "\\bsubtable\\b", "\\bsub\\b", "\\btable\\b",
+    "\\buseExtension\\b", "\\bvalueRecordDef\\b", "\\bwinAscent\\b", "\\bwinDescent\\b"]
+
 class Highlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(Highlighter, self).__init__(parent)
@@ -217,22 +236,6 @@ class Highlighter(QSyntaxHighlighter):
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground(QColor(30, 150, 220))
         keywordFormat.setFontWeight(QFont.Bold)
-
-        keywordPatterns = ["\\bAscender\\b", "\\bAttach\\b", "\\bCapHeight\\b", "\\bCaretOffset\\b", "\\bCodePageRange\\b",
-            "\\bDescender\\b", "\\bFontRevision\\b", "\\bGlyphClassDef\\b", "\\bHorizAxis.BaseScriptList\\b",
-            "\\bHorizAxis.BaseTagList\\b", "\\bHorizAxis.MinMax\\b", "\\bIgnoreBaseGlyphs\\b", "\\bIgnoreLigatures\\b",
-            "\\bIgnoreMarks\\b", "\\bLigatureCaretByDev\\b", "\\bLigatureCaretByIndex\\b", "\\bLigatureCaretByPos\\b",
-            "\\bLineGap\\b", "\\bMarkAttachClass\\b", "\\bMarkAttachmentType\\b", "\\bNULL\\b", "\\bPanose\\b", "\\bRightToLeft\\b",
-            "\\bTypoAscender\\b", "\\bTypoDescender\\b", "\\bTypoLineGap\\b", "\\bUnicodeRange\\b", "\\bUseMarkFilteringSet\\b",
-            "\\bVendor\\b", "\\bVertAdvanceY\\b", "\\bVertAxis.BaseScriptList\\b", "\\bVertAxis.BaseTagList\\b",
-            "\\bVertAxis.MinMax\\b", "\\bVertOriginY\\b", "\\bVertTypoAscender\\b", "\\bVertTypoDescender\\b",
-            "\\bVertTypoLineGap\\b", "\\bXHeight\\b", "\\banchorDef\\b", "\\banchor\\b", "\\banonymous\\b", "\\banon\\b",
-            "\\bby\\b", "\\bcontour\\b", "\\bcursive\\b", "\\bdevice\\b", "\\benumerate\\b", "\\benum\\b", "\\bexclude_dflt\\b",
-            "\\bfeatureNames\\b", "\\bfeature\\b", "\\bfrom\\b", "\\bignore\\b", "\\binclude_dflt\\b", "\\binclude\\b",
-            "\\blanguagesystem\\b", "\\blanguage\\b", "\\blookupflag\\b", "\\blookup\\b", "\\bmarkClass\\b", "\\bmark\\b",
-            "\\bnameid\\b", "\\bname\\b", "\\bparameters\\b", "\\bposition\\b", "\\bpos\\b", "\\brequired\\b", "\\breversesub\\b",
-            "\\brsub\\b", "\\bscript\\b", "\\bsizemenuname\\b", "\\bsubstitute\\b", "\\bsubtable\\b", "\\bsub\\b", "\\btable\\b",
-            "\\buseExtension\\b", "\\bvalueRecordDef\\b", "\\bwinAscent\\b", "\\bwinDescent\\b"]
 
         self.highlightingRules = [(QRegExp("%s%s%s" % ("(", "|".join(keywordPatterns), ")")), keywordFormat)]
 

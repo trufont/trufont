@@ -8,6 +8,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+cannedDesign = [
+    dict(type="cannedDesign", allowPseudoUnicode=True)
+]
 glyphSortDescriptors = [
     dict(type="alphabetical", allowPseudoUnicode=True),
     dict(type="category", allowPseudoUnicode=True),
@@ -15,9 +18,6 @@ glyphSortDescriptors = [
     dict(type="script", allowPseudoUnicode=True),
     dict(type="suffix", allowPseudoUnicode=True),
     dict(type="decompositionBase", allowPseudoUnicode=True)
-]
-cannedDesign = [
-    dict(type="cannedDesign", allowPseudoUnicode=True)
 ]
 
 cellGridColor = QColor(130, 130, 130)
@@ -37,26 +37,31 @@ class CharacterWidget(QWidget):
         super(CharacterWidget, self).__init__(parent)
 
         self.font = font
-        #self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), glyphSortDescriptors)]
-        self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), cannedDesign)]
+        self.glyphs = []
         self.scrollArea = scrollArea
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.squareSize = squareSize
         self.columns = 10
         self._selection = set()
         self.lastKey = -1
         self.moveKey = -1
         
+        self._maybeDragPosition = None
         self.setFocusPolicy(Qt.ClickFocus)
 
     def updateFont(self, font):
         self.font = font
-        self.glyphs = [font[k] for k in font.unicodeData.sortGlyphNames(font.keys(), cannedDesign)]
+        self.updateGlyphsFromFont()
+    
+    def updateGlyphsFromFont(self, descriptor=cannedDesign):
+        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), descriptor)]
         self.adjustSize()
         self.update()
     
-    def updateGlyphs(self):
-        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), cannedDesign)]
+    def setGlyphs(self, glyphs):
+        self.glyphs = glyphs
+        self._selection = set()
         self.adjustSize()
         self.update()
 
@@ -76,7 +81,11 @@ class CharacterWidget(QWidget):
     def markSelection(self, color):
         for key in self._selection:
             glyph = self.glyphs[key]
-            glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
+            if color is None:
+                if "public.markColor" in glyph.lib:
+                    del glyph.lib["public.markColor"]
+            else:
+                glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
         self.update()
     
     # TODO: eventually get rid of the signal
@@ -101,6 +110,11 @@ class CharacterWidget(QWidget):
             self.computeCharacterSelected()
             self.update()
             event.accept()
+        elif event.key() == Qt.Key_D and event.modifiers() & Qt.ControlModifier:
+            self._selection = set()
+            self.computeCharacterSelected()
+            self.update()
+            event.accept()
         else:
             super(CharacterWidget, self).keyPressEvent(event)
 
@@ -112,6 +126,10 @@ class CharacterWidget(QWidget):
             if modifiers & Qt.ShiftModifier and len(self._selection)==1:
                 self.lastKey = self._selection.pop()
                 self.moveKey = key
+            elif key in self._selection:
+                self._maybeDragPosition = event.pos()
+                event.accept()
+                return
             else:
                 self.lastKey = key
                 self.moveKey = self.lastKey
@@ -126,6 +144,19 @@ class CharacterWidget(QWidget):
     
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
+            if self._maybeDragPosition is not None:
+                if ((event.pos() - self._maybeDragPosition).manhattanLength() \
+                    < QApplication.startDragDistance()): return
+                # TODO: needs ordering or not?
+                glyphList = " ".join((self.glyphs[key].name for key in self._selection))
+                drag = QDrag(self)
+                mimeData = QMimeData()
+                mimeData.setData("text/plain", glyphList)
+                drag.setMimeData(mimeData)
+                
+                dropAction = drag.exec_()
+                event.accept()
+                return
             key = (event.y() // self.squareSize) * self.columns + min(event.x() // self.squareSize, self.columns-1)
             if key > len(self.glyphs)-1: return
             self.moveKey = key
@@ -138,6 +169,7 @@ class CharacterWidget(QWidget):
     
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
+            self._maybeDragPosition = None
             lastKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
             moveKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
             if event.modifiers() & Qt.ControlModifier:
@@ -292,6 +324,7 @@ class MainWindow(QMainWindow):
         self.scrollArea = QScrollArea(self)
         squareSize = 56
         self.characterWidget = CharacterWidget(self.font, squareSize, self.scrollArea, self)
+        self.characterWidget.updateGlyphsFromFont()
         self.scrollArea.setWidget(self.characterWidget)
 
         # TODO: make shortcuts platform-independent
@@ -312,6 +345,8 @@ class MainWindow(QMainWindow):
         
         markColorMenu = QMenu("Mark color", self)
         pixmap = QPixmap(24, 24)
+        none = markColorMenu.addAction("None", self.colorFill)
+        none.setData(None)
         red = markColorMenu.addAction("Red", self.colorFill)
         pixmap.fill(Qt.red)
         red.setIcon(QIcon(pixmap))
@@ -504,7 +539,7 @@ class MainWindow(QMainWindow):
         if ok and gName != '':
             self.font.newGlyph(gName)
             self.font[gName].width = 500
-            self.characterWidget.updateGlyphs()
+            self.characterWidget.updateGlyphsFromFont()
 
     def about(self):
         QMessageBox.about(self, "About Me",
