@@ -12,6 +12,7 @@ class GroupListWidget(QListWidget):
         for groupName in groupNames:
             item = QListWidgetItem(groupName, self)
             item.setFlags(item.flags() | Qt.ItemIsEditable)
+        #if len(groupNames): self.setCurrentRow(0)
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
@@ -29,6 +30,10 @@ class GroupStackWidget(QWidget):
         self.upm = font.info.unitsPerEm
         self.padding = 10
         self.alignRight = False
+    
+    def setAlignment(self, alignRight):
+        self.alignRight = alignRight
+        self.update()
     
     def setGlyphs(self, glyphs):
         self.glyphs = glyphs
@@ -100,38 +105,72 @@ class GroupsWindow(QWidget):
         
         self.stackWidget = GroupStackWidget(self.font, parent=self)
         
+        self.addGroupButton = QPushButton("+", self)
+        self.addGroupButton.clicked.connect(self._groupAdd)
+        self.removeGroupButton = QPushButton("−", self)
+        self.removeGroupButton.clicked.connect(self._groupDelete)
+
+        self.alignLeftBox = QCheckBox("Align left", self)
+        self.alignRightBox = QCheckBox("Align right", self)
+        alignGroup = QButtonGroup(self)
+        alignGroup.addButton(self.alignLeftBox)
+        alignGroup.addButton(self.alignRightBox)
+        self.alignLeftBox.setChecked(True)
+        alignGroup.buttonClicked[int].connect(self._alignmentChanged)
+        
         self.scrollArea = QScrollArea(self)
         self.characterWidget = GroupCharacterWidget(self.font, scrollArea=self.scrollArea, parent=self)
         self.scrollArea.setWidget(self.characterWidget)
         self.groupsList.currentItemChanged.connect(self._groupChanged)
+        self._cachedName = None
         
         layout = QGridLayout(self)
         layout.addWidget(self.groupsList, 0, 0, 5, 4)
         layout.addWidget(self.stackWidget, 0, 4, 5, 4)
-        layout.addWidget(self.scrollArea, 5, 0, 4, 8)
+        layout.addWidget(self.addGroupButton, 5, 0)
+        layout.addWidget(self.removeGroupButton, 5, 3)
+        layout.addWidget(self.alignLeftBox, 5, 4)
+        layout.addWidget(self.alignRightBox, 5, 7)
+        layout.addWidget(self.scrollArea, 6, 0, 4, 8)
         self.setLayout(layout)
         
         self.setWindowTitle("%s%s%s%s" % ("Groups window – ", self.font.info.familyName, " ", self.font.info.styleName))
     
+    def _alignmentChanged(self, id):
+        # identifiers are numbered as: -2, -3, etc.
+        alignRight = bool(-id-2)
+        self.stackWidget.setAlignment(alignRight)
+    
+    def _groupAdd(self):
+        groupName = "New group"
+        if groupName in self.font.groups:
+            index = 1
+            while "%s %d" % (groupName, index) in self.font.groups:
+                index += 1
+            groupName = "%s %d" % (groupName, index)
+        self.font.groups[groupName] = []
+        item = QListWidgetItem(groupName, self.groupsList)
+        item.setFlags(item.flags() | Qt.ItemIsEditable)
+        self.groupsList.setCurrentItem(item)
+        self.groupsList.editItem(item)
+    
     def _groupChanged(self):
-        currentGroup = self.groupsList.currentItem().text()
+        self._cachedName = self.groupsList.currentItem().text()
         glyphs = []
-        for gName in self.font.groups[currentGroup]:
+        for gName in self.font.groups[self._cachedName]:
             glyphs.append(self.font[gName])
         self.stackWidget.setGlyphs(glyphs)
         self.characterWidget.setGlyphs(glyphs)
+        self.characterWidget.update()
     
     def _groupRenamed(self):
-        cur = self.groupsList.currentItem()
-        # XXX: perf?
-        index = self.groupsList.indexFromItem(cur)
-        newKey = cur.text()
-        self.font.groups[newKey] = self.font.groups[self.groups[index]]
-        del self.font.groups[self.groups[index]]
+        newKey = self.groupsList.currentItem().text()
+        self.font.groups[newKey] = self.font.groups[self._cachedName]
+        del self.font.groups[self._cachedName]
     
     def _groupDelete(self):
-        cur = self.groupsList.currentItem()
-        del self.font.groups[cur.text()]
+        newKey = self.groupsList.currentItem().text()
+        del self.font.groups[newKey]
         self.groupsList.takeItem(self.groupsList.currentRow())
         self._groupChanged()
     

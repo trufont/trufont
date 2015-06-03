@@ -40,7 +40,7 @@ class MainEditWindow(QMainWindow):
         self.editor.setPlainText(self.font.features.text)
 
     def save(self):
-        self.editor.write(self.font.features.text)
+        self.editor.write(self.font.features)
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)

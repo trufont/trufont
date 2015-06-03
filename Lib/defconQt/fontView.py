@@ -75,8 +75,10 @@ class CharacterWidget(QWidget):
         self.adjustSize()
 
     def sizeHint(self):
+        # Calculate sizeHint with max(height, scrollArea.height()) because if scrollArea is
+        # bigger than widget height after an update, we risk leaving old painted content on screen
         return QSize(self.columns * self.squareSize,
-                math.ceil(len(self.glyphs) / self.columns) * self.squareSize)
+                max(math.ceil(len(self.glyphs) / self.columns) * self.squareSize, self.scrollArea.height()))
     
     def markSelection(self, color):
         for key in self._selection:
@@ -148,6 +150,7 @@ class CharacterWidget(QWidget):
                 if ((event.pos() - self._maybeDragPosition).manhattanLength() \
                     < QApplication.startDragDistance()): return
                 # TODO: needs ordering or not?
+                # TODO: see about dropping join tuples
                 glyphList = " ".join((self.glyphs[key].name for key in self._selection))
                 drag = QDrag(self)
                 mimeData = QMimeData()
@@ -212,9 +215,10 @@ class CharacterWidget(QWidget):
         beginColumn = redrawRect.left() // self.squareSize
         endColumn = redrawRect.right() // self.squareSize
         
-        painter.setPen(cellGridColor)
-        painter.drawLine(redrawRect.left(), redrawRect.top(), redrawRect.left(), redrawRect.bottom())
-        painter.drawLine(0, 0, redrawRect.right(), 0)
+        # painter.setPen(cellGridColor)
+        # painter.drawLine(redrawRect.left(), redrawRect.top(), redrawRect.left()+self.squareSize \
+            # *min(len(self.glyphs), self.columns), redrawRect.top()+self.squareSize*(math.ceil(len(self.glyphs)/self.columns)))
+        # painter.drawLine(0, 0, redrawRect.right(), 0)
 
         # selection code
         if self.moveKey != -1:
@@ -279,7 +283,7 @@ class CharacterWidget(QWidget):
                 painter.drawText(1, 0, self.squareSize - 2, GlyphCellHeaderHeight - minOffset,
                       Qt.TextSingleLine | Qt.AlignCenter, name)
                 painter.restore()
-
+                
                 painter.setPen(cellGridColor)
                 rightEdgeX = column * self.squareSize + self.squareSize
                 bottomEdgeY = row * self.squareSize + self.squareSize
@@ -325,6 +329,7 @@ class MainWindow(QMainWindow):
         squareSize = 56
         self.characterWidget = CharacterWidget(self.font, squareSize, self.scrollArea, self)
         self.characterWidget.updateGlyphsFromFont()
+        self.characterWidget.setFocus()
         self.scrollArea.setWidget(self.characterWidget)
 
         # TODO: make shortcuts platform-independent
@@ -385,11 +390,11 @@ class MainWindow(QMainWindow):
         self.sqSizeSlider.setValue(squareSize)
         self.sqSizeSlider.valueChanged.connect(self._squareSizeChanged)
         self.selectionLabel = QLabel(self)
-        self.characterWidget.characterSelected.connect(self._selectionChanged)
         self.statusBar().addPermanentWidget(self.sqSizeSlider)
         self.statusBar().addWidget(self.selectionLabel)
 
         self.setCentralWidget(self.scrollArea)
+        self.characterWidget.characterSelected.connect(self._selectionChanged)
         self.characterWidget.glyphOpened.connect(self._glyphOpened)
         self.setWindowTitle()
         # TODO: dump the hardcoded path

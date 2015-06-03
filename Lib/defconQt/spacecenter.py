@@ -16,7 +16,7 @@ class MainSpaceWindow(QWidget):
                 string = getuser()
             except:
                 string = "World"
-            string = "%s%s" % ("Hello ", string)
+            string = "Hello %s" % string
         self.font = font
         self.glyphs = []
         self._subscribeToGlyphsText(string)
@@ -39,7 +39,7 @@ class MainSpaceWindow(QWidget):
         
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
-        self.setWindowTitle("%s%s%s%s" % ("Space center – ", self.font.info.familyName, " ", self.font.info.styleName))
+        self.setWindowTitle("Space center – %s %s" % (self.font.info.familyName, self.font.info.styleName))
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
@@ -170,6 +170,9 @@ class FontToolBar(QToolBar):
         self.configBar.setIcon(QIcon("resources/ic_settings_24px.svg"))
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px");
         self.toolsMenu = QMenu(self)
+        showKerning = self.toolsMenu.addAction("Show Kerning", self.showKerning)
+        showKerning.setCheckable(True)
+        self.toolsMenu.addSeparator()
         wrapLines = self.toolsMenu.addAction("Wrap lines", self.wrapLines)
         wrapLines.setCheckable(True)
         noWrapLines = self.toolsMenu.addAction("No wrap", self.noWrapLines)
@@ -186,6 +189,10 @@ class FontToolBar(QToolBar):
         self.addWidget(self.comboBox)
         self.addWidget(self.configBar)
     
+    def showKerning(self):
+        action = self.sender()
+        self.parent().canvas.setShowKerning(action.isChecked())
+    
     def wrapLines(self):
         self.parent().canvas.setWrapLines(True)
     
@@ -196,6 +203,7 @@ class GlyphsCanvas(QWidget):
     def __init__(self, font, glyphs, scrollArea, pointSize=defaultPointSize, parent=None):
         super(GlyphsCanvas, self).__init__(parent)
 
+        self.font = font
         self.ascender = font.info.ascender
         if self.ascender is None: self.ascender = 750
         self.descender = font.info.descender
@@ -206,6 +214,7 @@ class GlyphsCanvas(QWidget):
         self.ptSize = pointSize
         self.calculateScale()
         self.padding = 10
+        self._showKerning = False
         
         self._wrapLines = True
         self.scrollArea = scrollArea
@@ -217,6 +226,10 @@ class GlyphsCanvas(QWidget):
         scale = self.ptSize / self.upm
         if scale < .01: scale = 0.01
         self.scale = scale
+    
+    def setShowKerning(self, showKerning):
+        self._showKerning = showKerning
+        self.update()
     
     def setWrapLines(self, wrapLines):
         if self._wrapLines == wrapLines: return
@@ -272,30 +285,75 @@ class GlyphsCanvas(QWidget):
         comboBox.setEditText(str(newPointSize))
         comboBox.blockSignals(False)
         event.accept()
+    
+    # Tal Leming. Edited.
+    def lookupKerningValue(self, first, second):
+        kerning = self.font.kerning
+        groups = self.font.groups
+        # quickly check to see if the pair is in the kerning dictionary
+        if (first, second) in kerning:
+            return kerning[pair]
+        # get group names and make sure first and second are glyph names
+        firstGroup = secondGroup = None
+        if first.startswith("@MMK_L"):
+            firstGroup = first
+            first = None
+        else:
+            for group, groupMembers in groups.items():
+                if group.startswith("@MMK_L"):
+                    if first in groupMembers:
+                        firstGroup = group
+                        break
+        if second.startswith("@MMK_R"):
+            secondGroup = second
+            second = None
+        else:
+            for group, groupMembers in groups.items():
+                if group.startswith("@MMK_R"):
+                    if second in groupMembers:
+                        secondGroup = group
+                        break
+        # make an ordered list of pairs to look up
+        pairs = [
+            (first, second),
+            (first, secondGroup),
+            (firstGroup, second),
+            (firstGroup, secondGroup)
+        ]
+        # look up the pairs and return any matches
+        for pair in pairs:
+            if pair in kerning:
+                return kerning[pair]
+        return 0
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(0, 0, self.width(), self.height(), Qt.white)
         painter.translate(self.padding, self.padding+self.ascender*self.scale)
+        # TODO: scale painter here to avoid g*scale everywhere below
 
         cur_width = 0
         lines = 1
-        for glyph in self.glyphs:
+        for index, glyph in enumerate(self.glyphs):
             # line wrapping
             # TODO: should padding be added for the right boundary as well? I'd say no but not sure
-            if self._wrapLines and cur_width + glyph.width*self.scale + self.padding > self.width():
+            gWidth = glyph.width*self.scale
+            if self._wrapLines and cur_width + gWidth + self.padding > self.width():
                 painter.translate(-cur_width, self.ptSize)
-                cur_width = glyph.width*self.scale
+                cur_width = gWidth
                 lines += 1
             else:
-                cur_width += glyph.width*self.scale
+                if self._showKerning and cur_width > 0:
+                    kern = self.lookupKerningValue(self.glyphs[index-1].name, glyph.name)
+                    painter.translate(kern*self.scale, 0)
+                cur_width += gWidth
             glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
             painter.save()
             painter.scale(self.scale, -self.scale)
             painter.fillPath(glyphPath, Qt.black)
             painter.restore()
-            painter.translate(glyph.width*self.scale, 0)
+            painter.translate(gWidth, 0)
         
         scrollMargins = self.scrollArea.contentsMargins()
         innerHeight = self.scrollArea.height() - scrollMargins.top() - scrollMargins.bottom()
