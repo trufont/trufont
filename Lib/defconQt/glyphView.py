@@ -136,11 +136,23 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         # TODO: redo this with scaling
         self.setPen(QPen(offCurvePointColor, 1.0))
         self.setBrush(QBrush(backgroundColor))
+        self._needsUngrab = False
     
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
             self.parentItem()._CPMoved(value)
         return QGraphicsItem.itemChange(self, change, value)
+    
+    def mousePressEvent(self, event):
+        if not self._needsUngrab and self.x() == 0 and self.y() == 0:
+            event.ignore()
+        super(OffCurvePointItem, self).mousePressEvent(event)
+    
+    def mouseReleaseEvent(self, event):
+        super(OffCurvePointItem, self).mouseReleaseEvent(event)
+        if self._needsUngrab:
+            self.ungrabMouse()
+            self._needsUngrab = False
         
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
@@ -157,10 +169,10 @@ class OffCurvePointItem(QGraphicsEllipseItem):
 
 # TODO: enforce 2 OCP there convention in ctor
 class OnCurvePointItem(QGraphicsPathItem):
-    def __init__(self, x, y, isSmooth, contour, pointIndex, parent=None):
+    def __init__(self, x, y, isSmooth, contour, point, parent=None):
         super(OnCurvePointItem, self).__init__(parent)
         self._contour = contour
-        self._pointIndex = pointIndex
+        self._point = point
         self._isSmooth = isSmooth
 
         self.setPointPath()
@@ -169,7 +181,6 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setPen(QPen(pointStrokeColor, 1.5))
-        self._penColor = self.pen().color()
         self.setBrush(QBrush(onCurvePointColor))
     
     def setPointPath(self):
@@ -180,7 +191,11 @@ class OnCurvePointItem(QGraphicsPathItem):
             path.addRect(-onHalf, -onHalf, onWidth, onHeight)
         self.setPath(path)
     
+    def getPointIndex(self):
+        return self._contour.index(self._point)
+    
     def _CPMoved(self, newValue):
+        pointIndex = self.getPointIndex()
         children = self.childItems()
         # nodes are at even positions
         if children[0].isSelected():
@@ -193,19 +208,22 @@ class OnCurvePointItem(QGraphicsPathItem):
         line = children[selected+1].line()
         children[selected+1].setLine(line.x1(), line.y1(), newValue.x(), newValue.y())
 
-        elemIndex = self._pointIndex+selected-1
+        elemIndex = pointIndex+selected-1
         self._contour[elemIndex].x = self.pos().x()+newValue.x()
         self._contour[elemIndex].y = self.pos().y()+newValue.y()
         self._contour.dirty = True
         if not (self._isSmooth and children[propagate].isVisible()): return
-        targetLen = children[selected+1].line().length()+children[propagate+1].line().length()
+        if children[selected]._needsUngrab:
+            targetLen = children[selected+1].line().length()*2
+        else:
+            targetLen = children[selected+1].line().length()+children[propagate+1].line().length()
         tmpLine = QLineF(newValue, QPointF(0, 0))
         tmpLine.setLength(targetLen)
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges, False)
         children[propagate].setPos(tmpLine.x2(), tmpLine.y2())
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         children[propagate+1].setLine(line.x1(), line.y1(), tmpLine.x2(), tmpLine.y2())
-        propagateInContour = self._pointIndex+propagate-1
+        propagateInContour = pointIndex+propagate-1
         self._contour[propagateInContour].x = self.pos().x()+tmpLine.x2()
         self._contour[propagateInContour].y = self.pos().y()+tmpLine.y2()
 
@@ -214,8 +232,9 @@ class OnCurvePointItem(QGraphicsPathItem):
             if self.scene() is None: return QGraphicsItem.itemChange(self, change, value)
             # TODO: if we're snapped to int round self.pos to int
             # have a look at defcon FuzzyNumber as well
-            self._contour[self._pointIndex].x = self.pos().x()
-            self._contour[self._pointIndex].y = self.pos().y()
+            pointIndex = self.getPointIndex()
+            self._contour[pointIndex].x = self.pos().x()
+            self._contour[pointIndex].y = self.pos().y()
             self._contour.dirty = True
 
             #if self._pointIndex == 0 and len(self._contour) > 1:
@@ -224,33 +243,22 @@ class OnCurvePointItem(QGraphicsPathItem):
                 # maybe make it disappear on move and recalc when releasing
                 # what does rf do here?
                 #if self._startPointObject is not None: self._startPointObject.setPos(self.pos())
-            '''
-            path = self.scene()._outlineItem.path()
-            for i in range(path.elementCount()):
-                elem = path.elementAt(i)
-                if elem.isCurveTo(): kind = "curve"
-                elif elem.isLineTo(): kind = "line"
-                else: kind = "move"
-                print("{} {}: {} {}".format(i, kind, elem.x, elem.y))
-            print()
-            print(self._pointIndex)
-            print()
-            '''
 
             children = self.childItems()
             if children[0].isVisible():
                 prevPos = children[0].pos()
-                self._contour[self._pointIndex-1].x = self.pos().x()+prevPos.x()
-                self._contour[self._pointIndex-1].y = self.pos().y()+prevPos.y()
+                self._contour[pointIndex-1].x = self.pos().x()+prevPos.x()
+                self._contour[pointIndex-1].y = self.pos().y()+prevPos.y()
             if children[2].isVisible():
                 nextPos = children[2].pos()
-                self._contour[self._pointIndex+1].x = self.pos().x()+nextPos.x()
-                self._contour[self._pointIndex+1].y = self.pos().y()+nextPos.y()
+                self._contour[pointIndex+1].x = self.pos().x()+nextPos.x()
+                self._contour[pointIndex+1].y = self.pos().y()+nextPos.y()
         return QGraphicsItem.itemChange(self, change, value)
     
     def mouseDoubleClickEvent(self, event):
+        pointIndex = self.getPointIndex()
         self._isSmooth = not self._isSmooth
-        self._contour[self._pointIndex].smooth = self._isSmooth
+        self._contour[pointIndex].smooth = self._isSmooth
         self.setPointPath()
     
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
@@ -261,11 +269,15 @@ class OnCurvePointItem(QGraphicsPathItem):
         if option.state & QStyle.State_Selected:
             pen.setColor(pointSelectionColor)
         else:
-            pen.setColor(self._penColor)
+            pen.setColor(pointStrokeColor)
         self.setPen(pen)
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
 
 class GlyphScene(QGraphicsScene):
+    def __init__(self, parent):
+        super(GlyphScene, self).__init__(parent)
+        self._editing = False
+
     # TODO: implement key multiplex in a set()
     # http://stackoverflow.com/a/10568233/2037879
     def keyPressEvent(self, event):
@@ -288,62 +300,133 @@ class GlyphScene(QGraphicsScene):
         for item in self.selectedItems():
             # TODO: if isinstance turns out to be slow, we might want to make a selectedMoveBy
             # function in items that calls moveBy for onCurve, noops for offCurve
-            if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): print("yea"); continue
+            if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): continue
             item.moveBy(x,y)
         event.accept()
-    
-    
+
     def mousePressEvent(self, event):
         if not self.views()[0]._drawingTool: super(GlyphScene, self).mousePressEvent(event); return
-        # TODO: stream
-        half, width, height = 3, 6, 6
         touched = self.itemAt(event.scenePos(), self.views()[0].transform())
         sel = self.selectedItems()
         x, y = event.scenePos().x(), event.scenePos().y()
         # XXX: not sure why isinstance does not work here
-        # contour.open is there in case we tackle extension from first point.
-        # what does rf do here?
-        if len(sel) == 1 and (type(sel[0]) is OnCurvePointItem) and sel[0]._contour.open \
-              and (sel[0]._pointIndex == len(sel[0]._contour)-1):
+        if len(sel) == 1:
+            isLastOnCurve = type(sel[0]) is OnCurvePointItem and sel[0]._contour.open and \
+                sel[0].getPointIndex() == len(sel[0]._contour)-1
+            # TODO: reimplement convenience methods in OffCurvePointItem
+            isLastOffCurve = type(sel[0]) is OffCurvePointItem and sel[0].parentItem()._contour.open and \
+                sel[0].parentItem().getPointIndex()+1 == len(sel[0].parentItem()._contour)-1
+        if len(sel) == 1 and (isLastOffCurve or isLastOnCurve):
+            if isLastOnCurve:
+                lastContour = sel[0]._contour
+            else:
+                lastContour = sel[0].parentItem()._contour
             close = False
-            pointIndex = len(sel[0]._contour)
-            if (touched and isinstance(touched, OnCurvePointItem)) and touched._pointIndex == 0 \
-                  and sel[0]._contour == touched._contour:
+            pointIndex = len(lastContour)
+            if (touched and isinstance(touched, OnCurvePointItem)) and touched.getPointIndex() == 0 \
+                  and lastContour == touched._contour:
                 close = True
-                x, y = touched.pos().x(), touched.pos().y()
+                # Changing the first point from move to line/curve will cycle and so close the contour
+                lastContour[0].segmentType = "line"
             elif touched and isinstance(touched, OnCurvePointItem):
                 super(GlyphScene, self).mousePressEvent(event)
                 return
             else:
-                item = OnCurvePointItem(x, y, False, sel[0]._contour, pointIndex)
+                if isLastOffCurve:
+                    lastContour.addPoint((x,y))
+                    lastContour.addPoint((x,y), "curve")
+                else:
+                    lastContour.addPoint((x,y), "line")
+                item = OnCurvePointItem(x, y, False, lastContour, lastContour[-1])
                 self.addItem(item)
                 for i in range(2):
                     CPObject = OffCurvePointItem(0, 0, item)
                     CPObject.setVisible(False)
                     lineObj = QGraphicsLineItem(0, 0, 0, 0, item)
                     lineObj.setPen(QPen(bezierHandleColor, 1.0))
-            if not close:
-                sel[0]._contour.addPoint((x,y), "line")
-                event.accept()
-            else:
-                # Changing the first point from move to line/curve will cycle and so close the contour
-                sel[0]._contour[0].segmentType = "line"
-            sel[0]._contour.dirty = True
+                if isLastOffCurve:
+                    item.childItems()[0].setVisible(True)
+            lastContour.dirty = True
+            self._editing = True
         elif not (touched and isinstance(touched, OnCurvePointItem)):
             from defcon.objects.contour import Contour
             nextC = Contour()
-            self.views()[0]._glyph.appendContour(nextC)
+            self._glyphObject.appendContour(nextC)
             nextC.addPoint((x,y), "move")
 
-            item = OnCurvePointItem(x, y, False, self.views()[0]._glyph[-1], 0)
+            item = OnCurvePointItem(x, y, False, self._glyphObject[-1], self._glyphObject[-1][-1])
             self.addItem(item)
             for i in range(2):
                 CPObject = OffCurvePointItem(0, 0, item)
                 CPObject.setVisible(False)
                 lineObj = QGraphicsLineItem(0, 0, 0, 0, item)
                 lineObj.setPen(QPen(bezierHandleColor, 1.0))
-            event.accept()
+            self._editing = True
         super(GlyphScene, self).mousePressEvent(event)
+    
+    def mouseMoveEvent(self, event):
+        if self._editing:
+            sel = self.selectedItems()
+            if len(sel) == 1:
+                if isinstance(sel[0], OnCurvePointItem) and (event.scenePos() - sel[0].pos()).manhattanLength() >= 1:
+                    if len(sel[0]._contour) < 2:
+                        # release current onCurve
+                        self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
+                        self.mouseGrabberItem().ungrabMouse()
+                        sel[0].setSelected(False)
+                        # append an offCurve point and start moving it
+                        sel[0]._contour.addPoint((event.scenePos().x(), event.scenePos().y()))
+                        nextCP = sel[0].childItems()[2]
+                        nextCP.setVisible(True)
+                        nextCP._needsUngrab = True
+                        #nextCP.setSelected(True)
+                        self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
+                        nextCP.grabMouse()
+                    else:
+                        from defcon.objects.point import Point
+                        # release current onCurve, delete from contour
+                        self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
+                        self.mouseGrabberItem().ungrabMouse()
+                        sel[0].setSelected(False)
+                        
+                        # construct a curve segment to the current point if there is not one
+                        onCurve = sel[0]._contour[-1]
+                        if not onCurve.segmentType == "curve":
+                            # remove the last onCurve
+                            sel[0]._contour.removePoint(onCurve)
+                            prev = sel[0]._contour[-1]
+                            assert(prev.segmentType == "line" or prev.segmentType == "move")
+                            # add a zero-length offCurve to the previous point
+                            sel[0]._contour.addPoint((prev.x, prev.y))
+                            # add prevOffCurve and activate
+                            sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
+                            sel[0].childItems()[0].setVisible(True)
+                            # add back current onCurve as a curve point
+                            sel[0]._contour.addPoint((onCurve.x, onCurve.y), "curve", True)
+                            sel[0]._point = sel[0]._contour[-1]
+                        else:
+                            sel[0]._point.smooth = True
+                        sel[0]._isSmooth = True
+                        sel[0].setPointPath()
+                        # add last offCurve
+                        sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
+                        nextCP = sel[0].childItems()[2]
+                        nextCP._needsUngrab = True
+                        nextCP.setVisible(True)
+                        #nextCP.setSelected(True)
+                        self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
+                        nextCP.grabMouse()
+                    self._editing = False
+                    super(GlyphScene, self).mouseMoveEvent(event)
+                else:
+                    # eat the event
+                    event.accept()
+        else:
+            super(GlyphScene, self).mouseMoveEvent(event)
+    
+    def mouseReleaseEvent(self, event):
+        self._editing = False
+        super(GlyphScene, self).mouseReleaseEvent(event)
 
 class GlyphView(QGraphicsView):
     Native, OpenGL, Image = range(3)
@@ -504,7 +587,7 @@ class GlyphView(QGraphicsView):
                 x, y = onCurve.x, onCurve.y
                 points.append((x, y))
                 item = OnCurvePointItem(x, y, onCurve.isSmooth, self._glyph[onCurve.contourIndex],
-                    onCurve.pointIndex)
+                    self._glyph[onCurve.contourIndex][onCurve.pointIndex])
                 s.addItem(item)
                 # off curve
                 for CP in [onCurve.prevCP, onCurve.nextCP]:
@@ -601,9 +684,11 @@ class GlyphView(QGraphicsView):
     
     def setSceneDrawing(self):
         self._drawingTool = True
+        self.setDragMode(QGraphicsView.NoDrag)
     
     def setSceneSelection(self):
         self._drawingTool = False
+        self.setDragMode(QGraphicsView.RubberBandDrag)
     
     # Lock/release handdrag does not seem to work…
     '''
