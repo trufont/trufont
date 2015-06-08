@@ -110,7 +110,10 @@ class OutlineInformationPen(AbstractPointPen):
                     if point["segmentType"] is not None:
                         prevCP, nextCP = None, None
                         if back["segmentType"] is None:
-                            prevCP = back["point"]
+                            # if we have an open contour with a trailing offCurve, don't signal it to the
+                            # first point
+                            if not (not haveFirst and contour[pointIndex-2]["segmentType"] is not None):
+                                prevCP = back["point"]
                         if forward["segmentType"] is None:
                             nextCP = forward["point"]
                         x, y = point["point"]
