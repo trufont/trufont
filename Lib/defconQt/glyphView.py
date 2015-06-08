@@ -95,7 +95,7 @@ class MainGfxWindow(QMainWindow):
             self.view.setRenderer(GlyphView.Image)
 
     def setWindowTitle(self, title, font=None):
-        if font is not None: puts = "%s%s%s%s%s" % (title, " – ", font.info.familyName, " ", font.info.styleName)
+        if font is not None: puts = "%s – %s %s" % (title, font.info.familyName, font.info.styleName)
         else: puts = title
         super(MainGfxWindow, self).setWindowTitle(puts)
 
@@ -145,9 +145,21 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         self._needsUngrab = False
     
     def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionHasChanged:
+        if change == QGraphicsItem.ItemPositionChange:
+            if QApplication.keyboardModifiers() & Qt.ShiftModifier:
+                ax = abs(value.x())
+                ay = abs(value.y())
+                if ay > ax * 2:
+                    value.setX(0)
+                elif ay >= ax / 2:
+                    avg = (ax + ay) / 2
+                    value.setX(copysign(avg, value.x()))
+                    value.setY(copysign(avg, value.y()))
+                else:
+                    value.setY(0)
+        elif change == QGraphicsItem.ItemPositionHasChanged:
             self.parentItem()._CPMoved(value)
-        return QGraphicsItem.itemChange(self, change, value)
+        return value
     
     def mousePressEvent(self, event):
         if not self._needsUngrab and self.x() == 0 and self.y() == 0:
@@ -188,7 +200,6 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setPen(QPen(pointStrokeColor, 1.5))
         self.setBrush(QBrush(onCurvePointColor))
-        self.setZValue(1)
     
     def setPointPath(self):
         path = QPainterPath()
@@ -250,7 +261,6 @@ class OnCurvePointItem(QGraphicsPathItem):
             pointIndex = self.getPointIndex()
             self._contour[pointIndex].x = self.pos().x()
             self._contour[pointIndex].y = self.pos().y()
-            self._contour.dirty = True
 
             children = self.childItems()
             if children[2].isVisible():
@@ -261,7 +271,8 @@ class OnCurvePointItem(QGraphicsPathItem):
                 nextPos = children[3].pos()
                 self._contour[pointIndex+1].x = self.pos().x()+nextPos.x()
                 self._contour[pointIndex+1].y = self.pos().y()+nextPos.y()
-        return QGraphicsItem.itemChange(self, change, value)
+            self._contour.dirty = True
+        return value
     
     def mouseDoubleClickEvent(self, event):
         self._isSmooth = not self._isSmooth
