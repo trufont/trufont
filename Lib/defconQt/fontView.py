@@ -424,9 +424,12 @@ class MainWindow(QMainWindow):
             self.setWindowTitle()
 
     def saveFile(self, path=None):
-        self.font.save(path=path)
-#        self.font.dirty = False
-#        self.font.path = path # done by defcon
+        if path is None and self.font.path is None:
+            self.saveFileAs()
+        else:
+            self.font.save(path=path)
+#            self.font.dirty = False
+#            self.font.path = path # done by defcon
 
     def saveFileAs(self):
         path, ok = QFileDialog.getSaveFileName(self, "Save File", '',
