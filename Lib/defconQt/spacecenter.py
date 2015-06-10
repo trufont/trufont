@@ -339,15 +339,18 @@ class GlyphsCanvas(QWidget):
             # line wrapping
             # TODO: should padding be added for the right boundary as well? I'd say no but not sure
             gWidth = glyph.width*self.scale
-            if self._wrapLines and cur_width + gWidth + self.padding > self.width():
+            doKern = index > 0 and self._showKerning and cur_width > 0
+            if doKern:
+                kern = self.lookupKerningValue(self.glyphs[index-1].name, glyph.name)*self.scale
+            else: kern = 0
+            if self._wrapLines and cur_width + gWidth + kern + self.padding > self.width():
                 painter.translate(-cur_width, self.ptSize)
                 cur_width = gWidth
                 lines += 1
             else:
-                if self._showKerning and cur_width > 0:
-                    kern = self.lookupKerningValue(self.glyphs[index-1].name, glyph.name)
-                    painter.translate(kern*self.scale, 0)
-                cur_width += gWidth
+                if doKern:
+                    painter.translate(kern, 0)
+                cur_width += gWidth+kern
             glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
             painter.save()
             painter.scale(self.scale, -self.scale)
