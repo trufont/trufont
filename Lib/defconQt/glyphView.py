@@ -146,7 +146,8 @@ class OffCurvePointItem(QGraphicsEllipseItem):
     
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
-            if QApplication.keyboardModifiers() & Qt.ShiftModifier:
+            if QApplication.keyboardModifiers() & Qt.ShiftModifier \
+                  and len(self.scene().selectedItems()) == 1:
                 ax = abs(value.x())
                 ay = abs(value.y())
                 if ay > ax * 2:

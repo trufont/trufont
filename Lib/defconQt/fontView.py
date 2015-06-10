@@ -11,14 +11,8 @@ from PyQt5.QtWidgets import *
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
 ]
-glyphSortDescriptors = [
-    dict(type="alphabetical", allowPseudoUnicode=True),
-    dict(type="category", allowPseudoUnicode=True),
-    dict(type="unicode", allowPseudoUnicode=True),
-    dict(type="script", allowPseudoUnicode=True),
-    dict(type="suffix", allowPseudoUnicode=True),
-    dict(type="decompositionBase", allowPseudoUnicode=True)
-]
+sortItems = ["alphabetical", "category", "unicode", "script", "suffix",
+    "decompositionBase", "weightedSuffix", "ligature"]
 
 cellGridColor = QColor(130, 130, 130)
 cellHeaderBaseColor = QColor(230, 230, 230)
@@ -28,6 +22,127 @@ cellSelectionColor = QColor.fromRgbF(.2, .3, .7, .15)
 
 GlyphCellBufferHeight = .2
 GlyphCellHeaderHeight = 14
+
+class SortingWindow(QDialog):
+    def __init__(self, parent=None):
+        super(SortingWindow, self).__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Sort…")
+        
+        self.smartSortBox = QRadioButton("Smart sort", self)
+        self.characterSetBox = QRadioButton("Character set", self)
+        self.characterSetBox.setEnabled(False)
+        self.customSortBox = QRadioButton("Custom…", self)
+        self.customSortBox.toggled.connect(self.customSortToggle)
+        
+        self.customSortGroup = QGroupBox(parent=self)
+        desc = self.parent().characterWidget.sortDescriptor
+        if desc[0]["type"] == "cannedDesign":
+            self.smartSortBox.setChecked(True)
+            self.customSortGroup.setEnabled(False)
+            descriptorsCount = 6
+        else:
+            self.customSortBox.setChecked(True)
+            descriptorsCount = len(desc)
+        #elif desc == 
+        self.customDescriptors = [[] for i in range(descriptorsCount)]
+        self.customSortLayout = QGridLayout()
+        for i, line in enumerate(self.customDescriptors):
+            line.append(QComboBox(self))
+            line[0].insertItems(0, sortItems)
+            line.append(QCheckBox("Ascending", self))
+            line.append(QCheckBox("Allow pseudo-unicode", self))
+            if self.customSortBox.isChecked():
+                line[0].setCurrentIndex(self.indexFromItemName(desc[i]["type"]))
+                line[1].setChecked(desc[i]["ascending"])
+                line[2].setChecked(desc[i]["allowPseudoUnicode"])
+            else:
+                line[0].setCurrentIndex(i)
+                line[1].setChecked(True)
+                line[2].setChecked(True)
+            self.customSortLayout.addWidget(line[0], i, 0)
+            self.customSortLayout.addWidget(line[1], i, 1)
+            self.customSortLayout.addWidget(line[2], i, 2)
+            btn = QPushButton(self)
+            btn.setFixedWidth(32)
+            btn.setProperty("index", i)
+            line.append(btn)
+            self.customSortLayout.addWidget(btn, i, 3)
+            if i == 0:
+                btn.setText("+")
+                btn.pressed.connect(self._addRow)
+                self.addLineButton = btn
+            else:
+                btn.setText("−")
+                btn.pressed.connect(self._deleteRow)
+        self.customSortGroup.setLayout(self.customSortLayout)
+        
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.smartSortBox)
+        layout.addWidget(self.characterSetBox)
+        layout.addWidget(self.customSortBox)
+        layout.addWidget(self.customSortGroup)
+        layout.addWidget(buttonBox)
+        self.setLayout(layout)
+    
+    def _addRow(self):
+        i = len(self.customDescriptors)
+        line = []
+        line.append(QComboBox(self))
+        line[0].insertItems(0, sortItems)
+        line[0].setCurrentIndex(0)
+        line.append(QCheckBox("Ascending", self))
+        line.append(QCheckBox("Allow pseudo-unicode", self))
+        btn = QPushButton("−", self)
+        btn.setFixedWidth(32)
+        btn.setProperty("index", i)
+        btn.pressed.connect(self._deleteRow)
+        line.append(btn)
+        self.customDescriptors.append(line)
+        self.customSortLayout.addWidget(line[0], i, 0)
+        self.customSortLayout.addWidget(line[1], i, 1)
+        self.customSortLayout.addWidget(line[2], i, 2)
+        self.customSortLayout.addWidget(line[3], i, 3)
+        if i == 7: self.sender().setEnabled(False)
+        
+    
+    def _deleteRow(self):
+        rel = self.sender().property("index")
+        desc = self.customDescriptors
+        for i in range(rel+1, len(desc)-1):
+            desc[i][0].setCurrentIndex(desc[i+1][0].currentIndex())
+            desc[i][1].setChecked(desc[i+1][1].isChecked())
+            desc[i][2].setChecked(desc[i+1][2].isChecked())
+        for elem in desc[-1]:
+            elem.setParent(None)
+        del self.customDescriptors[-1]
+        self.addLineButton.setEnabled(True)
+        self.adjustSize()
+    
+    def indexFromItemName(self, name):
+        for index, item in enumerate(sortItems):
+            if name == item: return index
+        print("Unknown descriptor name: %s", name)
+        return 0
+    
+    def accept(self):
+        if self.smartSortBox.isChecked():
+            descriptors = cannedDesign
+        elif self.customSortBox.isChecked():
+            descriptors = []
+            for line in self.customDescriptors:
+                descriptors.append(dict(type=line[0].currentText(), ascending=line[1].isChecked(),
+                    allowPseudoUnicode=line[2].isChecked()))
+        self.parent().characterWidget.updateGlyphsFromFont(descriptors)
+        super(SortingWindow, self).accept()
+    
+    def customSortToggle(self):
+        checkBox = self.sender()
+        self.customSortGroup.setEnabled(checkBox.isChecked())
 
 class CharacterWidget(QWidget):
     characterSelected = pyqtSignal(int, str)
@@ -46,6 +161,7 @@ class CharacterWidget(QWidget):
         self._selection = set()
         self.lastKey = -1
         self.moveKey = -1
+        self.sortDescriptor = cannedDesign
         
         self._maybeDragPosition = None
         self.setFocusPolicy(Qt.ClickFocus)
@@ -54,8 +170,10 @@ class CharacterWidget(QWidget):
         self.font = font
         self.updateGlyphsFromFont()
     
-    def updateGlyphsFromFont(self, descriptor=cannedDesign):
-        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), descriptor)]
+    def updateGlyphsFromFont(self, descriptor=None):
+        if descriptor is not None: self.sortDescriptor = descriptor
+        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), self.sortDescriptor)]
+        self._selection = set()
         self.adjustSize()
         self.update()
     
@@ -235,9 +353,15 @@ class CharacterWidget(QWidget):
         gradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
         gradient.setColorAt(0.0, cellHeaderBaseColor)
         gradient.setColorAt(1.0, cellHeaderLineColor)
+        dirtyGradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
+        dirtyGradient.setColorAt(0.0, cellHeaderBaseColor.darker(125))
+        dirtyGradient.setColorAt(1.0, cellHeaderLineColor.darker(125))
         #markGradient = QRadialGradient(self.squareSize/2, GlyphCellHeaderHeight/2,
         #      self.squareSize-GlyphCellHeaderHeight, self.squareSize/2, self.squareSize)
         markGradient = QLinearGradient(0, 0, 0, self.squareSize-GlyphCellHeaderHeight)
+        headerFont = QFont()
+        headerFont.setFamily('Lucida Sans Unicode')
+        metrics = QFontMetrics(headerFont)
 
         for row in range(beginRow, endRow + 1):
             for column in range(beginColumn, endColumn + 1):
@@ -262,10 +386,14 @@ class CharacterWidget(QWidget):
                               self.squareSize - GlyphCellHeaderHeight, QBrush(markGradient))
                 
                 # header gradient
+                if glyph.dirty: col = dirtyGradient
+                else: col = gradient
                 painter.fillRect(0, 0, self.squareSize,
-                      GlyphCellHeaderHeight, QBrush(gradient))
+                      GlyphCellHeaderHeight, QBrush(col))
                 # header lines
-                painter.setPen(cellHeaderHighlightLineColor)
+                if glyph.dirty: col = cellHeaderHighlightLineColor.darker(110)
+                else: col = cellHeaderHighlightLineColor
+                painter.setPen(col)
                 minOffset = painter.pen().width()
                 painter.setRenderHint(QPainter.Antialiasing, False)
                 painter.drawLine(0, 0, 0, GlyphCellHeaderHeight - 1)
@@ -274,11 +402,8 @@ class CharacterWidget(QWidget):
                 painter.drawLine(0, GlyphCellHeaderHeight, self.squareSize, GlyphCellHeaderHeight)
                 painter.setRenderHint(QPainter.Antialiasing)
                 # header text
-                headerFont = QFont()
-                headerFont.setFamily('Lucida Sans Unicode')
                 painter.setFont(headerFont)
                 painter.setPen(QColor(80, 80, 80))
-                metrics = QFontMetrics(headerFont)
                 name = metrics.elidedText(self.glyphs[key].name, Qt.ElideRight, self.squareSize - 2)
                 painter.drawText(1, 0, self.squareSize - 2, GlyphCellHeaderHeight - minOffset,
                       Qt.TextSingleLine | Qt.AlignCenter, name)
@@ -365,6 +490,8 @@ class MainWindow(QMainWindow):
         green.setIcon(QIcon(pixmap))
         green.setData(QColor(Qt.green))
         selectionMenu.addMenu(markColorMenu)
+        selectionMenu.addSeparator()
+        selectionMenu.addAction("Sort…", self.sortCharacters)
 
         fontMenu = QMenu("&Font", self)
         self.menuBar().addMenu(fontMenu)
@@ -493,6 +620,13 @@ class MainWindow(QMainWindow):
     def setWindowTitle(self, title=None):
         if title is None: title = os.path.basename(self.font.path.rstrip(os.sep))
         super(MainWindow, self).setWindowTitle(title)
+    
+    def sortCharacters(self):
+        if not (hasattr(self, 'sortingWindow') and self.sortingWindow.isVisible()):
+           self.sortingWindow = SortingWindow(self)
+           self.sortingWindow.show()
+        else:
+           self.sortingWindow.raise_()
 
     def fontInfo(self):
         # If a window is already opened, bring it to the front, else spawn one.

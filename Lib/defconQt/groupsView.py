@@ -110,13 +110,10 @@ class GroupsWindow(QWidget):
         self.removeGroupButton = QPushButton("−", self)
         self.removeGroupButton.clicked.connect(self._groupDelete)
 
-        self.alignLeftBox = QCheckBox("Align left", self)
-        self.alignRightBox = QCheckBox("Align right", self)
-        alignGroup = QButtonGroup(self)
-        alignGroup.addButton(self.alignLeftBox)
-        alignGroup.addButton(self.alignRightBox)
+        self.alignLeftBox = QRadioButton("Align left", self)
+        self.alignRightBox = QRadioButton("Align right", self)
         self.alignLeftBox.setChecked(True)
-        alignGroup.buttonClicked[int].connect(self._alignmentChanged)
+        self.alignLeftBox.toggled.connect(self._alignmentChanged)
         
         self.scrollArea = QScrollArea(self)
         self.characterWidget = GroupCharacterWidget(self.font, scrollArea=self.scrollArea, parent=self)
@@ -136,9 +133,8 @@ class GroupsWindow(QWidget):
         
         self.setWindowTitle("%s%s%s%s" % ("Groups window – ", self.font.info.familyName, " ", self.font.info.styleName))
     
-    def _alignmentChanged(self, id):
-        # identifiers are numbered as: -2, -3, etc.
-        alignRight = bool(-id-2)
+    def _alignmentChanged(self):
+        alignRight = self.alignRightBox.isChecked()
         self.stackWidget.setAlignment(alignRight)
     
     def _groupAdd(self):
