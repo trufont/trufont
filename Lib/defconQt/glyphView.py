@@ -115,6 +115,8 @@ onWidth = onHeight = roundPosition(onCurvePointSize)# * self._inverseScale)
 onHalf = onWidth / 2.0
 smoothWidth = smoothHeight = roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
 smoothHalf = smoothWidth / 2.0
+onCurvePenWidth = 1.5
+offCurvePenWidth = 1.0
 
 bezierHandleColor = QColor.fromRgbF(0, 0, 0, .2)
 startPointColor = QColor.fromRgbF(0, 0, 0, .2)
@@ -500,6 +502,7 @@ class GlyphView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setDragMode(QGraphicsView.RubberBandDrag)
+        #self.setViewportUpdateMode(QGraphicsView.BoundingRectViewportUpdate)
         
         self.setRenderHint(QPainter.Antialiasing)
         #self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
@@ -760,38 +763,32 @@ class GlyphView(QGraphicsView):
         #self._setFrame()
         self.scale(factor, factor)
         scale = self.transform().m11()
-        #if scale < .3 or scale > 1: scale = 1
-        offCurvePointSize = 7
-        onCurvePointSize = 8
-        onCurveSmoothPointSize = 9
-        onCurvePenWidth = 1.5
-        offCurvePenWidth = 1.0
-        if scale < 1:
-            offCurvePointSize /= scale
-            onCurvePointSize /= scale
-            onCurveSmoothPointSize /= scale
-            onCurvePenWidth /= scale
-            offCurvePenWidth /= scale
+        if scale < 4:
+            offCPS = offCurvePointSize / scale
+            onCPS = onCurvePointSize / scale
+            onCSPS = onCurveSmoothPointSize / scale
+            onCPW = onCurvePenWidth / scale
+            offCPW = offCurvePenWidth / scale
             for item in self.scene().items():
                 if isinstance(item, OnCurvePointItem):
                     path = QPainterPath()
                     if item._isSmooth:
-                        width = height = self.roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
+                        width = height = self.roundPosition(onCSPS)# * self._inverseScale)
                         half = width / 2.0
                         path.addEllipse(-half, -half, width, height)
                     else:
-                        width = height = self.roundPosition(onCurvePointSize)# * self._inverseScale)
+                        width = height = self.roundPosition(onCPS)# * self._inverseScale)
                         half = width / 2.0
                         path.addRect(-half, -half, width, height)
                     item.prepareGeometryChange()
                     item.setPath(path)
-                    item.setPen(QPen(Qt.white, onCurvePenWidth))
+                    item.setPen(QPen(Qt.white, onCPW))
                 elif isinstance(item, OffCurvePointItem):
-                    width = height = self.roundPosition(offCurvePointSize)# * self._inverseScale)
+                    width = height = self.roundPosition(offCPS)# * self._inverseScale)
                     half = width / 2.0
                     item.prepareGeometryChange()
                     item.setRect(-half, -half, width, height)
-                    item.setPen(QPen(Qt.white, offCurvePenWidth))
+                    item.setPen(QPen(Qt.white, offCPW))
         self.update()
         event.accept()
 

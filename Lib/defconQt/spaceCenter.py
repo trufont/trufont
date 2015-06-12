@@ -360,9 +360,11 @@ class GlyphsCanvas(QWidget):
         
         scrollMargins = self.scrollArea.contentsMargins()
         innerHeight = self.scrollArea.height() - scrollMargins.top() - scrollMargins.bottom()
-        innerWidth = self.scrollArea.width() - scrollMargins.left() - scrollMargins.right()
-        width = max(innerWidth, cur_width+self.padding*2) if not self._wrapLines else self.width()
-        self.resize(width, max(innerHeight, lines*self.ptSize))
+        if not self._wrapLines:
+            innerWidth = self.scrollArea.width() - scrollMargins.left() - scrollMargins.right()
+            width = max(innerWidth, cur_width+self.padding*2)
+        else: width = self.width()
+        self.resize(width, max(innerHeight, lines*self.ptSize+2*self.padding))
 
 class GlyphCellItemDelegate(QStyledItemDelegate):
     # TODO: implement =... lexer
