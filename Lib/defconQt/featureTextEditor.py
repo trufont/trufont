@@ -190,7 +190,7 @@ class TextEditor(QPlainTextEdit):
             cursor.movePosition(QTextCursor.EndOfLine)
 
             super(TextEditor, self).keyPressEvent(event)
-            newLineSpace = "".join((self._indent for _ in range(indentLvl)))
+            newLineSpace = "".join(self._indent for _ in range(indentLvl))
             cursor.insertText(newLineSpace)
             if newBlock:
                 super(TextEditor, self).keyPressEvent(event)

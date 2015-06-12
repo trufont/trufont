@@ -243,18 +243,20 @@ class CharacterWidget(QWidget):
             key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
             if key > len(self.glyphs)-1: return
             modifiers = event.modifiers()
-            if modifiers & Qt.ShiftModifier and len(self._selection)==1:
+            if modifiers & Qt.ShiftModifier and len(self._selection) == 1:
                 self.lastKey = self._selection.pop()
                 self.moveKey = key
-            elif key in self._selection:
+            elif modifiers & Qt.ControlModifier:
+                self.lastKey = key
+                self.moveKey = self.lastKey
+            elif key in self._selection and not modifiers & Qt.ShiftModifier:
                 self._maybeDragPosition = event.pos()
                 event.accept()
                 return
             else:
+                self._selection = set()
                 self.lastKey = key
                 self.moveKey = self.lastKey
-            if not modifiers & Qt.ControlModifier:
-                self._selection = set()
             
             self.computeCharacterSelected()
             event.accept()
@@ -268,14 +270,14 @@ class CharacterWidget(QWidget):
                 if ((event.pos() - self._maybeDragPosition).manhattanLength() \
                     < QApplication.startDragDistance()): return
                 # TODO: needs ordering or not?
-                # TODO: see about dropping join tuples
-                glyphList = " ".join((self.glyphs[key].name for key in self._selection))
+                glyphList = " ".join(self.glyphs[key].name for key in self._selection)
                 drag = QDrag(self)
                 mimeData = QMimeData()
                 mimeData.setData("text/plain", glyphList)
                 drag.setMimeData(mimeData)
                 
                 dropAction = drag.exec_()
+                self._maybeDragPosition = None
                 event.accept()
                 return
             key = (event.y() // self.squareSize) * self.columns + min(event.x() // self.squareSize, self.columns-1)
@@ -291,20 +293,25 @@ class CharacterWidget(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._maybeDragPosition = None
-            lastKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
-            moveKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
-            if event.modifiers() & Qt.ControlModifier:
-                if moveKey > lastKey:
-                    self._selection ^= set(range(lastKey, moveKey+1))
-                else:
-                    self._selection ^= set(range(moveKey, lastKey+1))
+            if self.lastKey == -1:
+                if self._maybeDragPosition is None:
+                    self._selection = {(event.y() // self.squareSize) * self.columns + event.x() // self.squareSize}
+                    self.computeCharacterSelected()
             else:
-                if moveKey > lastKey:
-                    self._selection = set(range(lastKey, moveKey+1))
+                lastKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
+                moveKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
+                if event.modifiers() & Qt.ControlModifier:
+                    if moveKey > lastKey:
+                        self._selection ^= set(range(lastKey, moveKey+1))
+                    else:
+                        self._selection ^= set(range(moveKey, lastKey+1))
                 else:
-                    self._selection = set(range(moveKey, lastKey+1))
-            self.lastKey = -1
-            self.moveKey = -1
+                    if moveKey > lastKey:
+                        self._selection = set(range(lastKey, moveKey+1))
+                    else:
+                        self._selection = set(range(moveKey, lastKey+1))
+                self.lastKey = -1
+                self.moveKey = -1
             event.accept()
             self.update()
         else:

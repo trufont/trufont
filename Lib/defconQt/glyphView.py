@@ -152,9 +152,9 @@ class OffCurvePointItem(QGraphicsEllipseItem):
                   and len(self.scene().selectedItems()) == 1:
                 ax = abs(value.x())
                 ay = abs(value.y())
-                if ay > ax * 2:
+                if ay >= ax * 2:
                     value.setX(0)
-                elif ay >= ax / 2:
+                elif ay > ax / 2:
                     avg = (ax + ay) / 2
                     value.setX(copysign(avg, value.x()))
                     value.setY(copysign(avg, value.y()))
@@ -204,6 +204,19 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.setPen(QPen(pointStrokeColor, 1.5))
         self.setBrush(QBrush(onCurvePointColor))
     
+    def delete(self):
+        if len(self._contour.segments) < 2:
+            self.scene()._glyphObject.removeContour(self._contour)
+        else:
+            self._contour.removeSegment(self.getSegmentIndex(), True)
+            index = 0
+            for _ in self._contour:
+                if self._contour[index].segmentType is not None:
+                    self._contour.setStartPoint(index)
+                    break
+                index = (index+1) % len(self._contour)
+        self.scene().removeItem(self)
+    
     def setPointPath(self):
         path = QPainterPath()
         if self._isSmooth:
@@ -215,6 +228,14 @@ class OnCurvePointItem(QGraphicsPathItem):
     
     def getPointIndex(self):
         return self._contour.index(self._point)
+    
+    def getSegmentIndex(self):
+        # is there a contour.segments.index() method?
+        index = 0
+        for pt in self._contour:
+            if pt == self._point: break
+            if pt.segmentType is not None: index += 1
+        return (index-1) % len(self._contour.segments)
     
     def _CPMoved(self, newValue):
         pointIndex = self.getPointIndex()
@@ -278,7 +299,10 @@ class OnCurvePointItem(QGraphicsPathItem):
         return value
     
     def mouseDoubleClickEvent(self, event):
-        self._isSmooth = not self._isSmooth
+        self.setIsSmooth(not self._isSmooth)
+    
+    def setIsSmooth(self, isSmooth):
+        self._isSmooth = isSmooth
         self._point.smooth = self._isSmooth
         self.setPointPath()
     
@@ -298,12 +322,19 @@ class GlyphScene(QGraphicsScene):
     def __init__(self, parent):
         super(GlyphScene, self).__init__(parent)
         self._editing = False
+    
+    def getItemForPoint(self, point):
+        for item in self.items():
+            if isinstance(item, OnCurvePointItem) and item._point == point:
+                return item
+        return None
 
     # TODO: implement key multiplex in a set()
     # http://stackoverflow.com/a/10568233/2037879
     def keyPressEvent(self, event):
         key = event.key()
         count = event.count()
+        modifiers = event.modifiers()
         if key == Qt.Key_Left:
             x,y = -count,0
         elif key == Qt.Key_Up:
@@ -312,7 +343,28 @@ class GlyphScene(QGraphicsScene):
             x,y = count,0
         elif key == Qt.Key_Down:
             x,y = 0,-count
+        elif key == Qt.Key_Delete:
+            for item in self.selectedItems():
+                if isinstance(item, OnCurvePointItem):
+                    item.delete()
+            event.accept()
+            return
+        elif modifiers & Qt.ControlModifier and key == Qt.Key_A:
+            path = QPainterPath()
+            path.addRect(self.sceneRect())
+            self.setSelectionArea(path, self.views()[0].transform())
+            event.accept()
+            return
+        elif modifiers & Qt.ControlModifier and key == Qt.Key_D:
+            self.setSelectionArea(QPainterPath(), self.views()[0].transform())
+            event.accept()
+            return
         else:
+            sel = self.selectedItems()
+            if len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and \
+              sel[0].parentItem().getPointIndex() == len(sel[0].parentItem()._contour)-2 and \
+              key == Qt.Key_Alt:
+                sel[0].parentItem().setIsSmooth(False)
             super(GlyphScene, self).keyPressEvent(event)
             return
         if len(self.selectedItems()) == 0:
@@ -324,6 +376,14 @@ class GlyphScene(QGraphicsScene):
             if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): continue
             item.moveBy(x,y)
         event.accept()
+    
+    def keyReleaseEvent(self, event):
+        sel = self.selectedItems()
+        if len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and \
+          sel[0].parentItem().getPointIndex() == len(sel[0].parentItem()._contour)-2 and \
+          event.key() == Qt.Key_Alt:
+            sel[0].parentItem().setIsSmooth(True)
+        super(GlyphScene, self).keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
         if not self.views()[0]._drawingTool: super(GlyphScene, self).mousePressEvent(event); return
@@ -355,6 +415,15 @@ class GlyphScene(QGraphicsScene):
                 super(GlyphScene, self).mousePressEvent(event)
                 return
             else:
+                if QApplication.keyboardModifiers() & Qt.ShiftModifier:
+                    if isLastOnCurve:
+                        refx = sel[0].x()
+                        refy = sel[0].y()
+                    else:
+                        refx = sel[0].parentItem().x()
+                        refy = sel[0].parentItem().y()
+                    if abs(x-refx) > abs(y-refy): y = copysign(refy, y)
+                    else: x = copysign(refx, x)
                 if isLastOffCurve:
                     lastContour.addPoint((x,y))
                     lastContour.addPoint((x,y), "curve")
@@ -416,6 +485,7 @@ class GlyphScene(QGraphicsScene):
                             # remove the last onCurve
                             sel[0]._contour.removePoint(onCurve)
                             prev = sel[0]._contour[-1]
+                            self.getItemForPoint(prev).childItems()[3].setVisible(True)
                             # add a zero-length offCurve to the previous point
                             sel[0]._contour.addPoint((prev.x, prev.y))
                             # add prevOffCurve and activate

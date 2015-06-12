@@ -529,19 +529,19 @@ class PostScriptTab(QWidget):
         hintingLayout = QGridLayout(self)
 
         blueValuesLabel = QLabel("Blue values:", self)
-        blueValues = " ".join((str(val) for val in font.info.postscriptBlueValues))
+        blueValues = " ".join(str(val) for val in font.info.postscriptBlueValues)
         self.blueValuesEdit = QLineEdit(blueValues, self)
 
         otherBluesLabel = QLabel("Other blues:", self)
-        otherBlues = " ".join((str(val) for val in font.info.postscriptOtherBlues))
+        otherBlues = " ".join(str(val) for val in font.info.postscriptOtherBlues)
         self.otherBluesEdit = QLineEdit(otherBlues, self)
 
         familyBluesLabel = QLabel("Family blues:", self)
-        familyBlues = " ".join((str(val) for val in font.info.postscriptFamilyBlues))
+        familyBlues = " ".join(str(val) for val in font.info.postscriptFamilyBlues)
         self.familyBluesEdit = QLineEdit(familyBlues, self)
 
         familyOtherBluesLabel = QLabel("Family other blues:", self)
-        familyOtherBlues = " ".join((str(val) for val in font.info.postscriptFamilyOtherBlues))
+        familyOtherBlues = " ".join(str(val) for val in font.info.postscriptFamilyOtherBlues)
         self.familyOtherBluesEdit = QLineEdit(familyOtherBlues, self)
 
         hintingLayout.addWidget(blueValuesLabel, l, 0)
@@ -561,7 +561,7 @@ class PostScriptTab(QWidget):
         self.blueFuzzEdit.setValidator(QDoubleValidator(self))
 
         stemSnapHLabel = QLabel("StemSnapH:", self)
-        stemSnapH = " ".join((str(val) for val in font.info.postscriptStemSnapH))
+        stemSnapH = " ".join(str(val) for val in font.info.postscriptStemSnapH)
         self.stemSnapHEdit = QLineEdit(stemSnapH, self)
 
         blueScaleLabel = QLabel("Blue scale:", self)
@@ -570,7 +570,7 @@ class PostScriptTab(QWidget):
         self.blueScaleEdit.setValidator(QDoubleValidator(self))
 
         stemSnapVLabel = QLabel("StemSnapV:", self)
-        stemSnapV = " ".join((str(val) for val in font.info.postscriptStemSnapV))
+        stemSnapV = " ".join(str(val) for val in font.info.postscriptStemSnapV)
         self.stemSnapVEdit = QLineEdit(stemSnapV, self)
 
         blueShiftLabel = QLabel("Blue shift:", self)
