@@ -141,6 +141,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         # TODO: stop doing this and go back to mouse events –> won't permit multiple selection
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setFlag(QGraphicsItem.ItemStacksBehindParent)
         # TODO: redo this with scaling
         self.setPen(QPen(offCurvePointColor, 1.0))
         self.setBrush(QBrush(backgroundColor))
@@ -241,38 +242,32 @@ class OnCurvePointItem(QGraphicsPathItem):
         pointIndex = self.getPointIndex()
         children = self.childItems()
         # nodes are stored after lines (for stacking order)
-        if len(children) > 4:
-            selected = 5
+        if children[1].isSelected():
+            selected = 1
             propagate = 3
-            delta = 3
-        elif children[2].isSelected():
-            selected = 2
-            propagate = 3
-            delta = 2
         else:
             selected = 3
-            propagate = 2
-            delta = 2
+            propagate = 1
         curValue = children[selected].pos()
-        line = children[selected-delta].line()
-        children[selected-delta].setLine(line.x1(), line.y1(), newValue.x(), newValue.y())
+        line = children[selected-1].line()
+        children[selected-1].setLine(line.x1(), line.y1(), newValue.x(), newValue.y())
 
         if not len(children) > 4:
-            elemIndex = pointIndex-1+2*(selected-delta)
+            elemIndex = pointIndex-2+selected
             self._contour[elemIndex].x = self.pos().x()+newValue.x()
             self._contour[elemIndex].y = self.pos().y()+newValue.y()
         if not (self._isSmooth and children[propagate].isVisible()): self._contour.dirty = True; return
         if children[selected]._needsUngrab:
-            targetLen = children[selected-delta].line().length()*2
+            targetLen = children[selected-1].line().length()*2
         else:
-            targetLen = children[selected-delta].line().length()+children[propagate-delta].line().length()
+            targetLen = children[selected-1].line().length()+children[propagate-1].line().length()
         tmpLine = QLineF(newValue, QPointF(0, 0))
         tmpLine.setLength(targetLen)
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges, False)
         children[propagate].setPos(tmpLine.x2(), tmpLine.y2())
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        children[propagate-delta].setLine(line.x1(), line.y1(), tmpLine.x2(), tmpLine.y2())
-        propagateInContour = pointIndex-1+2*(propagate-delta)
+        children[propagate-1].setLine(line.x1(), line.y1(), tmpLine.x2(), tmpLine.y2())
+        propagateInContour = pointIndex-2+propagate
         self._contour[propagateInContour].x = self.pos().x()+tmpLine.x2()
         self._contour[propagateInContour].y = self.pos().y()+tmpLine.y2()
         self._contour.dirty = True
@@ -287,8 +282,8 @@ class OnCurvePointItem(QGraphicsPathItem):
             self._contour[pointIndex].y = self.pos().y()
 
             children = self.childItems()
-            if children[2].isVisible():
-                prevPos = children[2].pos()
+            if children[1].isVisible():
+                prevPos = children[1].pos()
                 self._contour[pointIndex-1].x = self.pos().x()+prevPos.x()
                 self._contour[pointIndex-1].y = self.pos().y()+prevPos.y()
             if children[3].isVisible():
@@ -408,7 +403,7 @@ class GlyphScene(QGraphicsScene):
                 if isLastOffCurve:
                     lastContour.addPoint((x,y))
                     lastContour[0].segmentType = "curve"
-                    touched.childItems()[2].setVisible(True)
+                    touched.childItems()[1].setVisible(True)
                 else:
                     lastContour[0].segmentType = "line"
             elif touched and isinstance(touched, OnCurvePointItem):
@@ -436,7 +431,7 @@ class GlyphScene(QGraphicsScene):
                     CPObject = OffCurvePointItem(0, 0, item)
                     CPObject.setVisible(False)
                 if isLastOffCurve:
-                    item.childItems()[2].setVisible(True)
+                    item.childItems()[1].setVisible(True)
             lastContour.dirty = True
             self._editing = True
         elif not (touched and isinstance(touched, OnCurvePointItem)):
@@ -490,7 +485,7 @@ class GlyphScene(QGraphicsScene):
                             sel[0]._contour.addPoint((prev.x, prev.y))
                             # add prevOffCurve and activate
                             sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
-                            sel[0].childItems()[2].setVisible(True)
+                            sel[0].childItems()[1].setVisible(True)
                             # add back current onCurve as a curve point
                             sel[0]._contour.addPoint((onCurve.x, onCurve.y), "curve", True)
                             sel[0]._point = sel[0]._contour[-1]
@@ -503,7 +498,10 @@ class GlyphScene(QGraphicsScene):
                             # preserve nextCP whatsoever.
                             lineObj = HandleLineItem(0, 0, 0, 0, sel[0])
                             nextCP = OffCurvePointItem(0, 0, sel[0])
-                            # now we have l1, l2, l3, p1, p2, p3
+                            # now we have l1, p1, l2, p2, l3, p3
+                            l2 = sel[0].childItems()[2]
+                            lineObj.stackBefore(l2)
+                            nextCP.stackBefore(l2)
                         else:
                             # add last offCurve
                             sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
@@ -529,9 +527,9 @@ class GlyphScene(QGraphicsScene):
             onCurve = touched.parentItem()
             children = onCurve.childItems()
             if len(children) > 4:
-                # l1, l2, l3, p1, p2, p3
-                children[5].prepareGeometryChange()
-                self.removeItem(children[5])
+                # l1, p1, l3, p3, l2, p2
+                children[3].prepareGeometryChange()
+                self.removeItem(children[3])
                 children[2].prepareGeometryChange()
                 self.removeItem(children[2])
 
