@@ -295,7 +295,9 @@ class CharacterWidget(QWidget):
             self._maybeDragPosition = None
             if self.lastKey == -1:
                 if self._maybeDragPosition is None:
-                    self._selection = {(event.y() // self.squareSize) * self.columns + event.x() // self.squareSize}
+                    key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
+                    if key > len(self.glyphs)-1: return
+                    self._selection = {key}
                     self.computeCharacterSelected()
             else:
                 lastKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
@@ -368,6 +370,8 @@ class CharacterWidget(QWidget):
         markGradient = QLinearGradient(0, 0, 0, self.squareSize-GlyphCellHeaderHeight)
         headerFont = QFont()
         headerFont.setFamily('Lucida Sans Unicode')
+        headerFont.insertSubstitution('Lucida Sans Unicode', 'Luxi Sans')
+        headerFont.setPointSize(8)
         metrics = QFontMetrics(headerFont)
 
         for row in range(beginRow, endRow + 1):
