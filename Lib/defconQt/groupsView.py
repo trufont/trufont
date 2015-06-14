@@ -100,8 +100,6 @@ class GroupsWindow(QWidget):
 
         self.groupsList = GroupListWidget(self.font.groups.keys(), self)
         self.groupsList.itemChanged.connect(self._groupRenamed)
-        # TODO: it seems grid layout extends the column regardless of this
-        self.groupsList.setMaximumWidth(4*56+1)
         
         self.stackWidget = GroupStackWidget(self.font, parent=self)
         
@@ -129,6 +127,8 @@ class GroupsWindow(QWidget):
         layout.addWidget(self.alignLeftBox, 5, 4)
         layout.addWidget(self.alignRightBox, 5, 7)
         layout.addWidget(self.scrollArea, 6, 0, 4, 8)
+        # TODO: calib this more
+        layout.setColumnStretch(4, 1)
         self.setLayout(layout)
         
         self.setWindowTitle("%s%s%s%s" % ("Groups window – ", self.font.info.familyName, " ", self.font.info.styleName))

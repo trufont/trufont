@@ -95,9 +95,8 @@ class MainGfxWindow(QMainWindow):
             self.view.setRenderer(GlyphView.Image)
 
     def setWindowTitle(self, title, font=None):
-        if font is not None: puts = "%s – %s %s" % (title, font.info.familyName, font.info.styleName)
-        else: puts = title
-        super(MainGfxWindow, self).setWindowTitle(puts)
+        if font is not None: title = "%s – %s %s" % (title, font.info.familyName, font.info.styleName)
+        super(MainGfxWindow, self).setWindowTitle(title)
 
 def roundPosition(value):
     value = value * 10#self._scale
@@ -149,6 +148,9 @@ class OffCurvePointItem(QGraphicsEllipseItem):
     
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
+            if self.scene()._integerPlane:
+                value.setX(round(value.x()))
+                value.setY(round(value.y()))
             if QApplication.keyboardModifiers() & Qt.ShiftModifier \
                   and len(self.scene().selectedItems()) == 1:
                 ax = abs(value.x())
@@ -178,7 +180,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
-        if self.x() == 0 and self.y() == 0: return
+        #if self.x() == 0 and self.y() == 0: return
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
         pen = self.pen()
@@ -273,7 +275,11 @@ class OnCurvePointItem(QGraphicsPathItem):
         self._contour.dirty = True
 
     def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionHasChanged:
+        if change == QGraphicsItem.ItemPositionChange:
+            if self.scene()._integerPlane:
+                value.setX(round(value.x()))
+                value.setY(round(value.y()))
+        elif change == QGraphicsItem.ItemPositionHasChanged:
             if self.scene() is None: return QGraphicsItem.itemChange(self, change, value)
             # TODO: if we're snapped to int round self.pos to int
             # have a look at defcon FuzzyNumber as well
@@ -317,6 +323,7 @@ class GlyphScene(QGraphicsScene):
     def __init__(self, parent):
         super(GlyphScene, self).__init__(parent)
         self._editing = False
+        self._integerPlane = True
     
     def getItemForPoint(self, point):
         for item in self.items():
@@ -453,7 +460,7 @@ class GlyphScene(QGraphicsScene):
         if self._editing:
             sel = self.selectedItems()
             if len(sel) == 1:
-                if isinstance(sel[0], OnCurvePointItem) and (event.scenePos() - sel[0].pos()).manhattanLength() >= 1:
+                if isinstance(sel[0], OnCurvePointItem) and (event.scenePos() - sel[0].pos()).manhattanLength() >= 2:
                     if len(sel[0]._contour) < 2:
                         # release current onCurve
                         self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
@@ -831,7 +838,7 @@ class GlyphView(QGraphicsView):
         #self._setFrame()
         self.scale(factor, factor)
         scale = self.transform().m11()
-        if scale < 4:
+        if scale < 4 and scale > .4:
             offCPS = offCurvePointSize / scale
             onCPS = onCurvePointSize / scale
             onCSPS = onCurveSmoothPointSize / scale

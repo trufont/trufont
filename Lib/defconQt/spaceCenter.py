@@ -291,7 +291,8 @@ class GlyphsCanvas(QWidget):
         kerning = self.font.kerning
         groups = self.font.groups
         # quickly check to see if the pair is in the kerning dictionary
-        if (first, second) in kerning:
+        pair = (first, second)
+        if pair in kerning:
             return kerning[pair]
         # get group names and make sure first and second are glyph names
         firstGroup = secondGroup = None
@@ -386,7 +387,10 @@ class GlyphCellItemDelegate(QStyledItemDelegate):
                     chg *= 10
                     if modifiers & Qt.ControlModifier:
                         chg *= 10
-                cur = int(editor.text())
+                try:
+                    cur = int(editor.text())
+                except ValueError:
+                    cur = float(editor.text())
                 editor.setText(str(cur+chg))
             self.commitData.emit(editor)
             editor.selectAll()
@@ -437,10 +441,13 @@ class SpaceTable(QTableWidget):
     def _cellEdited(self, row, col):
         if row == 0 or col == 0: return
         item = self.item(row, col).text()
-        # Glyphs that do not have outlines leave empty cells, can't call
-        # int() on that
+        # Glyphs that do not have outlines leave empty cells, can't convert
+        # that to a scalar
         if not item: return
-        item = int(item)
+        try:
+            item = int(item)
+        except ValueError:
+            item = float(item)
         # -1 because the first col contains descriptive text
         glyph = self.glyphs[col-1]
         if row == 1:
