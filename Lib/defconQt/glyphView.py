@@ -361,11 +361,93 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.setPen(pen)
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
 
+class ResizeHandleItem(QGraphicsRectItem):
+    def __init__(self, parent=None):
+        super(QGraphicsRectItem, self).__init__(-3, -3, 6, 6, parent)
+        self.setBrush(QBrush(Qt.lightGray))
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        #self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setCursor(Qt.SizeFDiagCursor)
+        
+        rect = self.parentItem().boundingRect()
+        self.setPos(rect.width(), rect.height())
+    
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedChange:
+            if not value: self.setVisible(value)
+        return value
+    
+    def mouseMoveEvent(self, event):
+        self.parentItem()._pixmapResized(event)
+        
+    def paint(self, painter, option, widget):
+        painter.save()
+        painter.setOpacity(.5)
+        super(ResizeHandleItem, self).paint(painter, option, widget)
+        painter.restore()
+
+class PixmapItem(QGraphicsPixmapItem):
+    def __init__(self, x, y, pixmap, parent=None):
+        super(QGraphicsPixmapItem, self).__init__(pixmap, parent)
+        self.setPos(x, y)
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setTransform(QTransform().fromScale(1, -1))
+        self.setOpacity(.5)
+
+        rect = self.boundingRect()
+        self._rWidth = rect.width()
+        self._rHeight = rect.height()
+        handle = ResizeHandleItem(self)
+        handle.setVisible(False)
+    
+    def _pixmapResized(self, event):
+        pos = event.scenePos()
+        dx = (pos.x() - self.x()) / self._rWidth
+        dy = (pos.y() - self.y()) / self._rHeight
+        #self.prepareGeometryChange()
+        #self.setRect(self.x(), self.y(), dx, dy)
+        self.setTransform(QTransform().fromScale(dx, dy))
+        event.accept()
+    
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedChange:
+            children = self.childItems()
+            if not children[0].isUnderMouse():
+                children[0].setVisible(value)
+        return value
+
 class GlyphScene(QGraphicsScene):
     def __init__(self, parent):
         super(GlyphScene, self).__init__(parent)
         self._editing = False
         self._integerPlane = True
+    
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            super(GlyphScene, self).dragEnterEvent(event)
+    
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            super(GlyphScene, self).dragMoveEvent(event)
+    
+    def dropEvent(self, event):
+        mimeData = event.mimeData()
+        if mimeData.hasUrls():
+            paths = mimeData.urls()
+            # only support the drop of one image for now
+            dragPix = QPixmap(paths[0].toLocalFile())
+            event.setAccepted(not dragPix.isNull())
+        else:
+            return
+        pos = event.scenePos()
+        newPix = PixmapItem(pos.x(), pos.y(), dragPix)
+        self.addItem(newPix)
+        event.acceptProposedAction()
     
     def getItemForPoint(self, point):
         for item in self.items():
