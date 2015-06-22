@@ -299,6 +299,48 @@ class OnCurvePointItem(QGraphicsPathItem):
             self._contour.dirty = True
         return value
     
+    def mouseMoveEvent(self, event):
+        modifiers = event.modifiers()
+        children = self.childItems()
+        # Ctrl: get and move prevCP, Alt: nextCP
+        if modifiers & Qt.ControlModifier and children[1].x() == 0 and children[1].y() == 0:
+            i, o = 1, 3
+        elif modifiers & Qt.AltModifier and children[3].x() == 0 and children[3].y() == 0:
+            i, o = 3, 1
+        elif not (modifiers & Qt.ControlModifier or modifiers & Qt.AltModifier):
+            super(OnCurvePointItem, self).mouseMoveEvent(event)
+            return
+        else: # eat the event if we are not going to yield an offCP
+            event.accept()
+            return
+        ptIndex = self.getPointIndex()
+        s = self.scene()
+        # if we have line segment, insert offCurve points
+        insertIndex = (ptIndex+(i-1)//2) % len(self._contour)
+        if self._contour[insertIndex].segmentType == "line":
+            nextToCP = self._contour[(ptIndex-2+i) % len(self._contour)]
+            assert(nextToCP.segmentType is not None)
+            self._contour[insertIndex].segmentType = "curve"
+            if i == 1:
+                first, second = (self._point.x, self._point.y), (nextToCP.x, nextToCP.y)
+            else:
+                first, second = (nextToCP.x, nextToCP.y), (self._point.x, self._point.y)
+            self._contour.insertPoint(insertIndex, self._contour._pointClass(first, name="Insert!"))
+            self._contour.insertPoint(insertIndex, self._contour._pointClass(second, name="Insert2"))
+            children[i].setVisible(True)
+            # TODO: need a list of items to make this efficient
+            s.getItemForPoint(nextToCP).childItems()[o].setVisible(True)
+        # release current onCurve
+        s.sendEvent(self, QEvent(QEvent.MouseButtonRelease))
+        s.mouseGrabberItem().ungrabMouse()
+        self.setSelected(False)
+        self.setIsSmooth(False)
+        children[i]._needsUngrab = True
+        s.sendEvent(children[i], QEvent(QEvent.MouseButtonPress))
+        children[i].setSelected(True)
+        children[i].grabMouse()
+        event.accept()
+
     def mouseDoubleClickEvent(self, event):
         self.setIsSmooth(not self._isSmooth)
     
@@ -388,6 +430,7 @@ class GlyphScene(QGraphicsScene):
         super(GlyphScene, self).keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
+        forceSelect = False
         if not self.views()[0]._drawingTool: super(GlyphScene, self).mousePressEvent(event); return
         touched = self.itemAt(event.scenePos(), self.views()[0].transform())
         sel = self.selectedItems()
@@ -418,6 +461,7 @@ class GlyphScene(QGraphicsScene):
                 return
             else:
                 if QApplication.keyboardModifiers() & Qt.ShiftModifier:
+                    forceSelect = True
                     if isLastOnCurve:
                         refx = sel[0].x()
                         refy = sel[0].y()
@@ -455,6 +499,8 @@ class GlyphScene(QGraphicsScene):
                 CPObject.setVisible(False)
             self._editing = True
         super(GlyphScene, self).mousePressEvent(event)
+        # Since shift clamps, we might be missing the point in mousePressEvent
+        if forceSelect: item.setSelected(True)
     
     def mouseMoveEvent(self, event):
         if self._editing:
@@ -569,6 +615,8 @@ class GlyphView(QGraphicsView):
         self._showOnCurvePoints = True
         self._fillColor = QColor.fromRgbF(0, 0, 0, .4)
         self._componentFillColor = QColor.fromRgbF(.2, .2, .3, .4)
+        self._showMetricsTitles = False
+        self._metricsColor = QColor(70, 70, 70)
 
         self.setBackgroundBrush(QBrush(Qt.lightGray))
         self.setScene(GlyphScene(self))
@@ -584,6 +632,7 @@ class GlyphView(QGraphicsView):
         self.scale(1, -1)
         self.addBackground()
         self.addBlues()
+        self.addHorizontalMetrics()
         self.addOutlines()
         self.addPoints()
 
@@ -650,6 +699,40 @@ class GlyphView(QGraphicsView):
                     s.addLine(0, yMin, width, yMax, QPen(self._bluesColor))
                 else:
                     s.addRect(0, yMin, width, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
+    
+    def addHorizontalMetrics(self):
+        s = self.scene()
+        width = self._glyph.width# * self._inverseScale
+        toDraw = [
+            ("Descender", self._font.info.descender),
+            ("Baseline", 0),
+            ("x-height", self._font.info.xHeight),
+            ("Cap height", self._font.info.capHeight),
+            ("Ascender", self._font.info.ascender)
+        ]
+        positions = {}
+        for name, position in toDraw:
+            if position not in positions:
+                positions[position] = []
+            positions[position].append(name)
+        # lines
+        for position, names in sorted(positions.items()):
+            y = self.roundPosition(position)
+            s.addLine(0, y, width, y, QPen(self._metricsColor))
+        # text
+        if self._showMetricsTitles:# and self._impliedPointSize > 150:
+            fontSize = 9# * self._inverseScale
+            font = self.font()
+            font.setFamily("Lucida Sans Unicode")
+            font.setPointSize(fontSize)
+            for position, names in sorted(positions.items()):
+                y = position - (fontSize / 2)
+                text = ", ".join(names)
+                text = " %s " % text
+                item = s.addSimpleText(text, font)
+                item.setBrush(self._metricsColor)
+                item.setTransform(QTransform().fromScale(1, -1))
+                item.setPos(0, y)
 
     def addOutlines(self):
         s = self.scene()
