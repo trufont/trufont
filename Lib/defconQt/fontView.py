@@ -539,7 +539,8 @@ class MainWindow(QMainWindow):
         #self.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"))
 
     def newFile(self):
-        # TODO: ask for save before leaving
+        ok = self.maybeSaveBeforeExit()
+        if not ok: return
         self.font = Font()
         self.font.info.unitsPerEm = 1000
         self.font.info.ascender = 750
@@ -577,11 +578,15 @@ class MainWindow(QMainWindow):
         #return ok
     
     def close(self):
-        # TODO: check if font changed
         self.font.removeObserver(self, "Font.Changed")
         QApplication.instance().quit()
         
     def closeEvent(self, event):
+        ok = self.maybeSaveBeforeExit()
+        if not ok: event.ignore()
+        else: event.accept()
+    
+    def maybeSaveBeforeExit(self):
         if self.font.dirty:
             title = "Me"
             if self.font.path is not None:
@@ -596,11 +601,11 @@ class MainWindow(QMainWindow):
             ret = closeDialog.exec_()
             if ret == QMessageBox.Save:
                 self.saveFile()
-                event.accept()
+                return True
             elif ret == QMessageBox.Discard:
-                event.accept()
-            else: #if ret == QMessageBox.Cancel:
-                event.ignore()
+                return True
+            return False
+        return True
     
     def colorFill(self):
         action = self.sender()
