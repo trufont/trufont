@@ -379,12 +379,6 @@ class ResizeHandleItem(QGraphicsRectItem):
     
     def mouseMoveEvent(self, event):
         self.parentItem()._pixmapResized(event)
-        
-    def paint(self, painter, option, widget):
-        painter.save()
-        painter.setOpacity(.5)
-        super(ResizeHandleItem, self).paint(painter, option, widget)
-        painter.restore()
 
 class PixmapItem(QGraphicsPixmapItem):
     def __init__(self, x, y, pixmap, parent=None):
@@ -403,12 +397,23 @@ class PixmapItem(QGraphicsPixmapItem):
     
     def _pixmapResized(self, event):
         pos = event.scenePos()
-        dx = (pos.x() - self.x()) / self._rWidth
         dy = (pos.y() - self.y()) / self._rHeight
+        if event.modifiers() & Qt.ShiftModifier:
+            # keep original aspect ratio
+            dx = -dy * self._rWidth / self._rHeight
+        else:
+            dx = (pos.x() - self.x()) / self._rWidth
         #self.prepareGeometryChange()
         #self.setRect(self.x(), self.y(), dx, dy)
         self.setTransform(QTransform().fromScale(dx, dy))
         event.accept()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete:
+            self.scene().removeItem(self)
+            event.accept()
+        else:
+            super(PixmapItem, self).keyPressEvent(event)
     
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedChange:
