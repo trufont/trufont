@@ -394,15 +394,15 @@ class PixmapItem(QGraphicsPixmapItem):
         self._rHeight = rect.height()
         handle = ResizeHandleItem(self)
         handle.setVisible(False)
-        self._rLine = QLineF(self.x(), self.y(), self._rWidth, self._rHeight)
     
     def _pixmapGeometryChanged(self, event):
         modifiers = event.modifiers()
         pos = event.scenePos()
         if modifiers & Qt.ControlModifier:
             # rotate
+            refLine = QLineF(self.x(), self.y(), self.x()+self._rWidth, self.y()-self._rHeight)
             curLine = QLineF(self.x(), self.y(), pos.x(), pos.y())
-            self.setRotation(self._rLine.angleTo(curLine))
+            self.setRotation(refLine.angleTo(curLine))
         else:
             # scale
             dy = (pos.y() - self.y()) / self._rHeight
