@@ -378,7 +378,7 @@ class ResizeHandleItem(QGraphicsRectItem):
         return value
     
     def mouseMoveEvent(self, event):
-        self.parentItem()._pixmapResized(event)
+        self.parentItem()._pixmapGeometryChanged(event)
 
 class PixmapItem(QGraphicsPixmapItem):
     def __init__(self, x, y, pixmap, parent=None):
@@ -394,26 +394,25 @@ class PixmapItem(QGraphicsPixmapItem):
         self._rHeight = rect.height()
         handle = ResizeHandleItem(self)
         handle.setVisible(False)
+        self._rLine = QLineF(self.x(), self.y(), self._rWidth, self._rHeight)
     
-    def _pixmapResized(self, event):
+    def _pixmapGeometryChanged(self, event):
+        modifiers = event.modifiers()
         pos = event.scenePos()
-        dy = (pos.y() - self.y()) / self._rHeight
-        if event.modifiers() & Qt.ShiftModifier:
-            # keep original aspect ratio
-            dx = -dy * self._rWidth / self._rHeight
+        if modifiers & Qt.ControlModifier:
+            # rotate
+            curLine = QLineF(self.x(), self.y(), pos.x(), pos.y())
+            self.setRotation(self._rLine.angleTo(curLine))
         else:
-            dx = (pos.x() - self.x()) / self._rWidth
-        #self.prepareGeometryChange()
-        #self.setRect(self.x(), self.y(), dx, dy)
-        self.setTransform(QTransform().fromScale(dx, dy))
+            # scale
+            dy = (pos.y() - self.y()) / self._rHeight
+            if modifiers & Qt.ShiftModifier:
+                # keep original aspect ratio
+                dx = -dy
+            else:
+                dx = (pos.x() - self.x()) / self._rWidth
+            self.setTransform(QTransform().fromScale(dx, dy))
         event.accept()
-    
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Delete:
-            self.scene().removeItem(self)
-            event.accept()
-        else:
-            super(PixmapItem, self).keyPressEvent(event)
     
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedChange:
@@ -478,6 +477,8 @@ class GlyphScene(QGraphicsScene):
             for item in self.selectedItems():
                 if isinstance(item, OnCurvePointItem):
                     item.delete()
+                elif isinstance(item, PixmapItem):
+                    self.removeItem(item)
             event.accept()
             return
         elif modifiers & Qt.ControlModifier and key == Qt.Key_A:
