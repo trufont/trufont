@@ -325,8 +325,8 @@ class OnCurvePointItem(QGraphicsPathItem):
                 first, second = (self._point.x, self._point.y), (nextToCP.x, nextToCP.y)
             else:
                 first, second = (nextToCP.x, nextToCP.y), (self._point.x, self._point.y)
-            self._contour.insertPoint(insertIndex, self._contour._pointClass(first, name="Insert!"))
-            self._contour.insertPoint(insertIndex, self._contour._pointClass(second, name="Insert2"))
+            self._contour.insertPoint(insertIndex, self._contour._pointClass(first))
+            self._contour.insertPoint(insertIndex, self._contour._pointClass(second))
             children[i].setVisible(True)
             # TODO: need a list of items to make this efficient
             s.getItemForPoint(nextToCP).childItems()[o].setVisible(True)
@@ -347,6 +347,7 @@ class OnCurvePointItem(QGraphicsPathItem):
     def setIsSmooth(self, isSmooth):
         self._isSmooth = isSmooth
         self._point.smooth = self._isSmooth
+        self._contour.dirty = True
         self.setPointPath()
     
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
@@ -388,6 +389,7 @@ class PixmapItem(QGraphicsPixmapItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setTransform(QTransform().fromScale(1, -1))
         self.setOpacity(.5)
+        self.setZValue(-1)
 
         rect = self.boundingRect()
         self._rWidth = rect.width()
@@ -523,6 +525,9 @@ class GlyphScene(QGraphicsScene):
         touched = self.itemAt(event.scenePos(), self.views()[0].transform())
         sel = self.selectedItems()
         x, y = event.scenePos().x(), event.scenePos().y()
+        if self._integerPlane:
+            x = int(x)
+            y = int(y)
         # XXX: not sure why isinstance does not work here
         if len(sel) == 1:
             isLastOnCurve = type(sel[0]) is OnCurvePointItem and sel[0]._contour.open and \
@@ -703,7 +708,7 @@ class GlyphView(QGraphicsView):
         self._showOnCurvePoints = True
         self._fillColor = QColor.fromRgbF(0, 0, 0, .4)
         self._componentFillColor = QColor.fromRgbF(.2, .2, .3, .4)
-        self._showMetricsTitles = False
+        self._showMetricsTitles = True
         self._metricsColor = QColor(70, 70, 70)
 
         self.setBackgroundBrush(QBrush(Qt.lightGray))
@@ -764,8 +769,10 @@ class GlyphView(QGraphicsView):
     def addBackground(self):
         s = self.scene()
         width = self._glyph.width
-        s.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
+        item = s.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
+        item.setZValue(-1000)
         item = s.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
+        item.setZValue(-999)
         self.centerOn(width/2, self._font.info.descender+self._font.info.unitsPerEm/2)
     
     def addBlues(self):
@@ -784,9 +791,11 @@ class GlyphView(QGraphicsView):
             yMaxs = [i for index, i in enumerate(values) if index % 2]
             for yMin, yMax in zip(yMins, yMaxs):
                 if yMin == yMax:
-                    s.addLine(0, yMin, width, yMax, QPen(self._bluesColor))
+                    item = s.addLine(0, yMin, width, yMax, QPen(self._bluesColor))
+                    item.setZValue(-998)
                 else:
-                    s.addRect(0, yMin, width, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
+                    item = s.addRect(0, yMin, width, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
+                    item.setZValue(-998)
     
     def addHorizontalMetrics(self):
         s = self.scene()
@@ -806,12 +815,13 @@ class GlyphView(QGraphicsView):
         # lines
         for position, names in sorted(positions.items()):
             y = self.roundPosition(position)
-            s.addLine(0, y, width, y, QPen(self._metricsColor))
+            item = s.addLine(0, y, width, y, QPen(self._metricsColor))
+            item.setZValue(-997)
         # text
         if self._showMetricsTitles:# and self._impliedPointSize > 150:
             fontSize = 9# * self._inverseScale
             font = self.font()
-            font.setFamily("Lucida Sans Unicode")
+            font.setFamily("Roboto Mono")
             font.setPointSize(fontSize)
             for position, names in sorted(positions.items()):
                 y = position - (fontSize / 2)
@@ -820,13 +830,15 @@ class GlyphView(QGraphicsView):
                 item = s.addSimpleText(text, font)
                 item.setBrush(self._metricsColor)
                 item.setTransform(QTransform().fromScale(1, -1))
-                item.setPos(0, y)
+                item.setPos(width, y)
+                item.setZValue(-997)
 
     def addOutlines(self):
         s = self.scene()
         # outlines
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
         s._outlineItem = s.addPath(path, brush=QBrush(self._fillColor))
+        s._outlineItem.setZValue(-995)
         s._glyphObject = self._glyph
         # components
         path = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
@@ -969,6 +981,8 @@ class GlyphView(QGraphicsView):
                 self.setDragMode(QGraphicsView.RubberBandDrag)
         super(GlyphView, self).mousePressEvent(event)
     
+    # XXX: should not have to set bools like this, should rely on QGroupBox
+    # data which is mutually-exclusive instead
     def setSceneDrawing(self):
         self._drawingTool = True
         self.setDragMode(QGraphicsView.NoDrag)
