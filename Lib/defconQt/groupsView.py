@@ -98,7 +98,8 @@ class GroupsWindow(QWidget):
         super(GroupsWindow, self).__init__(parent, Qt.Window)
         self.font = font
 
-        self.groupsList = GroupListWidget(self.font.groups.keys(), self)
+        groups = self.font.groups.keys()
+        self.groupsList = GroupListWidget(groups, self)
         self.groupsList.itemChanged.connect(self._groupRenamed)
         
         self.stackWidget = GroupStackWidget(self.font, parent=self)
@@ -107,6 +108,7 @@ class GroupsWindow(QWidget):
         self.addGroupButton.clicked.connect(self._groupAdd)
         self.removeGroupButton = QPushButton("−", self)
         self.removeGroupButton.clicked.connect(self._groupDelete)
+        if not groups: self.removeGroupButton.setEnabled(False)
 
         self.alignLeftBox = QRadioButton("Align left", self)
         self.alignRightBox = QRadioButton("Align right", self)
@@ -149,18 +151,22 @@ class GroupsWindow(QWidget):
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.groupsList.setCurrentItem(item)
         self.groupsList.editItem(item)
+        self.removeGroupButton.setEnabled(True)
     
     def _groupChanged(self):
         self._cachedName = self.groupsList.currentItem().text()
         glyphs = []
         for gName in self.font.groups[self._cachedName]:
-            glyphs.append(self.font[gName])
+            if gName in self.font:
+                glyphs.append(self.font[gName])
         self.stackWidget.setGlyphs(glyphs)
         self.characterWidget.setGlyphs(glyphs)
         self.characterWidget.update()
     
     def _groupRenamed(self):
-        newKey = self.groupsList.currentItem().text()
+        newKey = self.groupsList.currentItem()
+        if newKey is None: return
+        newKey = newKey.text()
         self.font.groups[newKey] = self.font.groups[self._cachedName]
         del self.font.groups[self._cachedName]
     
@@ -168,6 +174,7 @@ class GroupsWindow(QWidget):
         newKey = self.groupsList.currentItem().text()
         del self.font.groups[newKey]
         self.groupsList.takeItem(self.groupsList.currentRow())
+        if not self.font.groups.keys(): self.removeGroupButton.setEnabled(False)
         self._groupChanged()
     
     def characterDeleteEvent(self, selection):
@@ -181,7 +188,9 @@ class GroupsWindow(QWidget):
         self._groupChanged()
     
     def characterDropEvent(self, event):
-        currentGroup = self.groupsList.currentItem().text()
+        currentGroup = self.groupsList.currentItem()
+        if currentGroup is None: return
+        currentGroup = currentGroup.text()
         glyphNames = event.mimeData().text().split(" ")
         for gName in glyphNames:
             # Due to defcon limitations, we must fetch and update for the
