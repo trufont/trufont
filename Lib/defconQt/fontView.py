@@ -611,7 +611,7 @@ class MainWindow(QMainWindow):
         action = self.sender()
         self.characterWidget.markSelection(action.data())
     
-    def _fontChanged(self, event):
+    def _fontChanged(self, notification):
         self.characterWidget.update()
 
     def _glyphOpened(self, name):

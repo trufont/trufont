@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import *
 class GroupListWidget(QListWidget):
     def __init__(self, groupNames, parent=None):
         super(GroupListWidget, self).__init__(parent)
+        #self.setAlternatingRowColors(True)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSortingEnabled(True)
         

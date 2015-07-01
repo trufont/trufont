@@ -1,10 +1,13 @@
-from PyQt5.QtCore import QAbstractTableModel, QEvent, QSize, Qt
-from PyQt5.QtGui import (QBrush, QColor, QFont, QIcon, QKeySequence, QLinearGradient, QPainter,
-        QPainterPath, QPalette, QPen)
-from PyQt5.QtWidgets import (QAbstractItemView, QActionGroup, QApplication, QComboBox, QGridLayout, QLabel, QLineEdit,
-        QMainWindow, QMenu, QPushButton, QScrollArea, QStyledItemDelegate, QTableView, QTableWidget, QTableWidgetItem, QVBoxLayout, QSizePolicy, QSpinBox, QToolBar, QWidget)
+from fontView import cellSelectionColor
+from PyQt5.QtCore import *#QAbstractTableModel, QEvent, QSize, Qt
+from PyQt5.QtGui import *#(QBrush, QColor, QFont, QIcon, QKeySequence, QLinearGradient, QPainter,
+        #QPainterPath, QPalette, QPen)
+from PyQt5.QtWidgets import *#(QAbstractItemView, QActionGroup, QApplication, QComboBox, QGridLayout, QLabel, QLineEdit,
+        #QMainWindow, QMenu, QPushButton, QScrollArea, QStyledItemDelegate, QTableView, QTableWidget, QTableWidgetItem, QVBoxLayout, QSizePolicy, QSpinBox, QToolBar, QWidget)
 
 defaultPointSize = 150
+glyphSelectionColor = QColor(cellSelectionColor)
+glyphSelectionColor.setAlphaF(.09)
 
 class MainSpaceWindow(QWidget):
     def __init__(self, font, string=None, pointSize=defaultPointSize, parent=None):
@@ -53,10 +56,10 @@ class MainSpaceWindow(QWidget):
         self._unsubscribeFromGlyphs()
         super(MainSpaceWindow, self).close()
     
-    def _fontInfoChanged(self, event):
+    def _fontInfoChanged(self, notification):
         self.canvas.update()
     
-    def _glyphChanged(self, event):
+    def _glyphChanged(self, notification):
         self.canvas.update()
         self.table.blockSignals(True)
         self.table.fillGlyphs()
@@ -172,11 +175,16 @@ class FontToolBar(QToolBar):
         self.toolsMenu = QMenu(self)
         showKerning = self.toolsMenu.addAction("Show Kerning", self.showKerning)
         showKerning.setCheckable(True)
+        showMetrics = self.toolsMenu.addAction("Show Metrics", self.showMetrics)
+        showMetrics.setCheckable(True)
         self.toolsMenu.addSeparator()
         wrapLines = self.toolsMenu.addAction("Wrap lines", self.wrapLines)
         wrapLines.setCheckable(True)
         noWrapLines = self.toolsMenu.addAction("No wrap", self.noWrapLines)
         noWrapLines.setCheckable(True)
+        self.toolsMenu.addSeparator()
+        verticalFlip = self.toolsMenu.addAction("Vertical flip", self.verticalFlip)
+        verticalFlip.setCheckable(True)
         
         wrapLinesGroup = QActionGroup(self)
         wrapLinesGroup.addAction(wrapLines)
@@ -192,6 +200,14 @@ class FontToolBar(QToolBar):
     def showKerning(self):
         action = self.sender()
         self.parent().canvas.setShowKerning(action.isChecked())
+    
+    def showMetrics(self):
+        action = self.sender()
+        self.parent().canvas.setShowMetrics(action.isChecked())
+    
+    def verticalFlip(self):
+        action = self.sender()
+        self.parent().canvas.setVerticalFlip(action.isChecked())
     
     def wrapLines(self):
         self.parent().canvas.setWrapLines(True)
@@ -215,6 +231,10 @@ class GlyphsCanvas(QWidget):
         self.calculateScale()
         self.padding = 10
         self._showKerning = False
+        self._showMetrics = False
+        self._verticalFlip = False
+        self._positions = None
+        self._selected = None
         
         self._wrapLines = True
         self.scrollArea = scrollArea
@@ -229,6 +249,14 @@ class GlyphsCanvas(QWidget):
     
     def setShowKerning(self, showKerning):
         self._showKerning = showKerning
+        self.update()
+    
+    def setShowMetrics(self, showMetrics):
+        self._showMetrics = showMetrics
+        self.update()
+    
+    def setVerticalFlip(self, verticalFlip):
+        self._verticalFlip = verticalFlip
         self.update()
     
     def setWrapLines(self, wrapLines):
@@ -263,28 +291,26 @@ class GlyphsCanvas(QWidget):
             sh = self.scrollArea.horizontalScrollBar().height() + self.scrollArea.contentsMargins().bottom()
             self.resize(self.width(), event.size().height() - sh)
     
-    # if we have a cell clicked in and we click on the canvas,
-    # give focus to the canvas in order to quit editing
-    # TODO: Focus on individual chars and show BBox + active cell (see how rf does active cells)
-    # QTableWidget.scrollToItem()
-    def mousePressEvent(self, event):
-        self.setFocus(Qt.MouseFocusReason)
-    
     def wheelEvent(self, event):
-        # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
-        # see how rf behaves -> scaling factor grows with sz it seems
-        decay = event.angleDelta().y() / 120.0
-        newPointSize = self.ptSize + int(decay) * 10
-        if newPointSize <= 0: return
-        # TODO: send notification to parent and do all the fuss there
-        self._pointSizeChanged(newPointSize)
-        
-        # TODO: ugh…
-        comboBox = self.parent().parent().parent().toolbar.comboBox
-        comboBox.blockSignals(True)
-        comboBox.setEditText(str(newPointSize))
-        comboBox.blockSignals(False)
-        event.accept()
+        if event.modifiers() & Qt.ControlModifier:
+            # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
+            # see how rf behaves -> scaling factor grows with sz it seems
+            decay = event.angleDelta().y() / 120.0
+            scale = round(self.ptSize / 10)
+            if scale == 0 and decay >= 0: scale = 1
+            newPointSize = self.ptSize + int(decay) * scale
+            if newPointSize <= 0: return
+            # TODO: send notification to parent and do all the fuss there
+            self._pointSizeChanged(newPointSize)
+            
+            # TODO: ugh…
+            comboBox = self.parent().parent().parent().toolbar.comboBox
+            comboBox.blockSignals(True)
+            comboBox.setEditText(str(newPointSize))
+            comboBox.blockSignals(False)
+            event.accept()
+        else:
+            super(GlyphsCanvas, self).wheelEvent(event)
     
     # Tal Leming. Edited.
     def lookupKerningValue(self, first, second):
@@ -326,16 +352,79 @@ class GlyphsCanvas(QWidget):
             if pair in kerning:
                 return kerning[pair]
         return 0
+    
+    def mousePressEvent(self, event):
+        # Take focus to quit eventual cell editing
+        self.setFocus(Qt.MouseFocusReason)
+        if event.button() == Qt.LeftButton:
+            if self._verticalFlip:
+                baselineShift = -self.descender
+            else:
+                baselineShift = self.ascender
+            found = False
+            line = (event.y() - self.padding) // (self.ptSize*self._lineHeight)
+            # XXX: Shouldnt // yield an int?
+            line = int(line)
+            if line >= len(self._positions):
+                self._selected = None
+                event.accept()
+                self.update()
+                return
+            x = event.x() - self.padding
+            for index, data in enumerate(self._positions[line]):
+                pos, width = data
+                if pos <= x and pos+width > x:
+                    count = 0
+                    for i in range(line):
+                        count += len(self._positions[i])
+                    self._selected = count+index
+                    found = True
+            if not found: self._selected = None
+            else: self.parent().parent().parent().table.setCurrentColumn(self._selected+1)
+            event.accept()
+            self.update()
+        else:
+            super(GlyphCanvas, self).mousePressEvent(event)
+    
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton and self._selected is not None:
+            from fontView import MainWindow
+            # XXX: we are doing glyph -> name and glyphView does it backwards
+            # stop adding indirection in ctor
+            MainWindow._glyphOpened(self, self.glyphs[self._selected].name)
+            event.accept()
+        else:
+            super(GlyphCanvas, self).mouseDoubleClickEvent(event)
 
     def paintEvent(self, event):
+        linePen = QPen(Qt.black)
+        linePen.setWidth(3)
+        width = self.width() / self.scale
+        def paintLineMarks(painter):
+            painter.save()
+            painter.scale(self.scale, yDirection*self.scale)
+            painter.setPen(linePen)
+            painter.drawLine(0, self.ascender, width, self.ascender)
+            painter.drawLine(0, 0, width, 0)
+            painter.drawLine(0, self.descender, width, self.descender)
+            painter.restore()
+    
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(0, 0, self.width(), self.height(), Qt.white)
-        painter.translate(self.padding, self.padding+self.ascender*self.scale)
+        if self._verticalFlip:
+            baselineShift = -self.descender
+            yDirection = 1
+        else:
+            baselineShift = self.ascender
+            yDirection = -1
+        painter.translate(self.padding, self.padding+baselineShift*self.scale)
         # TODO: scale painter here to avoid g*scale everywhere below
 
         cur_width = 0
         lines = 1
+        self._positions = [[]]
+        if self._showMetrics: paintLineMarks(painter)
         for index, glyph in enumerate(self.glyphs):
             # line wrapping
             # TODO: should padding be added for the right boundary as well? I'd say no but not sure
@@ -346,15 +435,24 @@ class GlyphsCanvas(QWidget):
             else: kern = 0
             if self._wrapLines and cur_width + gWidth + kern + self.padding > self.width():
                 painter.translate(-cur_width, self.ptSize)
+                if self._showMetrics: paintLineMarks(painter)
+                self._positions.append([(0, gWidth)])
                 cur_width = gWidth
                 lines += 1
             else:
                 if doKern:
                     painter.translate(kern, 0)
+                self._positions[-1].append((cur_width, gWidth))
                 cur_width += gWidth+kern
             glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
             painter.save()
-            painter.scale(self.scale, -self.scale)
+            painter.scale(self.scale, yDirection*self.scale)
+            if self._showMetrics:
+                halfDescent = self.descender/2
+                painter.drawLine(0, 0, 0, halfDescent)
+                painter.drawLine(glyph.width, 0, glyph.width, halfDescent)
+            if self._selected is not None and index == self._selected:
+                painter.fillRect(0, self.descender, glyph.width, self.upm, glyphSelectionColor)
             painter.fillPath(glyphPath, Qt.black)
             painter.restore()
             painter.translate(gWidth, 0)
@@ -367,7 +465,29 @@ class GlyphsCanvas(QWidget):
         else: width = self.width()
         self.resize(width, max(innerHeight, lines*self.ptSize+2*self.padding))
 
+class SpaceTableWidgetItem(QTableWidgetItem):
+    def setData(self, role, value):
+        if role & Qt.EditRole:
+            # don't set empty or non-number data
+            if value == "":
+                return
+            else:
+                try:
+                    int(value)
+                except ValueError:
+                    try:
+                        value = str(round(float(value)))
+                    except ValueError:
+                        return
+        super(SpaceTableWidgetItem, self).setData(role, value)
+
 class GlyphCellItemDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        editor = super(GlyphCellItemDelegate, self).createEditor(parent, option, index)
+        #editor.setAlignment(Qt.AlignCenter)
+        editor.setValidator(QIntValidator(self))
+        return editor
+    
     # TODO: implement =... lexer
     def eventFilter(self, editor, event):
         if event.type() == QEvent.KeyPress:
@@ -387,10 +507,7 @@ class GlyphCellItemDelegate(QStyledItemDelegate):
                     chg *= 10
                     if modifiers & Qt.ControlModifier:
                         chg *= 10
-                try:
-                    cur = int(editor.text())
-                except ValueError:
-                    cur = float(editor.text())
+                cur = int(editor.text())
                 editor.setText(str(cur+chg))
             self.commitData.emit(editor)
             editor.selectAll()
@@ -409,13 +526,13 @@ class SpaceTable(QTableWidget):
         self.setColumnCount(len(self.glyphs)+2)
         data = [None, "Width", "Left", "Right"]
         for index, item in enumerate(data):
-            cell = QTableWidgetItem(item)
+            cell = SpaceTableWidgetItem(item)
             # don't set ItemIsEditable
             cell.setFlags(Qt.ItemIsEnabled)
             self.setItem(index, 0, cell)
         # let's use this one column to compute the width of others
-        self._cellWidth = .7*self.columnWidth(0)
-        self.setColumnWidth(0, .6*self.columnWidth(0))
+        self._cellWidth = .5*self.columnWidth(0)
+        self.setColumnWidth(0, self._cellWidth)
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
 
@@ -444,10 +561,7 @@ class SpaceTable(QTableWidget):
         # Glyphs that do not have outlines leave empty cells, can't convert
         # that to a scalar
         if not item: return
-        try:
-            item = int(item)
-        except ValueError:
-            item = float(item)
+        item = int(item)
         # -1 because the first col contains descriptive text
         glyph = self.glyphs[col-1]
         if row == 1:
@@ -465,16 +579,19 @@ class SpaceTable(QTableWidget):
         margins = self.contentsMargins()
         height += margins.top() + margins.bottom()
         return QSize(self.width(), height)
+    
+    def setCurrentColumn(self, column):
+        self.setCurrentCell(0, column)
 
     def fillGlyphs(self):
         def glyphTableWidgetItem(content, blockEdition=False):
             if content is not None: content = str(content)
-            item = QTableWidgetItem(content)
+            item = SpaceTableWidgetItem(content)
             if content is None or blockEdition:
                 # don't set ItemIsEditable
                 item.setFlags(Qt.ItemIsEnabled)
-            # TODO: also set alignment during edition
-            # or leave it as it is now, is fine by me...
+            # TODO: should fields be centered? I find left-aligned more
+            # natural to read, personally...
             #item.setTextAlignment(Qt.AlignCenter)
             return item
 

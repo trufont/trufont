@@ -82,8 +82,8 @@ class MainGfxWindow(QMainWindow):
         self.view._glyph.removeObserver(self, "Glyph.Changed")
         super(GlyphView, self).close()
     
-    def _glyphChanged(self, event):
-        self.view._glyphChanged(event)
+    def _glyphChanged(self, notification):
+        self.view._glyphChanged(notification)
 
     def setRenderer(self, action):
         if action == self.nativeAction:
@@ -163,7 +163,6 @@ class OffCurvePointItem(QGraphicsEllipseItem):
                     value.setY(copysign(avg, value.y()))
                 else:
                     value.setY(0)
-        elif change == QGraphicsItem.ItemPositionHasChanged:
             self.parentItem()._CPMoved(value)
         return value
     
@@ -734,7 +733,7 @@ class GlyphView(QGraphicsView):
         #self.scale(sc, sc);
         #self.scene().setSceneRect(-1000, -1000, 3000, 3000)
     
-    def _glyphChanged(self, event):
+    def _glyphChanged(self, notification):
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
         self.scene()._outlineItem.setPath(path)
         self.scene()._outlineItem.update()
