@@ -3,6 +3,7 @@ from PyQt5.QtGui import QColor, QFont, QKeySequence, QPainter, QSyntaxHighlighte
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
         QMessageBox, QPlainTextEdit, QWidget)
 
+# TODO: implement search and replace
 class MainEditWindow(QMainWindow):
     def __init__(self, font=None, parent=None):
         super(MainEditWindow, self).__init__(parent)
@@ -60,13 +61,14 @@ class LineNumberArea(QWidget):
 
     def paintEvent(self, event):
         self.parent().lineNumberAreaPaintEvent(event)
-        
+
 class TextEditor(QPlainTextEdit):
     def __init__(self, text=None, parent=None):
         super(TextEditor, self).__init__(parent)
         # https://gist.github.com/murphyrandle/2921575
         font = QFont('Roboto Mono', 10)
-        #font.setFixedPitch(True)
+        font.setFixedPitch(True)
+        self.setFont(font)
 
         self._indent = "    "
         self.highlighter = Highlighter(self.document())
@@ -75,11 +77,10 @@ class TextEditor(QPlainTextEdit):
         self.updateRequest.connect(self.updateLineNumberArea)
         
         self.setPlainText(text)
-        self.setFont(font)
     
     def setFontParams(self, family='Roboto Mono', ptSize=10, isMono=True):
         font = QFont(family, ptSize)
-        #font.setFixedPitch(isMono)
+        font.setFixedPitch(isMono)
         self.setFont(font)
 
     def write(self, features):

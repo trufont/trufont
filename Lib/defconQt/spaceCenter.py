@@ -468,17 +468,10 @@ class GlyphsCanvas(QWidget):
 class SpaceTableWidgetItem(QTableWidgetItem):
     def setData(self, role, value):
         if role & Qt.EditRole:
-            # don't set empty or non-number data
+            # don't set empty data
+            # XXX: maybe fetch the value from cell back to the editor
             if value == "":
                 return
-            else:
-                try:
-                    int(value)
-                except ValueError:
-                    try:
-                        value = str(round(float(value)))
-                    except ValueError:
-                        return
         super(SpaceTableWidgetItem, self).setData(role, value)
 
 class GlyphCellItemDelegate(QStyledItemDelegate):

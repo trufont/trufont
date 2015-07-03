@@ -1,3 +1,4 @@
+from enum import Enum
 from math import copysign
 from PyQt5.QtCore import *#QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
@@ -29,9 +30,14 @@ class MainGfxWindow(QMainWindow):
         self.drawingTool.setCheckable(True)
         self.drawingTool.toggled.connect(self.view.setSceneDrawing)
         
+        self.rulerTool = toolsMenu.addAction("&Ruler")
+        self.rulerTool.setCheckable(True)
+        self.rulerTool.toggled.connect(self.view.setSceneRuler)
+        
         self.toolsGroup = QActionGroup(self)
         self.toolsGroup.addAction(self.selectTool)
         self.toolsGroup.addAction(self.drawingTool)
+        self.toolsGroup.addAction(self.rulerTool)
         self.selectTool.setChecked(True)
 
         self.menuBar().addMenu(toolsMenu)
@@ -125,6 +131,11 @@ onCurvePointColor = offCurvePointColor
 pointStrokeColor = QColor.fromRgbF(1, 1, 1, 1)
 pointSelectionColor = Qt.red
 
+class SceneTools(Enum):
+    SelectionTool = 0
+    DrawingTool = 1
+    RulerTool = 2
+
 class HandleLineItem(QGraphicsLineItem):
     def __init__(self, x1, y1, x2, y2, parent):
         super(HandleLineItem, self).__init__(x1, y1, x2, y2, parent)
@@ -163,6 +174,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
                     value.setY(copysign(avg, value.y()))
                 else:
                     value.setY(0)
+        elif change == QGraphicsItem.ItemPositionHasChanged:
             self.parentItem()._CPMoved(value)
         return value
     
@@ -279,8 +291,6 @@ class OnCurvePointItem(QGraphicsPathItem):
                 value.setX(round(value.x()))
                 value.setY(round(value.y()))
         elif change == QGraphicsItem.ItemPositionHasChanged:
-            if self.scene() is None: return QGraphicsItem.itemChange(self, change, value)
-            # TODO: if we're snapped to int round self.pos to int
             # have a look at defcon FuzzyNumber as well
             pointIndex = self.getPointIndex()
             self._contour[pointIndex].x = self.pos().x()
@@ -427,6 +437,13 @@ class GlyphScene(QGraphicsScene):
         super(GlyphScene, self).__init__(parent)
         self._editing = False
         self._integerPlane = True
+        self._cachedRuler = None
+        self._rulerObject = None
+
+        font = self.font()
+        font.setFamily("Roboto Mono")
+        font.setFixedPitch(True)
+        self.setFont(font)
     
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -519,14 +536,20 @@ class GlyphScene(QGraphicsScene):
         super(GlyphScene, self).keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
-        forceSelect = False
-        if not self.views()[0]._drawingTool: super(GlyphScene, self).mousePressEvent(event); return
+        currentTool = self.views()[0]._currentTool
         touched = self.itemAt(event.scenePos(), self.views()[0].transform())
+        if not currentTool == SceneTools.DrawingTool:
+            if currentTool == SceneTools.RulerTool:
+                self.rulerMousePress(event)
+                return
+            self._itemUnderMouse = touched
+            super(GlyphScene, self).mousePressEvent(event)
+            return
+        forceSelect = False
         sel = self.selectedItems()
         x, y = event.scenePos().x(), event.scenePos().y()
         if self._integerPlane:
-            x = int(x)
-            y = int(y)
+            x, y = round(x), round(y)
         # XXX: not sure why isinstance does not work here
         if len(sel) == 1:
             isLastOnCurve = type(sel[0]) is OnCurvePointItem and sel[0]._contour.open and \
@@ -662,26 +685,104 @@ class GlyphScene(QGraphicsScene):
                     # eat the event
                     event.accept()
         else:
+            currentTool = self.views()[0]._currentTool
+            if currentTool == SceneTools.RulerTool:
+                self.rulerMouseMove(event)
+                return
             super(GlyphScene, self).mouseMoveEvent(event)
     
     def mouseReleaseEvent(self, event):
         self._editing = False
-        # cleanup extra point elements if we dealt w curved first point
-        touched = self.itemAt(event.scenePos(), self.views()[0].transform())
-        if touched and isinstance(touched, OffCurvePointItem):
-            onCurve = touched.parentItem()
-            children = onCurve.childItems()
-            if len(children) > 4:
-                # l1, p1, l3, p3, l2, p2
-                children[3].prepareGeometryChange()
-                self.removeItem(children[3])
-                children[2].prepareGeometryChange()
-                self.removeItem(children[2])
+        currentTool = self.views()[0]._currentTool
+        if currentTool == SceneTools.DrawingTool:
+            # cleanup extra point elements if we dealt w curved first point
+            touched = self.itemAt(event.scenePos(), self.views()[0].transform())
+            if touched and isinstance(touched, OffCurvePointItem):
+                onCurve = touched.parentItem()
+                children = onCurve.childItems()
+                if len(children) > 4:
+                    # l1, p1, l3, p3, l2, p2
+                    children[3].prepareGeometryChange()
+                    self.removeItem(children[3])
+                    children[2].prepareGeometryChange()
+                    self.removeItem(children[2])
 
-                onCurve._isSmooth = False
-                onCurve.setPointPath()
-                onCurve._point.smooth = False
+                    onCurve._isSmooth = False
+                    onCurve.setPointPath()
+                    onCurve._point.smooth = False
+        elif currentTool == SceneTools.RulerTool:
+            self.rulerMouseRelease(event)
         super(GlyphScene, self).mouseReleaseEvent(event)
+    
+    def rulerMousePress(self, event):
+        touched = self.itemAt(event.scenePos(), self.views()[0].transform())
+        if touched is not None and isinstance(touched, OnCurvePointItem) or \
+            isinstance(touched, OffCurvePointItem):
+            x, y = touched.scenePos().x(), touched.scenePos().y()
+        else:
+            x, y = event.scenePos().x(), event.scenePos().y()
+        if self._integerPlane:
+            x, y = round(x), round(y)
+        if self._cachedRuler is not None:
+            self.removeItem(self._cachedRuler)
+            self._cachedRuler = None
+        path = QPainterPath()
+        path.moveTo(x, y)
+        path.lineTo(x+1, y)
+        path.lineTo(x+1, y+1)
+        path.closeSubpath()
+        self._rulerObject = self.addPath(path)
+        item = QGraphicsSimpleTextItem("0", self._rulerObject)
+        font = self.font()
+        font.setPointSize(9)
+        item.setFont(font)
+        item.setTransform(QTransform().fromScale(1, -1))
+        event.accept()
+    
+    def rulerMouseMove(self, event):
+        # XXX: shouldnt have to do this, it seems mouseTracking is wrongly activated
+        if self._rulerObject is None: return
+        touched = self.itemAt(event.scenePos(), self.views()[0].transform())
+        if touched is not None and isinstance(touched, OnCurvePointItem) or \
+            isinstance(touched, OffCurvePointItem):
+            x, y = touched.scenePos().x(), touched.scenePos().y()
+        else:
+            # TODO: 45deg clamp w ShiftModifier
+            # maybe make a function for that + other occurences...
+            x, y = event.scenePos().x(), event.scenePos().y()
+        if self._integerPlane:
+            x, y = round(x), round(y)
+        path = self._rulerObject.path()
+        baseElem = path.elementAt(0)
+        path.setElementPositionAt(1, x, baseElem.y)
+        path.setElementPositionAt(2, x, y)
+        path.setElementPositionAt(3, baseElem.x, baseElem.y)
+        self._rulerObject.setPath(path)
+        textItem = self._rulerObject.childItems()[0]
+        line = QLineF(baseElem.x, baseElem.y, x, y)
+        l = line.length()
+        # XXX: angle() doesnt go by trigonometric direction. Weird.
+        # TODO: maybe split in positive/negative 180s (ff)
+        a = 360 - line.angle()
+        line.setP2(QPointF(x, baseElem.y))
+        h = line.length()
+        line.setP1(QPointF(x, y))
+        v = line.length()
+        text = "%d\n↔ %d\n↕ %d\nα %dº" % (l, h, v, a)
+        textItem.setText(text)
+        dx = x - baseElem.x
+        if dx >= 0: px = x
+        else: px = x - textItem.boundingRect().width()
+        dy = y - baseElem.y
+        if dy >= 0: py = baseElem.y
+        else: py = baseElem.y + textItem.boundingRect().height()
+        textItem.setPos(px, py)
+        event.accept()
+    
+    def rulerMouseRelease(self, event):
+        self._cachedRuler = self._rulerObject
+        self._rulerObject = None
+        event.accept()
 
 class GlyphView(QGraphicsView):
     Native, OpenGL, Image = range(3)
@@ -695,8 +796,6 @@ class GlyphView(QGraphicsView):
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
         self._impliedPointSize = 1000
         self._pointSize = None
-        
-        self._drawingTool = False
         
         self._inverseScale = 0.1
         self._scale = 10
@@ -713,11 +812,17 @@ class GlyphView(QGraphicsView):
         self.setBackgroundBrush(QBrush(Qt.lightGray))
         self.setScene(GlyphScene(self))
         #self.scene().setSceneRect(0, self._font.info.ascender, self._glyph.width, self._font.info.unitsPerEm)
+        font = self.font()
+        font.setFamily("Roboto Mono")
+        font.setFixedPitch(True)
+        self.setFont(font)
         
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setDragMode(QGraphicsView.RubberBandDrag)
         #self.setViewportUpdateMode(QGraphicsView.BoundingRectViewportUpdate)
+        
+        self._drawingTool = SceneTools.SelectionTool
+        self.setDragMode(QGraphicsView.RubberBandDrag)
         
         self.setRenderHint(QPainter.Antialiasing)
         #self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
@@ -820,7 +925,6 @@ class GlyphView(QGraphicsView):
         if self._showMetricsTitles:# and self._impliedPointSize > 150:
             fontSize = 9# * self._inverseScale
             font = self.font()
-            font.setFamily("Roboto Mono")
             font.setPointSize(fontSize)
             for position, names in sorted(positions.items()):
                 y = position - (fontSize / 2)
@@ -974,20 +1078,23 @@ class GlyphView(QGraphicsView):
     
     def mousePressEvent(self, event):
         if (event.button() == Qt.MidButton):
-            if self.dragMode() == QGraphicsView.RubberBandDrag:
+            dragMode = self.dragMode()
+            if dragMode == QGraphicsView.RubberBandDrag:
                 self.setDragMode(QGraphicsView.ScrollHandDrag)
-            else:
+            elif dragMode == QGraphicsView.ScrollHandDrag:
                 self.setDragMode(QGraphicsView.RubberBandDrag)
         super(GlyphView, self).mousePressEvent(event)
-    
-    # XXX: should not have to set bools like this, should rely on QGroupBox
-    # data which is mutually-exclusive instead
+
     def setSceneDrawing(self):
-        self._drawingTool = True
+        self._currentTool = SceneTools.DrawingTool
+        self.setDragMode(QGraphicsView.NoDrag)
+    
+    def setSceneRuler(self):
+        self._currentTool = SceneTools.RulerTool
         self.setDragMode(QGraphicsView.NoDrag)
     
     def setSceneSelection(self):
-        self._drawingTool = False
+        self._currentTool = SceneTools.SelectionTool
         self.setDragMode(QGraphicsView.RubberBandDrag)
     
     # Lock/release handdrag does not seem to work…
@@ -998,29 +1105,14 @@ class GlyphView(QGraphicsView):
         super(GlyphView, self).mouseReleaseEvent(event)
     '''
 
-    '''
-    def paintEvent(self, event):
-        if self.renderer == GlyphView.Image:
-            if self.image.size() != self.viewport().size():
-                self.image = QImage(self.viewport().size(),
-                        QImage.Format_ARGB32_Premultiplied)
-
-            imagePainter = QPainter(self.image)
-            QGraphicsView.render(self, imagePainter)
-            imagePainter.end()
-
-            p = QPainter(self.viewport())
-            p.drawImage(0, 0, self.image)
-        else:
-            super(GlyphView, self).paintEvent(event)
-    '''
-
     def wheelEvent(self, event):
         factor = pow(1.2, event.angleDelta().y() / 120.0)
 
         #self._calcScale()
         #self._setFrame()
         self.scale(factor, factor)
+        # XXX: SimpleTextItems need scaling as well, but finding way to use ItemIgnoresTransformations
+        # on them would be in-order...
         scale = self.transform().m11()
         if scale < 4 and scale > .4:
             offCPS = offCurvePointSize / scale
