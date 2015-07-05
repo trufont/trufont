@@ -543,7 +543,7 @@ class GlyphScene(QGraphicsScene):
             sel = self.selectedItems()
             if len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and \
               sel[0].parentItem().getPointIndex() == len(sel[0].parentItem()._contour)-2 and \
-              key == Qt.Key_Alt:
+              key == Qt.Key_Alt and self._editing:
                 sel[0].parentItem().setIsSmooth(False)
             super(GlyphScene, self).keyPressEvent(event)
             return
@@ -561,7 +561,7 @@ class GlyphScene(QGraphicsScene):
         sel = self.selectedItems()
         if len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and \
           sel[0].parentItem().getPointIndex() == len(sel[0].parentItem()._contour)-2 and \
-          event.key() == Qt.Key_Alt:
+          event.key() == Qt.Key_Alt and self._editing:
             sel[0].parentItem().setIsSmooth(True)
         super(GlyphScene, self).keyReleaseEvent(event)
 
@@ -578,6 +578,7 @@ class GlyphScene(QGraphicsScene):
             if not view._currentTool == SceneTools.DrawingTool:
                 super(GlyphScene, self).mousePressEvent(event)
                 return
+        self._blocked = True
         forceSelect = False
         sel = self.selectedItems()
         x, y = event.scenePos().x(), event.scenePos().y()
@@ -646,6 +647,7 @@ class GlyphScene(QGraphicsScene):
                 CPObject = OffCurvePointItem(0, 0, item)
                 CPObject.setVisible(False)
             self._editing = True
+        self._blocked = False
         super(GlyphScene, self).mousePressEvent(event)
         # Since shift clamps, we might be missing the point in mousePressEvent
         if forceSelect: item.setSelected(True)
@@ -655,6 +657,7 @@ class GlyphScene(QGraphicsScene):
             sel = self.selectedItems()
             if len(sel) == 1:
                 if isinstance(sel[0], OnCurvePointItem) and (event.scenePos() - sel[0].pos()).manhattanLength() >= 2:
+                    self._blocked = True
                     if len(sel[0]._contour) < 2:
                         # release current onCurve
                         self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
@@ -688,12 +691,12 @@ class GlyphScene(QGraphicsScene):
                             sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
                             sel[0].childItems()[1].setVisible(True)
                             # add back current onCurve as a curve point
-                            sel[0]._contour.addPoint((onCurve.x, onCurve.y), "curve", True)
+                            sel[0]._contour.addPoint((onCurve.x, onCurve.y), "curve")
                             sel[0]._point = sel[0]._contour[-1]
-                        else:
+                        if not QApplication.keyboardModifiers() & Qt.AltModifier:
                             sel[0]._point.smooth = True
-                        sel[0]._isSmooth = True
-                        sel[0].setPointPath()
+                            sel[0]._isSmooth = True
+                            sel[0].setPointPath()
                         if sel[0].getPointIndex() == 0:
                             # we're probably dealing with the first point that we looped.
                             # preserve nextCP whatsoever.
@@ -712,6 +715,7 @@ class GlyphScene(QGraphicsScene):
                         #nextCP.setSelected(True)
                         self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
                         nextCP.grabMouse()
+                    self._blocked = False
                     self._editing = False
                     super(GlyphScene, self).mouseMoveEvent(event)
                 else:
