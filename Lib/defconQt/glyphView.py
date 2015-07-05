@@ -269,7 +269,9 @@ class OnCurvePointItem(QGraphicsPathItem):
             elemIndex = pointIndex-2+selected
             self._contour[elemIndex].x = self.pos().x()+newValue.x()
             self._contour[elemIndex].y = self.pos().y()+newValue.y()
-        if not (self._isSmooth and children[propagate].isVisible()): self._contour.dirty = True; return
+        if not (self._isSmooth and children[propagate].isVisible()):
+            self.setShallowDirty()
+            return
         if children[selected]._needsUngrab:
             targetLen = children[selected-1].line().length()*2
         else:
@@ -283,7 +285,7 @@ class OnCurvePointItem(QGraphicsPathItem):
         propagateInContour = pointIndex-2+propagate
         self._contour[propagateInContour].x = self.pos().x()+tmpLine.x2()
         self._contour[propagateInContour].y = self.pos().y()+tmpLine.y2()
-        self._contour.dirty = True
+        self.setShallowDirty()
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -305,8 +307,14 @@ class OnCurvePointItem(QGraphicsPathItem):
                 nextPos = children[3].pos()
                 self._contour[pointIndex+1].x = self.pos().x()+nextPos.x()
                 self._contour[pointIndex+1].y = self.pos().y()+nextPos.y()
-            self._contour.dirty = True
+            self.setShallowDirty()
         return value
+    
+    def setShallowDirty(self):
+        scene = self.scene()
+        scene._blocked = True
+        self._contour.dirty = True
+        scene._blocked = False
     
     def mouseMoveEvent(self, event):
         modifiers = event.modifiers()
@@ -323,7 +331,7 @@ class OnCurvePointItem(QGraphicsPathItem):
             event.accept()
             return
         ptIndex = self.getPointIndex()
-        s = self.scene()
+        scene = self.scene()
         # if we have line segment, insert offCurve points
         insertIndex = (ptIndex+(i-1)//2) % len(self._contour)
         if self._contour[insertIndex].segmentType == "line":
@@ -338,14 +346,14 @@ class OnCurvePointItem(QGraphicsPathItem):
             self._contour.insertPoint(insertIndex, self._contour._pointClass(second))
             children[i].setVisible(True)
             # TODO: need a list of items to make this efficient
-            s.getItemForPoint(nextToCP).childItems()[o].setVisible(True)
+            scene.getItemForPoint(nextToCP).childItems()[o].setVisible(True)
         # release current onCurve
-        s.sendEvent(self, QEvent(QEvent.MouseButtonRelease))
-        s.mouseGrabberItem().ungrabMouse()
+        scene.sendEvent(self, QEvent(QEvent.MouseButtonRelease))
+        scene.mouseGrabberItem().ungrabMouse()
         self.setSelected(False)
         self.setIsSmooth(False)
         children[i]._needsUngrab = True
-        s.sendEvent(children[i], QEvent(QEvent.MouseButtonPress))
+        scene.sendEvent(children[i], QEvent(QEvent.MouseButtonPress))
         children[i].setSelected(True)
         children[i].grabMouse()
         event.accept()
@@ -356,7 +364,7 @@ class OnCurvePointItem(QGraphicsPathItem):
     def setIsSmooth(self, isSmooth):
         self._isSmooth = isSmooth
         self._point.smooth = self._isSmooth
-        self._contour.dirty = True
+        self.setShallowDirty()
         self.setPointPath()
     
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
@@ -444,6 +452,8 @@ class GlyphScene(QGraphicsScene):
         font.setFamily("Roboto Mono")
         font.setFixedPitch(True)
         self.setFont(font)
+        
+        self._blocked = False
     
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -502,11 +512,13 @@ class GlyphScene(QGraphicsScene):
         elif modifiers & Qt.ControlModifier and key == Qt.Key_A:
             path = QPainterPath()
             path.addRect(self.sceneRect())
-            self.setSelectionArea(path, self.views()[0].transform())
+            view = self.views()[0]
+            self.setSelectionArea(path, view.transform())
             event.accept()
             return
         elif modifiers & Qt.ControlModifier and key == Qt.Key_D:
-            self.setSelectionArea(QPainterPath(), self.views()[0].transform())
+            view = self.views()[0]
+            self.setSelectionArea(QPainterPath(), view.transform())
             event.accept()
             return
         else:
@@ -537,7 +549,8 @@ class GlyphScene(QGraphicsScene):
 
     def mousePressEvent(self, event):
         currentTool = self.views()[0]._currentTool
-        touched = self.itemAt(event.scenePos(), self.views()[0].transform())
+        view = self.views()[0]
+        touched = self.itemAt(event.scenePos(), view.transform())
         if not currentTool == SceneTools.DrawingTool:
             if currentTool == SceneTools.RulerTool:
                 self.rulerMousePress(event)
@@ -732,11 +745,12 @@ class GlyphScene(QGraphicsScene):
         path.lineTo(x+1, y+1)
         path.closeSubpath()
         self._rulerObject = self.addPath(path)
-        item = QGraphicsSimpleTextItem("0", self._rulerObject)
+        textItem = QGraphicsSimpleTextItem("0", self._rulerObject)
         font = self.font()
         font.setPointSize(9)
-        item.setFont(font)
-        item.setTransform(QTransform().fromScale(1, -1))
+        textItem.setFont(font)
+        textItem.setTransform(QTransform().fromScale(1, -1))
+        textItem.setPos(x, y + textItem.boundingRect().height())
         event.accept()
     
     def rulerMouseMove(self, event):
@@ -774,7 +788,7 @@ class GlyphScene(QGraphicsScene):
         if dx >= 0: px = x
         else: px = x - textItem.boundingRect().width()
         dy = y - baseElem.y
-        if dy >= 0: py = baseElem.y
+        if dy > 0: py = baseElem.y
         else: py = baseElem.y + textItem.boundingRect().height()
         textItem.setPos(px, py)
         event.accept()
@@ -839,9 +853,20 @@ class GlyphView(QGraphicsView):
         #self.scene().setSceneRect(-1000, -1000, 3000, 3000)
     
     def _glyphChanged(self, notification):
+        # TODO: maybe detect sidebearing changes (space center) and then only
+        # translate elements rather than reconstructing them.
+        # Also we lose selection when reconstructing, rf does not when changing
+        # sp.center values.
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-        self.scene()._outlineItem.setPath(path)
-        self.scene()._outlineItem.update()
+        scene = self.scene()
+        scene._outlineItem.setPath(path)
+        scene._outlineItem.update()
+        if not scene._blocked:
+            # TODO: also rewind anchors and components
+            for item in scene.items():
+                if isinstance(item, OnCurvePointItem):
+                    scene.removeItem(item)
+            self.addPoints()
 
     def _getGlyphWidthHeight(self):
         if self._glyph.bounds:
@@ -871,16 +896,16 @@ class GlyphView(QGraphicsView):
         self._impliedPointSize = self._font.info.unitsPerEm * self._scale
         
     def addBackground(self):
-        s = self.scene()
+        scene = self.scene()
         width = self._glyph.width
-        item = s.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
+        item = scene.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
         item.setZValue(-1000)
-        item = s.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
+        item = scene.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
         item.setZValue(-999)
         self.centerOn(width/2, self._font.info.descender+self._font.info.unitsPerEm/2)
     
     def addBlues(self):
-        s = self.scene()
+        scene = self.scene()
         width = self._glyph.width# * self._inverseScale
         font = self._glyph.getParent()
         #painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
@@ -895,14 +920,14 @@ class GlyphView(QGraphicsView):
             yMaxs = [i for index, i in enumerate(values) if index % 2]
             for yMin, yMax in zip(yMins, yMaxs):
                 if yMin == yMax:
-                    item = s.addLine(0, yMin, width, yMax, QPen(self._bluesColor))
+                    item = scene.addLine(0, yMin, width, yMax, QPen(self._bluesColor))
                     item.setZValue(-998)
                 else:
-                    item = s.addRect(0, yMin, width, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
+                    item = scene.addRect(0, yMin, width, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
                     item.setZValue(-998)
     
     def addHorizontalMetrics(self):
-        s = self.scene()
+        scene = self.scene()
         width = self._glyph.width# * self._inverseScale
         toDraw = [
             ("Descender", self._font.info.descender),
@@ -919,7 +944,7 @@ class GlyphView(QGraphicsView):
         # lines
         for position, names in sorted(positions.items()):
             y = self.roundPosition(position)
-            item = s.addLine(0, y, width, y, QPen(self._metricsColor))
+            item = scene.addLine(0, y, width, y, QPen(self._metricsColor))
             item.setZValue(-997)
         # text
         if self._showMetricsTitles:# and self._impliedPointSize > 150:
@@ -930,25 +955,25 @@ class GlyphView(QGraphicsView):
                 y = position - (fontSize / 2)
                 text = ", ".join(names)
                 text = " %s " % text
-                item = s.addSimpleText(text, font)
+                item = scene.addSimpleText(text, font)
                 item.setBrush(self._metricsColor)
                 item.setTransform(QTransform().fromScale(1, -1))
                 item.setPos(width, y)
                 item.setZValue(-997)
 
     def addOutlines(self):
-        s = self.scene()
+        scene = self.scene()
         # outlines
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-        s._outlineItem = s.addPath(path, brush=QBrush(self._fillColor))
-        s._outlineItem.setZValue(-995)
-        s._glyphObject = self._glyph
+        scene._outlineItem = scene.addPath(path, brush=QBrush(self._fillColor))
+        scene._outlineItem.setZValue(-995)
+        scene._glyphObject = self._glyph
         # components
         path = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
-        s.addPath(path, brush=QBrush(self._componentFillColor))
+        scene.addPath(path, brush=QBrush(self._componentFillColor))
 
     def addPoints(self):
-        s = self.scene()
+        scene = self.scene()
         # work out appropriate sizes and
         # skip if the glyph is too small
         pointSize = self._impliedPointSize
@@ -992,7 +1017,7 @@ class GlyphView(QGraphicsView):
                 points.append((x, y))
                 item = OnCurvePointItem(x, y, onCurve.isSmooth, self._glyph[onCurve.contourIndex],
                     self._glyph[onCurve.contourIndex][onCurve.pointIndex])
-                s.addItem(item)
+                scene.addItem(item)
                 # off curve
                 for CP in [onCurve.prevCP, onCurve.nextCP]:
                     if CP:
