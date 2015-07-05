@@ -447,6 +447,8 @@ class GlyphScene(QGraphicsScene):
         self._integerPlane = True
         self._cachedRuler = None
         self._rulerObject = None
+        self._dataForUndo = []
+        self._dataForRedo = []
 
         font = self.font()
         font.setFamily("Roboto Mono")
@@ -509,7 +511,23 @@ class GlyphScene(QGraphicsScene):
                     self.removeItem(item)
             event.accept()
             return
-        elif modifiers & Qt.ControlModifier and key == Qt.Key_A:
+        elif event.matches(QKeySequence.Undo):
+            if len(self._dataForUndo) > 0:
+                undo = self._dataForUndo.pop()
+                redo = self._glyphObject.getDataToSerializeForUndo()
+                self._glyphObject.loadDeserializedDataFromUndo(undo)
+                self._dataForRedo.append(redo)
+            event.accept()
+            return
+        elif event.matches(QKeySequence.Redo):
+            if len(self._dataForRedo) > 0:
+                undo = self._glyphObject.getDataToSerializeForUndo()
+                redo = self._dataForRedo.pop()
+                self._dataForUndo.append(undo)
+                self._glyphObject.loadDeserializedDataFromUndo(redo)
+            event.accept()
+            return
+        elif event.matches(QKeySequence.SelectAll):
             path = QPainterPath()
             path.addRect(self.sceneRect())
             view = self.views()[0]
@@ -548,16 +566,18 @@ class GlyphScene(QGraphicsScene):
         super(GlyphScene, self).keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
-        currentTool = self.views()[0]._currentTool
         view = self.views()[0]
         touched = self.itemAt(event.scenePos(), view.transform())
-        if not currentTool == SceneTools.DrawingTool:
-            if currentTool == SceneTools.RulerTool:
-                self.rulerMousePress(event)
-                return
-            self._itemUnderMouse = touched
-            super(GlyphScene, self).mousePressEvent(event)
+        if view._currentTool == SceneTools.RulerTool:
+            self.rulerMousePress(event)
             return
+        else:
+            data = self._glyphObject.getDataToSerializeForUndo()
+            self._dataForUndo.append(data)
+            self._dataForRedo = []
+            if not view._currentTool == SceneTools.DrawingTool:
+                super(GlyphScene, self).mousePressEvent(event)
+                return
         forceSelect = False
         sel = self.selectedItems()
         x, y = event.scenePos().x(), event.scenePos().y()
