@@ -274,6 +274,10 @@ class GlyphsCanvas(QWidget):
             self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.update()
     
+    def setSelected(self, selected):
+        self._selected = selected
+        self.update()
+    
     def _pointSizeChanged(self, pointSize):
         self.ptSize = int(pointSize)
         self.calculateScale()
@@ -281,6 +285,7 @@ class GlyphsCanvas(QWidget):
     
     def _glyphsChanged(self, newGlyphs):
         self.glyphs = newGlyphs
+        self._selected = None
         self.update()
     
     def _sizeEvent(self, event):
@@ -482,15 +487,19 @@ class GlyphCellItemDelegate(QStyledItemDelegate):
         return editor
     
     # TODO: implement =... lexer
+    # TODO: Alt+left or Alt+right don't SelectAll of the new cell
+    # cell by default. Implement this.
+    # TODO: cycle b/w editable cell area
     def eventFilter(self, editor, event):
         if event.type() == QEvent.KeyPress:
             chg = None
             count = event.count()
-            if event.key() == Qt.Key_Up:
+            key = event.key()
+            if key == Qt.Key_Up:
                 chg = count
-            elif event.key() == Qt.Key_Down:
+            elif key == Qt.Key_Down:
                 chg = -count
-            elif not event.key() == Qt.Key_Return:
+            elif not key == Qt.Key_Return:
                 return False
             if chg is not None:
                 modifiers = event.modifiers()
@@ -518,11 +527,12 @@ class SpaceTable(QTableWidget):
         # fillGlyphs() will change this value back
         self.setColumnCount(len(self.glyphs)+2)
         data = [None, "Width", "Left", "Right"]
-        for index, item in enumerate(data):
-            cell = SpaceTableWidgetItem(item)
-            # don't set ItemIsEditable
-            cell.setFlags(Qt.ItemIsEnabled)
-            self.setItem(index, 0, cell)
+        self._fgOverride = SpaceTableWidgetItem().foreground()
+        for index, title in enumerate(data):
+            item = SpaceTableWidgetItem(title)
+            item.setFlags(Qt.NoItemFlags)
+            item.setForeground(self._fgOverride)
+            self.setItem(index, 0, item)
         # let's use this one column to compute the width of others
         self._cellWidth = .5*self.columnWidth(0)
         self.setColumnWidth(0, self._cellWidth)
@@ -534,12 +544,11 @@ class SpaceTable(QTableWidget):
         self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed))
         self.fillGlyphs()
         self.resizeRowsToContents()
+        self.currentItemChanged.connect(self._itemChanged)
         self.cellChanged.connect(self._cellEdited)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
-        # TODO: investigate changing cell color as in robofont
-        # http://stackoverflow.com/a/13926342/2037879
 
     def _glyphsChanged(self, newGlyphs):
         self.glyphs = newGlyphs
@@ -557,13 +566,29 @@ class SpaceTable(QTableWidget):
         item = int(item)
         # -1 because the first col contains descriptive text
         glyph = self.glyphs[col-1]
+        # != comparisons avoid making glyph dirty when editor content is unchanged
         if row == 1:
-            glyph.width = item
+            if item != glyph.width: glyph.width = item
         elif row == 2:
-            glyph.leftMargin = item
+            if item != glyph.leftMargin: glyph.leftMargin = item
         elif row == 3:
-            glyph.rightMargin = item
+            if item != glyph.rightMargin: glyph.rightMargin = item
         # defcon callbacks do the update
+
+    def _itemChanged(self, current, previous):
+        cur = current.column()
+        if previous is not None:
+            prev = previous.column()
+            if cur == prev:
+                return
+        emptyBrush = QBrush(Qt.NoBrush)
+        selectionColor = QColor(235, 235, 235)
+        for i in range(4):
+            if previous is not None:
+                self.item(i, prev).setBackground(emptyBrush)
+            self.item(i, cur).setBackground(selectionColor)
+        # TODO: refactor this out into a parent method + callback arg
+        self.parent().canvas.setSelected(cur - 1)
 
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879
@@ -574,15 +599,16 @@ class SpaceTable(QTableWidget):
         return QSize(self.width(), height)
     
     def setCurrentColumn(self, column):
-        self.setCurrentCell(0, column)
+        self.setCurrentCell(1, column)
 
     def fillGlyphs(self):
-        def glyphTableWidgetItem(content, blockEdition=False):
+        def glyphTableWidgetItem(content, disableCell=False):
             if content is not None: content = str(content)
             item = SpaceTableWidgetItem(content)
-            if content is None or blockEdition:
-                # don't set ItemIsEditable
-                item.setFlags(Qt.ItemIsEnabled)
+            if disableCell:
+                item.setFlags(Qt.NoItemFlags)
+                item.setForeground(self._fgOverride)
+            elif content is None: item.setFlags(Qt.ItemIsEnabled)
             # TODO: should fields be centered? I find left-aligned more
             # natural to read, personally...
             #item.setTextAlignment(Qt.AlignCenter)

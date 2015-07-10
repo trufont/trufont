@@ -158,7 +158,8 @@ class TextEditor(QPlainTextEdit):
         return indent
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Return:
+        key = event.key()
+        if key == Qt.Key_Return:
             cursor = self.textCursor()
             indentLvl = self.findLineIndentLevel(cursor)
             newBlock = False
@@ -200,10 +201,10 @@ class TextEditor(QPlainTextEdit):
                 cursor.movePosition(QTextCursor.Up)
                 cursor.movePosition(QTextCursor.EndOfLine)
                 self.setTextCursor(cursor)
-        elif event.key() == Qt.Key_Tab:
+        elif key == Qt.Key_Tab:
             cursor = self.textCursor()
             cursor.insertText(self._indent)
-        elif event.key() == Qt.Key_Backspace:
+        elif key == Qt.Key_Backspace:
             cursor = self.textCursor()
             cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor,
                   len(self._indent))
