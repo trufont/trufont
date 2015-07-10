@@ -28,6 +28,9 @@ class MainSpaceWindow(QWidget):
         self.canvas = GlyphsCanvas(self.font, self.glyphs, self.scrollArea, pointSize, self)
         self.scrollArea.setWidget(self.canvas)
         self.table = SpaceTable(self.glyphs, self)
+        self.canvas.setSelectionCallback(self.table.setCurrentGlyph)
+        self.canvas.setPointSizeCallback(self.toolbar.setPointSize)
+        self.table.setSelectionCallback(self.canvas.setSelected)
         
         layout = QVBoxLayout(self)
         layout.addWidget(self.toolbar)
@@ -37,7 +40,7 @@ class MainSpaceWindow(QWidget):
         layout.setSpacing(0)
         self.setLayout(layout)
         self.resize(600, 500)
-        self.toolbar.comboBox.currentIndexChanged[str].connect(self.canvas._pointSizeChanged)
+        self.toolbar.comboBox.currentIndexChanged[str].connect(self.canvas.setPointSize)
         self.toolbar.textField.textEdited.connect(self._textChanged)
         
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
@@ -71,8 +74,8 @@ class MainSpaceWindow(QWidget):
         # subscribe to the new glyphs
         self._subscribeToGlyphsText(newText)
         # set the records into the view
-        self.canvas._glyphsChanged(self.glyphs)
-        self.table._glyphsChanged(self.glyphs)
+        self.canvas.setGlyphs(self.glyphs)
+        self.table.setGlyphs(self.glyphs)
     
     # Tal Leming. Edited.
     def textToGlyphNames(self, text):
@@ -149,8 +152,8 @@ class MainSpaceWindow(QWidget):
             glyphNames.append(chr(glyph.unicode) if glyph.unicode else "".join(("/", glyph.name, " ")))
         self.toolbar.textField.setText("".join(glyphNames))
         # set the records into the view
-        self.canvas._glyphsChanged(self.glyphs)
-        self.table._glyphsChanged(self.glyphs)
+        self.canvas.setGlyphs(self.glyphs)
+        self.table.setGlyphs(self.glyphs)
         
     def resizeEvent(self, event):
         if self.isVisible(): self.canvas._sizeEvent(event)
@@ -197,6 +200,11 @@ class FontToolBar(QToolBar):
         self.addWidget(self.comboBox)
         self.addWidget(self.configBar)
     
+    def setPointSize(self, pointSize):
+        self.comboBox.blockSignals(True)
+        self.comboBox.setEditText(str(pointSize))
+        self.comboBox.blockSignals(False)
+    
     def showKerning(self):
         action = self.sender()
         self.parent().canvas.setShowKerning(action.isChecked())
@@ -235,6 +243,8 @@ class GlyphsCanvas(QWidget):
         self._verticalFlip = False
         self._positions = None
         self._selected = None
+        self._pointSizeChangedCallback = None
+        self._selectionChangedCallback = None
         
         self._wrapLines = True
         self.scrollArea = scrollArea
@@ -274,19 +284,25 @@ class GlyphsCanvas(QWidget):
             self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.update()
     
-    def setSelected(self, selected):
-        self._selected = selected
+    def setGlyphs(self, newGlyphs):
+        self.glyphs = newGlyphs
+        self._selected = None
         self.update()
     
-    def _pointSizeChanged(self, pointSize):
+    def setPointSize(self, pointSize):
         self.ptSize = int(pointSize)
         self.calculateScale()
         self.update()
     
-    def _glyphsChanged(self, newGlyphs):
-        self.glyphs = newGlyphs
-        self._selected = None
+    def setPointSizeCallback(self, pointSizeChangedCallback):
+        self._pointSizeChangedCallback = pointSizeChangedCallback
+    
+    def setSelected(self, selected):
+        self._selected = selected
         self.update()
+    
+    def setSelectionCallback(self, selectionChangedCallback):
+        self._selectionChangedCallback = selectionChangedCallback
     
     def _sizeEvent(self, event):
         if self._wrapLines:
@@ -300,19 +316,16 @@ class GlyphsCanvas(QWidget):
         if event.modifiers() & Qt.ControlModifier:
             # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
             # see how rf behaves -> scaling factor grows with sz it seems
+            # XXX: current alg. is not reversible...
             decay = event.angleDelta().y() / 120.0
             scale = round(self.ptSize / 10)
             if scale == 0 and decay >= 0: scale = 1
             newPointSize = self.ptSize + int(decay) * scale
             if newPointSize <= 0: return
-            # TODO: send notification to parent and do all the fuss there
-            self._pointSizeChanged(newPointSize)
-            
-            # TODO: ugh…
-            comboBox = self.parent().parent().parent().toolbar.comboBox
-            comboBox.blockSignals(True)
-            comboBox.setEditText(str(newPointSize))
-            comboBox.blockSignals(False)
+
+            self.setPointSize(newPointSize)
+            if self._pointSizeChangedCallback is not None:
+                self._pointSizeChangedCallback(newPointSize)
             event.accept()
         else:
             super(GlyphsCanvas, self).wheelEvent(event)
@@ -385,7 +398,8 @@ class GlyphsCanvas(QWidget):
                     self._selected = count+index
                     found = True
             if not found: self._selected = None
-            else: self.parent().parent().parent().table.setCurrentColumn(self._selected+1)
+            if self._selectionChangedCallback is not None:
+                self._selectionChangedCallback(self._selected)
             event.accept()
             self.update()
         else:
@@ -549,8 +563,9 @@ class SpaceTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
+        self._selectionChangedCallback = None
 
-    def _glyphsChanged(self, newGlyphs):
+    def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
         # TODO: we don't need to reallocate cells, split alloc and fill
         self.blockSignals(True)
@@ -587,8 +602,8 @@ class SpaceTable(QTableWidget):
             if previous is not None:
                 self.item(i, prev).setBackground(emptyBrush)
             self.item(i, cur).setBackground(selectionColor)
-        # TODO: refactor this out into a parent method + callback arg
-        self.parent().canvas.setSelected(cur - 1)
+        if self._selectionChangedCallback is not None:
+            self._selectionChangedCallback(cur - 1)
 
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879
@@ -598,8 +613,11 @@ class SpaceTable(QTableWidget):
         height += margins.top() + margins.bottom()
         return QSize(self.width(), height)
     
-    def setCurrentColumn(self, column):
-        self.setCurrentCell(1, column)
+    def setCurrentGlyph(self, glyphIndex):
+        self.setCurrentCell(1, glyphIndex+1)
+    
+    def setSelectionCallback(self, selectionChangedCallback):
+        self._selectionChangedCallback = selectionChangedCallback
 
     def fillGlyphs(self):
         def glyphTableWidgetItem(content, disableCell=False):
