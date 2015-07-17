@@ -28,8 +28,9 @@ class MainSpaceWindow(QWidget):
         self.canvas = GlyphsCanvas(self.font, self.glyphs, self.scrollArea, pointSize, self)
         self.scrollArea.setWidget(self.canvas)
         self.table = SpaceTable(self.glyphs, self)
-        self.canvas.setSelectionCallback(self.table.setCurrentGlyph)
+        self.canvas.setDoubleClickCallback(self._glyphOpened)
         self.canvas.setPointSizeCallback(self.toolbar.setPointSize)
+        self.canvas.setSelectionCallback(self.table.setCurrentGlyph)
         self.table.setSelectionCallback(self.canvas.setSelected)
         
         layout = QVBoxLayout(self)
@@ -60,14 +61,18 @@ class MainSpaceWindow(QWidget):
         super(MainSpaceWindow, self).close()
     
     def _fontInfoChanged(self, notification):
+        self.canvas.fetchFontMetrics()
         self.canvas.update()
     
     def _glyphChanged(self, notification):
         self.canvas.update()
-        self.table.blockSignals(True)
-        self.table.fillGlyphs()
-        self.table.blockSignals(False)
+        self.table.updateCells()
     
+    def _glyphOpened(self, glyph):
+        from glyphView import MainGfxWindow
+        glyphViewWindow = MainGfxWindow(self.font, glyph, self.parent())
+        glyphViewWindow.show()
+
     def _textChanged(self, newText):
         # unsubscribe from the old glyphs
         self._unsubscribeFromGlyphs()
@@ -167,6 +172,7 @@ class FontToolBar(QToolBar):
         self.textField = QLineEdit(string, self)
         self.comboBox = QComboBox(self)
         self.comboBox.setEditable(True)
+        self.comboBox.setValidator(QIntValidator(self))
         for p in pointSizes:
             self.comboBox.addItem(str(p))
         self.comboBox.lineEdit().setText(str(pointSize))
@@ -228,12 +234,7 @@ class GlyphsCanvas(QWidget):
         super(GlyphsCanvas, self).__init__(parent)
 
         self.font = font
-        self.ascender = font.info.ascender
-        if self.ascender is None: self.ascender = 750
-        self.descender = font.info.descender
-        if self.descender is None: self.descender = 250
-        self.upm = font.info.unitsPerEm
-        if self.upm is None or not self.upm > 0: self.upm = 1000
+        self.fetchFontMetrics()
         self.glyphs = glyphs
         self.ptSize = pointSize
         self.calculateScale()
@@ -243,6 +244,7 @@ class GlyphsCanvas(QWidget):
         self._verticalFlip = False
         self._positions = None
         self._selected = None
+        self._doubleClickCallback = None
         self._pointSizeChangedCallback = None
         self._selectionChangedCallback = None
         
@@ -284,6 +286,14 @@ class GlyphsCanvas(QWidget):
             self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.update()
     
+    def fetchFontMetrics(self):
+        self.ascender = self.font.info.ascender
+        if self.ascender is None: self.ascender = 750
+        self.descender = self.font.info.descender
+        if self.descender is None: self.descender = 250
+        self.upm = self.font.info.unitsPerEm
+        if self.upm is None or not self.upm > 0: self.upm = 1000
+    
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
         self._selected = None
@@ -298,6 +308,7 @@ class GlyphsCanvas(QWidget):
         self._pointSizeChangedCallback = pointSizeChangedCallback
     
     def setSelected(self, selected):
+        # TODO: this should scroll to selection as well
         self._selected = selected
         self.update()
     
@@ -373,6 +384,7 @@ class GlyphsCanvas(QWidget):
     
     def mousePressEvent(self, event):
         # Take focus to quit eventual cell editing
+        # XXX: shouldnt set focus if we are in input field...
         self.setFocus(Qt.MouseFocusReason)
         if event.button() == Qt.LeftButton:
             if self._verticalFlip:
@@ -407,13 +419,13 @@ class GlyphsCanvas(QWidget):
     
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton and self._selected is not None:
-            from fontView import MainWindow
-            # XXX: we are doing glyph -> name and glyphView does it backwards
-            # stop adding indirection in ctor
-            MainWindow._glyphOpened(self, self.glyphs[self._selected].name)
-            event.accept()
+            if self._doubleClickCallback is not None:
+                self._doubleClickCallback(self.glyphs[self._selected])
         else:
             super(GlyphCanvas, self).mouseDoubleClickEvent(event)
+    
+    def setDoubleClickCallback(self, doubleClickCallback):
+        self._doubleClickCallback = doubleClickCallback
 
     def paintEvent(self, event):
         linePen = QPen(Qt.black)
@@ -563,11 +575,15 @@ class SpaceTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
+        self._blocked = False
         self._selectionChangedCallback = None
 
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
         # TODO: we don't need to reallocate cells, split alloc and fill
+        self.updateCells()
+    
+    def updateCells(self):
         self.blockSignals(True)
         self.fillGlyphs()
         self.blockSignals(False)
@@ -591,19 +607,24 @@ class SpaceTable(QTableWidget):
         # defcon callbacks do the update
 
     def _itemChanged(self, current, previous):
-        cur = current.column()
+        if current is not None:
+            cur = current.column()
         if previous is not None:
             prev = previous.column()
-            if cur == prev:
+            if current is not None and cur == prev:
                 return
         emptyBrush = QBrush(Qt.NoBrush)
         selectionColor = QColor(235, 235, 235)
         for i in range(4):
             if previous is not None:
                 self.item(i, prev).setBackground(emptyBrush)
-            self.item(i, cur).setBackground(selectionColor)
-        if self._selectionChangedCallback is not None:
-            self._selectionChangedCallback(cur - 1)
+            if current is not None:
+                self.item(i, cur).setBackground(selectionColor)
+        if self._selectionChangedCallback is not None and not self._blocked:
+            if current is not None:
+                self._selectionChangedCallback(cur - 1)
+            else:
+                self._selectionChangedCallback(None)
 
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879
@@ -614,13 +635,19 @@ class SpaceTable(QTableWidget):
         return QSize(self.width(), height)
     
     def setCurrentGlyph(self, glyphIndex):
-        self.setCurrentCell(1, glyphIndex+1)
+        self._blocked = True
+        if glyphIndex is None:
+            self.setCurrentItem(None)
+        else:
+            self.setCurrentCell(1, glyphIndex+1)
+        self._blocked = False
     
     def setSelectionCallback(self, selectionChangedCallback):
         self._selectionChangedCallback = selectionChangedCallback
 
     def fillGlyphs(self):
         def glyphTableWidgetItem(content, disableCell=False):
+            content = round(content)
             if content is not None: content = str(content)
             item = SpaceTableWidgetItem(content)
             if disableCell:
