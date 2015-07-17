@@ -617,7 +617,6 @@ class MainWindow(QMainWindow):
     def _glyphOpened(self, name):
         from glyphView import MainGfxWindow
         glyphViewWindow = MainGfxWindow(self.font, self.font[name], self)
-        glyphViewWindow.setAttribute(Qt.WA_DeleteOnClose)
         glyphViewWindow.show()
     
     def _selectionChanged(self, count, glyph):
