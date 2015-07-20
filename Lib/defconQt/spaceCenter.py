@@ -577,6 +577,7 @@ class SpaceTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
         self._blocked = False
         self._selectionChangedCallback = None
+        self._coloredColumn = None
 
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
@@ -585,6 +586,8 @@ class SpaceTable(QTableWidget):
     
     def updateCells(self):
         self.blockSignals(True)
+        # quit focus
+        self.setCurrentItem(None)
         self.fillGlyphs()
         self.blockSignals(False)
     
@@ -598,12 +601,14 @@ class SpaceTable(QTableWidget):
         # -1 because the first col contains descriptive text
         glyph = self.glyphs[col-1]
         # != comparisons avoid making glyph dirty when editor content is unchanged
+        self._blocked = True
         if row == 1:
             if item != glyph.width: glyph.width = item
         elif row == 2:
             if item != glyph.leftMargin: glyph.leftMargin = item
         elif row == 3:
             if item != glyph.rightMargin: glyph.rightMargin = item
+        self._blocked = False
         # defcon callbacks do the update
 
     def _itemChanged(self, current, previous):
@@ -613,18 +618,25 @@ class SpaceTable(QTableWidget):
             prev = previous.column()
             if current is not None and cur == prev:
                 return
-        emptyBrush = QBrush(Qt.NoBrush)
-        selectionColor = QColor(235, 235, 235)
-        for i in range(4):
-            if previous is not None:
-                self.item(i, prev).setBackground(emptyBrush)
-            if current is not None:
-                self.item(i, cur).setBackground(selectionColor)
-        if self._selectionChangedCallback is not None and not self._blocked:
+        self.colorColumn(current if current is None else cur)
+        if self._selectionChangedCallback is not None:
             if current is not None:
                 self._selectionChangedCallback(cur - 1)
             else:
                 self._selectionChangedCallback(None)
+    
+    def colorColumn(self, column):
+        emptyBrush = QBrush(Qt.NoBrush)
+        selectionColor = QColor(235, 235, 235)
+        for i in range(4):
+            if self._coloredColumn is not None:
+                item = self.item(i, self._coloredColumn)
+                # cached column might be invalid if user input deleted it
+                if item is not None:
+                    item.setBackground(emptyBrush)
+            if column is not None:
+                self.item(i, column).setBackground(selectionColor)
+        self._coloredColumn = column
 
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879
@@ -633,21 +645,24 @@ class SpaceTable(QTableWidget):
         margins = self.contentsMargins()
         height += margins.top() + margins.bottom()
         return QSize(self.width(), height)
-    
+
     def setCurrentGlyph(self, glyphIndex):
-        self._blocked = True
-        if glyphIndex is None:
-            self.setCurrentItem(None)
-        else:
+        self.blockSignals(True)
+        if glyphIndex is not None:
+            # so we can scroll to the item
             self.setCurrentCell(1, glyphIndex+1)
-        self._blocked = False
+        self.setCurrentItem(None)
+        if glyphIndex is not None:
+            self.colorColumn(glyphIndex+1)
+        self.blockSignals(False)
     
     def setSelectionCallback(self, selectionChangedCallback):
         self._selectionChangedCallback = selectionChangedCallback
 
     def fillGlyphs(self):
         def glyphTableWidgetItem(content, disableCell=False):
-            content = round(content)
+            if isinstance(content, float):
+                content = round(content)
             if content is not None: content = str(content)
             item = SpaceTableWidgetItem(content)
             if disableCell:
