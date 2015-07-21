@@ -585,6 +585,7 @@ class SpaceTable(QTableWidget):
         self.updateCells()
     
     def updateCells(self):
+        if self._blocked: return
         self.blockSignals(True)
         # quit focus
         self.setCurrentItem(None)
