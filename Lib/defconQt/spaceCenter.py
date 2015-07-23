@@ -308,8 +308,20 @@ class GlyphsCanvas(QWidget):
         self._pointSizeChangedCallback = pointSizeChangedCallback
     
     def setSelected(self, selected):
-        # TODO: this should scroll to selection as well
         self._selected = selected
+        if self._positions is not None:
+            cur_len = 0
+            line = -1
+            for index, li in enumerate(self._positions):
+                if cur_len + len(li) > self._selected:
+                    pos, width = li[self._selected - cur_len]
+                    line = index
+                    break
+                cur_len += len(li)
+            if line > -1:
+                x = self.padding + pos + width/2
+                y = self.padding + (line+.5)*self.ptSize
+                self.scrollArea.ensureVisible(x, y, width/2+20, .5*self.ptSize+20)
         self.update()
     
     def setSelectionCallback(self, selectionChangedCallback):

@@ -73,11 +73,13 @@ class TextEditor(QPlainTextEdit):
         self._indent = "    "
         self.highlighter = Highlighter(self.document())
         self.lineNumbers = LineNumberArea(self)
+        self.setPlainText(text)
+        # kick-in geometry update before arming signals bc blockCountChanged
+        # won't initially trigger if text is None or one-liner.
+        self.updateLineNumberAreaWidth()
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)
-        
-        self.setPlainText(text)
-    
+
     def setFontParams(self, family='Roboto Mono', ptSize=10, isMono=True):
         font = QFont(family, ptSize)
         font.setFixedPitch(isMono)
@@ -115,7 +117,7 @@ class TextEditor(QPlainTextEdit):
     def lineNumberAreaWidth(self):
         digits = 1
         top = max(1, self.blockCount())
-        while (top >= 10):
+        while top >= 10:
             top /= 10
             digits += 1
         # Avoid too frequent geometry changes
@@ -132,7 +134,7 @@ class TextEditor(QPlainTextEdit):
         if rect.contains(self.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
     
-    def updateLineNumberAreaWidth(self, newBlockCount):
+    def updateLineNumberAreaWidth(self, newBlockCount=None):
         self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
     
     def resizeEvent(self, event):
@@ -145,7 +147,7 @@ class TextEditor(QPlainTextEdit):
         cursor.select(QTextCursor.LineUnderCursor)
         lineLength = len(cursor.selectedText()) // len(self._indent)
         cursor.movePosition(QTextCursor.StartOfLine)
-        while (lineLength > 0):
+        while lineLength > 0:
             cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self._indent))
             if cursor.selectedText() == self._indent:
                 indent += 1
