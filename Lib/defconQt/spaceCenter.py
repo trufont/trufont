@@ -470,14 +470,13 @@ class GlyphsCanvas(QWidget):
         if self._showMetrics: paintLineMarks(painter)
         for index, glyph in enumerate(self.glyphs):
             # line wrapping
-            # TODO: should padding be added for the right boundary as well? I'd say no but not sure
             gWidth = glyph.width*self.scale
             doKern = index > 0 and self._showKerning and cur_width > 0
             if doKern:
                 kern = self.lookupKerningValue(self.glyphs[index-1].name, glyph.name)*self.scale
             else: kern = 0
-            if self._wrapLines and cur_width + gWidth + kern + self.padding > self.width():
-                painter.translate(-cur_width, self.ptSize)
+            if self._wrapLines and cur_width + gWidth + kern + 2*self.padding > self.width():
+                painter.translate(-cur_width, self.ptSize*self._lineHeight)
                 if self._showMetrics: paintLineMarks(painter)
                 self._positions.append([(0, gWidth)])
                 cur_width = gWidth
