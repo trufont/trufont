@@ -88,7 +88,7 @@ class GroupCharacterWidget(CharacterWidget):
     def pipeDragEnterEvent(self, event):
         # TODO: the problem with text/plain is that any sort of text can get here.
         # (It allows direct compatibility with featureTextEditor though.)
-        if (event.mimeData().hasFormat("text/plain")):
+        if (event.mimeData().hasText()):
             event.acceptProposedAction()
     
     def pipeDropEvent(self, event):

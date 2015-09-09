@@ -551,6 +551,12 @@ class GlyphScene(QGraphicsScene):
         key = event.key()
         count = event.count()
         modifiers = event.modifiers()
+        # XXX: clean this up, prioritize key dispatching before processing things
+        # TODO: this is not DRY w space center, put this in a function
+        if modifiers & Qt.ShiftModifier:
+            count *= 10
+            if modifiers & Qt.ControlModifier:
+                count *= 10
         if key == Qt.Key_Left:
             x,y = -count,0
         elif key == Qt.Key_Up:
@@ -954,6 +960,9 @@ class GlyphView(QGraphicsView):
                 if isinstance(item, OnCurvePointItem):
                     scene.removeItem(item)
             self.addPoints()
+            # For now, we'll assume not scene._blocked == moving UI points
+            # this will not be the case anymore when drag sidebearings pops up
+            scene._widthItem.setRect(0, -1000, self._glyph.width, 3000)
 
     def _getGlyphWidthHeight(self):
         if self._glyph.bounds:
@@ -987,13 +996,13 @@ class GlyphView(QGraphicsView):
         width = self._glyph.width
         item = scene.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
         item.setZValue(-1000)
-        item = scene.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
-        item.setZValue(-999)
+        scene._widthItem = scene.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
+        scene._widthItem.setZValue(-999)
         self.centerOn(width/2, self._font.info.descender+self._font.info.unitsPerEm/2)
     
     def addBlues(self):
         scene = self.scene()
-        width = self._glyph.width# * self._inverseScale
+        #width = self._glyph.width# * self._inverseScale
         font = self._glyph.getParent()
         #painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
         if font is None:
@@ -1007,10 +1016,10 @@ class GlyphView(QGraphicsView):
             yMaxs = [i for index, i in enumerate(values) if index % 2]
             for yMin, yMax in zip(yMins, yMaxs):
                 if yMin == yMax:
-                    item = scene.addLine(0, yMin, width, yMax, QPen(self._bluesColor))
+                    item = scene.addLine(-1000, yMin, 3000, yMax, QPen(self._bluesColor))
                     item.setZValue(-998)
                 else:
-                    item = scene.addRect(0, yMin, width, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
+                    item = scene.addRect(-1000, yMin, 3000, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
                     item.setZValue(-998)
     
     def addHorizontalMetrics(self):
@@ -1031,7 +1040,7 @@ class GlyphView(QGraphicsView):
         # lines
         for position, names in sorted(positions.items()):
             y = self.roundPosition(position)
-            item = scene.addLine(0, y, width, y, QPen(self._metricsColor))
+            item = scene.addLine(-1000, y, 2000, y, QPen(self._metricsColor))
             item.setZValue(-997)
         # text
         if self._showMetricsTitles:# and self._impliedPointSize > 150:
@@ -1045,7 +1054,7 @@ class GlyphView(QGraphicsView):
                 item = scene.addSimpleText(text, font)
                 item.setBrush(self._metricsColor)
                 item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-                item.setPos(width, y)
+                item.setPos(width, y) # XXX
                 item.setZValue(-997)
 
     def addOutlines(self):
