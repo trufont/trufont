@@ -11,14 +11,16 @@ class MainEditWindow(QMainWindow):
         self.font = font
         self.setupFileMenu()
         self.editor = TextEditor(self.font.features.text, self)
+        # arm `undoAvailable` to `setWindowModified`
+        self.editor.setFileChangedCallback(self.setWindowModified)
         self.resize(600, 500)
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle("Font features", self.font)
     
     def setWindowTitle(self, title, font):
-        if font is not None: puts = "%s%s%s%s%s" % (title, " – ", self.font.info.familyName, " ", self.font.info.styleName)
-        else: puts = title
+        if font is not None: puts = "[*]%s%s%s%s%s" % (title, " – ", self.font.info.familyName, " ", self.font.info.styleName)
+        else: puts = "[*]%s" % title
         super(MainEditWindow, self).setWindowTitle(puts)
     
     def closeEvent(self, event):
@@ -84,6 +86,10 @@ class TextEditor(QPlainTextEdit):
         font = QFont(family, ptSize)
         font.setFixedPitch(isMono)
         self.setFont(font)
+
+    # TODO: add way to unset callback?
+    def setFileChangedCallback(self, fileChangedCallback):
+        self.undoAvailable.connect(fileChangedCallback)
 
     def write(self, features):
         features.text = self.toPlainText()

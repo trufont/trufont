@@ -568,6 +568,7 @@ class MainWindow(QMainWindow):
         else:
             self.font.save(path=path)
 #            self.font.dirty = False
+            self.setWindowModified(False)
 #            self.font.path = path # done by defcon
 
     def saveFileAs(self):
@@ -575,6 +576,7 @@ class MainWindow(QMainWindow):
                 "UFO Fonts (*.ufo)")
         if ok:
             self.saveFile(path)
+            self.setWindowTitle()
         #return ok
     
     def close(self):
@@ -613,6 +615,7 @@ class MainWindow(QMainWindow):
     
     def _fontChanged(self, notification):
         self.characterWidget.update()
+        self.setWindowModified(True)
 
     def _glyphOpened(self, name):
         from glyphView import MainGfxWindow
@@ -634,7 +637,7 @@ class MainWindow(QMainWindow):
     
     def setWindowTitle(self, title=None):
         if title is None: title = os.path.basename(self.font.path.rstrip(os.sep))
-        super(MainWindow, self).setWindowTitle(title)
+        super(MainWindow, self).setWindowTitle("[*]{}".format(title))
     
     def sortCharacters(self):
         if not (hasattr(self, 'sortingWindow') and self.sortingWindow.isVisible()):
