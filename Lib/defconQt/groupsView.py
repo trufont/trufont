@@ -16,9 +16,14 @@ class GroupListWidget(QListWidget):
         #if len(groupNames): self.setCurrentRow(0)
     
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Delete:
+        key = event.key()
+        if key == Qt.Key_Delete:
             self.parent()._groupDelete()
             event.accept()
+        elif key == Qt.Key_Left:
+            self.parent().alignLeftBox.setChecked(True)
+        elif key == Qt.Key_Right:
+            self.parent().alignRightBox.setChecked(True)
         else:
             super(GroupListWidget, self).keyPressEvent(event)
 
@@ -95,13 +100,18 @@ class GroupCharacterWidget(CharacterWidget):
         self.parent().parent().parent().characterDropEvent(event)
 
 class GroupsWindow(QWidget):
+    leftGroups = ["@MMK_L", "public.kern1"]
+    rightGroups = ["@MMK_R", "public.kern2"]
+
     def __init__(self, font, parent=None):
         super(GroupsWindow, self).__init__(parent, Qt.Window)
         self.font = font
 
         groups = self.font.groups.keys()
         self.groupsList = GroupListWidget(groups, self)
+        self.groupsList.currentItemChanged.connect(self._groupChanged)
         self.groupsList.itemChanged.connect(self._groupRenamed)
+        self.groupsList.setFocus(True)
         
         self.stackWidget = GroupStackWidget(self.font, parent=self)
         
@@ -115,11 +125,11 @@ class GroupsWindow(QWidget):
         self.alignRightBox = QRadioButton("Align right", self)
         self.alignLeftBox.setChecked(True)
         self.alignLeftBox.toggled.connect(self._alignmentChanged)
+        self._autoDirection = True
         
         self.scrollArea = QScrollArea(self)
         self.characterWidget = GroupCharacterWidget(self.font, scrollArea=self.scrollArea, parent=self)
         self.scrollArea.setWidget(self.characterWidget)
-        self.groupsList.currentItemChanged.connect(self._groupChanged)
         self._cachedName = None
         
         layout = QGridLayout(self)
@@ -156,6 +166,15 @@ class GroupsWindow(QWidget):
     
     def _groupChanged(self):
         self._cachedName = self.groupsList.currentItem().text()
+        if self._autoDirection:
+            for name in self.leftGroups:
+                if self._cachedName.startswith(name):
+                    self.alignRightBox.setChecked(True)
+                    break
+            for name in self.rightGroups:
+                if self._cachedName.startswith(name):
+                    self.alignLeftBox.setChecked(True)
+                    break
         glyphs = []
         for gName in self.font.groups[self._cachedName]:
             if gName in self.font:
