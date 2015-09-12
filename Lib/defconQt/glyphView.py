@@ -113,11 +113,16 @@ class MainGfxWindow(QMainWindow):
         self.rulerTool = toolsMenu.addAction("&Ruler")
         self.rulerTool.setCheckable(True)
         self.rulerTool.toggled.connect(self.view.setSceneRuler)
-        
+
+        self.knifeTool = toolsMenu.addAction("&Knife")
+        self.knifeTool.setCheckable(True)
+        self.knifeTool.toggled.connect(self.view.setSceneKnife)
+
         self.toolsGroup = QActionGroup(self)
         self.toolsGroup.addAction(self.selectTool)
         self.toolsGroup.addAction(self.drawingTool)
         self.toolsGroup.addAction(self.rulerTool)
+        self.toolsGroup.addAction(self.knifeTool)
         self.selectTool.setChecked(True)
 
         self.menuBar().addMenu(toolsMenu)
@@ -216,6 +221,7 @@ class SceneTools(Enum):
     SelectionTool = 0
     DrawingTool = 1
     RulerTool = 2
+    KnifeTool = 3
 
 class HandleLineItem(QGraphicsLineItem):
     def __init__(self, x1, y1, x2, y2, parent):
@@ -479,7 +485,7 @@ class OnCurvePointItem(QGraphicsPathItem):
 
     def mouseDoubleClickEvent(self, event):
         view = self.scene().views()[0] # XXX: meh, maybe refactor doubleClick event into the scene?
-        if view._currentTool == SceneTools.RulerTool:
+        if view._currentTool == SceneTools.RulerTool or view._currentTool == SceneTools.KnifeTool:
             return
         self.setIsSmooth(not self._isSmooth)
     
@@ -583,6 +589,9 @@ class GlyphScene(QGraphicsScene):
         self._integerPlane = True
         self._cachedRuler = None
         self._rulerObject = None
+        self._cachedIntersections = []
+        self._knifeDots = []
+        self._knifeLine = None
         self._dataForUndo = []
         self._dataForRedo = []
 
@@ -725,7 +734,10 @@ class GlyphScene(QGraphicsScene):
             data = self._glyphObject.getDataToSerializeForUndo()
             self._dataForUndo.append(data)
             self._dataForRedo = []
-            if not view._currentTool == SceneTools.DrawingTool:
+            if view._currentTool == SceneTools.KnifeTool:
+                self.knifeMousePress(event)
+                return
+            elif view._currentTool == SceneTools.SelectionTool:
                 super(GlyphScene, self).mousePressEvent(event)
                 return
         self._blocked = True
@@ -882,6 +894,9 @@ class GlyphScene(QGraphicsScene):
             if currentTool == SceneTools.RulerTool:
                 self.rulerMouseMove(event)
                 return
+            elif currentTool == SceneTools.KnifeTool:
+                self.knifeMouseMove(event)
+                return
             items = self.items(event.scenePos())
             # XXX: we must cater w mouse tracking
             # we dont need isSelected() once its rid
@@ -983,6 +998,104 @@ class GlyphScene(QGraphicsScene):
     def rulerMouseRelease(self, event):
         self._cachedRuler = self._rulerObject
         self._rulerObject = None
+        event.accept()
+
+    def knifeMousePress(self, event):
+        scenePos = event.scenePos()
+        x, y = scenePos.x(), scenePos.y()
+        self._knifeLine = self.addLine(x, y, x, y)
+        event.accept()
+
+    """
+    Computes intersection between a cubic spline and a line segment.
+    Adapted from: https://www.particleincell.com/2013/cubic-line-intersection/
+
+    Takes four defcon points describing curve and four scalars describing line
+    parameters.
+    """
+    def computeIntersections(self, p1, p2, p3, p4, x1, y1, x2, y2):
+        from fontTools.misc import bezierTools
+        bx, by = x1 - x2, y2 - y1
+        m = x1*(y1-y2) + y1*(x2-x1)
+        a, b, c, d = bezierTools.calcCubicParameters((p1.x, p1.y), (p2.x, p2.y),
+            (p3.x, p3.y), (p4.x, p4.y))
+
+        pc0 = by*a[0] + bx*a[1]
+        pc1 = by*b[0] + bx*b[1]
+        pc2 = by*c[0] + bx*c[1]
+        pc3 = by*d[0] + bx*d[1] + m
+        r = bezierTools.solveCubic(pc0, pc1, pc2, pc3)
+
+        sol = []
+        for t in r:
+            s0 = a[0]*t**3 + b[0]*t**2 + c[0]*t + d[0]
+            s1 = a[1]*t**3 + b[1]*t**2 + c[1]*t + d[1]
+            if (x2-x1) != 0:
+                s = (s0-x1) / (x2-x1)
+            else:
+                s = (s1-y1) / (y2-y1)
+            if not (t < 0 or t > 1 or s < 0 or s > 1):
+                sol.append((s0, s1, t))
+        return sol
+
+    """
+    G. Bach, http://stackoverflow.com/a/1968345
+    """
+    def lineIntersection(self, x1, y1, x2, y2, x3, y3, x4, y4):
+        Bx_Ax = x2 - x1
+        By_Ay = y2 - y1
+        Dx_Cx = x4 - x3
+        Dy_Cy = y4 - y3
+        determinant = (-Dx_Cx * By_Ay + Bx_Ax * Dy_Cy)
+        if abs(determinant) < 1e-20: return []
+        s = (-By_Ay * (x1 - x3) + Bx_Ax * (y1 - y3)) / determinant
+        t = ( Dx_Cx * (y1 - y3) - Dy_Cy * (x1 - x3)) / determinant
+        if s >= 0 and s <= 1 and t >= 0 and t <= 1:
+            return [(x1 + (t * Bx_Ax), y1 + (t * By_Ay), t)]
+        return []
+
+    def knifeMouseMove(self, event):
+        # XXX: shouldnt have to do this, it seems mouseTracking is wrongly activated
+        if self._knifeLine is None: return
+        for dot in self._knifeDots:
+            self.removeItem(dot)
+        self._knifeDots = []
+        scenePos = event.scenePos()
+        x, y = scenePos.x(), scenePos.y()
+        line = self._knifeLine.line()
+        line.setP2(QPointF(x, y))
+        # XXX: not nice
+        glyph = self.views()[0]._glyph
+        self._cachedIntersections = []
+        for contour in glyph:
+            segments = contour.segments
+            for index, seg in enumerate(segments):
+                prev = segments[index-1][-1]
+                if len(seg) == 3:
+                    i = self.computeIntersections(prev, seg[0], seg[1], seg[2], line.x1(), line.y1(), x, y)
+                else:
+                    i = self.lineIntersection(prev.x, prev.y, seg[0].x, seg[0].y, line.x1(), line.y1(), x, y)
+                for pt in i:
+                    scale = self.getViewScale()
+                    item = self.addEllipse(-offHalf/scale, -offHalf/scale, offWidth/scale, offHeight/scale)
+                    item.setPos(pt[0], pt[1])
+                    self._cachedIntersections.append((contour, index, pt[2]))
+                    self._knifeDots.append(item)
+        self._knifeLine.setLine(line)
+        event.accept()
+
+    def knifeMouseRelease(self, event):
+        self.removeItem(self._knifeLine)
+        self._knifeLine = None
+        for dot in self._knifeDots:
+            self.removeItem(dot)
+        self._knifeDots = []
+        # reverse so as to not invalidate our cached segment indexes
+        self._cachedIntersections.reverse()
+        if len(self._cachedIntersections):
+            for intersect in self._cachedIntersections:
+                contour, index, t = intersect
+                contour.splitAndInsertPointAtSegmentAndT(index, t)
         event.accept()
 
 class GlyphView(QGraphicsView):
@@ -1311,7 +1424,11 @@ class GlyphView(QGraphicsView):
     def setSceneSelection(self):
         self._currentTool = SceneTools.SelectionTool
         self.setDragMode(QGraphicsView.RubberBandDrag)
-    
+
+    def setSceneKnife(self):
+        self._currentTool = SceneTools.KnifeTool
+        self.setDragMode(QGraphicsView.NoDrag)
+
     # Lock/release handdrag does not seem to work…
     '''
     def mouseReleaseEvent(self, event):
