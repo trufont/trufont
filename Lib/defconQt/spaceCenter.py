@@ -409,6 +409,10 @@ class GlyphsCanvas(QWidget):
             line = int(line)
             if line >= len(self._positions):
                 self._selected = None
+                # XXX: find a way to DRY notification of self._selected changed
+                # w ability to block notifications as well
+                if self._selectionChangedCallback is not None:
+                    self._selectionChangedCallback(self._selected)
                 event.accept()
                 self.update()
                 return
