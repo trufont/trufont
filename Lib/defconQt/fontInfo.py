@@ -2,25 +2,20 @@ from PyQt5.QtCore import *#QDate, QDateTime, QTime, Qt
 from PyQt5.QtGui import *#QDoubleValidator, QIntValidator
 from PyQt5.QtWidgets import *#QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
+class InfoTabWidget(QTabWidget):
+    def addNamedTab(self, tab):
+        self.addTab(tab, tab.name)
+
 class TabDialog(QDialog):
     def __init__(self, font, parent=None):
         super(TabDialog, self).__init__(parent)
-
-        # TODO: figure a proper correspondence to set and fetch widgets...
-        self.tabs = {
-            "General": 0,
-            "Metrics": 1,
-            "OpenType": 2,
-            "PostScript": 3
-        }
-
         self.font = font
-        self.tabWidget = QTabWidget()
-        self.tabWidget.addTab(GeneralTab(self.font), "General")
-        self.tabWidget.addTab(MetricsTab(self.font), "Metrics")
-        self.tabWidget.addTab(OpenTypeTab(self.font), "OpenType")
-        self.tabWidget.addTab(PostScriptTab(self.font), "PostScript")
-#        self.tabWidget.addTab(ApplicationsTab(fileInfo), "Miscellaneous")
+
+        self.tabWidget = InfoTabWidget()
+        self.tabWidget.addNamedTab(GeneralTab(self.font))
+        self.tabWidget.addNamedTab(MetricsTab(self.font))
+        self.tabWidget.addNamedTab(OpenTypeTab(self.font))
+        self.tabWidget.addNamedTab(PostScriptTab(self.font))
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
 
@@ -32,16 +27,16 @@ class TabDialog(QDialog):
         mainLayout.addWidget(buttonBox)
         self.setLayout(mainLayout)
 
-        self.setWindowTitle("%s%s%s%s" % ("Font Info – ", self.font.info.familyName, " ", self.font.info.styleName))
+        self.setWindowTitle("Font Info – %s %s" % (self.font.info.familyName, self.font.info.styleName))
 
     def accept(self):
-        self.tabWidget.widget(self.tabs["General"]).writeValues(self.font)
-        self.tabWidget.widget(self.tabs["Metrics"]).writeValues(self.font)
-        self.tabWidget.widget(self.tabs["OpenType"]).writeValues(self.font)
-        self.tabWidget.widget(self.tabs["PostScript"]).writeValues(self.font)
+        for i in range(self.tabWidget.count()):
+            self.tabWidget.widget(i).writeValues(self.font)
         super(TabDialog, self).accept()
 
 class GeneralTab(QWidget):
+    name = "General"
+
     def __init__(self, font, parent=None):
         super(GeneralTab, self).__init__(parent)
         mainLayout = QGridLayout(self)
@@ -175,6 +170,8 @@ class GeneralTab(QWidget):
         font.info.trademark = trademark if trademark != '' else None
 
 class MetricsTab(QWidget):
+    name = "Metrics"
+
     def __init__(self, font, parent=None):
         super(MetricsTab, self).__init__(parent)
         mainLayout = QGridLayout()
@@ -277,41 +274,43 @@ class MetricsTab(QWidget):
         font.info.note = note if note != '' else None
 
 class OpenTypeTab(QWidget):
+    name = "OpenType"
+
     def __init__(self, font, parent=None):
         super(OpenTypeTab, self).__init__(parent)
-        l = 0
-        
+
         nameGroup = QGroupBox("name table", self)
         #nameGroup.setFlat(True)
         nameLayout = QGridLayout(self)
-        
+
         preferredFamilyNameLabel = QLabel("Pref. Family Name:", self)
         self.preferredFamilyNameEdit = QLineEdit(font.info.openTypeNamePreferredFamilyName, self)
-        
+
         preferredSubfamilyNameLabel = QLabel("Pref. Subfamily Name:", self)
         self.preferredSubfamilyNameEdit = QLineEdit(font.info.openTypeNamePreferredSubfamilyName, self)
-        
+
         compatibleFullNameLabel = QLabel("Compatible Full Name:", self)
         self.compatibleFullNameEdit = QLineEdit(font.info.openTypeNameCompatibleFullName, self)
-        
+
         WWSFamilyNameLabel = QLabel("WWS Family Name:", self)
         self.WWSFamilyNameEdit = QLineEdit(font.info.openTypeNameWWSFamilyName, self)
-        
+
         WWSSubfamilyNameLabel = QLabel("WWS Subfamily Name:", self)
         self.WWSSubfamilyNameEdit = QLineEdit(font.info.openTypeNameWWSSubfamilyName, self)
-        
+
         versionLabel = QLabel("Version:", self)
         self.versionEdit = QLineEdit(font.info.openTypeNameVersion, self)
-        
+
         uniqueIDLabel = QLabel("Unique ID:", self)
         self.uniqueIDEdit = QLineEdit(font.info.openTypeNameUniqueID, self)
-        
+
         descriptionLabel = QLabel("Description:", self)
         self.descriptionEdit = QLineEdit(font.info.openTypeNameDescription, self)
-        
+
         sampleTextLabel = QLabel("Sample text:", self)
         self.sampleTextEdit = QLineEdit(font.info.openTypeNameSampleText, self)
-        
+
+        l = 0
         nameLayout.addWidget(preferredFamilyNameLabel, l, 0)
         nameLayout.addWidget(self.preferredFamilyNameEdit, l, 1, 1, 2)
         nameLayout.addWidget(WWSFamilyNameLabel, l, 3)
@@ -335,42 +334,42 @@ class OpenTypeTab(QWidget):
         nameLayout.addWidget(sampleTextLabel, l, 3)
         nameLayout.addWidget(self.sampleTextEdit, l, 4, 1, 2)
         nameGroup.setLayout(nameLayout)
-        l = 0
-        
+
         hheaGroup = QGroupBox("hhea table", self)
         #hheaGroup.setFlat(True)
         hheaLayout = QGridLayout(self)
-        
+
         ascenderLabel = QLabel("Ascender:", self)
         ascender = str(font.info.openTypeHheaAscender) if font.info.openTypeHheaAscender is not None else ''
         self.ascenderEdit = QLineEdit(ascender, self)
         self.ascenderEdit.setValidator(QIntValidator(self))
-        
+
         descenderLabel = QLabel("Descender:", self)
         descender = str(font.info.openTypeHheaDescender) if font.info.openTypeHheaDescender is not None else ''
         self.descenderEdit = QLineEdit(descender, self)
         self.descenderEdit.setValidator(QIntValidator(self))
-        
+
         lineGapLabel = QLabel("LineGap:", self)
         lineGap = str(font.info.openTypeHheaLineGap) if font.info.openTypeHheaLineGap is not None else ''
         self.lineGapEdit = QLineEdit(lineGap, self)
         self.lineGapEdit.setValidator(QIntValidator(self))
-        
+
         caretSlopeRiseLabel = QLabel("caretSlopeRise:", self)
         caretSlopeRise = str(font.info.openTypeHheaCaretSlopeRise) if font.info.openTypeHheaCaretSlopeRise is not None else ''
         self.caretSlopeRiseEdit = QLineEdit(caretSlopeRise, self)
         self.caretSlopeRiseEdit.setValidator(QIntValidator(self))
-        
+
         caretSlopeRunLabel = QLabel("caretSlopeRun:", self)
         caretSlopeRun = str(font.info.openTypeHheaCaretSlopeRun) if font.info.openTypeHheaCaretSlopeRun is not None else ''
         self.caretSlopeRunEdit = QLineEdit(caretSlopeRun, self)
         self.caretSlopeRunEdit.setValidator(QIntValidator(self))
-        
+
         caretOffsetLabel = QLabel("caretOffset:", self)
         caretOffset = str(font.info.openTypeHheaCaretOffset) if font.info.openTypeHheaCaretOffset is not None else ''
         self.caretOffsetEdit = QLineEdit(caretOffset, self)
         self.caretOffsetEdit.setValidator(QIntValidator(self))
-        
+
+        l = 0
         hheaLayout.addWidget(ascenderLabel, l, 0)
         hheaLayout.addWidget(self.ascenderEdit, l, 1, 1, 2)
         hheaLayout.addWidget(caretSlopeRiseLabel, l, 3)
@@ -386,42 +385,42 @@ class OpenTypeTab(QWidget):
         hheaLayout.addWidget(caretOffsetLabel, l, 3)
         hheaLayout.addWidget(self.caretOffsetEdit, l, 4, 1, 2)
         hheaGroup.setLayout(hheaLayout)
-        l = 0
-        
+
         vheaGroup = QGroupBox("vhea table", self)
         #vheaGroup.setFlat(True)
         vheaLayout = QGridLayout(self)
-        
+
         vertTypoAscenderLabel = QLabel("vertTypoAscender:", self)
         vertTypoAscender = str(font.info.openTypeVheaVertTypoAscender) if font.info.openTypeVheaVertTypoAscender is not None else ''
         self.vertTypoAscenderEdit = QLineEdit(vertTypoAscender, self)
         self.vertTypoAscenderEdit.setValidator(QIntValidator(self))
-        
+
         vertTypoDescenderLabel = QLabel("vertTypoDescender:", self)
         vertTypoDescender = str(font.info.openTypeVheaVertTypoDescender) if font.info.openTypeVheaVertTypoDescender is not None else ''
         self.vertTypoDescenderEdit = QLineEdit(vertTypoDescender, self)
         self.vertTypoDescenderEdit.setValidator(QIntValidator(self))
-        
+
         vertTypoLineGapLabel = QLabel("vertTypoLineGap:", self)
         vertTypoLineGap = str(font.info.openTypeVheaVertTypoLineGap) if font.info.openTypeVheaVertTypoLineGap is not None else ''
         self.vertTypoLineGapEdit = QLineEdit(vertTypoLineGap, self)
         self.vertTypoLineGapEdit.setValidator(QIntValidator(self))
-        
+
         vheaCaretSlopeRiseLabel = QLabel("caretSlopeRise:", self)
         vheaCaretSlopeRise = str(font.info.openTypeVheaCaretSlopeRise) if font.info.openTypeVheaCaretSlopeRise is not None else ''
         self.vheaCaretSlopeRiseEdit = QLineEdit(vheaCaretSlopeRise, self)
         self.vheaCaretSlopeRiseEdit.setValidator(QIntValidator(self))
-        
+
         vheaCaretSlopeRunLabel = QLabel("caretSlopeRun:", self)
         vheaCaretSlopeRun = str(font.info.openTypeVheaCaretSlopeRun) if font.info.openTypeVheaCaretSlopeRun is not None else ''
         self.vheaCaretSlopeRunEdit = QLineEdit(vheaCaretSlopeRun, self)
         self.vheaCaretSlopeRunEdit.setValidator(QIntValidator(self))
-        
+
         vheaCaretOffsetLabel = QLabel("caretOffset:", self)
         vheaCaretOffset = str(font.info.openTypeVheaCaretOffset) if font.info.openTypeVheaCaretOffset is not None else ''
         self.vheaCaretOffsetEdit = QLineEdit(vheaCaretOffset, self)
         self.vheaCaretOffsetEdit.setValidator(QIntValidator(self))
-        
+
+        l = 0
         vheaLayout.addWidget(vertTypoAscenderLabel, l, 0)
         vheaLayout.addWidget(self.vertTypoAscenderEdit, l, 1, 1, 2)
         vheaLayout.addWidget(vheaCaretSlopeRiseLabel, l, 3)
@@ -437,14 +436,13 @@ class OpenTypeTab(QWidget):
         vheaLayout.addWidget(vheaCaretOffsetLabel, l, 3)
         vheaLayout.addWidget(self.vheaCaretOffsetEdit, l, 4, 1, 2)
         vheaGroup.setLayout(vheaLayout)
-        l = 0
-        
+
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(nameGroup)
         mainLayout.addWidget(hheaGroup)
         mainLayout.addWidget(vheaGroup)
         self.setLayout(mainLayout)
-    
+
     def writeValues(self, font):
         preferredFamilyName = self.preferredFamilyNameEdit.text()
         font.info.openTypeNamePreferredFamilyName = preferredFamilyName if preferredFamilyName != '' else None
@@ -490,9 +488,10 @@ class OpenTypeTab(QWidget):
         font.info.openTypeVheaCaretOffset = int(vheaCaretOffset) if vheaCaretOffset != '' else None
 
 class PostScriptTab(QWidget):
+    name = "Postscript"
+
     def __init__(self, font, parent=None):
         super(PostScriptTab, self).__init__(parent)
-        l = 0
 
         namingGroup = QGroupBox("Naming", self)
         #namingGroup.setFlat(True)
@@ -512,6 +511,7 @@ class PostScriptTab(QWidget):
         self.uniqueIDEdit = QLineEdit(uniqueID, self)
         self.uniqueIDEdit.setValidator(QIntValidator(self))
 
+        l = 0
         namingLayout.addWidget(fontNameLabel, l, 0)
         namingLayout.addWidget(self.fontNameEdit, l, 1, 1, 2)
         namingLayout.addWidget(weightNameLabel, l, 3)
@@ -522,7 +522,6 @@ class PostScriptTab(QWidget):
         namingLayout.addWidget(uniqueIDLabel, l, 3)
         namingLayout.addWidget(self.uniqueIDEdit, l, 4, 1, 2)
         namingGroup.setLayout(namingLayout)
-        l = 0
 
         hintingGroup = QGroupBox("Hinting", self)
         #hintingGroup.setFlat(True)
@@ -544,6 +543,7 @@ class PostScriptTab(QWidget):
         familyOtherBlues = " ".join(str(val) for val in font.info.postscriptFamilyOtherBlues)
         self.familyOtherBluesEdit = QLineEdit(familyOtherBlues, self)
 
+        l = 0
         hintingLayout.addWidget(blueValuesLabel, l, 0)
         hintingLayout.addWidget(self.blueValuesEdit, l, 1, 1, 2)
         hintingLayout.addWidget(familyBluesLabel, l, 3)
@@ -600,7 +600,6 @@ class PostScriptTab(QWidget):
         hintingLayout.addWidget(forceBoldLabel, l, 3)
         hintingLayout.addWidget(self.forceBoldBox, l, 4, 1, 2)
         hintingGroup.setLayout(hintingLayout)
-        l = 0
 
         metricsGroup = QGroupBox("Metrics", self)
         #metricsGroup.setFlat(True)
@@ -638,6 +637,7 @@ class PostScriptTab(QWidget):
         if isFixedPitch is None: self.isFixedPitchBox.setCheckState(Qt.PartiallyChecked)
         else: self.isFixedPitchBox.setChecked(isFixedPitch)
 
+        l = 0
         metricsLayout.addWidget(defaultWidthXLabel, l, 0)
         metricsLayout.addWidget(self.defaultWidthXEdit, l, 1, 1, 2)
         metricsLayout.addWidget(underlineThicknessLabel, l, 3)
@@ -653,7 +653,6 @@ class PostScriptTab(QWidget):
         metricsLayout.addWidget(isFixedPitchLabel, l, 3)
         metricsLayout.addWidget(self.isFixedPitchBox, l, 4, 1, 2)
         metricsGroup.setLayout(metricsLayout)
-        l = 0
 
         charactersGroup = QGroupBox("Characters", self)
         #charactersGroup.setFlat(True)
@@ -667,40 +666,16 @@ class PostScriptTab(QWidget):
         items = ["None", "ANSI", "Default", "Symbol", "Macintosh", "Shift JIS", "Hangul", "Hangul (Johab)", "GB2312",
             "Chinese BIG5", "Greek", "Turkish", "Vietnamese", "Hebrew", "Arabic", "Baltic", "Bitstream",
             "Cyrillic", "Thai", "Eastern European", "OEM"]
-        # windowsCharacterSet = {
-            # "ANSI": 1,
-            # "Default": 2,
-            # "Symbol": 3,
-            # "Macintosh": 4,
-            # "Shift JIS": 5,
-            # "Hangul": 6,
-            # "Hangul (Johab)": 7,
-            # "GB2312": 8,
-            # "Chinese BIG5": 9,
-            # "Greek": 10,
-            # "Turkish": 11,
-            # "Vietnamese": 12,
-            # "Hebrew": 13,
-            # "Arabic": 14,
-            # "Baltic": 15,
-            # "Bitstream": 16,
-            # "Cyrillic": 17,
-            # "Thai": 18,
-            # "Eastern European": 19,
-            # "OEM": 20,
-        # }
         self.windowsCharacterSetDrop.insertItems(0, items)
         if font.info.postscriptWindowsCharacterSet is not None:
             self.windowsCharacterSetDrop.setCurrentIndex(font.info.postscriptWindowsCharacterSet)
-        #else:
-        #    self.windowsCharacterSetDrop.setCurrentIndex(0)
 
+        l = 0
         charactersLayout.addWidget(defaultCharacterLabel, l, 0)
         charactersLayout.addWidget(self.defaultCharacterEdit, l, 1, 1, 2)
         charactersLayout.addWidget(windowsCharacterSetLabel, l, 3)
         charactersLayout.addWidget(self.windowsCharacterSetDrop, l, 4, 1, 2)
         charactersGroup.setLayout(charactersLayout)
-        #l = 0
 
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(namingGroup)
@@ -708,7 +683,7 @@ class PostScriptTab(QWidget):
         mainLayout.addWidget(metricsGroup)
         mainLayout.addWidget(charactersGroup)
         self.setLayout(mainLayout)
-    
+
     def writeValues(self, font):
         fontName = self.fontNameEdit.text()
         font.info.postscriptFontName = fontName if fontName != '' else None
