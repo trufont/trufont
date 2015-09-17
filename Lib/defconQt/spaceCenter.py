@@ -1,4 +1,6 @@
-from fontView import cellSelectionColor
+from defconQt.fontView import cellSelectionColor
+from defconQt.glyphView import MainGfxWindow
+from getpass import getuser
 from PyQt5.QtCore import *#QAbstractTableModel, QEvent, QSize, Qt
 from PyQt5.QtGui import *#(QBrush, QColor, QFont, QIcon, QKeySequence, QLinearGradient, QPainter,
         #QPainterPath, QPalette, QPen)
@@ -14,7 +16,6 @@ class MainSpaceWindow(QWidget):
         super(MainSpaceWindow, self).__init__(parent, Qt.Window)
 
         if string is None:
-            from getpass import getuser
             try:
                 string = getuser()
             except:
@@ -69,7 +70,6 @@ class MainSpaceWindow(QWidget):
         self.table.updateCells()
     
     def _glyphOpened(self, glyph):
-        from glyphView import MainGfxWindow
         glyphViewWindow = MainGfxWindow(self.font, glyph, self.parent())
         glyphViewWindow.show()
 

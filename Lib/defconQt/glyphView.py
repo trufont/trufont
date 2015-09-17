@@ -1,5 +1,8 @@
 from enum import Enum
 from math import copysign
+from defcon.objects.contour import Contour
+from defcon.objects.point import Point
+from fontTools.misc import bezierTools
 from PyQt5.QtCore import *#QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
 from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
@@ -797,7 +800,6 @@ class GlyphScene(QGraphicsScene):
             lastContour.dirty = True
             self._editing = True
         elif not (touched and isinstance(touched, OnCurvePointItem)):
-            from defcon.objects.contour import Contour
             nextC = Contour()
             self._glyphObject.appendContour(nextC)
             nextC.addPoint((x,y), "move")
@@ -840,7 +842,6 @@ class GlyphScene(QGraphicsScene):
                         self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
                         nextCP.grabMouse()
                     else:
-                        from defcon.objects.point import Point
                         # release current onCurve, delete from contour
                         self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
                         mouseGrabberItem.ungrabMouse()
@@ -1014,7 +1015,6 @@ class GlyphScene(QGraphicsScene):
     parameters.
     """
     def computeIntersections(self, p1, p2, p3, p4, x1, y1, x2, y2):
-        from fontTools.misc import bezierTools
         bx, by = x1 - x2, y2 - y1
         m = x1*(y1-y2) + y1*(x2-x1)
         a, b, c, d = bezierTools.calcCubicParameters((p1.x, p1.y), (p2.x, p2.y),

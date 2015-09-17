@@ -1,9 +1,14 @@
 import math
 import os
-import representationFactories
 import unicodedata
 
 from defcon import Font
+from defconQt.featureTextEditor import MainEditWindow
+from defconQt.fontInfo import TabDialog
+from defconQt.glyphView import MainGfxWindow
+from defconQt.groupsView import GroupsWindow
+from defconQt.spaceCenter import MainSpaceWindow
+# TODO: remove globs when things start to stabilize
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -618,7 +623,6 @@ class MainWindow(QMainWindow):
         self.setWindowModified(True)
 
     def _glyphOpened(self, name):
-        from glyphView import MainGfxWindow
         glyphViewWindow = MainGfxWindow(self.font, self.font[name], self)
         glyphViewWindow.show()
     
@@ -651,7 +655,6 @@ class MainWindow(QMainWindow):
         # TODO: see about using widget.setAttribute(Qt.WA_DeleteOnClose) otherwise
         # it seems we're just leaking memory after each close... (both raise_ and
         # show allocate memory instead of using the hidden widget it seems)
-        from fontInfo import TabDialog
         if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
            self.fontInfoWindow = TabDialog(self.font, self)
            self.fontInfoWindow.show()
@@ -662,7 +665,6 @@ class MainWindow(QMainWindow):
 
     def fontFeatures(self):
         # TODO: see up here
-        from featureTextEditor import MainEditWindow
         if not (hasattr(self, 'fontFeaturesWindow') and self.fontFeaturesWindow.isVisible()):
            self.fontFeaturesWindow = MainEditWindow(self.font, self)
            self.fontFeaturesWindow.show()
@@ -672,7 +674,6 @@ class MainWindow(QMainWindow):
     def spaceCenter(self):
         # TODO: see up here
         # TODO: show selection in a space center, rewind selection if we raise window (rf)
-        from spaceCenter import MainSpaceWindow
         if not (hasattr(self, 'spaceCenterWindow') and self.spaceCenterWindow.isVisible()):
             self.spaceCenterWindow = MainSpaceWindow(self.font, parent=self)
             self.spaceCenterWindow.show()
@@ -686,7 +687,6 @@ class MainWindow(QMainWindow):
     
     def fontGroups(self):
         # TODO: see up here
-        from groupsView import GroupsWindow
         if not (hasattr(self, 'fontGroupsWindow') and self.fontGroupsWindow.isVisible()):
            self.fontGroupsWindow = GroupsWindow(self.font, self)
            self.fontGroupsWindow.show()
@@ -708,25 +708,3 @@ class MainWindow(QMainWindow):
                 "ecosystem to all main operating systems, in a fast and dependency-free " \
                 "package.</p>")
 
-if __name__ == '__main__':
-    import sys
-
-    if len(sys.argv) < 2:
-         ufoFile = "C:\\CharterNova-Regular.ufo"
-#        print('Usage: %s INPUTFILE' % sys.argv[0])
-#        sys.exit(1)
-    else:
-         ufoFile = sys.argv[1]
-
-    #from pycallgraph import PyCallGraph
-    #from pycallgraph.output import GraphvizOutput
-
-    representationFactories.registerAllFactories()
-    #with PyCallGraph(output=GraphvizOutput()):
-    app = QApplication(sys.argv)
-    # TODO: http://stackoverflow.com/a/21330349/2037879
-    app.setWindowIcon(QIcon("resources/icon.png"))
-    window = MainWindow(Font(ufoFile))
-    window.resize(605, 430)
-    window.show()
-    sys.exit(app.exec_())

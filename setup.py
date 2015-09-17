@@ -39,7 +39,9 @@ setup(name="defconQt",
     author_email="adri-from-59@hotmail.fr",
 #    url="",
     license="GNU LGPL 2.1/GNU GPL v3",
-    # TODO: populate
-    packages=["defconQt"],
+    packages=[
+        "defconQt",
+        "defconQt.representationFactories",
+    ],
     package_dir={"":"Lib"}
 )
