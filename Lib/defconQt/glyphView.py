@@ -926,6 +926,8 @@ class GlyphScene(QGraphicsScene):
                     onCurve._point.smooth = False
         elif currentTool == SceneTools.RulerTool:
             self.rulerMouseRelease(event)
+        elif currentTool == SceneTools.KnifeTool:
+            self.knifeMouseRelease(event)
         super(GlyphScene, self).mouseReleaseEvent(event)
 
     def rulerMousePress(self, event):
@@ -1089,11 +1091,13 @@ class GlyphScene(QGraphicsScene):
             self.removeItem(dot)
         self._knifeDots = []
         # reverse so as to not invalidate our cached segment indexes
+        # XXX: multiple cuts on one segment don't work reliably
         self._cachedIntersections.reverse()
         if len(self._cachedIntersections):
             for intersect in self._cachedIntersections:
                 contour, index, t = intersect
                 contour.splitAndInsertPointAtSegmentAndT(index, t)
+        self._cachedIntersections = []
         event.accept()
 
 class GlyphView(QGraphicsView):
