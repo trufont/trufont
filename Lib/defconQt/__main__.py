@@ -1,4 +1,4 @@
-from defcon import Font
+from defconQt.objects.defcon import TFont
 from defconQt.fontView import MainWindow
 import sys
 
@@ -20,6 +20,6 @@ representationFactories.registerAllFactories()
 app = QApplication(sys.argv)
 # TODO: http://stackoverflow.com/a/21330349/2037879
 app.setWindowIcon(QIcon("defconQt/resources/icon.png"))
-window = MainWindow(Font(ufoFile))
+window = MainWindow(TFont(ufoFile))
 window.show()
 sys.exit(app.exec_())

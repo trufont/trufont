@@ -1,7 +1,7 @@
 from enum import Enum
 from math import copysign
-from defcon.objects.contour import Contour
-from defcon.objects.point import Point
+from defconQt.objects.defcon import TContour, TGlyph
+from defconQt.pens.copySelectionPen import CopySelectionPen
 from fontTools.misc import bezierTools
 from PyQt5.QtCore import *#QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
@@ -11,13 +11,13 @@ from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
 from PyQt5.QtOpenGL import QGL, QGLFormat, QGLWidget
 
 
-class GotoWindow(QDialog):
+class GotoDialog(QDialog):
     alphabetical = [
         dict(type="alphabetical", allowPseudoUnicode=True)
     ]
 
     def __init__(self, font, parent=None):
-        super(GotoWindow, self).__init__(parent)
+        super(GotoDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Go to…")
         self.font = font
@@ -79,14 +79,18 @@ class GotoWindow(QDialog):
         self.glyphList.addItems(glyphs)
         if select: self.glyphList.setCurrentRow(0)
 
-    def accept(self):
-        # TODO: zap going thru the view, here and above
-        currentItem = self.glyphList.currentItem()
+    @staticmethod
+    def getNewGlyph(parent, font):
+        dialog = GotoDialog(font, parent)
+        result = dialog.exec_()
+        currentItem = dialog.glyphList.currentItem()
+        newGlyph = None
         if currentItem is not None:
-            targetGlyph = currentItem.text()
-            if not targetGlyph in self.font: return
-            self._view.setGlyph(self.font[targetGlyph])
-        super(GotoWindow, self).accept()
+            newGlyphName = currentItem.text()
+            if newGlyphName in dialog.font:
+                newGlyph = dialog.font[newGlyphName]
+        return (newGlyph, result)
+
 
 class MainGfxWindow(QMainWindow):
     def __init__(self, glyph, parent=None):
@@ -263,6 +267,9 @@ class OffCurvePointItem(QGraphicsEllipseItem):
                     value.setY(0)
         elif change == QGraphicsItem.ItemPositionHasChanged:
             self.parentItem()._CPMoved(value)
+        # TODO: consider what to do w offCurves
+        #elif change == QGraphicsItem.ItemSelectedHasChanged:
+        #    pass#self.parentItem()._CPSelChanged(value)
         return value
 
     def mousePressEvent(self, event):
@@ -432,6 +439,8 @@ class OnCurvePointItem(QGraphicsPathItem):
                 self._contour[pointIndex+1].x = self.pos().x()+nextPos.x()
                 self._contour[pointIndex+1].y = self.pos().y()+nextPos.y()
             self.setShallowDirty()
+        elif change == QGraphicsItem.ItemSelectedHasChanged:
+            self._point.selected = value
         return value
 
     def setShallowDirty(self):
@@ -667,9 +676,11 @@ class GlyphScene(QGraphicsScene):
             event.accept()
             return
         elif key == Qt.Key_J:
-            glyph = self.views()[0]._glyph
-            dialog = GotoWindow(glyph.getParent(), self.parent())
-            dialog.exec_()
+            view = self.views()[0]
+            glyph = view._glyph
+            newGlyph, ok = GotoDialog.getNewGlyph(self.parent(), glyph.getParent())
+            if ok and newGlyph is not None:
+                view.setGlyph(newGlyph)
             return
         elif event.matches(QKeySequence.Undo):
             if len(self._dataForUndo) > 0:
@@ -697,6 +708,23 @@ class GlyphScene(QGraphicsScene):
         elif modifiers & Qt.ControlModifier and key == Qt.Key_D:
             view = self.views()[0]
             self.setSelectionArea(QPainterPath(), view.transform())
+            event.accept()
+            return
+        elif event.matches(QKeySequence.Copy):
+            clipboard = QApplication.clipboard()
+            mimeData = clipboard.mimeData()
+            pen = CopySelectionPen()
+            self._glyphObject.drawPoints(pen)
+            # XXX: clipboard should outlive the widget window!
+            self._clipboardObject = pen.getGlyph().serializeForUndo()
+            event.accept()
+            return
+        elif event.matches(QKeySequence.Paste):
+            if self._clipboardObject is None: return
+            pen = self._glyphObject.getPointPen()
+            pasteGlyph = TGlyph()
+            pasteGlyph.deserializeFromUndo(self._clipboardObject)
+            pasteGlyph.drawPoints(pen)
             event.accept()
             return
         else:
@@ -798,7 +826,7 @@ class GlyphScene(QGraphicsScene):
             lastContour.dirty = True
             self._editing = True
         elif not (touched and isinstance(touched, OnCurvePointItem)):
-            nextC = Contour()
+            nextC = TContour()
             self._glyphObject.appendContour(nextC)
             nextC.addPoint((x,y), "move")
 

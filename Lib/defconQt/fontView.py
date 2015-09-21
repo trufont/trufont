@@ -1,10 +1,9 @@
-from defcon import Font
 from defconQt.featureTextEditor import MainEditWindow
 from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
-from defconQt.objects.defcon import CharacterSet
+from defconQt.objects.defcon import CharacterSet, TFont
 from defconQt.spaceCenter import MainSpaceWindow
 from fontTools.agl import AGL2UV
 # TODO: remove globs when things start to stabilize
@@ -80,7 +79,7 @@ class AddGlyphDialog(QDialog):
         self.setLayout(layout)
 
     @staticmethod
-    def getNewGlyphNames(parent=None, currentGlyphs=None):
+    def getNewGlyphNames(parent, currentGlyphs=None):
         dialog = AddGlyphDialog(currentGlyphs, parent)
         result = dialog.exec_()
         sortFont = False
@@ -229,7 +228,7 @@ class SortDialog(QDialog):
         return 0
 
     @staticmethod
-    def getDescriptor(parent=None, sortDescriptor=None):
+    def getDescriptor(parent, sortDescriptor=None):
         dialog = SortDialog(sortDescriptor, parent)
         result = dialog.exec_()
         if dialog.characterSetBox.isChecked():
@@ -336,7 +335,7 @@ class MainWindow(QMainWindow):
     def newFile(self):
         ok = self.maybeSaveBeforeExit()
         if not ok: return
-        self.font = Font()
+        self.font = TFont()
         self.font.info.unitsPerEm = 1000
         self.font.info.ascender = 750
         self.font.info.descender = -250
@@ -476,6 +475,7 @@ class MainWindow(QMainWindow):
             else:
                 glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
 
+    # TODO: maybe store this in TFont
     def newStandardGlyph(self, name):
         self.font.newGlyph(name)
         self.font[name].width = 500
