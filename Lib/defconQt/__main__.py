@@ -19,8 +19,7 @@ representationFactories.registerAllFactories()
 #with PyCallGraph(output=GraphvizOutput()):
 app = QApplication(sys.argv)
 # TODO: http://stackoverflow.com/a/21330349/2037879
-app.setWindowIcon(QIcon("resources/icon.png"))
+app.setWindowIcon(QIcon("defconQt/resources/icon.png"))
 window = MainWindow(Font(ufoFile))
-window.resize(605, 430)
 window.show()
 sys.exit(app.exec_())

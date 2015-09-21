@@ -1,55 +1,149 @@
-import math
-import os
-import unicodedata
-
 from defcon import Font
 from defconQt.featureTextEditor import MainEditWindow
 from defconQt.fontInfo import TabDialog
+from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
+from defconQt.objects.defcon import CharacterSet
 from defconQt.spaceCenter import MainSpaceWindow
+from fontTools.agl import AGL2UV
 # TODO: remove globs when things start to stabilize
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+import os
+import unicodedata
 
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
 ]
 sortItems = ["alphabetical", "category", "unicode", "script", "suffix",
     "decompositionBase", "weightedSuffix", "ligature"]
+latin1 = CharacterSet(
+["space","exclam","quotesingle","quotedbl","numbersign","dollar",
+"percent","ampersand","parenleft","parenright","asterisk","plus","comma",
+"hyphen","period","slash","zero","one","two","three","four","five",
+"six","seven","eight","nine","colon","semicolon","less","equal",
+"greater","question","at","A","B","C","D","E","F","G","H","I","J",
+"K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+"bracketleft","backslash","bracketright","asciicircum","underscore","grave",
+"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t",
+"u","v","w","x","y","z","braceleft","bar","braceright","asciitilde","exclamdown",
+"cent","sterling","currency","yen","brokenbar","section","dieresis","copyright",
+"ordfeminine","guillemotleft","logicalnot","registered","macron","degree",
+"plusminus","twosuperior","threesuperior","acute","mu","paragraph",
+"periodcentered","cedilla","onesuperior","ordmasculine","guillemotright",
+"onequarter","onehalf","threequarters","questiondown","Agrave","Aacute",
+"Acircumflex","Atilde","Adieresis","Aring","AE","Ccedilla","Egrave","Eacute",
+"Ecircumflex","Edieresis","Igrave","Iacute","Icircumflex","Idieresis","Eth",
+"Ntilde","Ograve","Oacute","Ocircumflex","Otilde","Odieresis","multiply",
+"Oslash","Ugrave","Uacute","Ucircumflex","Udieresis","Yacute","Thorn",
+"germandbls","agrave","aacute","acircumflex","atilde","adieresis","aring","ae",
+"ccedilla","egrave","eacute","ecircumflex","edieresis","igrave","iacute",
+"icircumflex","idieresis","eth","ntilde","ograve","oacute","ocircumflex",
+"otilde","odieresis","divide","oslash","ugrave","uacute","ucircumflex",
+"udieresis","yacute","thorn","ydieresis","dotlessi","circumflex","caron",
+"breve","dotaccent","ring","ogonek","tilde","hungarumlaut","quoteleft",
+"quoteright","minus"], "Latin-1")
 
-cellGridColor = QColor(130, 130, 130)
-cellHeaderBaseColor = QColor(230, 230, 230)
-cellHeaderLineColor = QColor(220, 220, 220)
-cellHeaderHighlightLineColor = QColor(240, 240, 240)
-cellSelectionColor = QColor.fromRgbF(.2, .3, .7, .15)
+# TODO: implement Frederik's Glyph Construction Builder
+class AddGlyphDialog(QDialog):
+    def __init__(self, currentGlyphs=None, parent=None):
+        super(AddGlyphDialog, self).__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Add glyphs…")
+        self.currentGlyphs = currentGlyphs
+        self.currentGlyphNames = [glyph.name for glyph in currentGlyphs]
 
-GlyphCellBufferHeight = .2
-GlyphCellHeaderHeight = 14
+        layout = QGridLayout(self)
+        self.importCharDrop = QComboBox(self)
+        self.importCharDrop.addItem("Import glyphnames…")
+        self.importCharDrop.addItem("Latin-1", latin1)
+        self.importCharDrop.currentIndexChanged[int].connect(self.importCharacters)
+        self.addGlyphEdit = QPlainTextEdit(self)
+        self.addGlyphEdit.setFocus(True)
 
-class SortingWindow(QDialog):
-    def __init__(self, parent=None):
-        super(SortingWindow, self).__init__(parent)
+        self.sortFontBox = QCheckBox("Sort font", self)
+        self.overwriteBox = QCheckBox("Override", self)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        l = 0
+        layout.addWidget(self.importCharDrop, l, 3)
+        l += 1
+        layout.addWidget(self.addGlyphEdit, l, 0, 1, 4)
+        l += 1
+        layout.addWidget(self.sortFontBox, l, 0)
+        layout.addWidget(self.overwriteBox, l, 1)
+        layout.addWidget(buttonBox, l, 3)
+        self.setLayout(layout)
+
+    @staticmethod
+    def getNewGlyphNames(parent=None, currentGlyphs=None):
+        dialog = AddGlyphDialog(currentGlyphs, parent)
+        result = dialog.exec_()
+        sortFont = False
+        newGlyphNames = []
+        for name in dialog.addGlyphEdit.toPlainText().split():
+            if name not in dialog.currentGlyphNames:
+                newGlyphNames.append(name)
+        if dialog.sortFontBox.isChecked():
+            # XXX: if we get here with previous sort being by character set,
+            # should it just stick?
+            sortFont = True
+        return (newGlyphNames, sortFont, result)
+
+    def importCharacters(self, index):
+        if index == 0: return
+        charset = self.importCharDrop.currentData()
+        editorNames = self.addGlyphEdit.toPlainText().split()
+        currentNames = set(self.currentGlyphNames) ^ set(editorNames)
+        changed = False
+        for name in charset.glyphNames:
+            if name not in currentNames:
+                changed = True
+                editorNames.append(name)
+        if changed:
+            self.addGlyphEdit.setPlainText(" ".join(editorNames))
+            cursor = self.addGlyphEdit.textCursor()
+            cursor.movePosition(QTextCursor.End, QTextCursor.MoveAnchor)
+            self.addGlyphEdit.setTextCursor(cursor)
+        self.importCharDrop.setCurrentIndex(0)
+        self.addGlyphEdit.setFocus(True)
+
+class SortDialog(QDialog):
+    def __init__(self, desc=None, parent=None):
+        super(SortDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Sort…")
-        
+
         self.smartSortBox = QRadioButton("Smart sort", self)
         self.characterSetBox = QRadioButton("Character set", self)
-        self.characterSetBox.setEnabled(False)
+        self.characterSetBox.toggled.connect(self.characterSetToggle)
+        self.characterSetDrop = QComboBox(self)
+        self.characterSetDrop.setEnabled(False)
+        # XXX: fetch from settings
+        self.characterSetDrop.insertItem(0, "Latin 1")
         self.customSortBox = QRadioButton("Custom…", self)
         self.customSortBox.toggled.connect(self.customSortToggle)
-        
+
         self.customSortGroup = QGroupBox(parent=self)
-        desc = self.parent().characterWidget.sortDescriptor
-        if desc[0]["type"] == "cannedDesign":
+        self.customSortGroup.setEnabled(False)
+        descriptorsCount = 6
+        if desc is None:
+            # sort fetched from public.glyphOrder. no-op
+            pass
+        elif isinstance(desc, CharacterSet):
+            self.characterSetBox.setChecked(True)
+            self.characterSetDrop.setEnabled(True)
+            # TODO: match cset name when QSettings support lands
+        elif desc[0]["type"] == "cannedDesign":
             self.smartSortBox.setChecked(True)
-            self.customSortGroup.setEnabled(False)
-            descriptorsCount = 6
         else:
             self.customSortBox.setChecked(True)
+            self.customSortGroup.setEnabled(True)
             descriptorsCount = len(desc)
-        #elif desc == 
         self.customDescriptors = [[] for i in range(descriptorsCount)]
         self.customSortLayout = QGridLayout()
         for i, line in enumerate(self.customDescriptors):
@@ -81,19 +175,20 @@ class SortingWindow(QDialog):
                 btn.setText("−")
                 btn.pressed.connect(self._deleteRow)
         self.customSortGroup.setLayout(self.customSortLayout)
-        
+
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
-        
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.smartSortBox)
         layout.addWidget(self.characterSetBox)
+        layout.addWidget(self.characterSetDrop)
         layout.addWidget(self.customSortBox)
         layout.addWidget(self.customSortGroup)
         layout.addWidget(buttonBox)
         self.setLayout(layout)
-    
+
     def _addRow(self):
         i = len(self.customDescriptors)
         line = []
@@ -113,8 +208,7 @@ class SortingWindow(QDialog):
         self.customSortLayout.addWidget(line[2], i, 2)
         self.customSortLayout.addWidget(line[3], i, 3)
         if i == 7: self.sender().setEnabled(False)
-        
-    
+
     def _deleteRow(self):
         rel = self.sender().property("index")
         desc = self.customDescriptors
@@ -127,356 +221,53 @@ class SortingWindow(QDialog):
         del self.customDescriptors[-1]
         self.addLineButton.setEnabled(True)
         self.adjustSize()
-    
+
     def indexFromItemName(self, name):
         for index, item in enumerate(sortItems):
             if name == item: return index
         print("Unknown descriptor name: %s", name)
         return 0
-    
-    def accept(self):
-        if self.smartSortBox.isChecked():
-            descriptors = cannedDesign
-        elif self.customSortBox.isChecked():
+
+    @staticmethod
+    def getDescriptor(parent=None, sortDescriptor=None):
+        dialog = SortDialog(sortDescriptor, parent)
+        result = dialog.exec_()
+        if dialog.characterSetBox.isChecked():
+            # TODO: dispatch csets when QSettings support lands
+            ret = latin1
+        elif dialog.customSortBox.isChecked():
             descriptors = []
-            for line in self.customDescriptors:
+            for line in dialog.customDescriptors:
                 descriptors.append(dict(type=line[0].currentText(), ascending=line[1].isChecked(),
                     allowPseudoUnicode=line[2].isChecked()))
-        self.parent().characterWidget.updateGlyphsFromFont(descriptors)
-        super(SortingWindow, self).accept()
-    
+            ret = descriptors
+        else:
+            ret = cannedDesign
+        return (ret, result)
+
+    def characterSetToggle(self):
+        checkBox = self.sender()
+        self.characterSetDrop.setEnabled(checkBox.isChecked())
+
     def customSortToggle(self):
         checkBox = self.sender()
         self.customSortGroup.setEnabled(checkBox.isChecked())
 
-class CharacterWidget(QWidget):
-    characterSelected = pyqtSignal(int, str)
-    glyphOpened = pyqtSignal(str)
-
-    def __init__(self, font, squareSize=56, scrollArea=None, parent=None):
-        super(CharacterWidget, self).__init__(parent)
-
-        self.font = font
-        self.glyphs = []
-        self.scrollArea = scrollArea
-        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.squareSize = squareSize
-        self.columns = 10
-        self._selection = set()
-        self.lastKey = -1
-        self.moveKey = -1
-        self.sortDescriptor = cannedDesign
-        
-        self._maybeDragPosition = None
-        self.setFocusPolicy(Qt.ClickFocus)
-
-    def updateFont(self, font):
-        self.font = font
-        self.updateGlyphsFromFont()
-    
-    def updateGlyphsFromFont(self, descriptor=None):
-        if descriptor is not None: self.sortDescriptor = descriptor
-        self.glyphs = [self.font[k] for k in self.font.unicodeData.sortGlyphNames(self.font.keys(), self.sortDescriptor)]
-        self._selection = set()
-        self.adjustSize()
-        self.update()
-    
-    def setGlyphs(self, glyphs):
-        self.glyphs = glyphs
-        self._selection = set()
-        self.adjustSize()
-        self.update()
-
-    def _sizeEvent(self, width, squareSize=None):
-        if self.scrollArea is not None: sw = self.scrollArea.verticalScrollBar().width() + self.scrollArea.contentsMargins().right()
-        else: sw = 0
-        if squareSize is not None: self.squareSize = squareSize
-        columns = (width - sw) // self.squareSize
-        if not columns > 0: return
-        self.columns = columns
-        self.adjustSize()
-
-    def sizeHint(self):
-        # Calculate sizeHint with max(height, scrollArea.height()) because if scrollArea is
-        # bigger than widget height after an update, we risk leaving old painted content on screen
-        return QSize(self.columns * self.squareSize,
-                max(math.ceil(len(self.glyphs) / self.columns) * self.squareSize, self.scrollArea.height()))
-    
-    def markSelection(self, color):
-        for key in self._selection:
-            glyph = self.glyphs[key]
-            if color is None:
-                if "public.markColor" in glyph.lib:
-                    del glyph.lib["public.markColor"]
-            else:
-                glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
-        self.update()
-    
-    # TODO: eventually get rid of the signal
-    def computeCharacterSelected(self):
-        lKey, mKey = self.lastKey, self.moveKey
-        mKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
-        lKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
-        if lKey == -1:
-            elements = set()
-        elif lKey > mKey:
-            elements = set(range(mKey, lKey+1))
-        else:
-            elements = set(range(lKey, mKey+1))
-        elements ^= self._selection
-        if len(elements)>1: self.characterSelected.emit(len(elements), "")
-        elif len(elements)>0: self.characterSelected.emit(1, self.glyphs[elements.pop()].name)
-        else: self.characterSelected.emit(0, "")
-    
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_A and event.modifiers() & Qt.ControlModifier:
-            self._selection = set(range(len(self.glyphs)))
-            self.computeCharacterSelected()
-            self.update()
-            event.accept()
-        elif event.key() == Qt.Key_D and event.modifiers() & Qt.ControlModifier:
-            self._selection = set()
-            self.computeCharacterSelected()
-            self.update()
-            event.accept()
-        else:
-            super(CharacterWidget, self).keyPressEvent(event)
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            if key > len(self.glyphs)-1: return
-            modifiers = event.modifiers()
-            if modifiers & Qt.ShiftModifier and len(self._selection) == 1:
-                self.lastKey = self._selection.pop()
-                self.moveKey = key
-            elif modifiers & Qt.ControlModifier:
-                self.lastKey = key
-                self.moveKey = self.lastKey
-            elif key in self._selection and not modifiers & Qt.ShiftModifier:
-                self._maybeDragPosition = event.pos()
-                event.accept()
-                return
-            else:
-                self._selection = set()
-                self.lastKey = key
-                self.moveKey = self.lastKey
-            
-            self.computeCharacterSelected()
-            event.accept()
-            self.update()
-        else:
-            super(CharacterWidget, self).mousePressEvent(event)
-    
-    def mouseMoveEvent(self, event):
-        if event.buttons() & Qt.LeftButton:
-            if self._maybeDragPosition is not None:
-                if ((event.pos() - self._maybeDragPosition).manhattanLength() \
-                    < QApplication.startDragDistance()): return
-                # TODO: needs ordering or not?
-                glyphList = " ".join(self.glyphs[key].name for key in self._selection)
-                drag = QDrag(self)
-                mimeData = QMimeData()
-                mimeData.setData("text/plain", glyphList)
-                drag.setMimeData(mimeData)
-                
-                dropAction = drag.exec_()
-                self._maybeDragPosition = None
-                event.accept()
-                return
-            key = (event.y() // self.squareSize) * self.columns + min(event.x() // self.squareSize, self.columns-1)
-            if key > len(self.glyphs)-1: return
-            self.moveKey = key
-            
-            self.computeCharacterSelected()
-            event.accept()
-            self.update()
-        else:
-            super(CharacterWidget, self).mouseMoveEvent(event)
-    
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._maybeDragPosition = None
-            if self.lastKey == -1:
-                if self._maybeDragPosition is None:
-                    key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-                    if key > len(self.glyphs)-1: return
-                    self._selection = {key}
-                    self.computeCharacterSelected()
-            else:
-                lastKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
-                moveKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
-                if event.modifiers() & Qt.ControlModifier:
-                    if moveKey > lastKey:
-                        self._selection ^= set(range(lastKey, moveKey+1))
-                    else:
-                        self._selection ^= set(range(moveKey, lastKey+1))
-                else:
-                    if moveKey > lastKey:
-                        self._selection = set(range(lastKey, moveKey+1))
-                    else:
-                        self._selection = set(range(moveKey, lastKey+1))
-                self.lastKey = -1
-                self.moveKey = -1
-            event.accept()
-            self.update()
-        else:
-            super(CharacterWidget, self).mouseReleaseEvent(event)
-   
-    def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            key = (event.y() // self.squareSize) * self.columns + event.x() // self.squareSize
-            if key > len(self.glyphs)-1: event.ignore(); return
-            self._selection -= {key}
-            self.lastKey = key
-            self.moveKey = self.lastKey
-            event.accept()
-            self.glyphOpened.emit(self.glyphs[key].name)
-        else:
-            super(CharacterWidget, self).mousePressEvent(event)
-
-    # TODO: see if more of this process can be delegated to a factory
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        redrawRect = event.rect()
-        beginRow = redrawRect.top() // self.squareSize
-        endRow = redrawRect.bottom() // self.squareSize
-        beginColumn = redrawRect.left() // self.squareSize
-        endColumn = redrawRect.right() // self.squareSize
-        
-        # painter.setPen(cellGridColor)
-        # painter.drawLine(redrawRect.left(), redrawRect.top(), redrawRect.left()+self.squareSize \
-            # *min(len(self.glyphs), self.columns), redrawRect.top()+self.squareSize*(math.ceil(len(self.glyphs)/self.columns)))
-        # painter.drawLine(0, 0, redrawRect.right(), 0)
-
-        # selection code
-        if self.moveKey != -1:
-            if self.moveKey > self.lastKey:
-                curSelection = set(range(self.lastKey, self.moveKey+1))
-            else:
-                curSelection = set(range(self.moveKey, self.lastKey+1))
-        elif self.lastKey != -1: # XXX: necessary?
-            curSelection = {self.lastKey}
-        else:
-            curSelection = set()
-        curSelection ^= self._selection
-            
-        gradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
-        gradient.setColorAt(0.0, cellHeaderBaseColor)
-        gradient.setColorAt(1.0, cellHeaderLineColor)
-        dirtyGradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
-        dirtyGradient.setColorAt(0.0, cellHeaderBaseColor.darker(125))
-        dirtyGradient.setColorAt(1.0, cellHeaderLineColor.darker(125))
-        #markGradient = QRadialGradient(self.squareSize/2, GlyphCellHeaderHeight/2,
-        #      self.squareSize-GlyphCellHeaderHeight, self.squareSize/2, self.squareSize)
-        markGradient = QLinearGradient(0, 0, 0, self.squareSize-GlyphCellHeaderHeight)
-        headerFont = QFont()
-        headerFont.setFamily('Lucida Sans Unicode')
-        headerFont.insertSubstitution('Lucida Sans Unicode', 'Luxi Sans')
-        headerFont.setPointSize(8)
-        metrics = QFontMetrics(headerFont)
-
-        for row in range(beginRow, endRow + 1):
-            for column in range(beginColumn, endColumn + 1):
-                key = row * self.columns + column
-                if key > len(self.glyphs)-1: break
-
-                painter.save()
-                painter.translate(column * self.squareSize, row * self.squareSize)
-                # background
-                painter.fillRect(0, 0, self.squareSize, self.squareSize, Qt.white)
-                glyph = self.glyphs[key]
-                if "public.markColor" in glyph.lib:
-                    colorStr = glyph.lib["public.markColor"].split(",")
-                    if len(colorStr) == 4:
-                        comp = []
-                        for c in colorStr:
-                            comp.append(float(c.strip()))
-                        markColor = QColor.fromRgbF(*comp)
-                        markGradient.setColorAt(1.0, markColor)
-                        markGradient.setColorAt(0.0, markColor.lighter(125))
-                        painter.fillRect(0, GlyphCellHeaderHeight, self.squareSize,
-                              self.squareSize - GlyphCellHeaderHeight, QBrush(markGradient))
-                
-                # header gradient
-                if glyph.dirty: col = dirtyGradient
-                else: col = gradient
-                painter.fillRect(0, 0, self.squareSize,
-                      GlyphCellHeaderHeight, QBrush(col))
-                # header lines
-                if glyph.dirty: col = cellHeaderHighlightLineColor.darker(110)
-                else: col = cellHeaderHighlightLineColor
-                painter.setPen(col)
-                minOffset = painter.pen().width()
-                painter.setRenderHint(QPainter.Antialiasing, False)
-                painter.drawLine(0, 0, 0, GlyphCellHeaderHeight - 1)
-                painter.drawLine(self.squareSize - 2, 0, self.squareSize - 2, GlyphCellHeaderHeight -1)
-                painter.setPen(QColor(170, 170, 170))
-                painter.drawLine(0, GlyphCellHeaderHeight, self.squareSize, GlyphCellHeaderHeight)
-                painter.setRenderHint(QPainter.Antialiasing)
-                # header text
-                painter.setFont(headerFont)
-                painter.setPen(QColor(80, 80, 80))
-                name = metrics.elidedText(self.glyphs[key].name, Qt.ElideRight, self.squareSize - 2)
-                painter.drawText(1, 0, self.squareSize - 2, GlyphCellHeaderHeight - minOffset,
-                      Qt.TextSingleLine | Qt.AlignCenter, name)
-                painter.restore()
-                
-                painter.setPen(cellGridColor)
-                rightEdgeX = column * self.squareSize + self.squareSize
-                bottomEdgeY = row * self.squareSize + self.squareSize
-                painter.drawLine(rightEdgeX, row * self.squareSize + 1, rightEdgeX, bottomEdgeY)
-                painter.drawLine(rightEdgeX, bottomEdgeY, column * self.squareSize + 1, bottomEdgeY)
-
-                # selection code
-                painter.setRenderHint(QPainter.Antialiasing, False)
-                if key in curSelection:
-                    painter.fillRect(column * self.squareSize + 1,
-                            row * self.squareSize + 1, self.squareSize - 3,
-                            self.squareSize - 3, cellSelectionColor)
-                painter.setRenderHint(QPainter.Antialiasing)
-
-                glyph = self.glyphs[key].getRepresentation("defconQt.QPainterPath")
-                if self.font.info.unitsPerEm is None: break
-                if not self.font.info.unitsPerEm > 0: self.font.info.unitsPerEm = 1000
-                factor = (self.squareSize-GlyphCellHeaderHeight)/(self.font.info.unitsPerEm*(1+2*GlyphCellBufferHeight))
-                x_offset = (self.squareSize-self.glyphs[key].width*factor)/2
-                # If the glyph overflows horizontally we need to adjust the scaling factor
-                if x_offset < 0:
-                    factor *= 1+2*x_offset/(self.glyphs[key].width*factor)
-                    x_offset = 0
-                # TODO: the * 1.8 below is somewhat artificial
-                y_offset = self.font.info.descender*factor * 1.8
-                painter.save()
-                painter.setClipRect(column * self.squareSize, row * self.squareSize+GlyphCellHeaderHeight,
-                      self.squareSize, self.squareSize-GlyphCellHeaderHeight)
-                painter.translate(column * self.squareSize + x_offset, row * self.squareSize + self.squareSize + y_offset)
-                painter.scale(factor, -factor)
-                painter.fillPath(glyph, Qt.black)
-                painter.restore()
-
 class MainWindow(QMainWindow):
-    def __init__(self, font=Font()):
+    def __init__(self, font):
         super(MainWindow, self).__init__()
-
-        self.font = font
-        self.font.addObserver(self, "_fontChanged", "Font.Changed")
-        # TODO: have the scrollarea be part of the widget itself?
-        # or better yet, switch to QGraphicsScene
-        self.scrollArea = QScrollArea(self)
         squareSize = 56
-        self.characterWidget = CharacterWidget(self.font, squareSize, self.scrollArea, self)
-        self.characterWidget.updateGlyphsFromFont()
-        self.characterWidget.setFocus()
-        self.scrollArea.setWidget(self.characterWidget)
+        self.collectionWidget = GlyphCollectionWidget(self)
+        self._font = None
+        self._sortDescriptor = None
+        self.font = font
+        self.collectionWidget.characterSelectedCallback = self._selectionChanged
+        self.collectionWidget.doubleClickCallback = self._glyphOpened
+        self.collectionWidget.setFocus()
 
+        menuBar = self.menuBar()
         # TODO: make shortcuts platform-independent
         fileMenu = QMenu("&File", self)
-        self.menuBar().addMenu(fileMenu)
-
         fileMenu.addAction("&New…", self.newFile, QKeySequence.New)
         fileMenu.addAction("&Open…", self.openFile, QKeySequence.Open)
         # TODO: add functionality
@@ -485,47 +276,48 @@ class MainWindow(QMainWindow):
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
         fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        menuBar.addMenu(fileMenu)
 
         selectionMenu = QMenu("&Selection", self)
-        self.menuBar().addMenu(selectionMenu)
-        
         markColorMenu = QMenu("Mark color", self)
         pixmap = QPixmap(24, 24)
-        none = markColorMenu.addAction("None", self.colorFill)
+        none = markColorMenu.addAction("None", self.markColor)
         none.setData(None)
-        red = markColorMenu.addAction("Red", self.colorFill)
+        red = markColorMenu.addAction("Red", self.markColor)
         pixmap.fill(Qt.red)
         red.setIcon(QIcon(pixmap))
         red.setData(QColor(Qt.red))
-        yellow = markColorMenu.addAction("Yellow", self.colorFill)
+        yellow = markColorMenu.addAction("Yellow", self.markColor)
         pixmap.fill(Qt.yellow)
         yellow.setIcon(QIcon(pixmap))
         yellow.setData(QColor(Qt.yellow))
-        green = markColorMenu.addAction("Green", self.colorFill)
+        green = markColorMenu.addAction("Green", self.markColor)
         pixmap.fill(Qt.green)
         green.setIcon(QIcon(pixmap))
         green.setData(QColor(Qt.green))
         selectionMenu.addMenu(markColorMenu)
-        selectionMenu.addSeparator()
-        selectionMenu.addAction("Sort…", self.sortCharacters)
+        menuBar.addMenu(selectionMenu)
 
         fontMenu = QMenu("&Font", self)
-        self.menuBar().addMenu(fontMenu)
-        
-        # TODO: work out sensible shortcuts
-        fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+I")
-        fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+F")
+        # TODO: work out sensible shortcuts and make sure they're cross-platform
+        # ready - consider extracting them into separate file?
         fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+U")
+        fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+M")
+        fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+F")
         fontMenu.addSeparator()
-        fontMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Y")
-        fontMenu.addAction("&Groups window", self.fontGroups, "Ctrl+G")
+        fontMenu.addAction("Sort…", self.sortCharacters)
+        menuBar.addMenu(fontMenu)
+
+        windowMenu = QMenu("&Windows", self)
+        windowMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Y")
+        windowMenu.addAction("&Groups window", self.fontGroups, "Ctrl+G")
+        menuBar.addMenu(windowMenu)
 
         helpMenu = QMenu("&Help", self)
-        self.menuBar().addMenu(helpMenu)
-
         helpMenu.addAction("&About", self.about)
         helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
-        
+        menuBar.addMenu(helpMenu)
+
         self.sqSizeSlider = QSlider(Qt.Horizontal, self)
         self.sqSizeSlider.setMinimum(36)
         self.sqSizeSlider.setMaximum(96)
@@ -533,15 +325,13 @@ class MainWindow(QMainWindow):
         self.sqSizeSlider.setValue(squareSize)
         self.sqSizeSlider.valueChanged.connect(self._squareSizeChanged)
         self.selectionLabel = QLabel(self)
-        self.statusBar().addPermanentWidget(self.sqSizeSlider)
-        self.statusBar().addWidget(self.selectionLabel)
+        statusBar = self.statusBar()
+        statusBar.addPermanentWidget(self.sqSizeSlider)
+        statusBar.addWidget(self.selectionLabel)
 
-        self.setCentralWidget(self.scrollArea)
-        self.characterWidget.characterSelected.connect(self._selectionChanged)
-        self.characterWidget.glyphOpened.connect(self._glyphOpened)
-        self.setWindowTitle()
-        # TODO: dump the hardcoded path
-        #self.setWindowIcon(QIcon("C:\\Users\\Adrien\\Downloads\\defconQt\\Lib\\defconQt\\resources\\icon.png"))
+        self.setCentralWidget(self.collectionWidget.scrollArea())
+        self.resize(605, 430)
+        self.setWindowTitle() # TODO: maybe clean this up
 
     def newFile(self):
         ok = self.maybeSaveBeforeExit()
@@ -553,28 +343,36 @@ class MainWindow(QMainWindow):
         self.font.info.capHeight = 750
         self.font.info.xHeight = 500
         self.setWindowTitle("Untitled.ufo")
-        self.characterWidget.updateFont(self.font)
+        self.sortDescriptor = latin1
 
     def openFile(self, path=None):
         if not path:
-            path, _ = QFileDialog.getOpenFileName(self, "Open File", '',
+            path, ok = QFileDialog.getOpenFileName(self, "Open File", '',
                     "UFO Fonts (metainfo.plist)")
-
+            if not ok: return
         if path:
             # TODO: error handling
             path = os.path.dirname(path)
+            # TODO: I note that a change of self.font often goes with setWindowTitle().
+            # Be more DRY.
             self.font = Font(path)
-            self.characterWidget.updateFont(self.font)
             self.setWindowTitle()
 
     def saveFile(self, path=None):
         if path is None and self.font.path is None:
             self.saveFileAs()
         else:
+            glyphs = self.collectionWidget.glyphs
+            # TODO: save sortDescriptor somewhere in lib as well
+            glyphNames = []
+            for glyph in glyphs:
+                glyphNames.append(glyph.name)
+            self.font.lib["public.glyphOrder"] = glyphNames
             self.font.save(path=path)
-#            self.font.dirty = False
+            self.font.dirty = False
+            for glyph in self.font:
+                glyph.dirty = False
             self.setWindowModified(False)
-#            self.font.path = path # done by defcon
 
     def saveFileAs(self):
         path, ok = QFileDialog.getSaveFileName(self, "Save File", '',
@@ -583,20 +381,21 @@ class MainWindow(QMainWindow):
             self.saveFile(path)
             self.setWindowTitle()
         #return ok
-    
+
     def close(self):
         self.font.removeObserver(self, "Font.Changed")
         QApplication.instance().quit()
-        
+
     def closeEvent(self, event):
         ok = self.maybeSaveBeforeExit()
         if not ok: event.ignore()
         else: event.accept()
-    
+
     def maybeSaveBeforeExit(self):
         if self.font.dirty:
             title = "Me"
             if self.font.path is not None:
+                # TODO: maybe cache this font name in the Font
                 currentFont = os.path.basename(self.font.path.rstrip(os.sep))
             else:
                 currentFont = "Untitled.ufo"
@@ -613,42 +412,110 @@ class MainWindow(QMainWindow):
                 return True
             return False
         return True
-    
-    def colorFill(self):
-        action = self.sender()
-        self.characterWidget.markSelection(action.data())
-    
+
+    def _get_font(self):
+        return self._font
+
+    # TODO: consider that user may want to change font without sortDescriptor
+    # be calculated and set magically (and therefore, arbitrarily)
+    # In that case is it reasonable to just leave self._font?
+    def _set_font(self, font):
+        if self._font is not None:
+            self._font.removeObserver(self, "Font.Changed")
+        self._font = font
+        self._font.addObserver(self, "_fontChanged", "Font.Changed")
+        if "public.glyphOrder" in self._font.lib:
+            self.sortDescriptor = CharacterSet(
+                self._font.lib["public.glyphOrder"])
+        else:
+            # TODO: cannedDesign or carry sortDescriptor from previous font?
+            self.sortDescriptor = cannedDesign
+
+    font = property(_get_font, _set_font, doc="The fontView font. Subscribes \
+        to the new font, updates the sorting order and cells widget when set.")
+
+    def _get_sortDescriptor(self):
+        return self._sortDescriptor
+
+    def _set_sortDescriptor(self, desc):
+        if isinstance(desc, CharacterSet):
+            cnt = 0
+            glyphs = []
+            for glyphName in desc.glyphNames:
+                if not glyphName in self._font:
+                    # create a template glyph
+                    self.newStandardGlyph(glyphName)
+                    self._font[glyphName].template = True
+                else:
+                    cnt += 1
+                glyphs.append(self._font[glyphName])
+            if cnt < len(self._font):
+                # somehow some glyphs in the font are not present in the glyph
+                # order, loop again to add these at the end
+                for glyph in self._font:
+                    if not glyph in glyphs:
+                     glyphs.append(glyph)
+        else:
+            glyphs = [self._font[k] for k in self._font.unicodeData
+                .sortGlyphNames(self._font.keys(), desc)]
+        self.collectionWidget.glyphs = glyphs
+        self._sortDescriptor = desc
+
+    sortDescriptor = property(_get_sortDescriptor, _set_sortDescriptor,
+        doc="The sortDescriptor. Takes glyphs from the font and sorts them \
+        when set.")
+
+    def markColor(self):
+        color = self.sender().data()
+        glyphs = self.collectionWidget.glyphs
+        for key in self.collectionWidget.selection:
+            glyph = glyphs[key]
+            if color is None:
+                if "public.markColor" in glyph.lib:
+                    del glyph.lib["public.markColor"]
+            else:
+                glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
+
+    def newStandardGlyph(self, name):
+        self.font.newGlyph(name)
+        self.font[name].width = 500
+        # TODO: we should not force-add unicode, also list ought to be
+        # changeable from AGL2UV
+        if name in AGL2UV: self.font[name].unicode = AGL2UV[name]
+
     def _fontChanged(self, notification):
-        self.characterWidget.update()
+        self.collectionWidget.update()
         self.setWindowModified(True)
 
-    def _glyphOpened(self, name):
-        glyphViewWindow = MainGfxWindow(self.font, self.font[name], self)
+    def _glyphOpened(self, glyph):
+        glyphViewWindow = MainGfxWindow(glyph, self)
         glyphViewWindow.show()
-    
-    def _selectionChanged(self, count, glyph):
-        if count == 0: self.selectionLabel.setText("")
-        else: self.selectionLabel.setText("%s%s%s%d %s" % (glyph, " " if count <= 1 else "", "(", count, "selected)"))
+
+    def _selectionChanged(self, selection):
+        if selection is not None:
+            if isinstance(selection, str):
+                count = 1
+                text = "%s " % selection
+            else:
+                count = selection
+                text = ""
+            if not count == 0:
+                text = "%s(%d selected)" % (text, count)
+        else: text = ""
+        self.selectionLabel.setText(text)
 
     def _squareSizeChanged(self):
         val = self.sqSizeSlider.value()
-        self.characterWidget._sizeEvent(self.width(), val)
+        self.collectionWidget._sizeEvent(self.width(), val)
         QToolTip.showText(QCursor.pos(), str(val), self)
 
     def resizeEvent(self, event):
-        if self.isVisible(): self.characterWidget._sizeEvent(event.size().width())
+        if self.isVisible(): self.collectionWidget._sizeEvent(event.size().width())
         super(MainWindow, self).resizeEvent(event)
-    
+
     def setWindowTitle(self, title=None):
         if title is None: title = os.path.basename(self.font.path.rstrip(os.sep))
         super(MainWindow, self).setWindowTitle("[*]{}".format(title))
-    
-    def sortCharacters(self):
-        if not (hasattr(self, 'sortingWindow') and self.sortingWindow.isVisible()):
-           self.sortingWindow = SortingWindow(self)
-           self.sortingWindow.show()
-        else:
-           self.sortingWindow.raise_()
 
     def fontInfo(self):
         # If a window is already opened, bring it to the front, else spawn one.
@@ -656,20 +523,20 @@ class MainWindow(QMainWindow):
         # it seems we're just leaking memory after each close... (both raise_ and
         # show allocate memory instead of using the hidden widget it seems)
         if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
-           self.fontInfoWindow = TabDialog(self.font, self)
-           self.fontInfoWindow.show()
+            self.fontInfoWindow = TabDialog(self.font, self)
+            self.fontInfoWindow.show()
         else:
-           # Should data be rewind if user calls font info while one is open?
-           # I'd say no, but this has yet to be settled.
-           self.fontInfoWindow.raise_()
+            # Should data be rewind if user calls font info while one is open?
+            # I'd say no, but this has yet to be settled.
+            self.fontInfoWindow.raise_()
 
     def fontFeatures(self):
         # TODO: see up here
         if not (hasattr(self, 'fontFeaturesWindow') and self.fontFeaturesWindow.isVisible()):
-           self.fontFeaturesWindow = MainEditWindow(self.font, self)
-           self.fontFeaturesWindow.show()
+            self.fontFeaturesWindow = MainEditWindow(self.font, self)
+            self.fontFeaturesWindow.show()
         else:
-           self.fontFeaturesWindow.raise_()
+            self.fontFeaturesWindow.raise_()
 
     def spaceCenter(self):
         # TODO: see up here
@@ -679,27 +546,36 @@ class MainWindow(QMainWindow):
             self.spaceCenterWindow.show()
         else:
             self.spaceCenterWindow.raise_()
-        if self.characterWidget._selection:
+        selection = self.collectionWidget.selection
+        if selection:
             glyphs = []
-            for item in sorted(self.characterWidget._selection):
-                glyphs.append(self.characterWidget.glyphs[item])
+            for item in sorted(selection):
+                glyph = self.collectionWidget.glyphs[item]
+                glyphs.append(glyph)
             self.spaceCenterWindow.setGlyphs(glyphs)
-    
+
     def fontGroups(self):
         # TODO: see up here
         if not (hasattr(self, 'fontGroupsWindow') and self.fontGroupsWindow.isVisible()):
-           self.fontGroupsWindow = GroupsWindow(self.font, self)
-           self.fontGroupsWindow.show()
+            self.fontGroupsWindow = GroupsWindow(self.font, self)
+            self.fontGroupsWindow.show()
         else:
-           self.fontGroupsWindow.raise_()
-    
+            self.fontGroupsWindow.raise_()
+
+    def sortCharacters(self):
+        sortDescriptor, ok = SortDialog.getDescriptor(self, self.sortDescriptor)
+        if ok:
+            self.sortDescriptor = sortDescriptor
+
     def addGlyph(self):
-        gName, ok = QInputDialog.getText(self, "Add glyph", "Name of the glyph:")
-        # Not overwriting existing glyphs. Should it warn in this case? (rf)
-        if ok and gName != '':
-            self.font.newGlyph(gName)
-            self.font[gName].width = 500
-            self.characterWidget.updateGlyphsFromFont()
+        glyphs = self.collectionWidget.glyphs
+        newGlyphNames, sortFont, ok = AddGlyphDialog.getNewGlyphNames(self, glyphs)
+        if ok:
+            for name in newGlyphNames:
+                # XXX: if sortFont
+                self.newStandardGlyph(name)
+                glyphs.append(self.font[name])
+            self.collectionWidget.glyphs = glyphs
 
     def about(self):
         QMessageBox.about(self, "About Me",
@@ -707,4 +583,3 @@ class MainWindow(QMainWindow):
                 "<p>I am a new UFO-centric font editor and I aim to bring the <b>robofab</b> " \
                 "ecosystem to all main operating systems, in a fast and dependency-free " \
                 "package.</p>")
-

@@ -16,7 +16,7 @@ Dependencies:
 
 Run:
 
-`python -m Lib\defconQt`
+`cd Lib && python -m defconQt`
 
 The install script is not very reliable just now, but nor is the package. Direct execution is the best
 supported way at the moment.

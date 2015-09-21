@@ -17,12 +17,12 @@ class MainEditWindow(QMainWindow):
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle("Font features", self.font)
-    
+
     def setWindowTitle(self, title, font):
-        if font is not None: puts = "[*]%s%s%s%s%s" % (title, " – ", self.font.info.familyName, " ", self.font.info.styleName)
+        if font is not None: puts = "[*]%s – %s %s" % (title, self.font.info.familyName, self.font.info.styleName)
         else: puts = "[*]%s" % title
         super(MainEditWindow, self).setWindowTitle(puts)
-    
+
     def closeEvent(self, event):
         if self.editor.document().isModified():
             closeDialog = QMessageBox(QMessageBox.Question, "Me", "Save your changes?",
@@ -37,7 +37,7 @@ class MainEditWindow(QMainWindow):
                 event.accept()
             else:
                 event.ignore()
-    
+
     def reload(self):
         self.font.reloadFeatures()
         self.editor.setPlainText(self.font.features.text)
@@ -93,7 +93,7 @@ class TextEditor(QPlainTextEdit):
 
     def write(self, features):
         features.text = self.toPlainText()
-        
+
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.lineNumbers)
         painter.fillRect(event.rect(), QColor(230, 230, 230))
@@ -103,23 +103,23 @@ class TextEditor(QPlainTextEdit):
         painter.drawLine(d.x(), d.y(), a.x(), a.y())
         painter.setPen(QColor(100, 100, 100))
         painter.setFont(self.font())
-        
+
         block = self.firstVisibleBlock()
         blockNumber = block.blockNumber();
         top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
         bottom = top + int(self.blockBoundingRect(block).height())
-        
+
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(blockNumber + 1)
-                painter.drawText(4, top, self.lineNumbers.width() - 8, 
+                painter.drawText(4, top, self.lineNumbers.width() - 8,
                     self.fontMetrics().height(),
                     Qt.AlignRight, number)
             block = block.next()
             top = bottom
             bottom = top + int(self.blockBoundingRect(block).height())
             blockNumber += 1
-    
+
     def lineNumberAreaWidth(self):
         digits = 1
         top = max(1, self.blockCount())
@@ -129,25 +129,25 @@ class TextEditor(QPlainTextEdit):
         # Avoid too frequent geometry changes
         if digits < 3: digits = 3
         return 10 + self.fontMetrics().width('9') * digits
-    
+
     def updateLineNumberArea(self, rect, dy):
         if dy:
             self.lineNumbers.scroll(0, dy);
         else:
-            self.lineNumbers.update(0, rect.y(), 
+            self.lineNumbers.update(0, rect.y(),
                 self.lineNumbers.width(), rect.height())
 
         if rect.contains(self.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
-    
+
     def updateLineNumberAreaWidth(self, newBlockCount=None):
         self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
-    
+
     def resizeEvent(self, event):
         super(TextEditor, self).resizeEvent(event)
         cr = self.contentsRect()
         self.lineNumbers.setGeometry(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height())
-    
+
     def findLineIndentLevel(self, cursor):
         indent = 0
         cursor.select(QTextCursor.LineUnderCursor)
@@ -247,7 +247,7 @@ class Highlighter(QSyntaxHighlighter):
         keywordFormat.setForeground(QColor(30, 150, 220))
         keywordFormat.setFontWeight(QFont.Bold)
 
-        self.highlightingRules = [(QRegExp("%s%s%s" % ("(", "|".join(keywordPatterns), ")")), keywordFormat)]
+        self.highlightingRules = [(QRegExp("(%s)" % ("|".join(keywordPatterns))), keywordFormat)]
 
         singleLineCommentFormat = QTextCharFormat()
         singleLineCommentFormat.setForeground(Qt.darkGray)
@@ -270,13 +270,3 @@ class Highlighter(QSyntaxHighlighter):
                 index = expression.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
-
-if __name__ == '__main__':
-
-    import sys
-
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.resize(640, 512)
-    window.show()
-    sys.exit(app.exec_())

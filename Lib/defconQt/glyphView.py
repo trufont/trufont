@@ -16,14 +16,13 @@ class GotoWindow(QDialog):
         dict(type="alphabetical", allowPseudoUnicode=True)
     ]
 
-    def __init__(self, view, parent=None):
+    def __init__(self, font, parent=None):
         super(GotoWindow, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Go to…")
-        self._view = view
-        font = self._view._font
-        self._sortedGlyphs = font.unicodeData.sortGlyphNames(font.keys(), self.alphabetical)
-        
+        self.font = font
+        self._sortedGlyphs = self.font.unicodeData.sortGlyphNames(self.font.keys(), self.alphabetical)
+
         layout = QGridLayout(self)
         self.glyphLabel = QLabel("Glyph:", self)
         self.glyphEdit = QLineEdit(self)
@@ -34,13 +33,13 @@ class GotoWindow(QDialog):
         self.containsBox = QRadioButton("Contains", self)
         self.beginsWithBox.setChecked(True)
         self.beginsWithBox.toggled.connect(self.updateGlyphList)
-        
+
         self.glyphList = QListWidget(self)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
-        
+
         l = 0
         layout.addWidget(self.glyphLabel, l, 0, 1, 2)
         layout.addWidget(self.glyphEdit, l, 2, 1, 4)
@@ -67,7 +66,7 @@ class GotoWindow(QDialog):
             event.accept()
         else:
             QLineEdit.keyPressEvent(self.glyphEdit, event)
-    
+
     def updateGlyphList(self, select=True):
         self.glyphList.clear()
         if not self.glyphEdit.isModified():
@@ -79,32 +78,31 @@ class GotoWindow(QDialog):
             glyphs = [glyph for glyph in self._sortedGlyphs if text in glyph]
         self.glyphList.addItems(glyphs)
         if select: self.glyphList.setCurrentRow(0)
-    
+
     def accept(self):
         # TODO: zap going thru the view, here and above
         currentItem = self.glyphList.currentItem()
         if currentItem is not None:
-            font = self._view._font
             targetGlyph = currentItem.text()
-            if not targetGlyph in font: return
-            self._view.setGlyph(font[targetGlyph])
+            if not targetGlyph in self.font: return
+            self._view.setGlyph(self.font[targetGlyph])
         super(GotoWindow, self).accept()
 
 class MainGfxWindow(QMainWindow):
-    def __init__(self, font=None, glyph=None, parent=None):
+    def __init__(self, glyph, parent=None):
         super(MainGfxWindow, self).__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setAttribute(Qt.WA_KeyCompression)
 
-        self.view = GlyphView(font, glyph, self)
+        self.view = GlyphView(glyph, self)
 
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
         self.menuBar().addMenu(fileMenu)
-        
+
         toolsMenu = QMenu("&Tools", self)
-        
+
         self.selectTool = toolsMenu.addAction("&Selection")
         self.selectTool.setCheckable(True)
         self.selectTool.toggled.connect(self.view.setSceneSelection)
@@ -112,7 +110,7 @@ class MainGfxWindow(QMainWindow):
         self.drawingTool = toolsMenu.addAction("&Drawing")
         self.drawingTool.setCheckable(True)
         self.drawingTool.toggled.connect(self.view.setSceneDrawing)
-        
+
         self.rulerTool = toolsMenu.addAction("&Ruler")
         self.rulerTool.setCheckable(True)
         self.rulerTool.toggled.connect(self.view.setSceneRuler)
@@ -170,13 +168,13 @@ class MainGfxWindow(QMainWindow):
         rendererGroup.triggered.connect(self.setRenderer)
 
         self.setCentralWidget(self.view)
-        self.setWindowTitle(glyph.name, font)
+        self.setWindowTitle(glyph.name, glyph.getParent())
         self.adjustSize()
-    
+
     def close(self):
         self.view._glyph.removeObserver(self, "Glyph.Changed")
         super(MainGfxWindow, self).close()
-    
+
     def _glyphChanged(self, notification):
         self.view._glyphChanged(notification)
 
@@ -245,7 +243,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
 
         self.setBrush(QBrush(offCurvePointColor))
         self._needsUngrab = False
-    
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
             if self.scene()._integerPlane:
@@ -266,18 +264,18 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         elif change == QGraphicsItem.ItemPositionHasChanged:
             self.parentItem()._CPMoved(value)
         return value
-    
+
     def mousePressEvent(self, event):
         if not self._needsUngrab and self.x() == 0 and self.y() == 0:
             event.ignore()
         super(OffCurvePointItem, self).mousePressEvent(event)
-    
+
     def mouseReleaseEvent(self, event):
         super(OffCurvePointItem, self).mouseReleaseEvent(event)
         if self._needsUngrab:
             self.ungrabMouse()
             self._needsUngrab = False
-        
+
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
         #if self.x() == 0 and self.y() == 0: return
@@ -290,7 +288,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
             pen.setColor(offCurvePointStrokeColor)
         self.setPen(pen)
         super(OffCurvePointItem, self).paint(painter, newOption, widget)
-    
+
     def setPointPath(self, scale=None):
         if scale is None:
             scene = self.scene()
@@ -318,7 +316,7 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setBrush(QBrush(onCurvePointColor))
-    
+
     def delete(self, preserveShape=True):
         def findNextOnCurve(self, index=0):
             for _ in self._contour:
@@ -347,7 +345,7 @@ class OnCurvePointItem(QGraphicsPathItem):
                 self._contour.setStartPoint(nextOnCurveIndex)
         scene._blocked = False
         scene.removeItem(self)
-    
+
     def setPointPath(self, scale=None):
         path = QPainterPath()
         if scale is None:
@@ -365,10 +363,10 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.prepareGeometryChange()
         self.setPath(path)
         self.setPen(QPen(onCurvePointStrokeColor, onCurvePenWidth/scale))
-    
+
     def getPointIndex(self):
         return self._contour.index(self._point)
-    
+
     def getSegmentIndex(self):
         # closed contour cycles and so the "previous" segment goes to current point
         index = 0 if self._contour.open else -1
@@ -376,7 +374,7 @@ class OnCurvePointItem(QGraphicsPathItem):
             if pt == self._point: break
             if pt.segmentType is not None: index += 1
         return index % len(self._contour.segments)
-    
+
     def _CPMoved(self, newValue):
         pointIndex = self.getPointIndex()
         children = self.childItems()
@@ -435,13 +433,13 @@ class OnCurvePointItem(QGraphicsPathItem):
                 self._contour[pointIndex+1].y = self.pos().y()+nextPos.y()
             self.setShallowDirty()
         return value
-    
+
     def setShallowDirty(self):
         scene = self.scene()
         scene._blocked = True
         self._contour.dirty = True
         scene._blocked = False
-    
+
     def mouseMoveEvent(self, event):
         modifiers = event.modifiers()
         children = self.childItems()
@@ -491,13 +489,13 @@ class OnCurvePointItem(QGraphicsPathItem):
         if view._currentTool == SceneTools.RulerTool or view._currentTool == SceneTools.KnifeTool:
             return
         self.setIsSmooth(not self._isSmooth)
-    
+
     def setIsSmooth(self, isSmooth):
         self._isSmooth = isSmooth
         self._point.smooth = self._isSmooth
         self.setShallowDirty()
         self.setPointPath()
-    
+
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
         newOption = QStyleOptionGraphicsItem(option)
@@ -520,18 +518,18 @@ class ResizeHandleItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         #self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setCursor(Qt.SizeFDiagCursor)
-        
+
         rect = self.parentItem().boundingRect()
         self.setPos(rect.width(), rect.height())
-    
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedChange:
             if not value: self.setVisible(value)
         return value
-    
+
     def mouseMoveEvent(self, event):
         self.parentItem()._pixmapGeometryChanged(event)
-    
+
     def setPointPath(self, scale=None):
         if scale is None:
             scene = self.scene()
@@ -558,7 +556,7 @@ class PixmapItem(QGraphicsPixmapItem):
         self._rHeight = rect.height()
         handle = ResizeHandleItem(self)
         handle.setVisible(False)
-    
+
     def _pixmapGeometryChanged(self, event):
         modifiers = event.modifiers()
         pos = event.scenePos()
@@ -577,7 +575,7 @@ class PixmapItem(QGraphicsPixmapItem):
                 dx = (pos.x() - self.x()) / self._rWidth
             self.setTransform(QTransform().fromScale(dx, dy))
         event.accept()
-    
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedChange:
             children = self.childItems()
@@ -602,21 +600,21 @@ class GlyphScene(QGraphicsScene):
         font.setFamily("Roboto Mono")
         font.setFixedPitch(True)
         self.setFont(font)
-        
+
         self._blocked = False
-    
+
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             super(GlyphScene, self).dragEnterEvent(event)
-    
+
     def dragMoveEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             super(GlyphScene, self).dragMoveEvent(event)
-    
+
     def dropEvent(self, event):
         mimeData = event.mimeData()
         if mimeData.hasUrls():
@@ -630,13 +628,13 @@ class GlyphScene(QGraphicsScene):
         newPix = PixmapItem(pos.x(), pos.y(), dragPix)
         self.addItem(newPix)
         event.acceptProposedAction()
-    
+
     def getItemForPoint(self, point):
         for item in self.items():
             if isinstance(item, OnCurvePointItem) and item._point == point:
                 return item
         return None
-    
+
     def getViewScale(self):
         return self.views()[0].transform().m11()
 
@@ -669,24 +667,24 @@ class GlyphScene(QGraphicsScene):
             event.accept()
             return
         elif key == Qt.Key_J:
-            view = self.views()[0]
-            dialog = GotoWindow(view, self.parent())
+            glyph = self.views()[0]._glyph
+            dialog = GotoWindow(glyph.getParent(), self.parent())
             dialog.exec_()
             return
         elif event.matches(QKeySequence.Undo):
             if len(self._dataForUndo) > 0:
                 undo = self._dataForUndo.pop()
-                redo = self._glyphObject.getDataToSerializeForUndo()
-                self._glyphObject.loadDeserializedDataFromUndo(undo)
+                redo = self._glyphObject.serializeForUndo()
+                self._glyphObject.deserializeFromUndo(undo)
                 self._dataForRedo.append(redo)
             event.accept()
             return
         elif event.matches(QKeySequence.Redo):
             if len(self._dataForRedo) > 0:
-                undo = self._glyphObject.getDataToSerializeForUndo()
+                undo = self._glyphObject.serializeForUndo()
                 redo = self._dataForRedo.pop()
                 self._dataForUndo.append(undo)
-                self._glyphObject.loadDeserializedDataFromUndo(redo)
+                self._glyphObject.deserializeFromUndo(redo)
             event.accept()
             return
         elif event.matches(QKeySequence.SelectAll):
@@ -718,7 +716,7 @@ class GlyphScene(QGraphicsScene):
             if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): continue
             item.moveBy(x,y)
         event.accept()
-    
+
     def keyReleaseEvent(self, event):
         sel = self.selectedItems()
         if len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and \
@@ -734,7 +732,7 @@ class GlyphScene(QGraphicsScene):
             self.rulerMousePress(event)
             return
         else:
-            data = self._glyphObject.getDataToSerializeForUndo()
+            data = self._glyphObject.serializeForUndo()
             self._dataForUndo.append(data)
             self._dataForRedo = []
             if view._currentTool == SceneTools.KnifeTool:
@@ -815,7 +813,7 @@ class GlyphScene(QGraphicsScene):
         super(GlyphScene, self).mousePressEvent(event)
         # Since shift clamps, we might be missing the point in mousePressEvent
         if forceSelect: item.setSelected(True)
-    
+
     def mouseMoveEvent(self, event):
         if self._editing is True:
             sel = self.selectedItems()
@@ -846,7 +844,7 @@ class GlyphScene(QGraphicsScene):
                         self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
                         mouseGrabberItem.ungrabMouse()
                         sel[0].setSelected(False)
-                        
+
                         # construct a curve segment to the current point if there is not one
                         onCurve = sel[0]._point
                         if not onCurve.segmentType == "curve":
@@ -906,7 +904,7 @@ class GlyphScene(QGraphicsScene):
                 items[1].setPos(0, 0)
             else:
                 super(GlyphScene, self).mouseMoveEvent(event)
-    
+
     def mouseReleaseEvent(self, event):
         self._editing = False
         currentTool = self.views()[0]._currentTool
@@ -929,7 +927,7 @@ class GlyphScene(QGraphicsScene):
         elif currentTool == SceneTools.RulerTool:
             self.rulerMouseRelease(event)
         super(GlyphScene, self).mouseReleaseEvent(event)
-    
+
     def rulerMousePress(self, event):
         touched = self.itemAt(event.scenePos(), self.views()[0].transform())
         if touched is not None and isinstance(touched, OnCurvePointItem) or \
@@ -955,7 +953,7 @@ class GlyphScene(QGraphicsScene):
         textItem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         textItem.setPos(x, y + textItem.boundingRect().height())
         event.accept()
-    
+
     def rulerMouseMove(self, event):
         # XXX: shouldnt have to do this, it seems mouseTracking is wrongly activated
         if self._rulerObject is None: return
@@ -995,7 +993,7 @@ class GlyphScene(QGraphicsScene):
         else: py = baseElem.y + textItem.boundingRect().height()
         textItem.setPos(px, py)
         event.accept()
-    
+
     def rulerMouseRelease(self, event):
         self._cachedRuler = self._rulerObject
         self._rulerObject = None
@@ -1101,16 +1099,15 @@ class GlyphScene(QGraphicsScene):
 class GlyphView(QGraphicsView):
     Native, OpenGL, Image = range(3)
 
-    def __init__(self, font, glyph, parent=None):
+    def __init__(self, glyph, parent=None):
         super(GlyphView, self).__init__(parent)
 
         self.renderer = GlyphView.Native
-        self._font = font
         self._glyph = glyph
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
         self._impliedPointSize = 1000
         self._pointSize = None
-        
+
         self._inverseScale = 0.1
         self._scale = 10
         self._noPointSizePadding = 200
@@ -1118,8 +1115,8 @@ class GlyphView(QGraphicsView):
         self._drawStroke = True
         self._showOffCurvePoints = True
         self._showOnCurvePoints = True
-        self._fillColor = QColor.fromRgbF(0, 0, 0, .4)
-        self._componentFillColor = QColor.fromRgbF(.2, .2, .3, .4)
+        self._fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
+        self._componentFillColor = QColor.fromRgbF(0, 0, 0, .4)#QColor.fromRgbF(.2, .2, .3, .4)
         self._showMetricsTitles = True
         self._metricsColor = QColor(70, 70, 70)
 
@@ -1129,30 +1126,29 @@ class GlyphView(QGraphicsView):
         font.setFamily("Roboto Mono")
         font.setFixedPitch(True)
         self.setFont(font)
-        
+
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         #self.setViewportUpdateMode(QGraphicsView.BoundingRectViewportUpdate)
-        
+
         self._drawingTool = SceneTools.SelectionTool
         self.setDragMode(QGraphicsView.RubberBandDrag)
-        
+
         self.setRenderHint(QPainter.Antialiasing)
-        #self.translate(0, self.height()*(1+self._font.info.descender/self._font.info.unitsPerEm))
         self.scale(1, -1)
         self.addBackground()
         self.addBlues()
         self.addHorizontalMetrics()
         self.addOutlines()
         self.addPoints()
-    
+
     def _glyphChanged(self, notification):
         # TODO: maybe detect sidebearing changes (space center) and then only
         # translate elements rather than reconstructing them.
         # Also we lose selection when reconstructing, rf does not when changing
         # sp.center values.
         self.redrawGlyph()
-    
+
     def redrawGlyph(self):
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
         scene = self.scene()
@@ -1172,42 +1168,16 @@ class GlyphView(QGraphicsView):
             # this will not be the case anymore when drag sidebearings pops up
             scene._widthItem.setRect(0, -1000, self._glyph.width, 3000)
 
-    def _getGlyphWidthHeight(self):
-        if self._glyph.bounds:
-            left, bottom, right, top = self._glyph.bounds
-        else:
-            left = right = bottom = top = 0
-        left = min((0, left))
-        right = max((right, self._glyph.width))
-        bottom = self._font.info.descender
-        top = max((self._font.info.capHeight, self._font.info.ascender, self._font.info.unitsPerEm + self._font.info.descender))
-        width = abs(left) + right
-        height = -bottom + top
-        return width, height
-
-    def _calcScale(self):
-        if self._pointSize is None:
-            visibleHeight = self.viewport().height()
-            fitHeight = visibleHeight
-            glyphWidth, glyphHeight = self._getGlyphWidthHeight()
-            glyphHeight += self._noPointSizePadding * 2
-            self._scale = fitHeight / glyphHeight
-        else:
-            self._scale = self._pointSize / float(self._font.info.unitsPerEm)
-        if self._scale <= 0:
-            self._scale = .01
-        self._inverseScale = 1.0 / self._scale
-        self._impliedPointSize = self._font.info.unitsPerEm * self._scale
-        
     def addBackground(self):
         scene = self.scene()
+        font = self._glyph.getParent()
         width = self._glyph.width
         item = scene.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
         item.setZValue(-1000)
         scene._widthItem = scene.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
         scene._widthItem.setZValue(-999)
-        self.centerOn(width/2, self._font.info.descender+self._font.info.unitsPerEm/2)
-    
+        self.centerOn(width/2, font.info.descender+font.info.unitsPerEm/2)
+
     def addBlues(self):
         scene = self.scene()
         #width = self._glyph.width# * self._inverseScale
@@ -1229,16 +1199,17 @@ class GlyphView(QGraphicsView):
                 else:
                     item = scene.addRect(-1000, yMin, 3000, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
                     item.setZValue(-998)
-    
+
     def addHorizontalMetrics(self):
         scene = self.scene()
+        font = self._glyph.getParent()
         width = self._glyph.width# * self._inverseScale
         toDraw = [
-            ("Descender", self._font.info.descender),
+            ("Descender", font.info.descender),
             ("Baseline", 0),
-            ("x-height", self._font.info.xHeight),
-            ("Cap height", self._font.info.capHeight),
-            ("Ascender", self._font.info.ascender)
+            ("x-height", font.info.xHeight),
+            ("Cap height", font.info.capHeight),
+            ("Ascender", font.info.ascender)
         ]
         positions = {}
         for name, position in toDraw:
@@ -1376,15 +1347,18 @@ class GlyphView(QGraphicsView):
         value = round(value) - .5
         value = value * self._inverseScale
         return value
-    
-    def setGlyph(self, glyph, font=None):
-        if font is not None: self._font = font
+
+    def setGlyph(self, glyph):
         self._glyph.removeObserver(self, "Glyph.Changed")
+        # TODO: consider creating a new scene instead of zeroing things out
+        # manually
+        self._dataForUndo = []
+        self._dataForRedo = []
         self._glyph = glyph
+        # XXX: DRY ALERT!
+        self.scene()._glyphObject = glyph
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
-        #self.scene().setSceneRect(*self._glyph.bounds)
-        #self.scene().setSceneRect(0, self._font.info.ascender, self._glyph.width, self._font.info.unitsPerEm)
-        self.parent().setWindowTitle(glyph.name, self._font)
+        self.parent().setWindowTitle(self._glyph.name, self._glyph.getParent())
         self.redrawGlyph()
 
     def setRenderer(self, renderer):
@@ -1403,7 +1377,7 @@ class GlyphView(QGraphicsView):
     def setViewOutline(self, enable):
         if self.outlineItem:
             self.outlineItem.setVisible(enable)
-    
+
     def mousePressEvent(self, event):
         if (event.button() == Qt.MidButton):
             dragMode = self.dragMode()
@@ -1416,11 +1390,11 @@ class GlyphView(QGraphicsView):
     def setSceneDrawing(self):
         self._currentTool = SceneTools.DrawingTool
         self.setDragMode(QGraphicsView.NoDrag)
-    
+
     def setSceneRuler(self):
         self._currentTool = SceneTools.RulerTool
         self.setDragMode(QGraphicsView.NoDrag)
-    
+
     def setSceneSelection(self):
         self._currentTool = SceneTools.SelectionTool
         self.setDragMode(QGraphicsView.RubberBandDrag)
@@ -1440,8 +1414,6 @@ class GlyphView(QGraphicsView):
     def wheelEvent(self, event):
         factor = pow(1.2, event.angleDelta().y() / 120.0)
 
-        #self._calcScale()
-        #self._setFrame()
         self.scale(factor, factor)
         # TODO: stop displaying SimpleTextItems at certains sizes, maybe anchor them differently as well
         scale = self.transform().m11()
@@ -1452,17 +1424,3 @@ class GlyphView(QGraphicsView):
                     item.setPointPath(scale)
         self.update()
         event.accept()
-
-if __name__ == '__main__':
-
-    import sys
-
-    app = QApplication(sys.argv)
-
-    window = MainGfxWindow()
-    if len(sys.argv) == 2:
-        window.openFile(sys.argv[1])
-    else:
-        window.openFile(':/files/bubbles.svg')
-    window.show()
-    sys.exit(app.exec_())

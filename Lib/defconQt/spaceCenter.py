@@ -1,4 +1,4 @@
-from defconQt.fontView import cellSelectionColor
+from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGfxWindow
 from getpass import getuser
 from PyQt5.QtCore import *#QAbstractTableModel, QEvent, QSize, Qt
@@ -25,18 +25,16 @@ class MainSpaceWindow(QWidget):
         self.glyphs = []
         self._subscribeToGlyphsText(string)
         self.toolbar = FontToolBar(string, pointSize, self)
-        self.scrollArea = QScrollArea(self)
-        self.canvas = GlyphsCanvas(self.font, self.glyphs, self.scrollArea, pointSize, self)
-        self.scrollArea.setWidget(self.canvas)
+        self.canvas = GlyphsCanvas(self.font, self.glyphs, pointSize, self)
         self.table = SpaceTable(self.glyphs, self)
-        self.canvas.setDoubleClickCallback(self._glyphOpened)
-        self.canvas.setPointSizeCallback(self.toolbar.setPointSize)
-        self.canvas.setSelectionCallback(self.table.setCurrentGlyph)
-        self.table.setSelectionCallback(self.canvas.setSelected)
-        
+        self.canvas.doubleClickCallback = self._glyphOpened
+        self.canvas.pointSizeCallback = self.toolbar.setPointSize
+        self.canvas.selectionChangedCallback = self.table.setCurrentGlyph
+        self.table.selectionChangedCallback = self.canvas.setSelected
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.toolbar)
-        layout.addWidget(self.scrollArea)
+        layout.addWidget(self.canvas.scrollArea())
         layout.addWidget(self.table)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -44,7 +42,7 @@ class MainSpaceWindow(QWidget):
         self.resize(600, 500)
         self.toolbar.comboBox.currentIndexChanged[str].connect(self.canvas.setPointSize)
         self.toolbar.textField.textEdited.connect(self._textChanged)
-        
+
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
         self.setWindowTitle("Space center – %s %s" % (self.font.info.familyName, self.font.info.styleName))
@@ -55,22 +53,22 @@ class MainSpaceWindow(QWidget):
 
         fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
-    
+
     def close(self):
         self.font.info.removeObserver(self, "Info.Changed")
         self._unsubscribeFromGlyphs()
         super(MainSpaceWindow, self).close()
-    
+
     def _fontInfoChanged(self, notification):
         self.canvas.fetchFontMetrics()
         self.canvas.update()
-    
+
     def _glyphChanged(self, notification):
         self.canvas.update()
         self.table.updateCells()
-    
+
     def _glyphOpened(self, glyph):
-        glyphViewWindow = MainGfxWindow(self.font, glyph, self.parent())
+        glyphViewWindow = MainGfxWindow(glyph, self.parent())
         glyphViewWindow.show()
 
     def _textChanged(self, newText):
@@ -81,7 +79,7 @@ class MainSpaceWindow(QWidget):
         # set the records into the view
         self.canvas.setGlyphs(self.glyphs)
         self.table.setGlyphs(self.glyphs)
-    
+
     # Tal Leming. Edited.
     def textToGlyphNames(self, text):
         # escape //
@@ -118,7 +116,7 @@ class MainSpaceWindow(QWidget):
         if compileStack is not None and compileStack:
             glyphNames.append("".join(compileStack))
         return glyphNames
-    
+
     def _subscribeToGlyphsText(self, newText):
         glyphs = []
         glyphNames = self.textToGlyphNames(newText)
@@ -127,7 +125,7 @@ class MainSpaceWindow(QWidget):
             if gName not in self.font: continue
             glyphs.append(self.font[gName])
         self._subscribeToGlyphs(glyphs)
-    
+
     def _subscribeToGlyphs(self, glyphs):
         self.glyphs = glyphs
 
@@ -137,7 +135,7 @@ class MainSpaceWindow(QWidget):
                 continue
             handledGlyphs.add(glyph)
             glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
-        
+
     def _unsubscribeFromGlyphs(self):
         handledGlyphs = set()
         for glyph in self.glyphs:
@@ -159,7 +157,7 @@ class MainSpaceWindow(QWidget):
         # set the records into the view
         self.canvas.setGlyphs(self.glyphs)
         self.table.setGlyphs(self.glyphs)
-        
+
     def resizeEvent(self, event):
         if self.isVisible(): self.canvas._sizeEvent(event)
         super(MainSpaceWindow, self).resizeEvent(event)
@@ -179,7 +177,7 @@ class FontToolBar(QToolBar):
 
         self.configBar = QPushButton(self)
         self.configBar.setFlat(True)
-        self.configBar.setIcon(QIcon("resources/ic_settings_24px.svg"))
+        self.configBar.setIcon(QIcon("defconQt/resources/ic_settings_24px.svg"))
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px");
         self.toolsMenu = QMenu(self)
         showKerning = self.toolsMenu.addAction("Show Kerning", self.showKerning)
@@ -205,34 +203,35 @@ class FontToolBar(QToolBar):
         self.addWidget(self.textField)
         self.addWidget(self.comboBox)
         self.addWidget(self.configBar)
-    
+
     def setPointSize(self, pointSize):
         self.comboBox.blockSignals(True)
         self.comboBox.setEditText(str(pointSize))
         self.comboBox.blockSignals(False)
-    
+
     def showKerning(self):
         action = self.sender()
         self.parent().canvas.setShowKerning(action.isChecked())
-    
+
     def showMetrics(self):
         action = self.sender()
         self.parent().canvas.setShowMetrics(action.isChecked())
-    
+
     def verticalFlip(self):
         action = self.sender()
         self.parent().canvas.setVerticalFlip(action.isChecked())
     
     def wrapLines(self):
         self.parent().canvas.setWrapLines(True)
-    
+
     def noWrapLines(self):
         self.parent().canvas.setWrapLines(False)
 
 class GlyphsCanvas(QWidget):
-    def __init__(self, font, glyphs, scrollArea, pointSize=defaultPointSize, parent=None):
+    def __init__(self, font, glyphs, pointSize=defaultPointSize, parent=None):
         super(GlyphsCanvas, self).__init__(parent)
-
+        # XXX: make canvas font-agnostic as in defconAppkit and use
+        # glyph.getParent() instead
         self.font = font
         self.fetchFontMetrics()
         self.glyphs = glyphs
@@ -244,29 +243,33 @@ class GlyphsCanvas(QWidget):
         self._verticalFlip = False
         self._positions = None
         self._selected = None
-        self._doubleClickCallback = None
-        self._pointSizeChangedCallback = None
-        self._selectionChangedCallback = None
-        
+        self.doubleClickCallback = None
+        self.pointSizeChangedCallback = None
+        self.selectionChangedCallback = None
+
         self._wrapLines = True
-        self.scrollArea = scrollArea
-        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self._scrollArea = QScrollArea(self.parent())
+        self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self._scrollArea.setWidget(self)
         self.resize(581, 400)
+
+    def scrollArea(self):
+        return self._scrollArea
 
     def calculateScale(self):
         scale = self.ptSize / self.upm
         if scale < .01: scale = 0.01
         self.scale = scale
-    
+
     def setShowKerning(self, showKerning):
         self._showKerning = showKerning
         self.update()
-    
+
     def setShowMetrics(self, showMetrics):
         self._showMetrics = showMetrics
         self.update()
-    
+
     def setVerticalFlip(self, verticalFlip):
         self._verticalFlip = verticalFlip
         self.update()
@@ -275,17 +278,17 @@ class GlyphsCanvas(QWidget):
         if self._wrapLines == wrapLines: return
         self._wrapLines = wrapLines
         if self._wrapLines:
-            sw = self.scrollArea.verticalScrollBar().width() + self.scrollArea.contentsMargins().right()
+            sw = self._scrollArea.verticalScrollBar().width() + self._scrollArea.contentsMargins().right()
             self.resize(self.parent().parent().parent().width() - sw, self.height())
-            self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
-            sh = self.scrollArea.horizontalScrollBar().height() + self.scrollArea.contentsMargins().bottom()
+            sh = self._scrollArea.horizontalScrollBar().height() + self._scrollArea.contentsMargins().bottom()
             self.resize(self.width(), self.parent().parent().parent().height() - sh)
-            self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.update()
-    
+
     def fetchFontMetrics(self):
         self.ascender = self.font.info.ascender
         if self.ascender is None: self.ascender = 750
@@ -293,20 +296,17 @@ class GlyphsCanvas(QWidget):
         if self.descender is None: self.descender = 250
         self.upm = self.font.info.unitsPerEm
         if self.upm is None or not self.upm > 0: self.upm = 1000
-    
+
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
         self._selected = None
         self.update()
-    
+
     def setPointSize(self, pointSize):
         self.ptSize = int(pointSize)
         self.calculateScale()
         self.update()
-    
-    def setPointSizeCallback(self, pointSizeChangedCallback):
-        self._pointSizeChangedCallback = pointSizeChangedCallback
-    
+
     def setSelected(self, selected):
         self._selected = selected
         if self._positions is not None:
@@ -321,20 +321,17 @@ class GlyphsCanvas(QWidget):
             if line > -1:
                 x = self.padding + pos + width/2
                 y = self.padding + (line+.5)*self.ptSize
-                self.scrollArea.ensureVisible(x, y, width/2+20, .5*self.ptSize+20)
+                self._scrollArea.ensureVisible(x, y, width/2+20, .5*self.ptSize+20)
         self.update()
-    
-    def setSelectionCallback(self, selectionChangedCallback):
-        self._selectionChangedCallback = selectionChangedCallback
-    
+
     def _sizeEvent(self, event):
         if self._wrapLines:
-            sw = self.scrollArea.verticalScrollBar().width() + self.scrollArea.contentsMargins().right()
+            sw = self._scrollArea.verticalScrollBar().width() + self._scrollArea.contentsMargins().right()
             self.resize(event.size().width() - sw, self.height())
         else:
-            sh = self.scrollArea.horizontalScrollBar().height() + self.scrollArea.contentsMargins().bottom()
+            sh = self._scrollArea.horizontalScrollBar().height() + self._scrollArea.contentsMargins().bottom()
             self.resize(self.width(), event.size().height() - sh)
-    
+
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
             # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
@@ -347,12 +344,12 @@ class GlyphsCanvas(QWidget):
             if newPointSize <= 0: return
 
             self.setPointSize(newPointSize)
-            if self._pointSizeChangedCallback is not None:
-                self._pointSizeChangedCallback(newPointSize)
+            if self.pointSizeChangedCallback is not None:
+                self.pointSizeChangedCallback(newPointSize)
             event.accept()
         else:
             super(GlyphsCanvas, self).wheelEvent(event)
-    
+
     # Tal Leming. Edited.
     def lookupKerningValue(self, first, second):
         kerning = self.font.kerning
@@ -393,7 +390,7 @@ class GlyphsCanvas(QWidget):
             if pair in kerning:
                 return kerning[pair]
         return 0
-    
+
     def mousePressEvent(self, event):
         # Take focus to quit eventual cell editing
         # XXX: shouldnt set focus if we are in input field...
@@ -404,15 +401,15 @@ class GlyphsCanvas(QWidget):
             else:
                 baselineShift = self.ascender
             found = False
-            line = (event.y() - self.padding) // (self.ptSize*self._lineHeight)
+            line = (event.y() - self.padding) // (self.ptSize)
             # XXX: Shouldnt // yield an int?
             line = int(line)
             if line >= len(self._positions):
                 self._selected = None
                 # XXX: find a way to DRY notification of self._selected changed
                 # w ability to block notifications as well
-                if self._selectionChangedCallback is not None:
-                    self._selectionChangedCallback(self._selected)
+                if self.selectionChangedCallback is not None:
+                    self.selectionChangedCallback(self._selected)
                 event.accept()
                 self.update()
                 return
@@ -426,22 +423,19 @@ class GlyphsCanvas(QWidget):
                     self._selected = count+index
                     found = True
             if not found: self._selected = None
-            if self._selectionChangedCallback is not None:
-                self._selectionChangedCallback(self._selected)
+            if self.selectionChangedCallback is not None:
+                self.selectionChangedCallback(self._selected)
             event.accept()
             self.update()
         else:
             super(GlyphCanvas, self).mousePressEvent(event)
-    
+
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton and self._selected is not None:
-            if self._doubleClickCallback is not None:
-                self._doubleClickCallback(self.glyphs[self._selected])
+            if self.doubleClickCallback is not None:
+                self.doubleClickCallback(self.glyphs[self._selected])
         else:
             super(GlyphCanvas, self).mouseDoubleClickEvent(event)
-    
-    def setDoubleClickCallback(self, doubleClickCallback):
-        self._doubleClickCallback = doubleClickCallback
 
     def paintEvent(self, event):
         linePen = QPen(Qt.black)
@@ -455,7 +449,7 @@ class GlyphsCanvas(QWidget):
             painter.drawLine(0, 0, width, 0)
             painter.drawLine(0, self.descender, width, self.descender)
             painter.restore()
-    
+
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(0, 0, self.width(), self.height(), Qt.white)
@@ -480,7 +474,7 @@ class GlyphsCanvas(QWidget):
                 kern = self.lookupKerningValue(self.glyphs[index-1].name, glyph.name)*self.scale
             else: kern = 0
             if self._wrapLines and cur_width + gWidth + kern + 2*self.padding > self.width():
-                painter.translate(-cur_width, self.ptSize*self._lineHeight)
+                painter.translate(-cur_width, self.ptSize)
                 if self._showMetrics: paintLineMarks(painter)
                 self._positions.append([(0, gWidth)])
                 cur_width = gWidth
@@ -502,14 +496,14 @@ class GlyphsCanvas(QWidget):
             painter.fillPath(glyphPath, Qt.black)
             painter.restore()
             painter.translate(gWidth, 0)
-        
-        scrollMargins = self.scrollArea.contentsMargins()
-        innerHeight = self.scrollArea.height() - scrollMargins.top() - scrollMargins.bottom()
+
+        scrollMargins = self._scrollArea.contentsMargins()
+        innerHeight = self._scrollArea.height() - scrollMargins.top() - scrollMargins.bottom()
         if not self._wrapLines:
-            innerWidth = self.scrollArea.width() - scrollMargins.left() - scrollMargins.right()
+            innerWidth = self._scrollArea.width() - scrollMargins.left() - scrollMargins.right()
             width = max(innerWidth, cur_width+self.padding*2)
         else: width = self.width()
-        self.resize(width, max(innerHeight, lines*self.ptSize+2*self.padding))
+        self.resize(width, max(innerHeight, lines*self.ptSize*self._lineHeight+2*self.padding))
 
 class SpaceTableWidgetItem(QTableWidgetItem):
     def setData(self, role, value):
@@ -526,7 +520,7 @@ class GlyphCellItemDelegate(QStyledItemDelegate):
         #editor.setAlignment(Qt.AlignCenter)
         editor.setValidator(QIntValidator(self))
         return editor
-    
+
     # TODO: implement =... lexer
     # TODO: Alt+left or Alt+right don't SelectAll of the new cell
     # cell by default. Implement this.
@@ -591,14 +585,14 @@ class SpaceTable(QTableWidget):
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
         self._blocked = False
-        self._selectionChangedCallback = None
+        self.selectionChangedCallback = None
         self._coloredColumn = None
 
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
         # TODO: we don't need to reallocate cells, split alloc and fill
         self.updateCells()
-    
+
     def updateCells(self):
         if self._blocked: return
         self.blockSignals(True)
@@ -606,7 +600,7 @@ class SpaceTable(QTableWidget):
         self.setCurrentItem(None)
         self.fillGlyphs()
         self.blockSignals(False)
-    
+
     def _cellEdited(self, row, col):
         if row == 0 or col == 0: return
         item = self.item(row, col).text()
@@ -635,12 +629,12 @@ class SpaceTable(QTableWidget):
             if current is not None and cur == prev:
                 return
         self.colorColumn(current if current is None else cur)
-        if self._selectionChangedCallback is not None:
+        if self.selectionChangedCallback is not None:
             if current is not None:
-                self._selectionChangedCallback(cur - 1)
+                self.selectionChangedCallback(cur - 1)
             else:
-                self._selectionChangedCallback(None)
-    
+                self.selectionChangedCallback(None)
+
     def colorColumn(self, column):
         emptyBrush = QBrush(Qt.NoBrush)
         selectionColor = QColor(235, 235, 235)
@@ -671,9 +665,6 @@ class SpaceTable(QTableWidget):
         if glyphIndex is not None:
             self.colorColumn(glyphIndex+1)
         self.blockSignals(False)
-    
-    def setSelectionCallback(self, selectionChangedCallback):
-        self._selectionChangedCallback = selectionChangedCallback
 
     def fillGlyphs(self):
         def glyphTableWidgetItem(content, disableCell=False):
@@ -698,16 +689,8 @@ class SpaceTable(QTableWidget):
             self.setItem(2, index+1, glyphTableWidgetItem(glyph.leftMargin))
             self.setItem(3, index+1, glyphTableWidgetItem(glyph.rightMargin))
             self.setColumnWidth(index+1, self._cellWidth)
-        
+
     def wheelEvent(self, event):
         cur = self.horizontalScrollBar().value()
         self.horizontalScrollBar().setValue(cur - event.angleDelta().y() / 120)
         event.accept()
-
-if __name__ == '__main__':
-    import sys
-# registerallfactories
-    app = QApplication(sys.argv)
-    window = Window()
-    window.show()
-    sys.exit(app.exec_())
