@@ -192,7 +192,20 @@ class FontToolBar(QToolBar):
         self.toolsMenu.addSeparator()
         verticalFlip = self.toolsMenu.addAction("Vertical flip", self.verticalFlip)
         verticalFlip.setCheckable(True)
-        
+        """
+        lineHeight = QWidgetAction(self.toolsMenu)
+        lineHeight.setText("Line height:")
+        lineHeightSlider = QSlider(Qt.Horizontal, self)
+        # QSlider works with integers so we'll just divide by 100 what comes out of it
+        lineHeightSlider.setMinimum(80)
+        lineHeightSlider.setMaximum(160)
+        lineHeightSlider.setValue(100)
+        #lineHeightSlider.setContentsMargins(30, 0, 30, 0)
+        lineHeightSlider.valueChanged.connect(self.lineHeight)
+        lineHeight.setDefaultWidget(lineHeightSlider)
+        self.toolsMenu.addAction(lineHeight)
+        """
+
         wrapLinesGroup = QActionGroup(self)
         wrapLinesGroup.addAction(wrapLines)
         wrapLinesGroup.addAction(noWrapLines)
@@ -220,7 +233,10 @@ class FontToolBar(QToolBar):
     def verticalFlip(self):
         action = self.sender()
         self.parent().canvas.setVerticalFlip(action.isChecked())
-    
+
+    def lineHeight(self, value):
+        self.parent().canvas.setLineHeight(value / 100)
+
     def wrapLines(self):
         self.parent().canvas.setWrapLines(True)
 
@@ -241,6 +257,7 @@ class GlyphsCanvas(QWidget):
         self._showKerning = False
         self._showMetrics = False
         self._verticalFlip = False
+        self._lineHeight = 1.1
         self._positions = None
         self._selected = None
         self.doubleClickCallback = None
@@ -273,7 +290,11 @@ class GlyphsCanvas(QWidget):
     def setVerticalFlip(self, verticalFlip):
         self._verticalFlip = verticalFlip
         self.update()
-    
+
+    def setLineHeight(self, lineHeight):
+        self._lineHeight = lineHeight
+        self.update()
+
     def setWrapLines(self, wrapLines):
         if self._wrapLines == wrapLines: return
         self._wrapLines = wrapLines
@@ -320,8 +341,8 @@ class GlyphsCanvas(QWidget):
                 cur_len += len(li)
             if line > -1:
                 x = self.padding + pos + width/2
-                y = self.padding + (line+.5)*self.ptSize
-                self._scrollArea.ensureVisible(x, y, width/2+20, .5*self.ptSize+20)
+                y = self.padding + (line+.5)*self.ptSize*self._lineHeight
+                self._scrollArea.ensureVisible(x, y, width/2+20, .5*self.ptSize*self._lineHeight+20)
         self.update()
 
     def _sizeEvent(self, event):
@@ -401,7 +422,7 @@ class GlyphsCanvas(QWidget):
             else:
                 baselineShift = self.ascender
             found = False
-            line = (event.y() - self.padding) // (self.ptSize)
+            line = (event.y() - self.padding) // (self.ptSize*self._lineHeight)
             # XXX: Shouldnt // yield an int?
             line = int(line)
             if line >= len(self._positions):
@@ -459,7 +480,7 @@ class GlyphsCanvas(QWidget):
         else:
             baselineShift = self.ascender
             yDirection = -1
-        painter.translate(self.padding, self.padding+baselineShift*self.scale)
+        painter.translate(self.padding, self.padding+baselineShift*self.scale*self._lineHeight)
         # TODO: scale painter here to avoid g*scale everywhere below
 
         cur_width = 0
@@ -474,7 +495,7 @@ class GlyphsCanvas(QWidget):
                 kern = self.lookupKerningValue(self.glyphs[index-1].name, glyph.name)*self.scale
             else: kern = 0
             if self._wrapLines and cur_width + gWidth + kern + 2*self.padding > self.width():
-                painter.translate(-cur_width, self.ptSize)
+                painter.translate(-cur_width, self.ptSize*self._lineHeight)
                 if self._showMetrics: paintLineMarks(painter)
                 self._positions.append([(0, gWidth)])
                 cur_width = gWidth
@@ -664,6 +685,8 @@ class SpaceTable(QTableWidget):
         self.setCurrentItem(None)
         if glyphIndex is not None:
             self.colorColumn(glyphIndex+1)
+        else:
+            self.colorColumn(glyphIndex)
         self.blockSignals(False)
 
     def fillGlyphs(self):
