@@ -99,38 +99,12 @@ class MainGfxWindow(QMainWindow):
         self.setAttribute(Qt.WA_KeyCompression)
 
         self.view = GlyphView(glyph, self)
+        menuBar = self.menuBar()
 
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
 
-        self.menuBar().addMenu(fileMenu)
-
-        toolsMenu = QMenu("&Tools", self)
-
-        self.selectTool = toolsMenu.addAction("&Selection")
-        self.selectTool.setCheckable(True)
-        self.selectTool.toggled.connect(self.view.setSceneSelection)
-
-        self.drawingTool = toolsMenu.addAction("&Drawing")
-        self.drawingTool.setCheckable(True)
-        self.drawingTool.toggled.connect(self.view.setSceneDrawing)
-
-        self.rulerTool = toolsMenu.addAction("&Ruler")
-        self.rulerTool.setCheckable(True)
-        self.rulerTool.toggled.connect(self.view.setSceneRuler)
-
-        self.knifeTool = toolsMenu.addAction("&Knife")
-        self.knifeTool.setCheckable(True)
-        self.knifeTool.toggled.connect(self.view.setSceneKnife)
-
-        self.toolsGroup = QActionGroup(self)
-        self.toolsGroup.addAction(self.selectTool)
-        self.toolsGroup.addAction(self.drawingTool)
-        self.toolsGroup.addAction(self.rulerTool)
-        self.toolsGroup.addAction(self.knifeTool)
-        self.selectTool.setChecked(True)
-
-        self.menuBar().addMenu(toolsMenu)
+        menuBar.addMenu(fileMenu)
 
         viewMenu = QMenu("&View", self)
         self.backgroundAction = viewMenu.addAction("&Background")
@@ -145,7 +119,7 @@ class MainGfxWindow(QMainWindow):
         self.outlineAction.setChecked(True)
         self.outlineAction.toggled.connect(self.view.setViewOutline)
 
-        self.menuBar().addMenu(viewMenu)
+        menuBar.addMenu(viewMenu)
 
         rendererMenu = QMenu("&Renderer", self)
         self.nativeAction = rendererMenu.addAction("&Native")
@@ -167,7 +141,19 @@ class MainGfxWindow(QMainWindow):
 
         rendererGroup.addAction(self.imageAction)
 
-        self.menuBar().addMenu(rendererMenu)
+        menuBar.addMenu(rendererMenu)
+
+        toolBar = QToolBar(self)
+        toolBar.setMovable(False)
+        selectionToolButton = toolBar.addAction("Selection", self.view.setSceneSelection)
+        selectionToolButton.setIcon(QIcon("defconQt/resources/cursor.svg"))
+        penToolButton = toolBar.addAction("Pen", self.view.setSceneDrawing)
+        penToolButton.setIcon(QIcon("defconQt/resources/curve.svg"))
+        rulerToolButton = toolBar.addAction("Ruler", self.view.setSceneRuler)
+        rulerToolButton.setIcon(QIcon("defconQt/resources/ruler.svg"))
+        knifeToolButton = toolBar.addAction("Knife", self.view.setSceneKnife)
+        knifeToolButton.setIcon(QIcon("defconQt/resources/cut.svg"))
+        self.addToolBar(toolBar)
 
         rendererGroup.triggered.connect(self.setRenderer)
 
@@ -1163,8 +1149,7 @@ class GlyphView(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         #self.setViewportUpdateMode(QGraphicsView.BoundingRectViewportUpdate)
 
-        self._drawingTool = SceneTools.SelectionTool
-        self.setDragMode(QGraphicsView.RubberBandDrag)
+        self.setSceneSelection()
 
         self.setRenderHint(QPainter.Antialiasing)
         self.scale(1, -1)
