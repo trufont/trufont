@@ -1,10 +1,10 @@
-from defcon import Glyph
+from defconQt.objects.defcon import TGlyph
 from robofab.pens.pointPen import AbstractPointPen
 
 class CopySelectionPen(AbstractPointPen):
     def __init__(self, glyph=None):
         if glyph is None:
-            glyph = Glyph()
+            glyph = TGlyph()
         self._glyph = glyph
         self._contour = None
         self._havePoint = False
