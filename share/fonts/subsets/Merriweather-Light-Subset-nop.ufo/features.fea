@@ -1,0 +1,46 @@
+
+
+@GDEF_Simple = [\space \exclam \quotedbl \numbersign \dollar \percent \ampersand 
+	\quoteright \parenleft \parenright \asterisk \plus \comma \hyphen \period \slash 
+	\zero \one \two \three \four \five \six \seven \eight \nine \colon \semicolon \less 
+	\equal \greater \question \at \A \B \C \D \E \F \G \H \I \J \K \L \M \N \O \P \Q \R \S \T \U \V \W 
+	\X \Y \Z \bracketleft \backslash \bracketright \asciicircum \underscore 
+	\quoteleft \a \b \c \d \e \f \g \h \i \j \k \l \m \n \o \p \q \r \s \t \u \v \w \x \y \z \braceleft 
+	\bar \braceright \asciitilde \exclamdown \cent \sterling \fraction \yen \florin 
+	\section \currency \quotesingle \quotedblleft \guillemotleft \guilsinglleft 
+	\guilsinglright \endash \dagger \daggerdbl \periodcentered \paragraph \bullet 
+	\quotesinglbase \quotedblbase \quotedblright \guillemotright \ellipsis 
+	\perthousand \questiondown \grave \acute \circumflex \tilde \macron \breve 
+	\dotaccent \dieresis \ring \cedilla \hungarumlaut \ogonek \caron \emdash \AE 
+	\ordfeminine \Lslash \Oslash \OE \ordmasculine \ae \dotlessi \lslash \oslash \oe 
+	\germandbls \onesuperior \logicalnot \mu \trademark \Eth \onehalf \plusminus 
+	\Thorn \onequarter \divide \brokenbar \degree \thorn \threequarters 
+	\twosuperior \registered \minus \eth \multiply \threesuperior \copyright 
+	\Aacute \Acircumflex \Adieresis \Agrave \Aring \Atilde \Ccedilla \Eacute 
+	\Ecircumflex \Edieresis \Egrave \Iacute \Icircumflex \Idieresis \Igrave \Ntilde 
+	\Oacute \Ocircumflex \Odieresis \Ograve \Otilde \Scaron \Uacute \Ucircumflex 
+	\Udieresis \Ugrave \Yacute \Ydieresis \Zcaron \aacute \acircumflex \adieresis 
+	\agrave \aring \atilde \ccedilla \eacute \ecircumflex \edieresis \egrave \iacute 
+	\icircumflex \idieresis \igrave \ntilde \oacute \ocircumflex \odieresis \ograve 
+	\otilde \scaron \uacute \ucircumflex \udieresis \ugrave \yacute \ydieresis 
+	\zcaron \.null \CR \uni200A \uni2009 \uni2008 \uni2007 \uni2006 \uni2005 \uni2004 
+	\uni2003 \uni2000 \uni2001 \uni2002 \grave.cap \dieresis.cap \commabelow 
+	\commaaccent \circumflex.cap \caron.cap \breve.cap \ring.cap \ogonek.cap 
+	\tilde.cap \foundryicon \aogonek \acute.cap \Euro \eogonek \dotlessj 
+	\kgreenlandic \ldot \uni0001 \uni0002 \uni0003 \uni0019 \uni0018 \uni0017 
+	\uni0016 \uni0015 \uni0014 \uni0013 \uni0012 \uni0011 \uni0010 \uni0009 \uni0008 
+	\uni0007 \uni0006 \uni0005 \uni0004 \hbar \Ldotaccent \kcommaaccent 
+	\approxequal \Delta \lessequal \greaterequal \notequal \lozenge \Omega \radical 
+	\summation \integral \pi \product \partialdiff \infinity \HT \LF \uni000A 
+	\uni000B \uni000C \uni000D \uni000E \uni000F \uni0000 \uni001A \uni001B \uni001C 
+	\uni001D \uni001E \uni001F \uni007F \DLE \DC1 \DC2 \DC3 \DC4 \RS \US \DEL \nbspace 
+	\dotaccent.cap \Zacute \Zdotaccent \zdotaccent \IJ \Itilde \Nacute \Racute 
+	\Rcaron \Rcommaaccent \Kcommaaccent \rcaron \rcommaaccent \ij \jcircumflex 
+	\Jcircumflex \Eogonek \nacute \itilde \Aogonek ];
+@GDEF_Ligature = [\fi \fl \ff \ffi \ffl ];
+
+table GDEF {
+  GlyphClassDef @GDEF_Simple, @GDEF_Ligature, , ;
+
+} GDEF;
+
