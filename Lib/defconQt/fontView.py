@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
 
-        selectionMenu = QMenu("&Selection", self)
+        editMenu = QMenu("&Edit", self)
         markColorMenu = QMenu("Mark color", self)
         pixmap = QPixmap(24, 24)
         none = markColorMenu.addAction("None", self.markColor)
@@ -294,10 +294,10 @@ class MainWindow(QMainWindow):
         pixmap.fill(Qt.green)
         green.setIcon(QIcon(pixmap))
         green.setData(QColor(Qt.green))
-        selectionMenu.addMenu(markColorMenu)
-        selectionMenu.addAction("Copy Reference", self.copyReference)
-        selectionMenu.addAction("Paste Into", self.pasteInto)
-        menuBar.addMenu(selectionMenu)
+        editMenu.addMenu(markColorMenu)
+        editMenu.addAction("Copy Reference", self.copyReference)
+        editMenu.addAction("Paste Into", self.pasteInto)
+        menuBar.addMenu(editMenu)
 
         fontMenu = QMenu("&Font", self)
         # TODO: work out sensible shortcuts and make sure they're cross-platform
