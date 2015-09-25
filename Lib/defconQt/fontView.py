@@ -4,6 +4,7 @@ from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.objects.defcon import CharacterSet, TFont
+from defcon import Component
 from defconQt.spaceCenter import MainSpaceWindow
 from fontTools.agl import AGL2UV
 # TODO: remove globs when things start to stabilize
@@ -467,27 +468,26 @@ class MainWindow(QMainWindow):
         when set.")
 
     def copyReference(self):
-        glyphs = self.collectionWidget.glyphs
         selection = self.collectionWidget.selection
         if len(selection) == 0:
             pass # XXX: error dialog: "you need to select a glyph first"
         else:
-            self.selectedReferences = [glyphs[key] for key in selection]
+            self.selectedReferences = selection
 
     def pasteInto(self):
         glyphs = self.collectionWidget.glyphs
         selection = self.collectionWidget.selection
         if len(selection) == 0:
             pass # XXX: error dialog: "you need to select a glyph first"
-        elif len(selection) == 1:
-            if self.selectedReferences:
-                for key in self.collectionWidget.selection:
-                    self.collectionWidget.glyphs[key].refs = self.selectedReferences
         else:
-            pass
-            # XXX: error dialog: "please select only one glyph"
-            # TODO: Perhaps here we could bulk-paste the same thing
-            #       into all of the selected glyphs?
+            try:
+                for ref in self.selectedReferences:
+                    component = Component()
+                    component.baseGlyph = glyphs[ref].name
+                    for key in selection:
+                        glyphs[key].appendComponent(component)
+            except:
+                pass
 
     def markColor(self):
         color = self.sender().data()

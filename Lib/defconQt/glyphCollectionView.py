@@ -365,11 +365,6 @@ class GlyphCollectionWidget(QWidget):
                     painter.translate(column * self.squareSize + x_offset, row * self.squareSize + self.squareSize + y_offset)
                     painter.scale(factor, -factor)
                     painter.fillPath(outline, Qt.black)
-                    try:
-                        for ref in glyph.refs:
-                            painter.fillPath(ref.getRepresentation("defconQt.QPainterPath"), Qt.black)
-                    except:
-                        pass
                     painter.restore()
                 else:
                     painter.save()
