@@ -295,6 +295,8 @@ class MainWindow(QMainWindow):
         green.setIcon(QIcon(pixmap))
         green.setData(QColor(Qt.green))
         selectionMenu.addMenu(markColorMenu)
+        selectionMenu.addAction("Copy Reference", self.copyReference)
+        selectionMenu.addAction("Paste Into", self.pasteInto)
         menuBar.addMenu(selectionMenu)
 
         fontMenu = QMenu("&Font", self)
@@ -463,6 +465,29 @@ class MainWindow(QMainWindow):
     sortDescriptor = property(_get_sortDescriptor, _set_sortDescriptor,
         doc="The sortDescriptor. Takes glyphs from the font and sorts them \
         when set.")
+
+    def copyReference(self):
+        glyphs = self.collectionWidget.glyphs
+        selection = self.collectionWidget.selection
+        if len(selection) == 0:
+            pass # XXX: error dialog: "you need to select a glyph first"
+        else:
+            self.selectedReferences = [glyphs[key] for key in selection]
+
+    def pasteInto(self):
+        glyphs = self.collectionWidget.glyphs
+        selection = self.collectionWidget.selection
+        if len(selection) == 0:
+            pass # XXX: error dialog: "you need to select a glyph first"
+        elif len(selection) == 1:
+            if self.selectedReferences:
+                for key in self.collectionWidget.selection:
+                    self.collectionWidget.glyphs[key].refs = self.selectedReferences
+        else:
+            pass
+            # XXX: error dialog: "please select only one glyph"
+            # TODO: Perhaps here we could bulk-paste the same thing
+            #       into all of the selected glyphs?
 
     def markColor(self):
         color = self.sender().data()
