@@ -597,10 +597,12 @@ class MainWindow(QMainWindow):
         newGlyphNames, sortFont, ok = AddGlyphDialog.getNewGlyphNames(self, glyphs)
         if ok:
             for name in newGlyphNames:
-                # XXX: if sortFont
                 self.newStandardGlyph(name)
                 glyphs.append(self.font[name])
             self.collectionWidget.glyphs = glyphs
+            if sortFont:
+                # kick-in the sort mechanism
+                self.sortDescriptor = self.sortDescriptor
 
     def about(self):
         QMessageBox.about(self, "About Me",
