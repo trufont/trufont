@@ -1021,8 +1021,14 @@ class GlyphScene(QGraphicsScene):
         event.accept()
 
     def rulerMouseRelease(self, event):
-        self._cachedRuler = self._rulerObject
-        self._rulerObject = None
+        textItem = self._rulerObject.childItems()[0]
+        if textItem.text() == "0":
+            # delete no-op ruler
+            self.removeItem(self._rulerObject)
+            self._rulerObject = None
+        else:
+            self._cachedRuler = self._rulerObject
+            self._rulerObject = None
         event.accept()
 
     def knifeMousePress(self, event):
