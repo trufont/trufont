@@ -598,7 +598,10 @@ class MainWindow(QMainWindow):
         if ok:
             for name in newGlyphNames:
                 self.newStandardGlyph(name)
-                glyphs.append(self.font[name])
+                glyph = self.font[name]
+                # XXX: consider making this parametrizable in the dialog
+                glyph.template = True
+                glyphs.append(glyph)
             self.collectionWidget.glyphs = glyphs
             if sortFont:
                 # kick-in the sort mechanism
