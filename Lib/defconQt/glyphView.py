@@ -513,6 +513,18 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.setPen(pen)
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
 
+bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
+fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
+componentFillColor = QColor.fromRgbF(0, 0, 0, .4)#QColor.fromRgbF(.2, .2, .3, .4)
+metricsColor = QColor(70, 70, 70)
+
+class VGuidelinesTextItem(QGraphicsSimpleTextItem):
+    def __init__(self, text, font, parent=None):
+        super(VGuidelinesTextItem, self).__init__(text, parent)
+        self.setBrush(metricsColor)
+        self.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        self.setFont(font)
+
 class ResizeHandleItem(QGraphicsRectItem):
     def __init__(self, parent=None):
         super(QGraphicsRectItem, self).__init__(parent)
@@ -998,6 +1010,7 @@ class GlyphScene(QGraphicsScene):
         path.setElementPositionAt(1, x, baseElem.y)
         path.setElementPositionAt(2, x, y)
         path.setElementPositionAt(3, baseElem.x, baseElem.y)
+        self._rulerObject.prepareGeometryChange()
         self._rulerObject.setPath(path)
         textItem = self._rulerObject.childItems()[0]
         line = QLineF(baseElem.x, baseElem.y, x, y)
@@ -1010,6 +1023,7 @@ class GlyphScene(QGraphicsScene):
         line.setP1(QPointF(x, y))
         v = line.length()
         text = "%d\n↔ %d\n↕ %d\nα %dº" % (l, h, v, a)
+        textItem.prepareGeometryChange()
         textItem.setText(text)
         dx = x - baseElem.x
         if dx >= 0: px = x
@@ -1111,6 +1125,7 @@ class GlyphScene(QGraphicsScene):
                     item.setPos(pt[0], pt[1])
                     self._cachedIntersections.append((contour, index, pt[2]))
                     self._knifeDots.append(item)
+        self._knifeLine.prepareGeometryChange()
         self._knifeLine.setLine(line)
         event.accept()
 
@@ -1145,14 +1160,10 @@ class GlyphView(QGraphicsView):
         self._inverseScale = 0.1
         self._scale = 10
         self._noPointSizePadding = 200
-        self._bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
         self._drawStroke = True
         self._showOffCurvePoints = True
         self._showOnCurvePoints = True
-        self._fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
-        self._componentFillColor = QColor.fromRgbF(0, 0, 0, .4)#QColor.fromRgbF(.2, .2, .3, .4)
         self._showMetricsTitles = True
-        self._metricsColor = QColor(70, 70, 70)
 
         self.setBackgroundBrush(QBrush(Qt.lightGray))
         self.setScene(GlyphScene(self))
@@ -1185,20 +1196,19 @@ class GlyphView(QGraphicsView):
     def redrawGlyph(self):
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
         scene = self.scene()
+        scene._outlineItem.prepareGeometryChange()
         scene._outlineItem.setPath(path)
-        #scene._outlineItem.update()
         if not scene._blocked:
             # TODO: also rewind anchors and components
             for item in scene.items():
                 if isinstance(item, OnCurvePointItem):
                     scene.removeItem(item)
-                # XXX: we need to discriminate more, we could hit false positive in the future
-                # by matching stock Qt items
-                elif isinstance(item, QGraphicsSimpleTextItem):
+                elif isinstance(item, VGuidelinesTextItem):
                     item.setPos(self._glyph.width, item.y())
             self.addPoints()
             # For now, we'll assume not scene._blocked == moving UI points
             # this will not be the case anymore when drag sidebearings pops up
+            scene._widthItem.prepareGeometryChange()
             scene._widthItem.setRect(0, -1000, self._glyph.width, 3000)
 
     def addBackground(self):
@@ -1227,10 +1237,10 @@ class GlyphView(QGraphicsView):
             yMaxs = [i for index, i in enumerate(values) if index % 2]
             for yMin, yMax in zip(yMins, yMaxs):
                 if yMin == yMax:
-                    item = scene.addLine(-1000, yMin, 3000, yMax, QPen(self._bluesColor))
+                    item = scene.addLine(-1000, yMin, 3000, yMax, QPen(bluesColor))
                     item.setZValue(-998)
                 else:
-                    item = scene.addRect(-1000, yMin, 3000, yMax - yMin, QPen(Qt.NoPen), QBrush(self._bluesColor))
+                    item = scene.addRect(-1000, yMin, 3000, yMax - yMin, QPen(Qt.NoPen), QBrush(bluesColor))
                     item.setZValue(-998)
 
     def addHorizontalMetrics(self):
@@ -1252,7 +1262,7 @@ class GlyphView(QGraphicsView):
         # lines
         for position, names in sorted(positions.items()):
             y = self.roundPosition(position)
-            item = scene.addLine(-1000, y, 2000, y, QPen(self._metricsColor))
+            item = scene.addLine(-1000, y, 2000, y, QPen(metricsColor))
             item.setZValue(-997)
         # text
         if self._showMetricsTitles:# and self._impliedPointSize > 150:
@@ -1263,22 +1273,23 @@ class GlyphView(QGraphicsView):
                 y = position - (fontSize / 2)
                 text = ", ".join(names)
                 text = " %s " % text
-                item = scene.addSimpleText(text, font)
-                item.setBrush(self._metricsColor)
+                item = VGuidelinesTextItem(text, font)
+                item.setBrush(metricsColor)
                 item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
                 item.setPos(width, y) # XXX
                 item.setZValue(-997)
+                scene.addItem(item)
 
     def addOutlines(self):
         scene = self.scene()
         # outlines
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-        scene._outlineItem = scene.addPath(path, brush=QBrush(self._fillColor))
+        scene._outlineItem = scene.addPath(path, brush=QBrush(fillColor))
         scene._outlineItem.setZValue(-995)
         scene._glyphObject = self._glyph
         # components
         path = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
-        scene.addPath(path, brush=QBrush(self._componentFillColor))
+        scene.addPath(path, brush=QBrush(componentFillColor))
 
     def addPoints(self):
         scene = self.scene()
