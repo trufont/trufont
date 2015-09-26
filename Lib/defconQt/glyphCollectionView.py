@@ -40,15 +40,14 @@ A widget that presents a list of glyphs in cells.
 class GlyphCollectionWidget(QWidget):
     def __init__(self, parent=None):
         super(GlyphCollectionWidget, self).__init__(parent)
+        self.setAttribute(Qt.WA_KeyCompression)
         self._glyphs = []
         # TODO: hide behind a façade
         self.squareSize = 56
         self._columns = 10
-        self._selection = {}
-        # TODO: consider replacing this with moveKey + set (which is generated
-        # when painting anyway)
-        self.lastKey = -1
-        self.moveKey = -1
+        self._selection = set()
+        self._oldSelection = None
+        self._lastSelectedCell = None
 
         self.characterSelectedCallback = None
         self.doubleClickCallback = None
@@ -63,8 +62,8 @@ class GlyphCollectionWidget(QWidget):
     def _get_glyphs(self):
         return self._glyphs
 
-    def _set_glyphs(self, value):
-        self._glyphs = value
+    def _set_glyphs(self, glyphs):
+        self._glyphs = glyphs
         self.adjustSize()
         self.selection = set()
         #self.update() # self.selection changed will do it
@@ -75,19 +74,32 @@ class GlyphCollectionWidget(QWidget):
     def _get_selection(self):
         return self._selection
 
-    def _set_selection(self, value):
-        self._selection = value
+    def _set_selection(self, selection):
+        self._selection = selection
         self.computeCharacterSelected()
         self.update()
 
     selection = property(_get_selection, _set_selection, doc="A set that contains \
         indexes of selected glyphs. Schedules display refresh when set.")
 
+    def _get_lastSelectedCell(self):
+        return self._lastSelectedCell
+
+    def _set_lastSelectedCell(self, index):
+        self._lastSelectedCell = index
+        if index is not None:
+            self.scrollToCell(index)
+
+    lastSelectedCell = property(_get_lastSelectedCell, _set_lastSelectedCell,
+        doc="The current lastSelectedCell in selection.")
+
     def scrollArea(self):
         return self._scrollArea
 
     def scrollToCell(self, index):
-        raise NotImplementedError
+        x = (.5 + index % self._columns) * self.squareSize
+        y = (.5 + index // self._columns) * self.squareSize
+        self._scrollArea.ensureVisible(x, y, .5*self.squareSize, .5*self.squareSize)
 
     # TODO: break this down into set width/set square
     # TODO: see whether scrollArea gets resizeEvents
@@ -103,33 +115,52 @@ class GlyphCollectionWidget(QWidget):
         # Calculate sizeHint with max(height, _scrollArea.height()) because if scrollArea is
         # bigger than widget height after an update, we risk leaving old painted content on screen
         return QSize(self._columns * self.squareSize,
-                max(math.ceil(len(self.glyphs) / self._columns) * self.squareSize, self._scrollArea.height()))
+                max(math.ceil(len(self._glyphs) / self._columns) * self.squareSize, self._scrollArea.height()))
 
     def computeCharacterSelected(self):
         if self.characterSelectedCallback is None:
             return
-        lKey, mKey = self.lastKey, self.moveKey
-        mKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
-        lKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
-        if lKey == -1:
-            elements = set()
-        elif lKey > mKey:
-            elements = set(range(mKey, lKey+1))
-        else:
-            elements = set(range(lKey, mKey+1))
-        elements ^= self.selection
-
-        cnt = len(elements)
+        cnt = len(self.selection)
         if cnt == 1:
-            self.characterSelectedCallback(self.glyphs[elements.pop()].name)
+            elem = next(iter(self.selection))
+            self.characterSelectedCallback(self._glyphs[elem].name)
         else:
             self.characterSelectedCallback(cnt)
+
+    def _arrowKeyPressEvent(self, event):
+        count = event.count()
+        key = event.key()
+        modifiers = event.modifiers()
+        # TODO: it might be the case that self._lastSelectedCell cannot be None
+        # when we arrive here whatsoever
+        if self._lastSelectedCell is not None:
+            if key == Qt.Key_Up:
+                delta = -self._columns
+            elif key == Qt.Key_Down:
+                delta = self._columns
+            elif key == Qt.Key_Left:
+                delta = -1
+            elif key == Qt.Key_Right:
+                delta = 1
+            newSel = self._lastSelectedCell + delta*count
+            if newSel < 0 or newSel >= len(self._glyphs):
+                return
+            if modifiers & Qt.ShiftModifier:
+                sel = self._linearSelection(newSel)
+                if sel is not None:
+                    self.selection |= sel
+            else:
+                self.selection = {newSel}
+            self.lastSelectedCell = newSel
 
     def keyPressEvent(self, event):
         key = event.key()
         modifiers = event.modifiers()
-        if event.matches(QKeySequence.SelectAll):
-            self.selection = set(range(len(self.glyphs)))
+        if key == Qt.Key_Up or key == Qt.Key_Down or key == Qt.Key_Left \
+            or key == Qt.Key_Right:
+            self._arrowKeyPressEvent(event)
+        elif event.matches(QKeySequence.SelectAll):
+            self.selection = set(range(len(self._glyphs)))
         elif key == Qt.Key_D and modifiers & Qt.ControlModifier:
             self.selection = set()
         # XXX: this is specific to fontView so should be done thru subclassing of a base widget,
@@ -139,53 +170,82 @@ class GlyphCollectionWidget(QWidget):
             if self.proceedWithDeletion() and self.selection:
                 # we need to del in reverse order to keep key references valid
                 for key in sorted(self._selection, reverse=True):
-                    glyph = self.glyphs[key]
+                    glyph = self._glyphs[key]
                     font = glyph.getParent()
-                    if glyph in font:
-                        del self.font[gName]
                     if modifiers & Qt.ShiftModifier:
+                        del self.font[gName]
                         # XXX: need a del fn in property
-                        del self.glyphs[key]
+                        del self._glyphs[key]
+                    else:
+                        # XXX: have template setter clear glyph content
+                        glyph.template = True
                 self.selection = set()
         else:
             super(GlyphCollectionWidget, self).keyPressEvent(event)
             return
         event.accept()
 
+    def _findEventIndex(self, event):
+        index = (event.y() // self.squareSize) * self._columns + event.x() // self.squareSize
+        if index >= len(self._glyphs):
+            return None
+        return index
+
+    def _linearSelection(self, index):
+        if index in self._selection:
+            newSelection = None
+        if not self._selection:
+            newSelection = {index}
+        else:
+            if index < self._lastSelectedCell:
+                newSelection = self._selection | set(range(index, self._lastSelectedCell + 1))
+            else:
+                newSelection = self._selection | set(range(self._lastSelectedCell, index + 1))
+        return newSelection
+
+    # TODO: in mousePressEvent and mouseMoveEvent below, self._lastSelectedCell
+    # must be updated at all exit point
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            key = (event.y() // self.squareSize) * self._columns + event.x() // self.squareSize
-            if key > len(self.glyphs)-1: return
+            self._oldSelection = self._selection
+            index = self._findEventIndex(event)
             modifiers = event.modifiers()
-            if modifiers & Qt.ShiftModifier and len(self.selection) == 1:
-                self.lastKey = self.selection.pop()
-                self.moveKey = key
-            elif modifiers & Qt.ControlModifier:
-                self.lastKey = key
-                self.moveKey = self.lastKey
-            elif key in self.selection and not modifiers & Qt.ShiftModifier:
-                self._maybeDragPosition = event.pos()
-                event.accept()
-                return
-            else:
-                self.selection = set()
-                self.lastKey = key
-                self.moveKey = self.lastKey
-
-            # TODO: make sure lastKey/moveKey are taken care of before rmin this
-            self.computeCharacterSelected()
             event.accept()
-            self.update()
+            if index is None:
+                if not (modifiers & Qt.CtrlModifier or modifiers & Qt.ShiftModifier):
+                    self.selection = set()
+                self._lastSelectedCell = index
+                return
+
+            if modifiers & Qt.ControlModifier:
+                if index in self._selection:
+                    selection = self.selection
+                    selection.remove(index)
+                    self.selection = selection
+                else:
+                    selection = self.selection
+                    selection.add(index)
+                    self.selection = selection
+            elif modifiers & Qt.ShiftModifier:
+                newSelection = self._linearSelection(index)
+                if newSelection is not None:
+                    self.selection = newSelection
+            elif not index in self._selection:
+                self.selection = {index}
+            else:
+                self._maybeDragPosition = event.pos()
+            self.lastSelectedCell = index
         else:
             super(GlyphCollectionWidget, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
+            index = self._findEventIndex(event)
             if self._maybeDragPosition is not None:
                 if ((event.pos() - self._maybeDragPosition).manhattanLength() \
                     < QApplication.startDragDistance()): return
                 # TODO: needs ordering or not?
-                glyphList = " ".join(self.glyphs[key].name for key in self.selection)
+                glyphList = " ".join(self._glyphs[i].name for i in self.selection)
                 drag = QDrag(self)
                 mimeData = QMimeData()
                 mimeData.setText(glyphList)
@@ -195,52 +255,49 @@ class GlyphCollectionWidget(QWidget):
                 self._maybeDragPosition = None
                 event.accept()
                 return
-            key = (event.y() // self.squareSize) * self._columns + min(event.x() // self.squareSize, self._columns-1)
-            if key < 0 or key > len(self.glyphs)-1: return
-            self.moveKey = key
+            if index == self._lastSelectedCell:
+                return
 
-            self.computeCharacterSelected()
+            modifiers = event.modifiers()
             event.accept()
-            self.update()
+            if index is None:
+                if not (modifiers & Qt.ControlModifier or modifiers & Qt.ShiftModifier):
+                    self.selection = set()
+                self._lastSelectedCell = index
+                return
+            if modifiers & Qt.ControlModifier:
+                if index in self._selection and index in self._oldSelection:
+                    selection = self.selection
+                    selection.remove(index)
+                    self.selection = selection
+                elif index not in self._selection and index not in self._oldSelection:
+                    selection = self.selection
+                    selection.add(index)
+                    self.selection = selection
+            elif modifiers & Qt.ShiftModifier:
+                newSelection = self._linearSelection(index)
+                if newSelection is not None:
+                    self.selection = newSelection
+            else:
+                self.selection = {index}
+            self.lastSelectedCell = index
         else:
             super(GlyphCollectionWidget, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self._maybeDragPosition = None
-            if self.lastKey == -1:
-                if self._maybeDragPosition is None:
-                    key = (event.y() // self.squareSize) * self._columns + event.x() // self.squareSize
-                    if key > len(self.glyphs)-1: return
-                    self.selection = {key}
-            else:
-                lastKey = self.lastKey if self.lastKey < len(self.glyphs) else len(self.glyphs)-1
-                moveKey = self.moveKey if self.moveKey < len(self.glyphs) else len(self.glyphs)-1
-                if moveKey > lastKey:
-                    sel = set(range(lastKey, moveKey+1))
-                else:
-                    sel = set(range(moveKey, lastKey+1))
-                self.lastKey = -1
-                self.moveKey = -1
-                if event.modifiers() & Qt.ControlModifier:
-                    self.selection ^= sel
-                else:
-                    self.selection = sel
             event.accept()
-            self.update()
+            self._maybeDragPosition = None
+            self._oldSelection = None
         else:
             super(GlyphCollectionWidget, self).mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            key = (event.y() // self.squareSize) * self._columns + event.x() // self.squareSize
-            if key > len(self.glyphs)-1: event.ignore(); return
-            self.selection -= {key}
-            self.lastKey = key
-            self.moveKey = self.lastKey
             event.accept()
+            index = self._findEventIndex(event)
             if self.doubleClickCallback is not None:
-                self.doubleClickCallback(self.glyphs[key])
+                self.doubleClickCallback(self._glyphs[index])
         else:
             super(GlyphCollectionWidget, self).mousePressEvent(event)
 
@@ -257,18 +314,6 @@ class GlyphCollectionWidget(QWidget):
         beginColumn = redrawRect.left() // self.squareSize
         endColumn = redrawRect.right() // self.squareSize
 
-        # selection code
-        if self.moveKey != -1:
-            if self.moveKey > self.lastKey:
-                curSelection = set(range(self.lastKey, self.moveKey+1))
-            else:
-                curSelection = set(range(self.moveKey, self.lastKey+1))
-        elif self.lastKey != -1: # XXX: necessary?
-            curSelection = {self.lastKey}
-        else:
-            curSelection = set()
-        curSelection ^= self._selection
-
         gradient = QLinearGradient(0, 0, 0, GlyphCellHeaderHeight)
         gradient.setColorAt(0.0, cellHeaderBaseColor)
         gradient.setColorAt(1.0, cellHeaderLineColor)
@@ -280,8 +325,8 @@ class GlyphCollectionWidget(QWidget):
         for row in range(beginRow, endRow + 1):
             for column in range(beginColumn, endColumn + 1):
                 key = row * self._columns + column
-                if key > len(self.glyphs)-1: break
-                glyph = self.glyphs[key]
+                if key >= len(self._glyphs): break
+                glyph = self._glyphs[key]
 
                 painter.save()
                 painter.translate(column * self.squareSize, row * self.squareSize)
@@ -335,12 +380,12 @@ class GlyphCollectionWidget(QWidget):
                 painter.drawLine(rightEdgeX, bottomEdgeY, column * self.squareSize + 1, bottomEdgeY)
 
                 # selection code
-                painter.setRenderHint(QPainter.Antialiasing, False)
-                if key in curSelection:
+                if key in self._selection:
+                    painter.setRenderHint(QPainter.Antialiasing, False)
                     painter.fillRect(column * self.squareSize + 1,
                             row * self.squareSize + 1, self.squareSize - 3,
                             self.squareSize - 3, cellSelectionColor)
-                painter.setRenderHint(QPainter.Antialiasing)
+                    painter.setRenderHint(QPainter.Antialiasing)
 
                 if not glyph.template:
                     font = glyph.getParent()
