@@ -674,11 +674,14 @@ class GlyphScene(QGraphicsScene):
         elif key == Qt.Key_Down:
             x,y = 0,-count
         elif key == Qt.Key_Delete:
+            self._blocked = True
             for item in self.selectedItems():
                 if isinstance(item, OnCurvePointItem):
                     item.delete(not event.modifiers() & Qt.ShiftModifier)
                 elif isinstance(item, PixmapItem):
                     self.removeItem(item)
+            self._blocked = False
+            self._glyphObject.dirty = True
             event.accept()
             return
         elif key == Qt.Key_J:
