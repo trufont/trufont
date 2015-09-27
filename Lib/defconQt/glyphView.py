@@ -330,7 +330,6 @@ class OnCurvePointItem(QGraphicsPathItem):
 
         scene = self.scene()
         glyph = scene._glyphObject
-        scene._blocked = True
         if len(self._contour.segments) < 2:
             glyph.removeContour(self._contour)
         else:
@@ -346,8 +345,7 @@ class OnCurvePointItem(QGraphicsPathItem):
                 self._contour.removeSegment(self.getSegmentIndex(), preserveShape)
                 nextOnCurveIndex = findNextOnCurve(self)
                 self._contour.setStartPoint(nextOnCurveIndex)
-        scene._blocked = False
-        scene.removeItem(self)
+        # This object will be removed from scene by notification mechanism
 
     def setPointPath(self, scale=None):
         path = QPainterPath()
