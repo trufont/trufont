@@ -212,7 +212,7 @@ class GlyphCollectionWidget(QWidget):
             modifiers = event.modifiers()
             event.accept()
             if index is None:
-                if not (modifiers & Qt.CtrlModifier or modifiers & Qt.ShiftModifier):
+                if not (modifiers & Qt.ControlModifier or modifiers & Qt.ShiftModifier):
                     self.selection = set()
                 self._lastSelectedCell = index
                 return
