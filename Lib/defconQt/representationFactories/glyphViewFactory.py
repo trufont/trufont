@@ -63,7 +63,7 @@ class OnlyComponentsQtPen(BasePen):
             pen.path.setFillRule(Qt.WindingFill)
             tPen = TransformPen(pen, transformation)
             glyph.draw(tPen)
-            self.paths.append(pen.path)
+            self.paths.append([pen.path, glyph])
 
 # ----------
 # point data
