@@ -1011,7 +1011,6 @@ class GlyphScene(QGraphicsScene):
         path.setElementPositionAt(1, x, baseElem.y)
         path.setElementPositionAt(2, x, y)
         path.setElementPositionAt(3, baseElem.x, baseElem.y)
-        self._rulerObject.prepareGeometryChange()
         self._rulerObject.setPath(path)
         textItem = self._rulerObject.childItems()[0]
         line = QLineF(baseElem.x, baseElem.y, x, y)
@@ -1024,7 +1023,6 @@ class GlyphScene(QGraphicsScene):
         line.setP1(QPointF(x, y))
         v = line.length()
         text = "%d\n↔ %d\n↕ %d\nα %dº" % (l, h, v, a)
-        textItem.prepareGeometryChange()
         textItem.setText(text)
         dx = x - baseElem.x
         if dx >= 0: px = x
@@ -1126,7 +1124,6 @@ class GlyphScene(QGraphicsScene):
                     item.setPos(pt[0], pt[1])
                     self._cachedIntersections.append((contour, index, pt[2]))
                     self._knifeDots.append(item)
-        self._knifeLine.prepareGeometryChange()
         self._knifeLine.setLine(line)
         event.accept()
 
@@ -1197,7 +1194,6 @@ class GlyphView(QGraphicsView):
     def redrawGlyph(self):
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
         scene = self.scene()
-        scene._outlineItem.prepareGeometryChange()
         scene._outlineItem.setPath(path)
         if not scene._blocked:
             # TODO: also rewind anchors and components
@@ -1209,7 +1205,6 @@ class GlyphView(QGraphicsView):
             self.addPoints()
             # For now, we'll assume not scene._blocked == moving UI points
             # this will not be the case anymore when drag sidebearings pops up
-            scene._widthItem.prepareGeometryChange()
             scene._widthItem.setRect(0, -1000, self._glyph.width, 3000)
 
     def addBackground(self):
