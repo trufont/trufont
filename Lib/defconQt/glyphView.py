@@ -1284,8 +1284,9 @@ class GlyphView(QGraphicsView):
         scene._outlineItem.setZValue(-995)
         scene._glyphObject = self._glyph
         # components
-        path = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
-        scene.addPath(path, brush=QBrush(componentFillColor))
+        paths = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
+        for path in paths:
+            scene.addPath(path, brush=QBrush(componentFillColor))
 
     def addPoints(self):
         scene = self.scene()
