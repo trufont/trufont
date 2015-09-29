@@ -9,8 +9,8 @@ from PyQt5.QtWidgets import QApplication
 if len(sys.argv) < 2:
     share_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'share')
     ufoFile = os.path.join(share_dir, 'fonts', 'subsets', 'Merriweather-Bold-Subset-nop.ufo')
-    print ('Usage: %s <input.ufo>' % sys.argv[0])
-    print ('Loading default sample font: "%s"' % ufoFile)
+    print('Usage: %s <input.ufo>' % sys.argv[0])
+    print('Loading default sample font: "%s"' % ufoFile)
 else:
     ufoFile = sys.argv[1]
     print('Loading font file: "%s"' % ufoFile)

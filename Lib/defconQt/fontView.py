@@ -3,7 +3,7 @@ from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
-from defconQt.objects.defcon import CharacterSet, TFont
+from defconQt.objects.defcon import CharacterSet, TFont, TGlyph
 from defcon import Component
 from defconQt.spaceCenter import MainSpaceWindow
 from fontTools.agl import AGL2UV
@@ -11,8 +11,7 @@ from fontTools.agl import AGL2UV
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-import os
-import unicodedata
+import os, pickle, unicodedata
 
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
@@ -296,8 +295,9 @@ class MainWindow(QMainWindow):
         green.setIcon(QIcon(pixmap))
         green.setData(QColor(Qt.green))
         editMenu.addMenu(markColorMenu)
-        editMenu.addAction("Copy Reference", self.copyReference)
-        editMenu.addAction("Paste Into", self.pasteInto)
+        editMenu.addAction("Copy", self.copy, QKeySequence.Copy)
+        editMenu.addAction("Copy Reference", self.copyReference, "Ctrl+Alt+c")
+        editMenu.addAction("Paste", self.paste, QKeySequence.Paste)
         menuBar.addMenu(editMenu)
 
         fontMenu = QMenu("&Font", self)
@@ -467,27 +467,43 @@ class MainWindow(QMainWindow):
         doc="The sortDescriptor. Takes glyphs from the font and sorts them \
         when set.")
 
-    def copyReference(self):
-        selection = self.collectionWidget.selection
-        if len(selection) == 0:
-            pass # XXX: error dialog: "you need to select a glyph first"
-        else:
-            self.selectedReferences = selection
-
-    def pasteInto(self):
+    def copy(self):
         glyphs = self.collectionWidget.glyphs
         selection = self.collectionWidget.selection
-        if len(selection) == 0:
-            pass # XXX: error dialog: "you need to select a glyph first"
-        else:
-            try:
-                for ref in self.selectedReferences:
-                    component = Component()
-                    component.baseGlyph = glyphs[ref].name
-                    for key in selection:
-                        glyphs[key].appendComponent(component)
-            except:
-                pass
+        pickled = []
+        for index in sorted(self.collectionWidget.selection):
+            pickled.append(glyphs[index].serializeForUndo(False))
+        clipboard = QApplication.clipboard()
+        mimeData = QMimeData()
+        mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps(pickled))
+        clipboard.setMimeData(mimeData)
+
+    def copyReference(self):
+        glyphs = self.collectionWidget.glyphs
+        selection = self.collectionWidget.selection
+        pickled = []
+        for index in sorted(self.collectionWidget.selection):
+            glyph = glyphs[index]
+            componentGlyph = TGlyph()
+            componentGlyph.width = glyph.width
+            component = Component()
+            component.baseGlyph = glyph.name
+            componentGlyph.appendComponent(component)
+            pickled.append(componentGlyph.serializeForUndo(False))
+        clipboard = QApplication.clipboard()
+        mimeData = QMimeData()
+        mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps(pickled))
+        clipboard.setMimeData(mimeData)
+
+    def paste(self):
+        clipboard = QApplication.clipboard()
+        mimeData = clipboard.mimeData()
+        if mimeData.hasFormat("application/x-defconQt-glyph-data"):
+            data = pickle.loads(mimeData.data("application/x-defconQt-glyph-data"))
+            glyphs = self.collectionWidget.getSelectedGlyphs()
+            if len(data) == len(glyphs):
+                for pickled, glyph in zip(data, glyphs):
+                    glyph.deserializeFromUndo(pickled)
 
     def markColor(self):
         color = self.sender().data()

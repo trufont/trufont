@@ -1,5 +1,6 @@
 from enum import Enum
 from math import copysign
+import pickle
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from fontTools.misc import bezierTools
@@ -326,7 +327,7 @@ class ComponentItem(QGraphicsPathItem):
             y = value.y()
             printf( "ItemPositionChange: X=%d Y=%d" % (x, y))
 
-            
+
     def setBounds(self, path):
         bounds_path = QPainterPath()
         region = path.boundingRegion(QTransform()).boundingRect().getCoords()
@@ -340,7 +341,7 @@ class ComponentItem(QGraphicsPathItem):
         pen.setColor(Qt.green)
         self.setPen(pen)
         super(ComponentItem, self).paint(painter, option, widget)
-        
+
 
 class OnCurvePointItem(QGraphicsPathItem):
     def __init__(self, x, y, isSmooth, contour, point, scale=1, parent=None):
@@ -758,19 +759,27 @@ class GlyphScene(QGraphicsScene):
             return
         elif event.matches(QKeySequence.Copy):
             clipboard = QApplication.clipboard()
-            mimeData = clipboard.mimeData()
+            mimeData = QMimeData()
             pen = CopySelectionPen()
             self._glyphObject.drawPoints(pen)
-            # XXX: clipboard should outlive the widget window!
-            self._clipboardObject = pen.getGlyph().serializeForUndo()
+            copyGlyph = pen.getGlyph()
+            # TODO: somehow try to do this in the pen
+            # pass the glyph to a controller object that holds a self._pen
+            copyGlyph.width = self._glyphObject.width
+            mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps([copyGlyph.serializeForUndo(False)]))
+            clipboard.setMimeData(mimeData)
             event.accept()
             return
         elif event.matches(QKeySequence.Paste):
-            if self._clipboardObject is None: return
-            pen = self._glyphObject.getPointPen()
-            pasteGlyph = TGlyph()
-            pasteGlyph.deserializeFromUndo(self._clipboardObject)
-            pasteGlyph.drawPoints(pen)
+            clipboard = QApplication.clipboard()
+            mimeData = clipboard.mimeData()
+            if mimeData.hasFormat("application/x-defconQt-glyph-data"):
+                data = pickle.loads(mimeData.data("application/x-defconQt-glyph-data"))
+                if len(data) == 1:
+                    pen = self._glyphObject.getPointPen()
+                    pasteGlyph = TGlyph()
+                    pasteGlyph.deserializeFromUndo(data[0])
+                    pasteGlyph.drawPoints(pen)
             event.accept()
             return
         else:

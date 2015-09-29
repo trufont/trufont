@@ -82,6 +82,9 @@ class GlyphCollectionWidget(QWidget):
     selection = property(_get_selection, _set_selection, doc="A set that contains \
         indexes of selected glyphs. Schedules display refresh when set.")
 
+    def getSelectedGlyphs(self):
+        return [self._glyphs[key] for key in sorted(self._selection)]
+
     def _get_lastSelectedCell(self):
         return self._lastSelectedCell
 
