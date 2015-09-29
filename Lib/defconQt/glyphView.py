@@ -306,9 +306,8 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         self.setPen(QPen(offCurvePointStrokeColor, offCurvePenWidth/scale))
 
 class ComponentItem(QGraphicsPathItem):
-    def __init__(self, path, component):
-        super(ComponentItem, self).__init__()
-        self._pathitem = self.scene().addPath(path, brush=QBrush(componentFillColor))
+    def __init__(self, path, component, parent = None):
+        super(ComponentItem, self).__init__(parent)
         self._component = component
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
@@ -1324,7 +1323,8 @@ class GlyphView(QGraphicsView):
         # components
         scene._componentItems = []
         for path, component in self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath"):
-            ci = ComponentItem(path, component)
+            pathitem = scene.addPath(path, brush=QBrush(componentFillColor))
+            ci = ComponentItem(pathitem, component)
             scene.addItem(ci)
             ci.setZValue(-998)
             scene._componentItems.append(ci)
