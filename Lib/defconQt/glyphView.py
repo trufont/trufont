@@ -307,10 +307,41 @@ class OffCurvePointItem(QGraphicsEllipseItem):
 
 class ComponentItem(QGraphicsPathItem):
     def __init__(self, path, component):
-      super(ComponentItem, self).__init__()
-      self._component = component
-      self.setFlag(QGraphicsItem.ItemIsMovable)
-      self.setFlag(QGraphicsItem.ItemIsSelectable)
+        super(ComponentItem, self).__init__()
+        self._pathitem = self.scene().addPath(path, brush=QBrush(componentFillColor))
+        self._component = component
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        #self.setPath(path)
+        self.setBounds(path)
+
+    def itemChange(self, change, value):
+        print ("change: %s value: %s" % (change, value))
+        if change == QGraphicsItem.ItemPositionHasChanged:
+            x = self.pos().x()
+            y = self.pos().y()
+            printf( "ItemPositionHasChanged: X=%d Y=%d" % (x, y))
+        elif change == QGraphicsItem.ItemPositionChange:
+            x = value.x()
+            y = value.y()
+            printf( "ItemPositionChange: X=%d Y=%d" % (x, y))
+
+            
+    def setBounds(self, path):
+        bounds_path = QPainterPath()
+        region = path.boundingRegion(QTransform()).boundingRect().getCoords()
+        bounds_path.addRect(region[0], region[1], region[2], region[3])
+        self.prepareGeometryChange()
+        self.setPen(QPen(componentFillColor))
+        self.setPath(bounds_path)
+
+    def paint(self, painter, option, widget):
+        pen = self.pen()
+        pen.setColor(Qt.green)
+        self.setPen(pen)
+        super(ComponentItem, self).paint(painter, option, widget)
+        
 
 class OnCurvePointItem(QGraphicsPathItem):
     def __init__(self, x, y, isSmooth, contour, point, scale=1, parent=None):
@@ -1291,11 +1322,12 @@ class GlyphView(QGraphicsView):
         scene._outlineItem.setZValue(-995)
         scene._glyphObject = self._glyph
         # components
-        components = self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath")
         scene._componentItems = []
-        for path, component in components:
-            component_path = scene.addPath(path, brush=QBrush(componentFillColor))
-            scene._componentItems.append(ComponentItem(component_path, component))
+        for path, component in self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath"):
+            ci = ComponentItem(path, component)
+            scene.addItem(ci)
+            ci.setZValue(-998)
+            scene._componentItems.append(ci)
 
     def addPoints(self):
         scene = self.scene()
