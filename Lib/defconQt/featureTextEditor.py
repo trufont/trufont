@@ -11,12 +11,12 @@ class MainEditWindow(QMainWindow):
         self.font = font
         self.setupFileMenu()
         self.editor = TextEditor(self.font.features.text, self)
-        # arm `undoAvailable` to `setWindowModified`
-        self.editor.setFileChangedCallback(self.setWindowModified)
         self.resize(600, 500)
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle("Font features", self.font)
+        # now arm `undoAvailable` to `setWindowModified`
+        self.editor.setFileChangedCallback(self.setWindowModified)
 
     def setWindowTitle(self, title, font):
         if font is not None: puts = "[*]%s – %s %s" % (title, self.font.info.familyName, self.font.info.styleName)

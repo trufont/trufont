@@ -11,7 +11,7 @@ class TabDialog(QDialog):
         super(TabDialog, self).__init__(parent)
         self.font = font
 
-        self.tabWidget = InfoTabWidget()
+        self.tabWidget = InfoTabWidget(self)
         self.tabWidget.addNamedTab(GeneralTab(self.font))
         self.tabWidget.addNamedTab(MetricsTab(self.font))
         self.tabWidget.addNamedTab(OpenTypeTab(self.font))

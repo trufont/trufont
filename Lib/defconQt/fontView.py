@@ -274,6 +274,7 @@ class MainWindow(QMainWindow):
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
         fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
+        fileMenu.addAction("Reload from disk", self.reload)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
 
@@ -333,7 +334,7 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.collectionWidget.scrollArea())
         self.resize(605, 430)
-        self.setWindowTitle() # TODO: maybe clean this up
+        self.setWindowTitle()
 
     def newFile(self):
         ok = self.maybeSaveBeforeExit()
@@ -401,7 +402,7 @@ class MainWindow(QMainWindow):
                 currentFont = os.path.basename(self.font.path.rstrip(os.sep))
             else:
                 currentFont = "Untitled.ufo"
-            body = "%s%s%s" % ("Do you want to save the changes you made to “", currentFont, "”?")
+            body = "Do you want to save the changes you made to “%s”?" % currentFont
             closeDialog = QMessageBox(QMessageBox.Question, title, body,
                   QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
             closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
@@ -414,6 +415,16 @@ class MainWindow(QMainWindow):
                 return True
             return False
         return True
+
+    def reload(self):
+        font = self._font
+        font.reloadInfo()
+        font.reloadKerning()
+        font.reloadGroups()
+        font.reloadFeatures()
+        font.reloadLib()
+        font.reloadGlyphs(font.keys())
+        self.setWindowModified(False)
 
     def _get_font(self):
         return self._font
@@ -503,7 +514,13 @@ class MainWindow(QMainWindow):
             glyphs = self.collectionWidget.getSelectedGlyphs()
             if len(data) == len(glyphs):
                 for pickled, glyph in zip(data, glyphs):
+                    name = glyph.name
+                    uni = glyph.unicode
                     glyph.deserializeFromUndo(pickled)
+                    # XXX: after upgrade to ufo3, write a more flexible
+                    # serialization system
+                    glyph.name = name
+                    glyph.unicode = uni
 
     def markColor(self):
         color = self.sender().data()
