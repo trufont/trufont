@@ -29,17 +29,15 @@ class NoComponentsQtPen(QtPen):
 def OnlyComponentsQPainterPathFactory(glyph, font):
     pen = OnlyComponentsQtPen(font)
     glyph.draw(pen)
-    return pen.getData()
+    pen.path.setFillRule(Qt.WindingFill)
+    return pen.path
 
 class OnlyComponentsQtPen(BasePen):
 
     def __init__(self, glyphSet):
         BasePen.__init__(self, glyphSet)
-        self._glyphSet = glyphSet
-        self.paths = []
-
-    def getData(self):
-      return self.paths
+        self.pen = QtPen(glyphSet)
+        self.path = self.pen.path
 
     def _moveTo(self, p):
         pass
@@ -59,11 +57,8 @@ class OnlyComponentsQtPen(BasePen):
         except KeyError:
             return
         else:
-            pen = QtPen(self._glyphSet)
-            pen.path.setFillRule(Qt.WindingFill)
-            tPen = TransformPen(pen, transformation)
+            tPen = TransformPen(self.pen, transformation)
             glyph.draw(tPen)
-            self.paths.append([pen.path, glyph])
 
 # ----------
 # point data

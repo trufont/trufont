@@ -306,43 +306,6 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         self.setRect(-offHalf/scale, -offHalf/scale, offWidth/scale, offHeight/scale)
         self.setPen(QPen(offCurvePointStrokeColor, offCurvePenWidth/scale))
 
-class ComponentItem(QGraphicsPathItem):
-    def __init__(self, path, component, parent = None):
-        super(ComponentItem, self).__init__(parent)
-        self._component = component
-        self.setFlag(QGraphicsItem.ItemIsMovable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        #self.setPath(path)
-        self.setBounds(path)
-
-    def itemChange(self, change, value):
-        print ("change: %s value: %s" % (change, value))
-        if change == QGraphicsItem.ItemPositionHasChanged:
-            x = self.pos().x()
-            y = self.pos().y()
-            printf( "ItemPositionHasChanged: X=%d Y=%d" % (x, y))
-        elif change == QGraphicsItem.ItemPositionChange:
-            x = value.x()
-            y = value.y()
-            printf( "ItemPositionChange: X=%d Y=%d" % (x, y))
-
-
-    def setBounds(self, path):
-        bounds_path = QPainterPath()
-        region = path.boundingRegion(QTransform()).boundingRect().getCoords()
-        bounds_path.addRect(region[0], region[1], region[2], region[3])
-        self.prepareGeometryChange()
-        self.setPen(QPen(componentFillColor))
-        self.setPath(bounds_path)
-
-    def paint(self, painter, option, widget):
-        pen = self.pen()
-        pen.setColor(Qt.green)
-        self.setPen(pen)
-        super(ComponentItem, self).paint(painter, option, widget)
-
-
 class OnCurvePointItem(QGraphicsPathItem):
     def __init__(self, x, y, isSmooth, contour, point, scale=1, parent=None):
         super(OnCurvePointItem, self).__init__(parent)
@@ -548,6 +511,31 @@ class OnCurvePointItem(QGraphicsPathItem):
             pen.setColor(onCurvePointStrokeColor)
         self.setPen(pen)
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
+
+class ComponentItem(QGraphicsPathItem):
+    def __init__(self, path, component, parent=None):
+        super(ComponentItem, self).__init__(path, parent)
+        self._component = component
+        self.setTransform(QTransform(*component.transformation))
+        self.setBrush(QBrush(componentFillColor))
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange:
+            if self.scene()._integerPlane:
+                value.setX(round(value.x()))
+                value.setY(round(value.y()))
+        elif change == QGraphicsItem.ItemPositionHasChanged:
+            t = self._component.transformation
+            x = self.pos().x()
+            y = self.pos().y()
+            scene = self.scene()
+            scene._blocked = True
+            self._component.transformation = (t[0], t[1], t[2], t[3], x, y)
+            scene._blocked = False
+        return value
 
 bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
 fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
@@ -1228,6 +1216,7 @@ class GlyphView(QGraphicsView):
         self.addBlues()
         self.addHorizontalMetrics()
         self.addOutlines()
+        self.addComponents()
         self.addPoints()
 
     def _glyphChanged(self, notification):
@@ -1244,10 +1233,11 @@ class GlyphView(QGraphicsView):
         if not scene._blocked:
             # TODO: also rewind anchors and components
             for item in scene.items():
-                if isinstance(item, OnCurvePointItem):
+                if isinstance(item, OnCurvePointItem) or isinstance(item, ComponentItem):
                     scene.removeItem(item)
                 elif isinstance(item, VGuidelinesTextItem):
                     item.setPos(self._glyph.width, item.y())
+            self.addComponents()
             self.addPoints()
             # For now, we'll assume not scene._blocked == moving UI points
             # this will not be the case anymore when drag sidebearings pops up
@@ -1324,19 +1314,20 @@ class GlyphView(QGraphicsView):
 
     def addOutlines(self):
         scene = self.scene()
-        # outlines
         path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
         scene._outlineItem = scene.addPath(path, brush=QBrush(fillColor))
         scene._outlineItem.setZValue(-995)
         scene._glyphObject = self._glyph
-        # components
-        scene._componentItems = []
-        for path, component in self._glyph.getRepresentation("defconQt.OnlyComponentsQPainterPath"):
-            pathitem = scene.addPath(path, brush=QBrush(componentFillColor))
-            ci = ComponentItem(pathitem, component)
-            scene.addItem(ci)
-            ci.setZValue(-998)
-            scene._componentItems.append(ci)
+
+    def addComponents(self):
+        scene = self.scene()
+        font = self._glyph.getParent()
+        for component in self._glyph.components:
+            glyph = font[component.baseGlyph]
+            path = glyph.getRepresentation("defconQt.QPainterPath")
+            item = ComponentItem(path, component)
+            item.setZValue(-996)
+            scene.addItem(item)
 
     def addPoints(self):
         scene = self.scene()
