@@ -297,7 +297,7 @@ class MainWindow(QMainWindow):
         green.setData(QColor(Qt.green))
         editMenu.addMenu(markColorMenu)
         editMenu.addAction("Copy", self.copy, QKeySequence.Copy)
-        editMenu.addAction("Copy Reference", self.copyReference, "Ctrl+Alt+c")
+        editMenu.addAction("Copy as Component", self.copyAsComponent, "Ctrl+Alt+c")
         editMenu.addAction("Paste", self.paste, QKeySequence.Paste)
         menuBar.addMenu(editMenu)
 
@@ -489,7 +489,7 @@ class MainWindow(QMainWindow):
         mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps(pickled))
         clipboard.setMimeData(mimeData)
 
-    def copyReference(self):
+    def copyAsComponent(self):
         glyphs = self.collectionWidget.glyphs
         selection = self.collectionWidget.selection
         pickled = []
