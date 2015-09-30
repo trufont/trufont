@@ -210,8 +210,9 @@ smoothHalf = smoothWidth / 2.0
 onCurvePenWidth = 1.5
 offCurvePenWidth = 1.0
 
-anchorSize = 15
-anchorPenWidth = 1.5
+anchorSize = 10
+anchorWidth = anchorHeight = roundPosition(anchorSize)
+anchorHalf = anchorWidth / 2.0
 
 bezierHandleColor = QColor.fromRgbF(0, 0, 0, .2)
 startPointColor = QColor.fromRgbF(0, 0, 0, .2)
@@ -221,6 +222,10 @@ offCurvePointStrokeColor = QColor.fromRgbF(.6, .6, .6, 1)
 onCurvePointColor = offCurvePointStrokeColor
 onCurvePointStrokeColor = offCurvePointColor
 anchorColor = Qt.blue
+bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
+fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
+componentFillColor = QColor.fromRgbF(0, 0, 0, .4)#QColor.fromRgbF(.2, .2, .3, .4)
+metricsColor = QColor(70, 70, 70)
 pointSelectionColor = Qt.red
 
 class SceneTools(Enum):
@@ -520,10 +525,19 @@ class AnchorItem(QGraphicsPathItem):
     def __init__(self, anchor, parent=None):
         super(AnchorItem, self).__init__(parent)
         self._anchor = anchor
+
+        textItem = QGraphicsSimpleTextItem(self._anchor.name, parent=self)
+        font = QFont()
+        font.setPointSize(9)
+        textItem.setFont(font)
+        textItem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         self.setPointPath()
+        self.setPos(self._anchor.x, self._anchor.y)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setBrush(QBrush(anchorColor))
+        self.setPen(QPen(Qt.NoPen))
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -551,25 +565,27 @@ class AnchorItem(QGraphicsPathItem):
         if scale > 4: scale = 4
         elif scale < .4: scale = .4
 
-        path.addEllipse(-(anchorSize/2)/scale, -(anchorSize/2)/scale, anchorSize/scale, anchorSize/scale)
-        path.moveTo(-anchorSize/scale, 0)
-        path.lineTo(anchorSize/scale, 0)
-        path.moveTo(0, anchorSize/scale)
-        path.lineTo(0, -anchorSize/scale)
+        path.moveTo(-anchorHalf/scale, 0)
+        path.lineTo(0, anchorHalf/scale)
+        path.lineTo(anchorHalf/scale, 0)
+        path.lineTo(0, -anchorHalf/scale)
+        path.closeSubpath()
 
-        textItem = QGraphicsSimpleTextItem(self._anchor.name, self)
-        font = QFont()
-        font.setPointSize(9)
-        textItem.setFont(font)
-        textItem.setBrush(anchorColor)
-        textItem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-        textItem.setPos(anchorSize/scale * 1.3, textItem.boundingRect().height()/2)
-        
         self.prepareGeometryChange()
         self.setPath(path)
-        self.setPos(self._anchor.x, self._anchor.y)
-        self.setPen(QPen(anchorColor, anchorPenWidth/scale))
+        textItem = self.childItems()[0]
+        textItem.setPos(anchorHalf/scale, textItem.boundingRect().height()/2)
 
+    # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
+    def paint(self, painter, option, widget):
+        newOption = QStyleOptionGraphicsItem(option)
+        newOption.state = QStyle.State_None
+        pen = self.pen()
+        if option.state & QStyle.State_Selected:
+            self.setPen(QPen(onCurvePointColor, 1.0))
+        else:
+            self.setPen(QPen(Qt.NoPen))
+        super(AnchorItem, self).paint(painter, newOption, widget)
 
 class ComponentItem(QGraphicsPathItem):
     def __init__(self, path, component, parent=None):
@@ -595,11 +611,6 @@ class ComponentItem(QGraphicsPathItem):
             self._component.transformation = (t[0], t[1], t[2], t[3], x, y)
             scene._blocked = False
         return value
-
-bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
-fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
-componentFillColor = QColor.fromRgbF(0, 0, 0, .4)#QColor.fromRgbF(.2, .2, .3, .4)
-metricsColor = QColor(70, 70, 70)
 
 class VGuidelinesTextItem(QGraphicsSimpleTextItem):
     def __init__(self, text, font, parent=None):
@@ -1570,8 +1581,8 @@ class GlyphView(QGraphicsView):
         scale = self.transform().m11()
         if scale < 4:
             for item in self.scene().items():
-                if isinstance(item, OnCurvePointItem) or isinstance(item, OffCurvePointItem) or \
-                  isinstance(item, ResizeHandleItem):
+                if isinstance(item, (OnCurvePointItem, OffCurvePointItem, \
+                  ResizeHandleItem, AnchorItem)):
                     item.setPointPath(scale)
         self.update()
         event.accept()
