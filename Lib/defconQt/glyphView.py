@@ -210,6 +210,9 @@ smoothHalf = smoothWidth / 2.0
 onCurvePenWidth = 1.5
 offCurvePenWidth = 1.0
 
+anchorSize = 15
+anchorPenWidth = 1.5
+
 bezierHandleColor = QColor.fromRgbF(0, 0, 0, .2)
 startPointColor = QColor.fromRgbF(0, 0, 0, .2)
 backgroundColor = Qt.white
@@ -217,6 +220,7 @@ offCurvePointColor = QColor.fromRgbF(1, 1, 1, 1)
 offCurvePointStrokeColor = QColor.fromRgbF(.6, .6, .6, 1)
 onCurvePointColor = offCurvePointStrokeColor
 onCurvePointStrokeColor = offCurvePointColor
+anchorColor = Qt.blue
 pointSelectionColor = Qt.red
 
 class SceneTools(Enum):
@@ -511,6 +515,61 @@ class OnCurvePointItem(QGraphicsPathItem):
             pen.setColor(onCurvePointStrokeColor)
         self.setPen(pen)
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
+
+class AnchorItem(QGraphicsPathItem):
+    def __init__(self, anchor, parent=None):
+        super(AnchorItem, self).__init__(parent)
+        self._anchor = anchor
+        self.setPointPath()
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange:
+            if self.scene()._integerPlane:
+                value.setX(round(value.x()))
+                value.setY(round(value.y()))
+        elif change == QGraphicsItem.ItemPositionHasChanged:
+            x = self.pos().x()
+            y = self.pos().y()
+            scene = self.scene()
+            scene._blocked = True
+            self._anchor.x = x
+            self._anchor.y = y
+            scene._blocked = False
+        return value
+
+    def setPointPath(self, scale=None):
+        path = QPainterPath()
+        if scale is None:
+            scene = self.scene()
+            if scene is not None:
+                scale = scene.getViewScale()
+            else:
+                scale = 1
+        if scale > 4: scale = 4
+        elif scale < .4: scale = .4
+
+        path.addEllipse(-(anchorSize/2)/scale, -(anchorSize/2)/scale, anchorSize/scale, anchorSize/scale)
+        path.moveTo(-anchorSize/scale, 0)
+        path.lineTo(anchorSize/scale, 0)
+        path.moveTo(0, anchorSize/scale)
+        path.lineTo(0, -anchorSize/scale)
+
+        textItem = QGraphicsSimpleTextItem(self._anchor.name, self)
+        font = QFont()
+        font.setPointSize(9)
+        textItem.setFont(font)
+        textItem.setBrush(anchorColor)
+        textItem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        textItem.setPos(anchorSize/scale * 1.3, textItem.boundingRect().height()/2)
+        
+        self.prepareGeometryChange()
+        self.setPath(path)
+        self.setPos(self._anchor.x, self._anchor.y)
+        self.setPen(QPen(anchorColor, anchorPenWidth/scale))
+
 
 class ComponentItem(QGraphicsPathItem):
     def __init__(self, path, component, parent=None):
@@ -1217,6 +1276,7 @@ class GlyphView(QGraphicsView):
         self.addHorizontalMetrics()
         self.addOutlines()
         self.addComponents()
+        self.addAnchors()
         self.addPoints()
 
     def _glyphChanged(self, notification):
@@ -1233,11 +1293,13 @@ class GlyphView(QGraphicsView):
         if not scene._blocked:
             # TODO: also rewind anchors and components
             for item in scene.items():
-                if isinstance(item, OnCurvePointItem) or isinstance(item, ComponentItem):
+                if isinstance(item, OnCurvePointItem) or isinstance(item, ComponentItem) or isinstance(item, AnchorItem):
                     scene.removeItem(item)
                 elif isinstance(item, VGuidelinesTextItem):
                     item.setPos(self._glyph.width, item.y())
+
             self.addComponents()
+            self.addAnchors()
             self.addPoints()
             # For now, we'll assume not scene._blocked == moving UI points
             # this will not be the case anymore when drag sidebearings pops up
@@ -1326,6 +1388,13 @@ class GlyphView(QGraphicsView):
             glyph = font[component.baseGlyph]
             path = glyph.getRepresentation("defconQt.QPainterPath")
             item = ComponentItem(path, component)
+            item.setZValue(-996)
+            scene.addItem(item)
+
+    def addAnchors(self):
+        scene = self.scene()
+        for anchor in self._glyph.anchors:
+            item = AnchorItem(anchor)
             item.setZValue(-996)
             scene.addItem(item)
 
