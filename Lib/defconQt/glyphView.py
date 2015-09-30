@@ -1,6 +1,7 @@
 from enum import Enum
 from math import copysign
 import pickle
+from defcon import Anchor
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from fontTools.misc import bezierTools
@@ -171,6 +172,11 @@ class MainGfxWindow(QMainWindow):
         self.setCentralWidget(self.view)
         self.setWindowTitle(glyph.name, glyph.getParent())
         self.adjustSize()
+
+        self.setContextMenuPolicy(Qt.ActionsContextMenu)
+        createAnchorAction = QAction("Add Anchor Point", self)
+        createAnchorAction.triggered.connect(lambda: self.view.createAnchor(self.view.scene().cursorX , self.view.scene().cursorY))
+        self.addAction(createAnchorAction)
 
     def close(self):
         self.view._glyph.removeObserver(self, "Glyph.Changed")
@@ -956,6 +962,8 @@ class GlyphScene(QGraphicsScene):
         if forceSelect: item.setSelected(True)
 
     def mouseMoveEvent(self, event):
+        self.cursorX = event.scenePos().x()
+        self.cursorY = event.scenePos().y()
         if self._editing is True:
             sel = self.selectedItems()
             if len(sel) == 1:
@@ -1247,6 +1255,49 @@ class GlyphScene(QGraphicsScene):
         self._cachedIntersections = []
         event.accept()
 
+class AddAnchorDialog(QDialog):
+    def __init__(self, parent=None):
+        super(AddAnchorDialog, self).__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Add anchor point…")
+
+        layout = QGridLayout(self)
+#        self.anchorClassesDrop = QComboBox(self)
+#        self.anchorClassesDrop.addItem("Anchor-point classes…")
+#        classNames = ["TODO", "iterate", "from", "list of previously", "used", "anchor point names"]
+#        for className in classNames:
+#            self.anchorClassesDrop.addItem(className, className)
+#        self.anchorClassesDrop.currentIndexChanged[int].connect(self.selectAnchorClass)
+
+        self.anchorNameEdit = QLineEdit(self)
+        self.anchorNameEdit.setFocus(True)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        l = 0
+#        layout.addWidget(self.anchorClassesDrop, l, 3)
+#        l += 1
+        layout.addWidget(self.anchorNameEdit, l, 0, 1, 4)
+        l += 1
+        layout.addWidget(buttonBox, l, 3)
+        self.setLayout(layout)
+
+#    def selectAnchorClass(self, index):
+#        print ("index: %d" % index)
+#        if index == 0: return
+#        className = self.anchorClassesDrop.itemData(index)
+#        print ("className: %s" % className)
+#        self.anchorNameEdit.setText(className)
+
+    @staticmethod
+    def getNewAnchorData():
+        dialog = AddAnchorDialog()
+        result = dialog.exec_()
+        name = dialog.anchorNameEdit.text().strip()
+        return (name, result)
+
 class GlyphView(QGraphicsView):
     Native, OpenGL, Image = range(3)
 
@@ -1401,6 +1452,15 @@ class GlyphView(QGraphicsView):
             item = ComponentItem(path, component)
             item.setZValue(-996)
             scene.addItem(item)
+
+    def createAnchor(self, x, y):
+        newAnchorName, ok = AddAnchorDialog.getNewAnchorData()
+        if ok:
+            anchor = Anchor()
+            anchor.x = x
+            anchor.y = y
+            anchor.name = newAnchorName
+            self._glyph.appendAnchor(anchor)
 
     def addAnchors(self):
         scene = self.scene()
