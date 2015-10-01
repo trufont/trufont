@@ -12,6 +12,40 @@ from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
         #QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
 from PyQt5.QtOpenGL import QGL, QGLFormat, QGLWidget
 
+class AddAnchorDialog(QDialog):
+    def __init__(self, pos=None, parent=None):
+        super(AddAnchorDialog, self).__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Add anchor…")
+
+        layout = QGridLayout(self)
+
+        anchorNameLabel = QLabel("Anchor name:", self)
+        self.anchorNameEdit = QLineEdit(self)
+        self.anchorNameEdit.setFocus(True)
+        if pos is not None:
+            anchorPositionLabel = QLabel("The anchor will be added at ({}, {})."
+              .format(pos.x(), pos.y()), self)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        l = 0
+        layout.addWidget(anchorNameLabel, l, 0)
+        layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
+        l += 1
+        layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
+        l += 1
+        layout.addWidget(buttonBox, l, 3)
+        self.setLayout(layout)
+
+    @staticmethod
+    def getNewAnchorData(parent, pos=None):
+        dialog = AddAnchorDialog(pos, parent)
+        result = dialog.exec_()
+        name = dialog.anchorNameEdit.text()
+        return (name, result)
 
 class GotoDialog(QDialog):
     alphabetical = [
@@ -216,7 +250,7 @@ smoothHalf = smoothWidth / 2.0
 onCurvePenWidth = 1.5
 offCurvePenWidth = 1.0
 
-anchorSize = 10
+anchorSize = 11
 anchorWidth = anchorHeight = roundPosition(anchorSize)
 anchorHalf = anchorWidth / 2.0
 
@@ -227,7 +261,8 @@ offCurvePointColor = QColor.fromRgbF(1, 1, 1, 1)
 offCurvePointStrokeColor = QColor.fromRgbF(.6, .6, .6, 1)
 onCurvePointColor = offCurvePointStrokeColor
 onCurvePointStrokeColor = offCurvePointColor
-anchorColor = Qt.blue
+anchorColor = QColor(120, 120, 255)
+anchorSelectionColor = Qt.blue
 bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
 fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
 componentFillColor = QColor.fromRgbF(0, 0, 0, .4)#QColor.fromRgbF(.2, .2, .3, .4)
@@ -528,7 +563,7 @@ class OnCurvePointItem(QGraphicsPathItem):
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
 
 class AnchorItem(QGraphicsPathItem):
-    def __init__(self, anchor, parent=None):
+    def __init__(self, anchor, scale=1, parent=None):
         super(AnchorItem, self).__init__(parent)
         self._anchor = anchor
 
@@ -537,13 +572,17 @@ class AnchorItem(QGraphicsPathItem):
         font.setPointSize(9)
         textItem.setFont(font)
         textItem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-        self.setPointPath()
+        self.setPointPath(scale)
         self.setPos(self._anchor.x, self._anchor.y)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setBrush(QBrush(anchorColor))
         self.setPen(QPen(Qt.NoPen))
+
+    def delete(self):
+        glyph = self._anchor.getParent()
+        glyph.removeAnchor(self._anchor)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -588,9 +627,9 @@ class AnchorItem(QGraphicsPathItem):
         newOption.state = QStyle.State_None
         pen = self.pen()
         if option.state & QStyle.State_Selected:
-            self.setPen(QPen(onCurvePointColor, 1.0))
+            self.setBrush(anchorSelectionColor)
         else:
-            self.setPen(QPen(Qt.NoPen))
+            self.setBrush(anchorColor)
         super(AnchorItem, self).paint(painter, newOption, widget)
 
 class ComponentItem(QGraphicsPathItem):
@@ -602,6 +641,10 @@ class ComponentItem(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+
+    def delete(self):
+        glyph = self._component.getParent()
+        glyph.removeComponent(self._component)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -780,6 +823,8 @@ class GlyphScene(QGraphicsScene):
             for item in self.selectedItems():
                 if isinstance(item, OnCurvePointItem):
                     item.delete(not event.modifiers() & Qt.ShiftModifier)
+                elif isinstance(item, (AnchorItem, ComponentItem)):
+                    item.delete()
                 elif isinstance(item, PixmapItem):
                     self.removeItem(item)
             self._blocked = False
@@ -873,6 +918,8 @@ class GlyphScene(QGraphicsScene):
         super(GlyphScene, self).keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
+        if event.button() == Qt.RightButton:
+            self._rightClickPos = event.scenePos()
         view = self.views()[0]
         touched = self.itemAt(event.scenePos(), view.transform())
         if view._currentTool == SceneTools.RulerTool:
@@ -962,8 +1009,6 @@ class GlyphScene(QGraphicsScene):
         if forceSelect: item.setSelected(True)
 
     def mouseMoveEvent(self, event):
-        self.cursorX = event.scenePos().x()
-        self.cursorY = event.scenePos().y()
         if self._editing is True:
             sel = self.selectedItems()
             if len(sel) == 1:
@@ -1255,49 +1300,6 @@ class GlyphScene(QGraphicsScene):
         self._cachedIntersections = []
         event.accept()
 
-class AddAnchorDialog(QDialog):
-    def __init__(self, parent=None):
-        super(AddAnchorDialog, self).__init__(parent)
-        self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Add anchor point…")
-
-        layout = QGridLayout(self)
-#        self.anchorClassesDrop = QComboBox(self)
-#        self.anchorClassesDrop.addItem("Anchor-point classes…")
-#        classNames = ["TODO", "iterate", "from", "list of previously", "used", "anchor point names"]
-#        for className in classNames:
-#            self.anchorClassesDrop.addItem(className, className)
-#        self.anchorClassesDrop.currentIndexChanged[int].connect(self.selectAnchorClass)
-
-        self.anchorNameEdit = QLineEdit(self)
-        self.anchorNameEdit.setFocus(True)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-
-        l = 0
-#        layout.addWidget(self.anchorClassesDrop, l, 3)
-#        l += 1
-        layout.addWidget(self.anchorNameEdit, l, 0, 1, 4)
-        l += 1
-        layout.addWidget(buttonBox, l, 3)
-        self.setLayout(layout)
-
-#    def selectAnchorClass(self, index):
-#        print ("index: %d" % index)
-#        if index == 0: return
-#        className = self.anchorClassesDrop.itemData(index)
-#        print ("className: %s" % className)
-#        self.anchorNameEdit.setText(className)
-
-    @staticmethod
-    def getNewAnchorData():
-        dialog = AddAnchorDialog()
-        result = dialog.exec_()
-        name = dialog.anchorNameEdit.text().strip()
-        return (name, result)
-
 class GlyphView(QGraphicsView):
     Native, OpenGL, Image = range(3)
 
@@ -1417,7 +1419,7 @@ class GlyphView(QGraphicsView):
             positions[position].append(name)
         # lines
         for position, names in sorted(positions.items()):
-            y = self.roundPosition(position)
+            y = roundPosition(position)
             item = scene.addLine(-1000, y, 2000, y, QPen(metricsColor))
             item.setZValue(-997)
         # text
@@ -1453,19 +1455,10 @@ class GlyphView(QGraphicsView):
             item.setZValue(-996)
             scene.addItem(item)
 
-    def createAnchor(self, x, y):
-        newAnchorName, ok = AddAnchorDialog.getNewAnchorData()
-        if ok:
-            anchor = Anchor()
-            anchor.x = x
-            anchor.y = y
-            anchor.name = newAnchorName
-            self._glyph.appendAnchor(anchor)
-
     def addAnchors(self):
         scene = self.scene()
         for anchor in self._glyph.anchors:
-            item = AnchorItem(anchor)
+            item = AnchorItem(anchor, self.transform().m11())
             item.setZValue(-996)
             scene.addItem(item)
 
@@ -1491,12 +1484,6 @@ class GlyphView(QGraphicsView):
             onCurveSmoothPointSize = 3
         else:
             return
-        '''
-        if pointSize > 250:
-            coordinateSize = 9
-        else:
-            coordinateSize = 0
-        '''
         # use the data from the outline representation
         outlineData = self._glyph.getRepresentation("defconQt.OutlineInformation")
         points = [] # TODO: remove this unless we need it # useful for text drawing, add it
@@ -1527,7 +1514,7 @@ class GlyphView(QGraphicsView):
         '''
         # start point
         if self._showOnCurvePoints and outlineData["startPoints"]:
-            startWidth = startHeight = self.roundPosition(startPointSize)# * self._inverseScale)
+            startWidth = startHeight = roundPosition(startPointSize)# * self._inverseScale)
             startHalf = startWidth / 2.0
             for point, angle in outlineData["startPoints"]:
                 x, y = point
@@ -1564,11 +1551,19 @@ class GlyphView(QGraphicsView):
                 self._drawTextAtPoint(text, attributes, (posX, posY), 3)
         '''
 
-    def roundPosition(self, value):
-        value = value * self._scale
-        value = round(value) - .5
-        value = value * self._inverseScale
-        return value
+    def createAnchor(self):
+        scene = self.scene()
+        pos = scene._rightClickPos
+        if scene._integerPlane:
+            pos.setX(int(pos.x()))
+            pos.setY(int(pos.y()))
+        newAnchorName, ok = AddAnchorDialog.getNewAnchorData(self, pos)
+        if ok:
+            anchor = Anchor()
+            anchor.x = pos.x()
+            anchor.y = pos.y()
+            anchor.name = newAnchorName
+            self._glyph.appendAnchor(anchor)
 
     def setGlyph(self, glyph):
         self._glyph.removeObserver(self, "Glyph.Changed")
