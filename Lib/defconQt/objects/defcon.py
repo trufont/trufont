@@ -11,104 +11,11 @@ class TFont(Font):
             kwargs["glyphPointClass"] = TPoint
         super(TFont, self).__init__(*args, **kwargs)
 
-    # XXX: had to copy all of this so as to exclude template glyphs from
-    # save. It pains me that's the only thing to be done w current upstream
     def save(self, path=None, formatVersion=None):
-        saveAs = False
-        if path is not None and path != self._path:
-            saveAs = True
-        else:
-            path = self._path
-        ## work out the format version
-        # if None is given, fallback to the one that
-        # came in when the UFO was loaded
-        if formatVersion is None and self._ufoFormatVersion is not None:
-            formatVersion = self._ufoFormatVersion
-        # otherwise fallback to 2
-        elif self._ufoFormatVersion is None:
-            formatVersion = 2
-        ## make a UFOWriter
-        ufoWriter = ufoLib.UFOWriter(path, formatVersion=formatVersion)
-        ## save objects
-        saveInfo = False
-        saveKerning = False
-        saveGroups = False
-        saveFeatures = False
-        ## lib should always be saved
-        saveLib = True
-        # if in a save as, save all objects
-        if saveAs:
-            saveInfo = True
-            saveKerning = True
-            saveGroups = True
-            saveFeatures = True
-        ## if changing ufo format versions, save all objects
-        if self._ufoFormatVersion != formatVersion:
-            saveInfo = True
-            saveKerning = True
-            saveGroups = True
-            saveFeatures = True
-        # save info, kerning and features if they are dirty
-        if self._info is not None and self._info.dirty:
-            saveInfo = True
-        if self._kerning is not None and self._kerning.dirty:
-            saveKerning = True
-        if self._features is not None and self._features.dirty:
-            saveFeatures = True
-        # always save groups and lib if they are loaded
-        # as they contain sub-objects that may not notify
-        # the main object about changes.
-        if self._groups is not None:
-            saveGroups = True
-        if self._lib is not None:
-            saveLib = True
-        # save objects as needed
-        if saveInfo:
-            ufoWriter.writeInfo(self.info)
-            self._stampInfoDataState()
-            self.info.dirty = False
-        if saveKerning:
-            ufoWriter.writeKerning(self.kerning)
-            self._stampKerningDataState()
-            self.kerning.dirty = False
-        if saveGroups:
-            ufoWriter.writeGroups(self.groups)
-            self._stampGroupsDataState()
-        if saveFeatures and formatVersion > 1:
-            ufoWriter.writeFeatures(self.features.text)
-            self._stampFeaturesDataState()
-        if saveLib:
-            # if making format version 1, do some
-            # temporary down conversion before
-            # passing the lib to the writer
-            libCopy = dict(self.lib)
-            if formatVersion == 1:
-                self._convertToFormatVersion1RoboFabData(libCopy)
-            ufoWriter.writeLib(libCopy)
-            self._stampLibDataState()
-        ## save glyphs
-        # for a save as operation, load all the glyphs
-        # and mark them as dirty.
-        if saveAs:
-            for glyph in self:
-                glyph.dirty = True
-        glyphSet = ufoWriter.getGlyphSet()
-        for glyphName, glyphObject in self._glyphs.items():
-            if glyphObject.template: continue
-            if glyphObject.dirty:
-                glyphSet.writeGlyph(glyphName, glyphObject, glyphObject.drawPoints)
-                self._stampGlyphDataState(glyphObject)
-        # remove deleted glyphs
-        if not saveAs and self._scheduledForDeletion:
-            for glyphName in self._scheduledForDeletion:
-                if glyphName in glyphSet:
-                    glyphSet.deleteGlyph(glyphName)
-        glyphSet.writeContents()
-        self._glyphSet = glyphSet
-        self._scheduledForDeletion = []
-        self._path = path
-        self._ufoFormatVersion = formatVersion
-        self.dirty = False
+        for glyph in self:
+            if glyph.template:
+                glyph.dirty = False
+        super(TFont, self).save(path, formatVersion)
 
 class TGlyph(Glyph):
     def __init__(self, *args, **kwargs):
