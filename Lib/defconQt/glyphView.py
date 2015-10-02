@@ -209,7 +209,7 @@ class MainGfxWindow(QMainWindow):
 
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
         createAnchorAction = QAction("Add Anchor Point", self)
-        createAnchorAction.triggered.connect(lambda: self.view.createAnchor(self.view.scene().cursorX , self.view.scene().cursorY))
+        createAnchorAction.triggered.connect(self.view.createAnchor)
         self.addAction(createAnchorAction)
 
     def close(self):
