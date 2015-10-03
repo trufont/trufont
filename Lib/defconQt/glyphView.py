@@ -208,13 +208,13 @@ class MainGfxWindow(QMainWindow):
         self.adjustSize()
 
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
-        createAnchorAction = QAction("Add Anchor Point", self)
+        createAnchorAction = QAction("Add Anchor…", self)
         createAnchorAction.triggered.connect(self.view.createAnchor)
         self.addAction(createAnchorAction)
 
-    def close(self):
+    def closeEvent(self, event):
         self.view._glyph.removeObserver(self, "Glyph.Changed")
-        super(MainGfxWindow, self).close()
+        event.accept()
 
     def _glyphChanged(self, notification):
         self.view._glyphChanged(notification)

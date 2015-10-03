@@ -10,6 +10,9 @@ class GroupListWidget(QListWidget):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSortingEnabled(True)
 
+        self.fillGroupNames(groupNames)
+
+    def fillGroupNames(self, groupNames):
         for groupName in groupNames:
             item = QListWidgetItem(groupName, self)
             item.setFlags(item.flags() | Qt.ItemIsEditable)
@@ -112,6 +115,7 @@ class GroupsWindow(QWidget):
     def __init__(self, font, parent=None):
         super(GroupsWindow, self).__init__(parent, Qt.Window)
         self.font = font
+        self.font.addObserver(self, "_groupsChanged", "Groups.Changed")
 
         groups = self.font.groups.keys()
         self.groupsList = GroupListWidget(groups, self)
@@ -192,8 +196,10 @@ class GroupsWindow(QWidget):
         newKey = self.groupsList.currentItem()
         if newKey is None: return
         newKey = newKey.text()
+        if newKey == self._cachedName: return
         self.font.groups[newKey] = self.font.groups[self._cachedName]
         del self.font.groups[self._cachedName]
+        self._cachedName = newKey
 
     def _groupDelete(self):
         newKey = self.groupsList.currentItem().text()
@@ -201,6 +207,16 @@ class GroupsWindow(QWidget):
         self.groupsList.takeItem(self.groupsList.currentRow())
         if not self.font.groups.keys(): self.removeGroupButton.setEnabled(False)
         self._groupChanged()
+
+    # XXX: it seems the notification doesn't trigger...
+    def _groupsChanged(self, notification):
+        self._cachedName = None
+        self.groupsList.blockSignals(True)
+        self.groupsList.clear()
+        self.groupsList.fillGroupNames(self)
+        # TODO: consider transferring currentGroup as well
+        self.groupsList.blockSignals(False)
+        #self.groupsList.setCurrentRow(0)
 
     def characterDeleteEvent(self, selection):
         currentGroup = self.groupsList.currentItem().text()
@@ -225,6 +241,10 @@ class GroupsWindow(QWidget):
             self.font.groups[currentGroup] = currentGroupList
         event.acceptProposedAction()
         self._groupChanged()
+
+    def closeEvent(self, event):
+        self.font.removeObserver(self, "Groups.Changed")
+        event.accept()
 
     def resizeEvent(self, event):
         if self.isVisible():

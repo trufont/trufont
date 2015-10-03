@@ -385,14 +385,13 @@ class MainWindow(QMainWindow):
             self.setWindowTitle()
         #return ok
 
-    def close(self):
-        self.font.removeObserver(self, "Font.Changed")
-        QApplication.instance().quit()
-
     def closeEvent(self, event):
         ok = self.maybeSaveBeforeExit()
-        if not ok: event.ignore()
-        else: event.accept()
+        if ok:
+            self.font.removeObserver(self, "Font.Changed")
+            event.accept()
+        else:
+            event.ignore()
 
     def maybeSaveBeforeExit(self):
         if self.font.dirty:
