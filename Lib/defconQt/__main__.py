@@ -1,10 +1,9 @@
 from defconQt.objects.defcon import TFont
-from defconQt.fontView import MainWindow
+from defconQt.fontView import Application, MainWindow
 import sys
 import os
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication
 
 if len(sys.argv) < 2:
     share_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'share')
@@ -20,7 +19,7 @@ else:
 from defconQt import representationFactories
 representationFactories.registerAllFactories()
 #with PyCallGraph(output=GraphvizOutput()):
-app = QApplication(sys.argv)
+app = Application(sys.argv)
 # TODO: http://stackoverflow.com/a/21330349/2037879
 app.setWindowIcon(QIcon("defconQt/resources/icon.png"))
 window = MainWindow(TFont(os.path.abspath(ufoFile)))

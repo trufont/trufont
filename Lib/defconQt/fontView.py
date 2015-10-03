@@ -3,6 +3,7 @@ from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
+from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import CharacterSet, TFont, TGlyph
 from defcon import Component
 from defconQt.spaceCenter import MainSpaceWindow
@@ -44,6 +45,17 @@ latin1 = CharacterSet(
 "udieresis","yacute","thorn","ydieresis","dotlessi","circumflex","caron",
 "breve","dotaccent","ring","ogonek","tilde","hungarumlaut","quoteleft",
 "quoteright","minus"], "Latin-1")
+
+class Application(QApplication):
+    def allFonts(self):
+        fonts = []
+        for window in QApplication.topLevelWidgets():
+            if isinstance(window, MainWindow):
+                fonts.append(window._font)
+                return fonts
+
+    def currentFont(self):
+        return self.currentMainWindow._font
 
 # TODO: implement Frederik's Glyph Construction Builder
 class AddGlyphDialog(QDialog):
@@ -311,6 +323,10 @@ class MainWindow(QMainWindow):
         fontMenu.addAction("Sort…", self.sortCharacters)
         menuBar.addMenu(fontMenu)
 
+        pythonMenu = QMenu("&Python", self)
+        pythonMenu.addAction("Scripting &window", self.scripting)
+        menuBar.addMenu(pythonMenu)
+
         windowMenu = QMenu("&Windows", self)
         windowMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Y")
         windowMenu.addAction("&Groups window", self.fontGroups, "Ctrl+G")
@@ -566,6 +582,12 @@ class MainWindow(QMainWindow):
         self.collectionWidget._sizeEvent(self.width(), val)
         QToolTip.showText(QCursor.pos(), str(val), self)
 
+    def event(self, event):
+        if event.type() == QEvent.WindowActivate:
+            app = QApplication.instance()
+            app.currentMainWindow = self
+        return super(MainWindow, self).event(event)
+
     def resizeEvent(self, event):
         if self.isVisible(): self.collectionWidget._sizeEvent(event.size().width())
         super(MainWindow, self).resizeEvent(event)
@@ -618,6 +640,15 @@ class MainWindow(QMainWindow):
             self.fontGroupsWindow.show()
         else:
             self.fontGroupsWindow.raise_()
+
+    def scripting(self):
+        # TODO: see up here
+        app = QApplication.instance()
+        if not (hasattr(app, 'scriptingWindow') and app.scriptingWindow.isVisible()):
+            app.scriptingWindow = MainScriptingWindow()
+            app.scriptingWindow.show()
+        else:
+            app.scriptingWindow.raise_()
 
     def sortCharacters(self):
         sortDescriptor, ok = SortDialog.getDescriptor(self, self.sortDescriptor)

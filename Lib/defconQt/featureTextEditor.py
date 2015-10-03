@@ -1,7 +1,9 @@
-from PyQt5.QtCore import QFile, QRegExp, Qt
-from PyQt5.QtGui import QColor, QFont, QKeySequence, QPainter, QSyntaxHighlighter, QTextCharFormat, QTextCursor
+from defconQt.baseCodeEditor import CodeEditor, CodeHighlighter
+from PyQt5.QtCore import QFile, Qt
+from PyQt5.QtGui import (QColor, QFont, QKeySequence, QPainter, QTextCharFormat,
+    QTextCursor)
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
-        QMessageBox, QPlainTextEdit, QWidget)
+    QMessageBox, QPlainTextEdit, QWidget)
 
 # TODO: implement search and replace
 class MainEditWindow(QMainWindow):
@@ -9,14 +11,20 @@ class MainEditWindow(QMainWindow):
         super(MainEditWindow, self).__init__(parent)
 
         self.font = font
-        self.setupFileMenu()
-        self.editor = TextEditor(self.font.features.text, self)
+        self.editor = FeatureTextEditor(self.font.features.text, self)
         self.resize(600, 500)
+
+        fileMenu = QMenu("&File", self)
+        fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
+        fileMenu.addSeparator()
+        fileMenu.addAction("Reload from UFO", self.reload)
+        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        self.menuBar().addMenu(fileMenu)
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle("Font features", self.font)
         # now arm `undoAvailable` to `setWindowModified`
-        self.editor.setFileChangedCallback(self.setWindowModified)
+        self.editor.undoAvailable.connect(self.setWindowModified)
 
     def setWindowTitle(self, title, font):
         if font is not None: puts = "[*]%s – %s %s" % (title, self.font.info.familyName, self.font.info.styleName)
@@ -45,125 +53,14 @@ class MainEditWindow(QMainWindow):
     def save(self):
         self.editor.write(self.font.features)
 
-    def setupFileMenu(self):
-        fileMenu = QMenu("&File", self)
-        self.menuBar().addMenu(fileMenu)
-
-        fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
-        fileMenu.addSeparator()
-        fileMenu.addAction("Reload from UFO", self.reload)
-        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
-
-class LineNumberArea(QWidget):
-    def __init__(self, editor):
-        super(LineNumberArea, self).__init__(editor)
-
-    def sizeHint(self):
-        return QSize(self.parent().lineNumberAreaWidth(), 0)
-
-    def paintEvent(self, event):
-        self.parent().lineNumberAreaPaintEvent(event)
-
-class TextEditor(QPlainTextEdit):
+class FeatureTextEditor(CodeEditor):
     def __init__(self, text=None, parent=None):
-        super(TextEditor, self).__init__(parent)
-        # https://gist.github.com/murphyrandle/2921575
-        font = QFont('Roboto Mono', 10)
-        font.setFixedPitch(True)
-        self.setFont(font)
-
-        self._indent = "    "
-        self.highlighter = Highlighter(self.document())
-        self.lineNumbers = LineNumberArea(self)
-        self.setPlainText(text)
-        # kick-in geometry update before arming signals bc blockCountChanged
-        # won't initially trigger if text is None or one-liner.
-        self.updateLineNumberAreaWidth()
-        self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
-        self.updateRequest.connect(self.updateLineNumberArea)
-
-    def setFontParams(self, family='Roboto Mono', ptSize=10, isMono=True):
-        font = QFont(family, ptSize)
-        font.setFixedPitch(isMono)
-        self.setFont(font)
-
-    # TODO: add way to unset callback?
-    def setFileChangedCallback(self, fileChangedCallback):
-        self.undoAvailable.connect(fileChangedCallback)
+        super(FeatureTextEditor, self).__init__(text, parent)
+        self.openBlockDelimiter = '{'
+        self.highlighter = FeatureTextHighlighter(self.document())
 
     def write(self, features):
         features.text = self.toPlainText()
-
-    def lineNumberAreaPaintEvent(self, event):
-        painter = QPainter(self.lineNumbers)
-        painter.fillRect(event.rect(), QColor(230, 230, 230))
-        d = event.rect().topRight()
-        a = event.rect().bottomRight()
-        painter.setPen(Qt.darkGray)
-        painter.drawLine(d.x(), d.y(), a.x(), a.y())
-        painter.setPen(QColor(100, 100, 100))
-        painter.setFont(self.font())
-
-        block = self.firstVisibleBlock()
-        blockNumber = block.blockNumber();
-        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
-        bottom = top + int(self.blockBoundingRect(block).height())
-
-        while block.isValid() and top <= event.rect().bottom():
-            if block.isVisible() and bottom >= event.rect().top():
-                number = str(blockNumber + 1)
-                painter.drawText(4, top, self.lineNumbers.width() - 8,
-                    self.fontMetrics().height(),
-                    Qt.AlignRight, number)
-            block = block.next()
-            top = bottom
-            bottom = top + int(self.blockBoundingRect(block).height())
-            blockNumber += 1
-
-    def lineNumberAreaWidth(self):
-        digits = 1
-        top = max(1, self.blockCount())
-        while top >= 10:
-            top /= 10
-            digits += 1
-        # Avoid too frequent geometry changes
-        if digits < 3: digits = 3
-        return 10 + self.fontMetrics().width('9') * digits
-
-    def updateLineNumberArea(self, rect, dy):
-        if dy:
-            self.lineNumbers.scroll(0, dy);
-        else:
-            self.lineNumbers.update(0, rect.y(),
-                self.lineNumbers.width(), rect.height())
-
-        if rect.contains(self.viewport().rect()):
-            self.updateLineNumberAreaWidth(0)
-
-    def updateLineNumberAreaWidth(self, newBlockCount=None):
-        self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
-
-    def resizeEvent(self, event):
-        super(TextEditor, self).resizeEvent(event)
-        cr = self.contentsRect()
-        self.lineNumbers.setGeometry(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height())
-
-    def findLineIndentLevel(self, cursor):
-        indent = 0
-        cursor.select(QTextCursor.LineUnderCursor)
-        lineLength = len(cursor.selectedText()) // len(self._indent)
-        cursor.movePosition(QTextCursor.StartOfLine)
-        while lineLength > 0:
-            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self._indent))
-            if cursor.selectedText() == self._indent:
-                indent += 1
-            else: break
-            # Now move the anchor back to the position()
-            #cursor.movePosition(QTextCursor.NoMove) # shouldn't NoMove work here?
-            cursor.setPosition(cursor.position())
-            lineLength -= 1
-        cursor.movePosition(QTextCursor.EndOfLine)
-        return indent
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -173,7 +70,7 @@ class TextEditor(QPlainTextEdit):
             newBlock = False
 
             cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
-            if cursor.selectedText() == '{':
+            if cursor.selectedText() == self.openBlockDelimiter:
                 # We don't add a closing tag if there is text right below with the same
                 # indentation level because in that case the user might just be looking
                 # to add a new line
@@ -191,7 +88,7 @@ class TextEditor(QPlainTextEdit):
             if newBlock:
                 txt = cursor.selectedText().lstrip(" ").split(" ")
                 if len(txt) > 1:
-                    if len(txt) < 3 and txt[-1][-1] == '{':
+                    if len(txt) < 3 and txt[-1][-1] == self.openBlockDelimiter:
                         feature = txt[-1][:-1]
                     else:
                         feature = txt[1]
@@ -199,74 +96,49 @@ class TextEditor(QPlainTextEdit):
                     feature = None
             cursor.movePosition(QTextCursor.EndOfLine)
 
-            super(TextEditor, self).keyPressEvent(event)
-            newLineSpace = "".join(self._indent for _ in range(indentLvl))
+            cursor.insertText("\n")
+            newLineSpace = "".join(self.indent for _ in range(indentLvl))
             cursor.insertText(newLineSpace)
             if newBlock:
-                super(TextEditor, self).keyPressEvent(event)
-                newLineSpace = "".join((newLineSpace[:-len(self._indent)], "} ", feature, ";"))
+                cursor.insertText("\n")
+                newLineSpace = "".join((newLineSpace[:-len(self.indent)], "} ", feature, ";"))
                 cursor.insertText(newLineSpace)
                 cursor.movePosition(QTextCursor.Up)
                 cursor.movePosition(QTextCursor.EndOfLine)
                 self.setTextCursor(cursor)
-        elif key == Qt.Key_Tab:
-            cursor = self.textCursor()
-            cursor.insertText(self._indent)
-        elif key == Qt.Key_Backspace:
-            cursor = self.textCursor()
-            cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor,
-                  len(self._indent))
-            if cursor.selectedText() == self._indent:
-                cursor.removeSelectedText()
-            else:
-                super(TextEditor, self).keyPressEvent(event)
         else:
-            super(TextEditor, self).keyPressEvent(event)
+            super(FeatureTextEditor, self).keyPressEvent(event)
 
-keywordPatterns = ["\\bAscender\\b", "\\bAttach\\b", "\\bCapHeight\\b", "\\bCaretOffset\\b", "\\bCodePageRange\\b",
-    "\\bDescender\\b", "\\bFontRevision\\b", "\\bGlyphClassDef\\b", "\\bHorizAxis.BaseScriptList\\b",
-    "\\bHorizAxis.BaseTagList\\b", "\\bHorizAxis.MinMax\\b", "\\bIgnoreBaseGlyphs\\b", "\\bIgnoreLigatures\\b",
-    "\\bIgnoreMarks\\b", "\\bLigatureCaretByDev\\b", "\\bLigatureCaretByIndex\\b", "\\bLigatureCaretByPos\\b",
-    "\\bLineGap\\b", "\\bMarkAttachClass\\b", "\\bMarkAttachmentType\\b", "\\bNULL\\b", "\\bPanose\\b", "\\bRightToLeft\\b",
-    "\\bTypoAscender\\b", "\\bTypoDescender\\b", "\\bTypoLineGap\\b", "\\bUnicodeRange\\b", "\\bUseMarkFilteringSet\\b",
-    "\\bVendor\\b", "\\bVertAdvanceY\\b", "\\bVertAxis.BaseScriptList\\b", "\\bVertAxis.BaseTagList\\b",
-    "\\bVertAxis.MinMax\\b", "\\bVertOriginY\\b", "\\bVertTypoAscender\\b", "\\bVertTypoDescender\\b",
-    "\\bVertTypoLineGap\\b", "\\bXHeight\\b", "\\banchorDef\\b", "\\banchor\\b", "\\banonymous\\b", "\\banon\\b",
-    "\\bby\\b", "\\bcontour\\b", "\\bcursive\\b", "\\bdevice\\b", "\\benumerate\\b", "\\benum\\b", "\\bexclude_dflt\\b",
-    "\\bfeatureNames\\b", "\\bfeature\\b", "\\bfrom\\b", "\\bignore\\b", "\\binclude_dflt\\b", "\\binclude\\b",
-    "\\blanguagesystem\\b", "\\blanguage\\b", "\\blookupflag\\b", "\\blookup\\b", "\\bmarkClass\\b", "\\bmark\\b",
-    "\\bnameid\\b", "\\bname\\b", "\\bparameters\\b", "\\bposition\\b", "\\bpos\\b", "\\brequired\\b", "\\breversesub\\b",
-    "\\brsub\\b", "\\bscript\\b", "\\bsizemenuname\\b", "\\bsubstitute\\b", "\\bsubtable\\b", "\\bsub\\b", "\\btable\\b",
-    "\\buseExtension\\b", "\\bvalueRecordDef\\b", "\\bwinAscent\\b", "\\bwinDescent\\b"]
+keywordPatterns = ["Ascender", "Attach", "CapHeight", "CaretOffset", "CodePageRange",
+    "Descender", "FontRevision", "GlyphClassDef", "HorizAxis.BaseScriptList",
+    "HorizAxis.BaseTagList", "HorizAxis.MinMax", "IgnoreBaseGlyphs", "IgnoreLigatures",
+    "IgnoreMarks", "LigatureCaretByDev", "LigatureCaretByIndex", "LigatureCaretByPos",
+    "LineGap", "MarkAttachClass", "MarkAttachmentType", "NULL", "Panose", "RightToLeft",
+    "TypoAscender", "TypoDescender", "TypoLineGap", "UnicodeRange", "UseMarkFilteringSet",
+    "Vendor", "VertAdvanceY", "VertAxis.BaseScriptList", "VertAxis.BaseTagList",
+    "VertAxis.MinMax", "VertOriginY", "VertTypoAscender", "VertTypoDescender",
+    "VertTypoLineGap", "XHeight", "anchorDef", "anchor", "anonymous", "anon",
+    "by", "contour", "cursive", "device", "enumerate", "enum", "exclude_dflt",
+    "featureNames", "feature", "from", "ignore", "include_dflt", "include",
+    "languagesystem", "language", "lookupflag", "lookup", "markClass", "mark",
+    "nameid", "name", "parameters", "position", "pos", "required", "reversesub",
+    "rsub", "script", "sizemenuname", "substitute", "subtable", "sub", "table",
+    "useExtension", "valueRecordDef", "winAscent", "winDescent"]
 
-class Highlighter(QSyntaxHighlighter):
+class FeatureTextHighlighter(CodeHighlighter):
     def __init__(self, parent=None):
-        super(Highlighter, self).__init__(parent)
+        super(FeatureTextHighlighter, self).__init__(parent)
 
         keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(QColor(30, 150, 220))
+        keywordFormat.setForeground(QColor(34, 34, 34))
         keywordFormat.setFontWeight(QFont.Bold)
-
-        self.highlightingRules = [(QRegExp("(%s)" % ("|".join(keywordPatterns))), keywordFormat)]
+        self.highlightingRules.append(("\\b(%s)\\b" % ("|".join(keywordPatterns)), keywordFormat))
 
         singleLineCommentFormat = QTextCharFormat()
         singleLineCommentFormat.setForeground(Qt.darkGray)
-        self.highlightingRules.append((QRegExp("#[^\n]*"),
-                singleLineCommentFormat))
+        self.highlightingRules.append(("#[^\n]*", singleLineCommentFormat))
 
-        classFormat = QTextCharFormat()
-        classFormat.setFontWeight(QFont.Bold)
-        classFormat.setForeground(QColor(200, 50, 150))
-        self.highlightingRules.append((QRegExp("@[A-Za-z0-9_.]+"),
-                classFormat))
-
-    def highlightBlock(self, text):
-        for pattern, format in self.highlightingRules:
-            expression = QRegExp(pattern)
-            index = expression.indexIn(text)
-            while index >= 0:
-                length = expression.matchedLength()
-                self.setFormat(index, length, format)
-                index = expression.indexIn(text, index + length)
-
-        self.setCurrentBlockState(0)
+        groupFormat = QTextCharFormat()
+        groupFormat.setFontWeight(QFont.Bold)
+        groupFormat.setForeground(QColor(96, 106, 161))
+        self.highlightingRules.append(("@[A-Za-z0-9_.]+", groupFormat))
