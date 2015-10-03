@@ -374,8 +374,15 @@ class MainWindow(QMainWindow):
             path = os.path.dirname(path)
             # TODO: I note that a change of self.font often goes with setWindowTitle().
             # Be more DRY.
-            self.font = TFont(path)
-            self.setWindowTitle()
+            #self.font = TFont(path)
+            #self.setWindowTitle()
+            for window in QApplication.topLevelWidgets():
+                if isinstance(window, MainWindow) and window._font.path == path:
+                    window.raise_()
+                    return
+            font = TFont(path)
+            window = MainWindow(font)
+            window.show()
 
     def saveFile(self, path=None):
         if path is None and self.font.path is None:
