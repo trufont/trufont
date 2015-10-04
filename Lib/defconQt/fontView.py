@@ -57,6 +57,8 @@ class Application(QApplication):
     def currentFont(self):
         return self.currentMainWindow._font
 
+MAX_RECENT_FILES = 6
+
 # TODO: implement Frederik's Glyph Construction Builder
 class AddGlyphDialog(QDialog):
     def __init__(self, currentGlyphs=None, parent=None):
@@ -267,6 +269,8 @@ class SortDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self, font):
         super(MainWindow, self).__init__()
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         squareSize = 56
         self.collectionWidget = GlyphCollectionWidget(self)
         self._font = None
@@ -277,12 +281,20 @@ class MainWindow(QMainWindow):
         self.collectionWidget.setFocus()
 
         menuBar = self.menuBar()
+        settings = QSettings()
         # TODO: make shortcuts platform-independent
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("&New…", self.newFile, QKeySequence.New)
         fileMenu.addAction("&Open…", self.openFile, QKeySequence.Open)
-        # TODO: add functionality
-        #fileMenu.addMenu(QMenu("Open &Recent...", self))
+        # recent files
+        self.recentFilesMenu = QMenu("Open &Recent...", self)
+        for i in range(MAX_RECENT_FILES):
+            action = QAction(self.recentFilesMenu)
+            action.setVisible(False)
+            action.triggered.connect(self.openRecentFont)
+            self.recentFilesMenu.addAction(action)
+        self.updateRecentFiles()
+        fileMenu.addMenu(self.recentFilesMenu)
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
         fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
@@ -311,6 +323,8 @@ class MainWindow(QMainWindow):
         editMenu.addAction("Copy", self.copy, QKeySequence.Copy)
         editMenu.addAction("Copy as Component", self.copyAsComponent, "Ctrl+Alt+c")
         editMenu.addAction("Paste", self.paste, QKeySequence.Paste)
+        editMenu.addSeparator()
+        editMenu.addAction("Settings…", self.settings)
         menuBar.addMenu(editMenu)
 
         fontMenu = QMenu("&Font", self)
@@ -350,6 +364,7 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.collectionWidget.scrollArea())
         self.resize(605, 430)
+        self.setCurrentFile(font.path)
         self.setWindowTitle()
 
     def newFile(self):
@@ -370,19 +385,22 @@ class MainWindow(QMainWindow):
                     "UFO Fonts (metainfo.plist)")
             if not ok: return
         if path:
-            # TODO: error handling
-            path = os.path.dirname(path)
-            # TODO: I note that a change of self.font often goes with setWindowTitle().
-            # Be more DRY.
-            #self.font = TFont(path)
-            #self.setWindowTitle()
+            if ".plist" in path:
+                path = os.path.dirname(path)
             for window in QApplication.topLevelWidgets():
                 if isinstance(window, MainWindow) and window._font.path == path:
                     window.raise_()
                     return
-            font = TFont(path)
+            try:
+                font = TFont(path)
+            except:
+                return
             window = MainWindow(font)
             window.show()
+
+    def openRecentFont(self):
+        fontPath = self.sender().toolTip()
+        self.openFile(fontPath)
 
     def saveFile(self, path=None):
         if path is None and self.font.path is None:
@@ -398,6 +416,7 @@ class MainWindow(QMainWindow):
             self.font.dirty = False
             for glyph in self.font:
                 glyph.dirty = False
+            self.setCurrentFile(path)
             self.setWindowModified(False)
 
     def saveFileAs(self):
@@ -407,6 +426,36 @@ class MainWindow(QMainWindow):
             self.saveFile(path)
             self.setWindowTitle()
         #return ok
+
+    def setCurrentFile(self, path):
+        settings = QSettings()
+        recentFiles = settings.value("core/recentFiles", [], type=str)
+        if path in recentFiles:
+            recentFiles.remove(path)
+        recentFiles.insert(0, path)
+        while len(recentFiles) > MAX_RECENT_FILES:
+            del recentFiles[-1]
+        settings.setValue("core/recentFiles", recentFiles)
+        for window in QApplication.topLevelWidgets():
+            if isinstance(window, MainWindow):
+                window.updateRecentFiles()
+
+    def updateRecentFiles(self):
+        settings = QSettings()
+        recentFiles = settings.value("core/recentFiles", [], type=str)
+        count = min(len(recentFiles), MAX_RECENT_FILES)
+        actions = self.recentFilesMenu.actions()
+        for index, recentFile in enumerate(recentFiles[:count]):
+            action = actions[index]
+            shortName = os.path.basename(recentFile.rstrip(os.sep))
+
+            action.setText(shortName)
+            action.setToolTip(recentFile)
+            action.setVisible(True)
+        for index in range(count, MAX_RECENT_FILES):
+            actions[index].setVisible(False)
+
+        self.recentFilesMenu.setEnabled(len(recentFiles))
 
     def closeEvent(self, event):
         ok = self.maybeSaveBeforeExit()

@@ -356,7 +356,6 @@ class GlyphsCanvas(QWidget):
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
             # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
-            # see how rf behaves -> scaling factor grows with sz it seems
             # XXX: current alg. is not reversible...
             decay = event.angleDelta().y() / 120.0
             scale = round(self.ptSize / 10)

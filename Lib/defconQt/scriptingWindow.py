@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QPlainTextEdit
 class MainScriptingWindow(QMainWindow):
     def __init__(self):
         super(MainScriptingWindow, self).__init__()
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.editor = PythonEditor(parent=self)
         self.resize(600, 500)
