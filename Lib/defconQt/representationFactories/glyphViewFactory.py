@@ -28,8 +28,8 @@ class NoComponentsQtPen(QtPen):
 # only components
 # ---------------
 
-def OnlyComponentsQPainterPathFactory(glyph, font):
-    pen = OnlyComponentsQtPen(font)
+def OnlyComponentsQPainterPathFactory(glyph):
+    pen = OnlyComponentsQtPen(glyph.getParent())
     glyph.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return pen.path
