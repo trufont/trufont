@@ -74,6 +74,248 @@ class Application(QApplication):
 
 MAX_RECENT_FILES = 6
 
+class InspectorWindow(QWidget):
+    def __init__(self):
+        super(InspectorWindow, self).__init__(flags=Qt.Tool)
+        self.setWindowTitle("Inspector")
+        self._blocked = False
+        self._glyph = None
+
+        glyphGroup = QGroupBox("Glyph", self)
+        glyphGroup.setFlat(True)
+        glyphLayout = QGridLayout(self)
+        columnOneWidth = self.fontMetrics().width('0')*7
+
+        nameLabel = QLabel("Name:", self)
+        self.nameEdit = QLineEdit(self)
+        self.nameEdit.editingFinished.connect(self.writeGlyphName)
+        unicodeLabel = QLabel("Unicode:", self)
+        self.unicodeEdit = QLineEdit(self)
+        self.unicodeEdit.editingFinished.connect(self.writeUnicode)
+        self.unicodeEdit.setMaximumWidth(columnOneWidth)
+        self.unicodeEdit.setValidator(QIntValidator(self))
+        self.unicodesEdit = QLineEdit(self)
+        self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
+        widthLabel = QLabel("Width:", self)
+        self.widthEdit = QLineEdit(self)
+        self.widthEdit.editingFinished.connect(self.writeWidth)
+        self.widthEdit.setMaximumWidth(columnOneWidth)
+        self.widthEdit.setValidator(QIntValidator(self))
+        leftSideBearingLabel = QLabel("Left:", self)
+        self.leftSideBearingEdit = QLineEdit(self)
+        self.leftSideBearingEdit.editingFinished.connect(self.writeLeftSideBearing)
+        self.leftSideBearingEdit.setMaximumWidth(columnOneWidth)
+        self.leftSideBearingEdit.setValidator(QIntValidator(self))
+        rightSideBearingLabel = QLabel("Right:", self)
+        self.rightSideBearingEdit = QLineEdit(self)
+        self.rightSideBearingEdit.editingFinished.connect(self.writeRightSideBearing)
+        self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
+        self.rightSideBearingEdit.setValidator(QIntValidator(self))
+        markColorLabel = QLabel("Mark:", self)
+        self.markColorButton = QPushButton(self)
+        self.markColorButton.setMaximumWidth(columnOneWidth)
+        app = QApplication.instance()
+        self.updateGlyph()
+        app.currentGlyphChanged.connect(self.updateGlyph)
+
+        l = 0
+        glyphLayout.addWidget(nameLabel, l, 0)
+        glyphLayout.addWidget(self.nameEdit, l, 1, 1, 5)
+        l += 1
+        glyphLayout.addWidget(unicodeLabel, l, 0)
+        glyphLayout.addWidget(self.unicodeEdit, l, 1)
+        glyphLayout.addWidget(self.unicodesEdit, l, 2, 1, 4)
+        l += 1
+        glyphLayout.addWidget(widthLabel, l, 0)
+        glyphLayout.addWidget(self.widthEdit, l, 1)
+        l += 1
+        glyphLayout.addWidget(leftSideBearingLabel, l, 0)
+        glyphLayout.addWidget(self.leftSideBearingEdit, l, 1)
+        glyphLayout.addWidget(rightSideBearingLabel, l, 2)
+        glyphLayout.addWidget(self.rightSideBearingEdit, l, 3)
+        l += 1
+        glyphLayout.addWidget(markColorLabel, l, 0)
+        glyphLayout.addWidget(self.markColorButton, l, 1)
+        glyphGroup.setLayout(glyphLayout)
+
+        transformGroup = QGroupBox("Transform", self)
+        transformGroup.setFlat(True)
+        transformLayout = QGridLayout(self)
+
+        # TODO: should this be implemented for partial selection?
+        # TODO: phase out fake button
+        symmetryButton = QPushButton("Symmetry", self)
+        symmetryButton.setEnabled(False)
+        hSymmetryButton = QPushButton("H", self)
+        hSymmetryButton.pressed.connect(self.hSymmetry)
+        vSymmetryButton = QPushButton("V", self)
+        vSymmetryButton.pressed.connect(self.vSymmetry)
+
+        moveButton = QPushButton("Move", self)
+        moveButton.pressed.connect(self.moveGlyph)
+        moveXLabel = QLabel("x:", self)
+        self.moveXEdit = QLineEdit("0", self)
+        self.moveXEdit.setValidator(QIntValidator(self))
+        moveYLabel = QLabel("y:", self)
+        self.moveYEdit = QLineEdit("0", self)
+        self.moveYEdit.setValidator(QIntValidator(self))
+        moveXYBox = QCheckBox("x=y", self)
+        moveXYBox.clicked.connect(self.lockMove)
+
+        scaleButton = QPushButton("Scale", self)
+        scaleButton.pressed.connect(self.scaleGlyph)
+        scaleXLabel = QLabel("x:", self)
+        self.scaleXEdit = QLineEdit("100", self)
+        self.scaleXEdit.setValidator(QIntValidator(self))
+        scaleYLabel = QLabel("y:", self)
+        self.scaleYEdit = QLineEdit("100", self)
+        self.scaleYEdit.setValidator(QIntValidator(self))
+        scaleXYBox = QCheckBox("x=y", self)
+        scaleXYBox.clicked.connect(self.lockScale)
+
+        l = 0
+        transformLayout.addWidget(symmetryButton, l, 0)
+        transformLayout.addWidget(hSymmetryButton, l, 2)
+        transformLayout.addWidget(vSymmetryButton, l, 4)
+        l += 1
+        transformLayout.addWidget(moveButton, l, 0)
+        transformLayout.addWidget(moveXLabel, l, 1)
+        transformLayout.addWidget(self.moveXEdit, l, 2)
+        transformLayout.addWidget(moveYLabel, l, 3)
+        transformLayout.addWidget(self.moveYEdit, l, 4)
+        transformLayout.addWidget(moveXYBox, l, 5)
+        l += 1
+        transformLayout.addWidget(scaleButton, l, 0)
+        transformLayout.addWidget(scaleXLabel, l, 1)
+        transformLayout.addWidget(self.scaleXEdit, l, 2)
+        transformLayout.addWidget(scaleYLabel, l, 3)
+        transformLayout.addWidget(self.scaleYEdit, l, 4)
+        transformLayout.addWidget(scaleXYBox, l, 5)
+        transformGroup.setLayout(transformLayout)
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(glyphGroup)
+        mainLayout.addWidget(transformGroup)
+        self.setLayout(mainLayout)
+
+    def hSymmetry(self):
+        xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
+        for contour in self._glyph:
+            for point in contour:
+                point.x =  xMin + xMax - point.x
+        self._glyph.dirty = True
+
+    def vSymmetry(self):
+        xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
+        for contour in self._glyph:
+            for point in contour:
+                point.y =  yMin + yMax - point.y
+        self._glyph.dirty = True
+
+    def lockMove(self, checked):
+        self.moveYEdit.setEnabled(not checked)
+
+    def moveGlyph(self):
+        x = self.moveXEdit.text()
+        if not self.moveYEdit.isEnabled():
+            y = x
+        else:
+            y = self.moveYEdit.text()
+        x, y = int(x) if x != "" else 0, int(y) if y != "" else 0
+        self._glyph.move((x, y))
+
+    def lockScale(self, checked):
+        self.scaleYEdit.setEnabled(not checked)
+
+    def scaleGlyph(self):
+        sX = self.scaleXEdit.text()
+        if not self.scaleYEdit.isEnabled():
+            sY = sX
+        else:
+            sY = self.scaleYEdit.text()
+        sX, sY = int(sX) if sX != "" else 1, int(sY) if sY != "" else 1
+        sX /= 100; sY /= 100
+        xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
+        for contour in self._glyph:
+            for point in contour:
+                point.x = xMin + (point.x - xMin) * sX
+                point.y = yMin + (point.y - yMin) * sY
+        self._glyph.dirty = True
+
+    def updateGlyph(self):
+        app = QApplication.instance()
+        if self._glyph is not None:
+            self._glyph.removeObserver(self, "Glyph.Changed")
+        self._glyph = app.currentGlyph()
+        if self._glyph is not None:
+            self._glyph.addObserver(self, "updateGlyphAttributes", "Glyph.Changed")
+        self.updateGlyphAttributes()
+
+    def updateGlyphAttributes(self, notification=None):
+        if self._blocked: return
+        name = self._glyph.name if self._glyph is not None else None
+        self.nameEdit.setText(name)
+        uni = str(self._glyph.unicode).zfill(4) if self._glyph is not None else None
+        self.unicodeEdit.setText(uni)
+        unicodes = ";".join(str(u) for u in self._glyph.unicodes[1:]) if self._glyph is not None else None
+        self.unicodesEdit.setText(unicodes)
+        width = str(int(self._glyph.width)) if self._glyph is not None else None
+        self.widthEdit.setText(width)
+        leftSideBearing = str(int(self._glyph.leftMargin)) if self._glyph is not None else None
+        self.leftSideBearingEdit.setText(leftSideBearing)
+        rightSideBearing = str(int(self._glyph.rightMargin)) if self._glyph is not None else None
+        self.rightSideBearingEdit.setText(rightSideBearing)
+        colorStr = "white"
+        if self._glyph is not None and "public.markColor" in self._glyph.lib:
+            # XXX: cleanup duplication with glyphCollectionView
+            # TODO: might well be possible to write this in a nicer way...
+            colors = self._glyph.lib["public.markColor"].split(",")
+            if len(colors) ==  4:
+                comp = []
+                for c in colors:
+                    comp.append(float(c.strip()))
+                markColor = QColor.fromRgbF(*comp)
+                colorStr = markColor.name()
+        self.markColorButton.setStyleSheet("background-color: {}; \
+            border: 1px solid black;".format(colorStr))
+
+    def writeGlyphName(self):
+        if self._glyph is None: return
+        self._blocked = True
+        self._glyph.name = self.nameEdit.text()
+        self._blocked = False
+
+    def writeUnicode(self):
+        if self._glyph is None: return
+        self._blocked = True
+        self._glyph.unicode = int(self.unicodeEdit.text())
+        self._blocked = False
+
+    def writeUnicodes(self):
+        if self._glyph is None: return
+        self._blocked = True
+        unicodes = self.unicodesEdit.text().split(";")
+        self._glyph.unicodes = [int(uni) for uni in unicodes]
+        self._blocked = False
+
+    def writeWidth(self):
+        if self._glyph is None: return
+        self._blocked = True
+        self._glyph.width = int(self.widthEdit.text())
+        self._blocked = False
+
+    def writeLeftSideBearing(self):
+        if self._glyph is None: return
+        self._blocked = True
+        self._glyph.leftMargin = int(self.leftSideBearingEdit.text())
+        self._blocked = False
+
+    def writeRightSideBearing(self):
+        if self._glyph is None: return
+        self._blocked = True
+        self._glyph.rightMargin = int(self.nameEdit.text())
+        self._blocked = False
+
 # TODO: implement Frederik's Glyph Construction Builder
 class AddGlyphDialog(QDialog):
     def __init__(self, currentGlyphs=None, parent=None):
@@ -360,6 +602,8 @@ class MainWindow(QMainWindow):
         menuBar.addMenu(pythonMenu)
 
         windowMenu = QMenu("&Windows", self)
+        action = windowMenu.addAction("&Inspector", self.inspector, "Ctrl+I")
+        action.setShortcutContext(Qt.ApplicationShortcut)
         windowMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Alt+S")
         windowMenu.addAction("&Groups window", self.fontGroups, "Ctrl+Alt+G")
         menuBar.addMenu(windowMenu)
@@ -720,7 +964,6 @@ class MainWindow(QMainWindow):
             self.fontGroupsWindow.raise_()
 
     def scripting(self):
-        # TODO: see up here
         app = QApplication.instance()
         if not hasattr(app, 'scriptingWindow'):
             app.scriptingWindow = MainScriptingWindow()
@@ -729,6 +972,17 @@ class MainWindow(QMainWindow):
             app.scriptingWindow.raise_()
         else:
             app.scriptingWindow.show()
+
+    def inspector(self):
+        app = QApplication.instance()
+        if not hasattr(app, 'inspectorWindow'):
+            app.inspectorWindow = InspectorWindow()
+            app.inspectorWindow.show()
+        elif app.inspectorWindow.isVisible():
+            # toggle
+            app.inspectorWindow.close()
+        else:
+            app.inspectorWindow.show()
 
     def sortCharacters(self):
         sortDescriptor, ok = SortDialog.getDescriptor(self, self.sortDescriptor)
