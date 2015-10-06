@@ -824,7 +824,7 @@ class MainWindow(QMainWindow):
         selection = self.collectionWidget.selection
         pickled = []
         for index in sorted(self.collectionWidget.selection):
-            pickled.append(glyphs[index].serializeForUndo(False))
+            pickled.append(glyphs[index].serialize())
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
         mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps(pickled))
@@ -841,7 +841,7 @@ class MainWindow(QMainWindow):
             component = Component()
             component.baseGlyph = glyph.name
             componentGlyph.appendComponent(component)
-            pickled.append(componentGlyph.serializeForUndo(False))
+            pickled.append(componentGlyph.serialize())
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
         mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps(pickled))
@@ -857,7 +857,7 @@ class MainWindow(QMainWindow):
                 for pickled, glyph in zip(data, glyphs):
                     name = glyph.name
                     uni = glyph.unicode
-                    glyph.deserializeFromUndo(pickled)
+                    glyph.deserialize(pickled)
                     # XXX: after upgrade to ufo3, write a more flexible
                     # serialization system
                     glyph.name = name

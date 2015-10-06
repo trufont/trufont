@@ -38,10 +38,10 @@ class TGlyph(Glyph):
     dirty = property(BaseObject._get_dirty, _set_dirty)
 
 class TContour(Contour):
-    def __init__(self, pointClass=None):
+    def __init__(self, pointClass=None, **kwargs):
         if pointClass is None:
             pointClass = TPoint
-        super(TContour, self).__init__(pointClass)
+        super(TContour, self).__init__(pointClass=pointClass, **kwargs)
 
     def drawPoints(self, pointPen):
         """
@@ -55,8 +55,8 @@ class TContour(Contour):
 class TPoint(Point):
     __slots__ = ["_selected"]
 
-    def __init__(self, pt, segmentType=None, smooth=False, name=None, selected=False):
-        super(TPoint, self).__init__(pt, segmentType, smooth, name)
+    def __init__(self, pt, selected=False, **kwargs):
+        super(TPoint, self).__init__(pt, **kwargs)
         self._selected = selected
 
     def _get_selected(self):

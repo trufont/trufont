@@ -11,8 +11,10 @@ from robofab.pens.pointPen import AbstractPointPen
 # no components
 # -------------
 
-def NoComponentsQPainterPathFactory(glyph, font):
-    pen = NoComponentsQtPen(font)
+def NoComponentsQPainterPathFactory(glyph):
+    # No need for a glyphSet, because the glyphSet argument is only needed
+    #  to draw the components.
+    pen = NoComponentsQtPen({})
     glyph.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return pen.path
@@ -180,7 +182,7 @@ class OutlineInformationPen(AbstractPointPen):
         self._rawComponentData.append((baseGlyphName, transformation))
 
 
-def OutlineInformationFactory(glyph, font):
+def OutlineInformationFactory(glyph):
     pen = OutlineInformationPen()
     glyph.drawPoints(pen)
     return pen.getData()

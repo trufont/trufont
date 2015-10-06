@@ -809,17 +809,17 @@ class GlyphScene(QGraphicsScene):
         elif event.matches(QKeySequence.Undo):
             if len(self._dataForUndo) > 0:
                 undo = self._dataForUndo.pop()
-                redo = self._glyphObject.serializeForUndo()
-                self._glyphObject.deserializeFromUndo(undo)
+                redo = self._glyphObject.serialize()
+                self._glyphObject.deserialize(undo)
                 self._dataForRedo.append(redo)
             event.accept()
             return
         elif event.matches(QKeySequence.Redo):
             if len(self._dataForRedo) > 0:
-                undo = self._glyphObject.serializeForUndo()
+                undo = self._glyphObject.serialize()
                 redo = self._dataForRedo.pop()
                 self._dataForUndo.append(undo)
-                self._glyphObject.deserializeFromUndo(redo)
+                self._glyphObject.deserialize(redo)
             event.accept()
             return
         elif event.matches(QKeySequence.SelectAll):
@@ -843,7 +843,7 @@ class GlyphScene(QGraphicsScene):
             # TODO: somehow try to do this in the pen
             # pass the glyph to a controller object that holds a self._pen
             copyGlyph.width = self._glyphObject.width
-            mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps([copyGlyph.serializeForUndo(False)]))
+            mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps([copyGlyph.serialize()]))
             clipboard.setMimeData(mimeData)
             event.accept()
             return
@@ -855,7 +855,7 @@ class GlyphScene(QGraphicsScene):
                 if len(data) == 1:
                     pen = self._glyphObject.getPointPen()
                     pasteGlyph = TGlyph()
-                    pasteGlyph.deserializeFromUndo(data[0])
+                    pasteGlyph.deserialize(data[0])
                     pasteGlyph.drawPoints(pen)
             event.accept()
             return
@@ -894,7 +894,7 @@ class GlyphScene(QGraphicsScene):
             self.rulerMousePress(event)
             return
         else:
-            data = self._glyphObject.serializeForUndo()
+            data = self._glyphObject.serialize()
             self._dataForUndo.append(data)
             self._dataForRedo = []
             if view._currentTool == SceneTools.KnifeTool:

@@ -463,7 +463,7 @@ class GlyphCollectionWidget(QWidget):
 
                 if not glyph.template:
                     font = glyph.getParent()
-                    outline = glyph.getRepresentation("defconQt.QPainterPath")
+                    outline = glyph.getRepresentation("defconQt.QPainterPath", font=font)
                     uPM = font.info.unitsPerEm
                     if uPM is None or not uPM > 0:
                         uPM = 1000
