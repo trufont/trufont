@@ -50,9 +50,6 @@ class OnlyComponentsQtPen(BasePen):
     def _curveToOne(self, p1, p2, p3):
         pass
 
-    def _closePath(self):
-        pass
-
     def addComponent(self, glyphName, transformation):
         try:
             glyph = self.glyphSet[glyphName]
