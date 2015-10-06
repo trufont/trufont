@@ -79,9 +79,6 @@ class GroupCollectionWidget(GlyphCollectionWidget):
     def __init__(self, parent=None):
         super(GroupCollectionWidget, self).__init__(parent)
         self._columns = 9
-        self._scrollArea.setAcceptDrops(True)
-        self._scrollArea.dragEnterEvent = self.pipeDragEnterEvent
-        self._scrollArea.dropEvent = self.pipeDropEvent
 
         # TODO: upstream this, somehow
         self.characterDeletionCallback = None
@@ -103,9 +100,14 @@ class GroupCollectionWidget(GlyphCollectionWidget):
         # (It allows direct compatibility with featureTextEditor though.)
         if (event.mimeData().hasText()):
             event.acceptProposedAction()
+        else:
+            super(GroupCollectionWidget, self).pipeDragEnterEvent(event)
 
     def pipeDropEvent(self, event):
-        if self.characterDropCallback is not None:
+        # TODO: inheritance model could be better here...
+        if event.source() == self:
+            super(GroupCollectionWidget, self).pipeDropEvent(event)
+        elif self.characterDropCallback is not None:
             self.characterDropCallback(event)
 
 class GroupsWindow(QWidget):
@@ -175,7 +177,9 @@ class GroupsWindow(QWidget):
         self.removeGroupButton.setEnabled(True)
 
     def _groupChanged(self):
-        self._cachedName = self.groupsList.currentItem().text()
+        currentItem = self.groupsList.currentItem()
+        if currentItem is None: return
+        self._cachedName = currentItem.text()
         if self._autoDirection:
             for name in self.leftGroups:
                 if self._cachedName.startswith(name):
@@ -193,9 +197,9 @@ class GroupsWindow(QWidget):
         self.collectionWidget.glyphs = glyphs
 
     def _groupRenamed(self):
-        newKey = self.groupsList.currentItem()
-        if newKey is None: return
-        newKey = newKey.text()
+        currentItem = self.groupsList.currentItem()
+        if currentItem is None: return
+        newKey = currentItem.text()
         if newKey == self._cachedName: return
         self.font.groups[newKey] = self.font.groups[self._cachedName]
         del self.font.groups[self._cachedName]

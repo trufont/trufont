@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QMimeData, QRectF, QSize, Qt
-from PyQt5.QtGui import (QBrush, QColor, QDrag, QFont, QFontMetrics, QKeySequence,
-    QLinearGradient, QPainter, QPen)
+from PyQt5.QtGui import (QBrush, QColor, QCursor, QDrag, QFont, QFontMetrics,
+    QKeySequence, QLinearGradient, QPainter, QPen)
 from PyQt5.QtWidgets import QApplication, QMessageBox, QScrollArea, QWidget
 import math
 
@@ -55,7 +55,13 @@ class GlyphCollectionWidget(QWidget):
         self._maybeDragPosition = None
 
         self.setFocusPolicy(Qt.ClickFocus)
+        self._currentDropIndex = None
         self._scrollArea = QScrollArea(parent)
+        self._scrollArea.dragEnterEvent = self.pipeDragEnterEvent
+        self._scrollArea.dragMoveEvent = self.pipeDragMoveEvent
+        self._scrollArea.dragLeaveEvent = self.pipeDragLeaveEvent
+        self._scrollArea.dropEvent = self.pipeDropEvent
+        self._scrollArea.setAcceptDrops(True)
         self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self._scrollArea.setWidget(self)
@@ -112,6 +118,51 @@ class GlyphCollectionWidget(QWidget):
         x = (.5 + index % self._columns) * self.squareSize
         y = (.5 + index // self._columns) * self.squareSize
         self._scrollArea.ensureVisible(x, y, .5*self.squareSize, .5*self.squareSize)
+
+    def _get_currentDropIndex(self):
+        return self._currentDropIndex
+
+    def _set_currentDropIndex(self, index):
+        self._currentDropIndex = index
+        self.update()
+
+    currentDropIndex = property(_get_currentDropIndex, _set_currentDropIndex)
+
+    def pipeDragEnterEvent(self, event):
+        # glyph reordering
+        if event.source() == self:
+            event.acceptProposedAction()
+
+    def pipeDragMoveEvent(self, event):
+        if event.source() == self:
+            pos = event.posF()
+            self.currentDropIndex = int(self._columns * (pos.y() // self.squareSize) \
+                + (pos.x() + .5*self.squareSize) // self.squareSize)
+
+    def pipeDragLeaveEvent(self, event):
+        self.currentDropIndex = None
+
+    def pipeDropEvent(self, event):
+        # TODO: consider dropping this check, maybe only subclasses should do it
+        # so as to dispatch but here we presumably don't need it
+        if event.source() == self:
+            insert = self.currentDropIndex
+            newGlyphNames = event.mimeData().text().split(" ")
+            font = self._glyphs[0].getParent()
+            # TODO: should glyphOrder change activate font.dirty?
+            newGlyphs = [font[name] for name in newGlyphNames]
+            # put all glyphs to be moved to None (deleting them would
+            # invalidate our insert indexes)
+            for index, glyph in enumerate(self._glyphs):
+                if glyph in newGlyphs:
+                    self._glyphs[index] = None
+            # insert newGlyphs into the list
+            lst = self._glyphs[:insert]
+            lst.extend(newGlyphs+self._glyphs[insert:])
+            self._glyphs = lst
+            # now, elide None
+            self.currentDropIndex = None
+            self.glyphs = [glyph for glyph in self._glyphs if glyph != None]
 
     # TODO: break this down into set width/set square
     # TODO: see whether scrollArea gets resizeEvents
@@ -257,7 +308,7 @@ class GlyphCollectionWidget(QWidget):
                 if ((event.pos() - self._maybeDragPosition).manhattanLength() \
                     < QApplication.startDragDistance()): return
                 # TODO: needs ordering or not?
-                glyphList = " ".join(self._glyphs[i].name for i in self.selection)
+                glyphList = " ".join(glyph.name for glyph in self.getSelectedGlyphs())
                 drag = QDrag(self)
                 mimeData = QMimeData()
                 mimeData.setText(glyphList)
@@ -390,6 +441,17 @@ class GlyphCollectionWidget(QWidget):
                 bottomEdgeY = row * self.squareSize + self.squareSize
                 painter.drawLine(rightEdgeX, row * self.squareSize + 1, rightEdgeX, bottomEdgeY)
                 painter.drawLine(rightEdgeX, bottomEdgeY, column * self.squareSize + 1, bottomEdgeY)
+                if self._currentDropIndex is not None:
+                    painter.setPen(Qt.green)
+                    if self._currentDropIndex == key:
+                        painter.drawLine(column * self.squareSize, row * self.squareSize,
+                            column * self.squareSize, bottomEdgeY)
+                    # special-case the end-column
+                    elif column == endColumn and self._currentDropIndex == key+1:
+                        yPos = self.mapFromGlobal(QCursor.pos()).y()
+                        if row == yPos // self.squareSize:
+                            painter.drawLine(rightEdgeX - 1, row * self.squareSize,
+                                rightEdgeX - 1, bottomEdgeY)
 
                 # selection code
                 if key in self._selection:
