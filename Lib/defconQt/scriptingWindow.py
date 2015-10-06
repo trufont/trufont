@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QPlainTextEdit
 class MainScriptingWindow(QMainWindow):
     def __init__(self):
         super(MainScriptingWindow, self).__init__()
-        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.editor = PythonEditor(parent=self)
         self.resize(600, 500)
@@ -31,6 +30,7 @@ class MainScriptingWindow(QMainWindow):
             "__builtins__": __builtins__,
             "AllFonts": app.allFonts,
             "CurrentFont": app.currentFont,
+            "CurrentGlyph": app.currentGlyph,
         }
         try:
             code = compile(script, "<string>", "exec")
@@ -57,9 +57,11 @@ class PythonEditor(CodeEditor):
         if key in self.autocomplete.keys():
             super(PythonEditor, self).keyPressEvent(event)
             cursor = self.textCursor()
-            cursor.insertText(self.autocomplete[key][-1])
-            cursor.movePosition(QTextCursor.PreviousCharacter)
-            self.setTextCursor(cursor)
+            ok = cursor.movePosition(QTextCursor.NextCharacter)
+            if not ok:
+                cursor.insertText(self.autocomplete[key][-1])
+                cursor.movePosition(QTextCursor.PreviousCharacter)
+                self.setTextCursor(cursor)
             event.accept()
             return
         elif key == Qt.Key_Backspace:

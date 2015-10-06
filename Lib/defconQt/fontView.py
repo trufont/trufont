@@ -12,7 +12,7 @@ from fontTools.agl import AGL2UV
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-import os, pickle, unicodedata
+import os, pickle, traceback
 
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
@@ -47,6 +47,12 @@ latin1 = CharacterSet(
 "quoteright","minus"], "Latin-1")
 
 class Application(QApplication):
+    currentGlyphChanged = pyqtSignal()
+
+    def __init__(self, *args, **kwargs):
+        super(Application, self).__init__(*args, **kwargs)
+        self._currentGlyph = None
+
     def allFonts(self):
         fonts = []
         for window in QApplication.topLevelWidgets():
@@ -56,6 +62,15 @@ class Application(QApplication):
 
     def currentFont(self):
         return self.currentMainWindow._font
+
+    def currentGlyph(self):
+        return self._currentGlyph
+
+    def setCurrentGlyph(self, glyph):
+        if glyph == self._currentGlyph:
+            return
+        self._currentGlyph = glyph
+        self.currentGlyphChanged.emit()
 
 MAX_RECENT_FILES = 6
 
@@ -278,6 +293,9 @@ class MainWindow(QMainWindow):
         self.font = font
         self.collectionWidget.characterSelectedCallback = self._selectionChanged
         self.collectionWidget.doubleClickCallback = self._glyphOpened
+        # XXX: should spaceCenter have this functionality as well?
+        # TODO: should default be True or False?
+        self.collectionWidget.updateCurrentGlyph = True
         self.collectionWidget.setFocus()
 
         menuBar = self.menuBar()
@@ -287,7 +305,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction("&New…", self.newFile, QKeySequence.New)
         fileMenu.addAction("&Open…", self.openFile, QKeySequence.Open)
         # recent files
-        self.recentFilesMenu = QMenu("Open &Recent...", self)
+        self.recentFilesMenu = QMenu("Open &recent…", self)
         for i in range(MAX_RECENT_FILES):
             action = QAction(self.recentFilesMenu)
             action.setVisible(False)
@@ -297,7 +315,7 @@ class MainWindow(QMainWindow):
         fileMenu.addMenu(self.recentFilesMenu)
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
-        fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
+        fileMenu.addAction("Save &as…", self.saveFileAs, QKeySequence.SaveAs)
         fileMenu.addAction("Reload from disk", self.reload)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
@@ -321,7 +339,7 @@ class MainWindow(QMainWindow):
         green.setData(QColor(Qt.green))
         editMenu.addMenu(markColorMenu)
         editMenu.addAction("Copy", self.copy, QKeySequence.Copy)
-        editMenu.addAction("Copy as Component", self.copyAsComponent, "Ctrl+Alt+c")
+        editMenu.addAction("Copy as component", self.copyAsComponent, "Ctrl+Alt+C")
         editMenu.addAction("Paste", self.paste, QKeySequence.Paste)
         editMenu.addSeparator()
         editMenu.addAction("Settings…", self.settings)
@@ -330,20 +348,20 @@ class MainWindow(QMainWindow):
         fontMenu = QMenu("&Font", self)
         # TODO: work out sensible shortcuts and make sure they're cross-platform
         # ready - consider extracting them into separate file?
-        fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+U")
-        fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+M")
-        fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+F")
+        fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+Alt+G")
+        fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+Alt+I")
+        fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+Alt+F")
         fontMenu.addSeparator()
         fontMenu.addAction("Sort…", self.sortCharacters)
         menuBar.addMenu(fontMenu)
 
         pythonMenu = QMenu("&Python", self)
-        pythonMenu.addAction("Scripting &window", self.scripting)
+        pythonMenu.addAction("Scripting &window", self.scripting, "Ctrl+Alt+R")
         menuBar.addMenu(pythonMenu)
 
         windowMenu = QMenu("&Windows", self)
-        windowMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Y")
-        windowMenu.addAction("&Groups window", self.fontGroups, "Ctrl+G")
+        windowMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Alt+S")
+        windowMenu.addAction("&Groups window", self.fontGroups, "Ctrl+Alt+G")
         menuBar.addMenu(windowMenu)
 
         helpMenu = QMenu("&Help", self)
@@ -394,6 +412,7 @@ class MainWindow(QMainWindow):
             try:
                 font = TFont(path)
             except:
+                print(traceback.format_exc())
                 return
             window = MainWindow(font)
             window.show()
@@ -642,6 +661,9 @@ class MainWindow(QMainWindow):
         if event.type() == QEvent.WindowActivate:
             app = QApplication.instance()
             app.currentMainWindow = self
+            lastSelectedGlyph = self.collectionWidget.lastSelectedGlyph()
+            if lastSelectedGlyph is not None:
+                app.setCurrentGlyph(lastSelectedGlyph)
         return super(MainWindow, self).event(event)
 
     def resizeEvent(self, event):
@@ -700,11 +722,13 @@ class MainWindow(QMainWindow):
     def scripting(self):
         # TODO: see up here
         app = QApplication.instance()
-        if not (hasattr(app, 'scriptingWindow') and app.scriptingWindow.isVisible()):
+        if not hasattr(app, 'scriptingWindow'):
             app.scriptingWindow = MainScriptingWindow()
             app.scriptingWindow.show()
-        else:
+        elif app.scriptingWindow.isVisible():
             app.scriptingWindow.raise_()
+        else:
+            app.scriptingWindow.show()
 
     def sortCharacters(self):
         sortDescriptor, ok = SortDialog.getDescriptor(self, self.sortDescriptor)

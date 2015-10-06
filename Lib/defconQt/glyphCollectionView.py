@@ -51,6 +51,7 @@ class GlyphCollectionWidget(QWidget):
 
         self.characterSelectedCallback = None
         self.doubleClickCallback = None
+        self.updateCurrentGlyph = False
         self._maybeDragPosition = None
 
         self.setFocusPolicy(Qt.ClickFocus)
@@ -90,11 +91,19 @@ class GlyphCollectionWidget(QWidget):
 
     def _set_lastSelectedCell(self, index):
         self._lastSelectedCell = index
+        if self.updateCurrentGlyph:
+            glyph = self.lastSelectedGlyph()
+            app = QApplication.instance()
+            app.setCurrentGlyph(glyph)
         if index is not None:
             self.scrollToCell(index)
 
     lastSelectedCell = property(_get_lastSelectedCell, _set_lastSelectedCell,
         doc="The current lastSelectedCell in selection.")
+
+    def lastSelectedGlyph(self):
+        index = self._lastSelectedCell
+        return self._glyphs[index] if index is not None else None
 
     def scrollArea(self):
         return self._scrollArea

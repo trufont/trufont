@@ -10,7 +10,6 @@ from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPaint
 from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
         #QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
         #QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
-from PyQt5.QtOpenGL import QGL, QGLFormat, QGLWidget
 
 class AddAnchorDialog(QDialog):
     def __init__(self, pos=None, parent=None):
@@ -139,45 +138,11 @@ class MainGfxWindow(QMainWindow):
 
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
-
         menuBar.addMenu(fileMenu)
 
-        viewMenu = QMenu("&View", self)
-        self.backgroundAction = viewMenu.addAction("&Background")
-        self.backgroundAction.setEnabled(False)
-        self.backgroundAction.setCheckable(True)
-        self.backgroundAction.setChecked(False)
-        self.backgroundAction.toggled.connect(self.view.setViewBackground)
-
-        self.outlineAction = viewMenu.addAction("&Outline")
-        self.outlineAction.setEnabled(False)
-        self.outlineAction.setCheckable(True)
-        self.outlineAction.setChecked(True)
-        self.outlineAction.toggled.connect(self.view.setViewOutline)
-
-        menuBar.addMenu(viewMenu)
-
-        rendererMenu = QMenu("&Renderer", self)
-        self.nativeAction = rendererMenu.addAction("&Native")
-        self.nativeAction.setCheckable(True)
-        self.nativeAction.setChecked(True)
-
-        if QGLFormat.hasOpenGL():
-            self.glAction = rendererMenu.addAction("&OpenGL")
-            self.glAction.setCheckable(True)
-
-        self.imageAction = rendererMenu.addAction("&Image")
-        self.imageAction.setCheckable(True)
-
-        rendererGroup = QActionGroup(self)
-        rendererGroup.addAction(self.nativeAction)
-
-        if QGLFormat.hasOpenGL():
-            rendererGroup.addAction(self.glAction)
-
-        rendererGroup.addAction(self.imageAction)
-
-        menuBar.addMenu(rendererMenu)
+        glyphMenu = QMenu("&Glyph", self)
+        glyphMenu.addAction("&Jump", self.changeGlyph)
+        menuBar.addMenu(glyphMenu)
 
         toolBar = QToolBar(self)
         toolBar.setMovable(False)
@@ -201,8 +166,6 @@ class MainGfxWindow(QMainWindow):
         toolsGroup.addAction(knifeToolButton)
         self.addToolBar(toolBar)
 
-        rendererGroup.triggered.connect(self.setRenderer)
-
         self.setCentralWidget(self.view)
         self.setWindowTitle(glyph.name, glyph.getParent())
         self.adjustSize()
@@ -212,21 +175,24 @@ class MainGfxWindow(QMainWindow):
         createAnchorAction.triggered.connect(self.view.createAnchor)
         self.addAction(createAnchorAction)
 
+    def changeGlyph(self):
+        glyph = self.view._glyph
+        newGlyph, ok = GotoDialog.getNewGlyph(self, glyph.getParent())
+        if ok and newGlyph is not None:
+            self.view.setGlyph(newGlyph)
+
+    def event(self, event):
+        if event.type() == QEvent.WindowActivate:
+            app = QApplication.instance()
+            app.setCurrentGlyph(self.view._glyph)
+        return super(MainGfxWindow, self).event(event)
+
     def closeEvent(self, event):
         self.view._glyph.removeObserver(self, "Glyph.Changed")
         event.accept()
 
     def _glyphChanged(self, notification):
         self.view._glyphChanged(notification)
-
-    def setRenderer(self, action):
-        if action == self.nativeAction:
-            self.view.setRenderer(GlyphView.Native)
-        elif action == self.glAction:
-            if QGLFormat.hasOpenGL():
-                self.view.setRenderer(GlyphView.OpenGL)
-        elif action == self.imageAction:
-            self.view.setRenderer(GlyphView.Image)
 
     def setWindowTitle(self, title, font=None):
         if font is not None: title = "%s – %s %s" % (title, font.info.familyName, font.info.styleName)
@@ -831,13 +797,6 @@ class GlyphScene(QGraphicsScene):
             self._glyphObject.dirty = True
             event.accept()
             return
-        elif key == Qt.Key_J:
-            view = self.views()[0]
-            glyph = view._glyph
-            newGlyph, ok = GotoDialog.getNewGlyph(self.parent(), glyph.getParent())
-            if ok and newGlyph is not None:
-                view.setGlyph(newGlyph)
-            return
         elif event.matches(QKeySequence.Undo):
             if len(self._dataForUndo) > 0:
                 undo = self._dataForUndo.pop()
@@ -1301,12 +1260,8 @@ class GlyphScene(QGraphicsScene):
         event.accept()
 
 class GlyphView(QGraphicsView):
-    Native, OpenGL, Image = range(3)
-
     def __init__(self, glyph, parent=None):
         super(GlyphView, self).__init__(parent)
-
-        self.renderer = GlyphView.Native
         self._glyph = glyph
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
         self._impliedPointSize = 1000
@@ -1574,26 +1529,11 @@ class GlyphView(QGraphicsView):
         self._glyph = glyph
         # XXX: DRY ALERT!
         self.scene()._glyphObject = glyph
+        app = QApplication.instance()
+        app.setCurrentGlyph(glyph)
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
         self.parent().setWindowTitle(self._glyph.name, self._glyph.getParent())
         self.redrawGlyph()
-
-    def setRenderer(self, renderer):
-        self.renderer = renderer
-
-        if self.renderer == GlyphView.OpenGL:
-            if QGLFormat.hasOpenGL():
-                self.setViewport(QGLWidget(QGLFormat(QGL.SampleBuffers)))
-        else:
-            self.setViewport(QWidget())
-
-    def setViewBackground(self, enable):
-        if self.backgroundItem:
-            self.backgroundItem.setVisible(enable)
-
-    def setViewOutline(self, enable):
-        if self.outlineItem:
-            self.outlineItem.setVisible(enable)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MidButton):
