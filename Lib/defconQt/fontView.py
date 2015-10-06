@@ -349,9 +349,9 @@ class AddGlyphDialog(QDialog):
         layout.addWidget(buttonBox, l, 3)
         self.setLayout(layout)
 
-    @staticmethod
-    def getNewGlyphNames(parent, currentGlyphs=None):
-        dialog = AddGlyphDialog(currentGlyphs, parent)
+    @classmethod
+    def getNewGlyphNames(cls, parent, currentGlyphs=None):
+        dialog = cls(currentGlyphs, parent)
         result = dialog.exec_()
         sortFont = False
         newGlyphNames = []
@@ -498,9 +498,9 @@ class SortDialog(QDialog):
         print("Unknown descriptor name: %s", name)
         return 0
 
-    @staticmethod
-    def getDescriptor(parent, sortDescriptor=None):
-        dialog = SortDialog(sortDescriptor, parent)
+    @classmethod
+    def getDescriptor(cls, parent, sortDescriptor=None):
+        dialog = cls(sortDescriptor, parent)
         result = dialog.exec_()
         if dialog.characterSetBox.isChecked():
             # TODO: dispatch csets when QSettings support lands

@@ -1,7 +1,7 @@
 from enum import Enum
 from math import copysign
 import pickle
-from defcon import Anchor
+from defcon import Anchor, Component
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from fontTools.misc import bezierTools
@@ -11,51 +11,16 @@ from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
         #QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
         #QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
 
-class AddAnchorDialog(QDialog):
-    def __init__(self, pos=None, parent=None):
-        super(AddAnchorDialog, self).__init__(parent)
-        self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Add anchor…")
-
-        layout = QGridLayout(self)
-
-        anchorNameLabel = QLabel("Anchor name:", self)
-        self.anchorNameEdit = QLineEdit(self)
-        self.anchorNameEdit.setFocus(True)
-        if pos is not None:
-            anchorPositionLabel = QLabel("The anchor will be added at ({}, {})."
-              .format(pos.x(), pos.y()), self)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-
-        l = 0
-        layout.addWidget(anchorNameLabel, l, 0)
-        layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
-        l += 1
-        layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
-        l += 1
-        layout.addWidget(buttonBox, l, 3)
-        self.setLayout(layout)
-
-    @staticmethod
-    def getNewAnchorData(parent, pos=None):
-        dialog = AddAnchorDialog(pos, parent)
-        result = dialog.exec_()
-        name = dialog.anchorNameEdit.text()
-        return (name, result)
-
 class GotoDialog(QDialog):
     alphabetical = [
         dict(type="alphabetical", allowPseudoUnicode=True)
     ]
 
-    def __init__(self, font, parent=None):
+    def __init__(self, currentGlyph, parent=None):
         super(GotoDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Go to…")
-        self.font = font
+        self.font = currentGlyph.getParent()
         self._sortedGlyphs = self.font.unicodeData.sortGlyphNames(self.font.keys(), self.alphabetical)
 
         layout = QGridLayout(self)
@@ -114,9 +79,9 @@ class GotoDialog(QDialog):
         self.glyphList.addItems(glyphs)
         if select: self.glyphList.setCurrentRow(0)
 
-    @staticmethod
-    def getNewGlyph(parent, font):
-        dialog = GotoDialog(font, parent)
+    @classmethod
+    def getNewGlyph(cls, parent, currentGlyph):
+        dialog = cls(currentGlyph, parent)
         result = dialog.exec_()
         currentItem = dialog.glyphList.currentItem()
         newGlyph = None
@@ -126,6 +91,47 @@ class GotoDialog(QDialog):
                 newGlyph = dialog.font[newGlyphName]
         return (newGlyph, result)
 
+class AddAnchorDialog(QDialog):
+    def __init__(self, pos=None, parent=None):
+        super(AddAnchorDialog, self).__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Add anchor…")
+
+        layout = QGridLayout(self)
+
+        anchorNameLabel = QLabel("Anchor name:", self)
+        self.anchorNameEdit = QLineEdit(self)
+        self.anchorNameEdit.setFocus(True)
+        if pos is not None:
+            anchorPositionLabel = QLabel("The anchor will be added at ({}, {})."
+              .format(pos.x(), pos.y()), self)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        l = 0
+        layout.addWidget(anchorNameLabel, l, 0)
+        layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
+        l += 1
+        layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
+        l += 1
+        layout.addWidget(buttonBox, l, 3)
+        self.setLayout(layout)
+
+    @classmethod
+    def getNewAnchorData(cls, parent, pos=None):
+        dialog = cls(pos, parent)
+        result = dialog.exec_()
+        name = dialog.anchorNameEdit.text()
+        return (name, result)
+
+class AddComponentDialog(GotoDialog):
+    def __init__(self, *args, **kwargs):
+        super(AddComponentDialog, self).__init__(*args, **kwargs)
+        self.setWindowTitle("Add component…")
+        self._sortedGlyphs.remove(args[0].name)
+        self.updateGlyphList(False)
 
 class MainGfxWindow(QMainWindow):
     def __init__(self, glyph, parent=None):
@@ -174,10 +180,13 @@ class MainGfxWindow(QMainWindow):
         createAnchorAction = QAction("Add Anchor…", self)
         createAnchorAction.triggered.connect(self.view.createAnchor)
         self.addAction(createAnchorAction)
+        createComponentAction = QAction("Add Component…", self)
+        createComponentAction.triggered.connect(self.view.createComponent)
+        self.addAction(createComponentAction)
 
     def changeGlyph(self):
         glyph = self.view._glyph
-        newGlyph, ok = GotoDialog.getNewGlyph(self, glyph.getParent())
+        newGlyph, ok = GotoDialog.getNewGlyph(self, glyph)
         if ok and newGlyph is not None:
             self.view.setGlyph(newGlyph)
 
@@ -1519,6 +1528,13 @@ class GlyphView(QGraphicsView):
             anchor.y = pos.y()
             anchor.name = newAnchorName
             self._glyph.appendAnchor(anchor)
+
+    def createComponent(self):
+        newGlyph, ok = AddComponentDialog.getNewGlyph(self, self._glyph)
+        if ok and newGlyph is not None:
+            component = Component()
+            component.baseGlyph = newGlyph.name
+            self._glyph.appendComponent(component)
 
     def setGlyph(self, glyph):
         self._glyph.removeObserver(self, "Glyph.Changed")
