@@ -457,7 +457,7 @@ class OpenTypeTab(QWidget):
         version = self.versionEdit.text()
         font.info.openTypeNameVersion = version if version != '' else None
         uniqueID = self.uniqueIDEdit.text()
-        font.info.openTypeNameUniqueID = int(uniqueID) if uniqueID != '' else None
+        font.info.openTypeNameUniqueID = uniqueID if uniqueID != '' else None
         description = self.descriptionEdit.text()
         font.info.openTypeNameDescription = description if description != '' else None
         sampleText = self.sampleTextEdit.text()
