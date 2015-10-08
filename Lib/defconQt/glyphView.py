@@ -26,8 +26,9 @@ class GotoDialog(QDialog):
         layout = QGridLayout(self)
         self.glyphLabel = QLabel("Glyph:", self)
         self.glyphEdit = QLineEdit(self)
-        self.glyphEdit.keyPressEvent = self.lineKeyPressEvent
         self.glyphEdit.textChanged.connect(self.updateGlyphList)
+        self.glyphEdit.event = self.lineEvent
+        self.glyphEdit.keyPressEvent = self.lineKeyPressEvent
 
         self.beginsWithBox = QRadioButton("Begins with", self)
         self.containsBox = QRadioButton("Contains", self)
@@ -51,28 +52,31 @@ class GotoDialog(QDialog):
         l += 1
         layout.addWidget(buttonBox, l, 0, 1, 6)
         self.setLayout(layout)
-        self.updateGlyphList(False)
+        self.updateGlyphList(True)
+
+    def lineEvent(self, event):
+        if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
+            if self.beginsWithBox.isChecked():
+                self.containsBox.toggle()
+            else:
+                self.beginsWithBox.toggle()
+            return True
+        else:
+            return QLineEdit.event(self.glyphEdit, event)
 
     def lineKeyPressEvent(self, event):
         key = event.key()
         if key == Qt.Key_Up or key == Qt.Key_Down:
             self.glyphList.keyPressEvent(event)
-        # TODO: kbd-dependent. Maybe change shortcut as well. rf uses Tab but takes away native Tab func.
-        elif key == Qt.Key_Q:
-            self.beginsWithBox.toggle()
-            event.accept()
-        elif key == Qt.Key_D:
-            self.containsBox.toggle()
-            event.accept()
         else:
             QLineEdit.keyPressEvent(self.glyphEdit, event)
 
-    def updateGlyphList(self, select=True):
+    def updateGlyphList(self, select):
         self.glyphList.clear()
         if not self.glyphEdit.isModified():
             self.glyphList.addItems(self._sortedGlyphs)
         text = self.glyphEdit.text()
-        if self.beginsWithBox.isChecked():
+        if select:
             glyphs = [glyph for glyph in self._sortedGlyphs if glyph.startswith(text)]
         else:
             glyphs = [glyph for glyph in self._sortedGlyphs if text in glyph]
@@ -147,7 +151,7 @@ class MainGfxWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         glyphMenu = QMenu("&Glyph", self)
-        glyphMenu.addAction("&Jump", self.changeGlyph)
+        glyphMenu.addAction("&Jump", self.changeGlyph, "J")
         menuBar.addMenu(glyphMenu)
 
         toolBar = QToolBar(self)

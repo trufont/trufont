@@ -673,6 +673,8 @@ class MainWindow(QMainWindow):
         if path is None and self.font.path is None:
             self.saveFileAs()
         else:
+            if path is None:
+                path = self.font.path
             glyphs = self.collectionWidget.glyphs
             # TODO: save sortDescriptor somewhere in lib as well
             glyphNames = []
