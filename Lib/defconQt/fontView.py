@@ -88,13 +88,12 @@ class InspectorWindow(QWidget):
         nameLabel = QLabel("Name:", self)
         self.nameEdit = QLineEdit(self)
         self.nameEdit.editingFinished.connect(self.writeGlyphName)
-        unicodeLabel = QLabel("Unicode:", self)
-        self.unicodeEdit = QLineEdit(self)
-        self.unicodeEdit.editingFinished.connect(self.writeUnicode)
-        self.unicodeEdit.setMaximumWidth(columnOneWidth)
-        self.unicodeEdit.setValidator(QIntValidator(self))
+        unicodesLabel = QLabel("Unicode:", self)
         self.unicodesEdit = QLineEdit(self)
         self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
+        unicodesRegExp = QRegExp("(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
+        unicodesValidator = QRegExpValidator(unicodesRegExp, self)
+        self.unicodesEdit.setValidator(unicodesValidator)
         widthLabel = QLabel("Width:", self)
         self.widthEdit = QLineEdit(self)
         self.widthEdit.editingFinished.connect(self.writeWidth)
@@ -121,9 +120,8 @@ class InspectorWindow(QWidget):
         glyphLayout.addWidget(nameLabel, l, 0)
         glyphLayout.addWidget(self.nameEdit, l, 1, 1, 5)
         l += 1
-        glyphLayout.addWidget(unicodeLabel, l, 0)
-        glyphLayout.addWidget(self.unicodeEdit, l, 1)
-        glyphLayout.addWidget(self.unicodesEdit, l, 2, 1, 4)
+        glyphLayout.addWidget(unicodesLabel, l, 0)
+        glyphLayout.addWidget(self.unicodesEdit, l, 1, 1, 5)
         l += 1
         glyphLayout.addWidget(widthLabel, l, 0)
         glyphLayout.addWidget(self.widthEdit, l, 1)
@@ -254,9 +252,7 @@ class InspectorWindow(QWidget):
         if self._blocked: return
         name = self._glyph.name if self._glyph is not None else None
         self.nameEdit.setText(name)
-        uni = str(self._glyph.unicode).zfill(4) if self._glyph is not None else None
-        self.unicodeEdit.setText(uni)
-        unicodes = ";".join(str(u) for u in self._glyph.unicodes[1:]) if self._glyph is not None else None
+        unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" % u for u in self._glyph.unicodes) if self._glyph is not None else None
         self.unicodesEdit.setText(unicodes)
         width = str(int(self._glyph.width)) if self._glyph is not None else None
         self.widthEdit.setText(width)
@@ -284,17 +280,14 @@ class InspectorWindow(QWidget):
         self._glyph.name = self.nameEdit.text()
         self._blocked = False
 
-    def writeUnicode(self):
-        if self._glyph is None: return
-        self._blocked = True
-        self._glyph.unicode = int(self.unicodeEdit.text())
-        self._blocked = False
-
     def writeUnicodes(self):
         if self._glyph is None: return
         self._blocked = True
-        unicodes = self.unicodesEdit.text().split(";")
-        self._glyph.unicodes = [int(uni) for uni in unicodes]
+        unicodes = self.unicodesEdit.text().split(" ")
+        if len(unicodes) == 1 and unicodes[0] == "":
+            self._glyph.unicodes = []
+        else:
+            self._glyph.unicodes = [int(uni, 16) for uni in unicodes]
         self._blocked = False
 
     def writeWidth(self):
