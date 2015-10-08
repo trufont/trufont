@@ -92,7 +92,7 @@ class InspectorWindow(QWidget):
         unicodesLabel = QLabel("Unicode:", self)
         self.unicodesEdit = QLineEdit(self)
         self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
-        unicodesRegExp = QRegExp("(|([a-fA-F0-9]{4,6})(;([a-fA-F0-9]{4,6}))*)")
+        unicodesRegExp = QRegExp("(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
         unicodesValidator = QRegExpValidator(unicodesRegExp, self)
         self.unicodesEdit.setValidator(unicodesValidator)
         widthLabel = QLabel("Width:", self)
@@ -253,7 +253,7 @@ class InspectorWindow(QWidget):
         if self._blocked: return
         name = self._glyph.name if self._glyph is not None else None
         self.nameEdit.setText(name)
-        unicodes = ";".join("%06X" % u if u > 0xFFFF else "%04X" % u for u in self._glyph.unicodes) if self._glyph is not None else None
+        unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" % u for u in self._glyph.unicodes) if self._glyph is not None else None
         self.unicodesEdit.setText(unicodes)
         width = str(int(self._glyph.width)) if self._glyph is not None else None
         self.widthEdit.setText(width)
@@ -284,7 +284,7 @@ class InspectorWindow(QWidget):
     def writeUnicodes(self):
         if self._glyph is None: return
         self._blocked = True
-        unicodes = self.unicodesEdit.text().split(";")
+        unicodes = self.unicodesEdit.text().split(" ")
         if len(unicodes) == 1 and unicodes[0] == "":
             self._glyph.unicodes = []
         else:
