@@ -1,18 +1,18 @@
 # defconQt
 
-`defconQt` is a set of widgets for font-editing applications written with Python3, robofab, defcon and PyQt.
+`defconQt` is a set of widgets for font-editing applications written with Python3, ufoLib, defcon and PyQt.
 
 Dependencies:
 
 - Python 3
 - PyQt5
 - [Behdad Esfahbod’s fontTools]
-- [Adrien Tétar’s fork of robofab, python3 branch]
-- [Adrien Tétar’s fork of defcon, python3 branch]
+- [Adrien Tétar’s fork of robofab, python3-ufo3 branch]
+- [Lasse Fister’s fork of defcon, serialization-py3-ufo-3 branch]
 
 [Behdad Esfahbod’s fontTools]: https://github.com/behdad/fonttools
-[Adrien Tétar’s fork of robofab, python3 branch]: https://github.com/adrientetar/robofab
-[Adrien Tétar’s fork of defcon, python3 branch]: https://github.com/adrientetar/defcon
+[Adrien Tétar’s fork of robofab, python3-ufo3 branch]: https://github.com/adrientetar/robofab
+[Lasse Fister’s fork of defcon, serialization-py3-ufo-3 branch]: https://github.com/graphicore/defcon/tree/serialization-py3-ufo-3
 
 Run:
 
