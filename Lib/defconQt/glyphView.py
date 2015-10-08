@@ -36,6 +36,7 @@ class GotoDialog(QDialog):
         self.beginsWithBox.toggled.connect(self.updateGlyphList)
 
         self.glyphList = QListWidget(self)
+        self.glyphList.itemDoubleClicked.connect(self.accept)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)

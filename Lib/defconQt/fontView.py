@@ -7,7 +7,6 @@ from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import CharacterSet, TFont, TGlyph
 from defcon import Component
 from defconQt.spaceCenter import MainSpaceWindow
-from fontTools.agl import AGL2UV
 # TODO: remove globs when things start to stabilize
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -335,20 +334,26 @@ class AddGlyphDialog(QDialog):
         self.addGlyphEdit = QPlainTextEdit(self)
         self.addGlyphEdit.setFocus(True)
 
+        self.addUnicodeBox = QCheckBox("Add Unicode", self)
+        self.addUnicodeBox.setChecked(True)
+        self.addAsTemplateBox = QCheckBox("Add as template", self)
+        self.addAsTemplateBox.setChecked(True)
         self.sortFontBox = QCheckBox("Sort font", self)
-        self.overwriteBox = QCheckBox("Override", self)
+        self.overrideBox = QCheckBox("Override", self)
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
         l = 0
-        layout.addWidget(self.importCharDrop, l, 3)
+        layout.addWidget(self.importCharDrop, l, 3, 1, 2)
         l += 1
-        layout.addWidget(self.addGlyphEdit, l, 0, 1, 4)
+        layout.addWidget(self.addGlyphEdit, l, 0, 1, 5)
         l += 1
-        layout.addWidget(self.sortFontBox, l, 0)
-        layout.addWidget(self.overwriteBox, l, 1)
-        layout.addWidget(buttonBox, l, 3)
+        layout.addWidget(self.addUnicodeBox, l, 0)
+        layout.addWidget(self.addAsTemplateBox, l, 1)
+        layout.addWidget(self.sortFontBox, l, 2)
+        layout.addWidget(self.overrideBox, l, 3)
+        layout.addWidget(buttonBox, l, 4)
         self.setLayout(layout)
 
     @classmethod
@@ -356,6 +361,12 @@ class AddGlyphDialog(QDialog):
         dialog = cls(currentGlyphs, parent)
         result = dialog.exec_()
         sortFont = False
+        params = dict(
+            addUnicode = dialog.addUnicodeBox.isChecked(),
+            asTemplate = dialog.addAsTemplateBox.isChecked(),
+            override = dialog.overrideBox.isChecked(),
+            sortFont = dialog.sortFontBox.isChecked(),
+        )
         newGlyphNames = []
         for name in dialog.addGlyphEdit.toPlainText().split():
             if name not in dialog.currentGlyphNames:
@@ -364,7 +375,7 @@ class AddGlyphDialog(QDialog):
             # XXX: if we get here with previous sort being by character set,
             # should it just stick?
             sortFont = True
-        return (newGlyphNames, sortFont, result)
+        return (newGlyphNames, params, result)
 
     def importCharacters(self, index):
         if index == 0: return
@@ -792,22 +803,16 @@ class MainWindow(QMainWindow):
 
     def _set_sortDescriptor(self, desc):
         if isinstance(desc, CharacterSet):
-            cnt = 0
             glyphs = []
             for glyphName in desc.glyphNames:
-                if not glyphName in self._font:
-                    # create a template glyph
-                    self.newStandardGlyph(glyphName)
-                    self._font[glyphName].template = True
-                else:
-                    cnt += 1
-                glyphs.append(self._font[glyphName])
-            if cnt < len(self._font):
-                # somehow some glyphs in the font are not present in the glyph
-                # order, loop again to add these at the end
+                if glyphName in self._font:
+                    glyphs.append(self._font[glyphName])
+            if len(glyphs) < len(self._font):
+                # if some glyphs in the font are not present in the glyph
+                # order, loop again to add them at the end
                 for glyph in self._font:
-                    if not glyph in glyphs:
-                     glyphs.append(glyph)
+                    if glyph not in glyphs:
+                        glyphs.append(glyph)
         else:
             glyphs = [self._font[k] for k in self._font.unicodeData
                 .sortGlyphNames(self._font.keys(), desc)]
@@ -879,14 +884,6 @@ class MainWindow(QMainWindow):
                     del glyph.lib["public.markColor"]
             else:
                 glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
-
-    # TODO: maybe store this in TFont
-    def newStandardGlyph(self, name):
-        self.font.newGlyph(name)
-        self.font[name].width = 500
-        # TODO: we should not force-add unicode, also list ought to be
-        # changeable from AGL2UV
-        if name in AGL2UV: self.font[name].unicode = AGL2UV[name]
 
     def _fontChanged(self, notification):
         self.collectionWidget.update()
@@ -1004,16 +1001,18 @@ class MainWindow(QMainWindow):
 
     def addGlyph(self):
         glyphs = self.collectionWidget.glyphs
-        newGlyphNames, sortFont, ok = AddGlyphDialog.getNewGlyphNames(self, glyphs)
+        newGlyphNames, params, ok = AddGlyphDialog.getNewGlyphNames(self, glyphs)
         if ok:
+            sortFont = params.pop("sortFont")
             for name in newGlyphNames:
-                self.newStandardGlyph(name)
-                glyph = self.font[name]
-                # XXX: consider making this parametrizable in the dialog
-                glyph.template = True
-                glyphs.append(glyph)
+                glyph = self.font.newStandardGlyph(name, **params)
+                if glyph is not None:
+                    glyphs.append(glyph)
             self.collectionWidget.glyphs = glyphs
             if sortFont:
+                # TODO: when the user add chars from a charset and no others,
+                # should we try to sort according to that charset?
+                # The above would probably warrant some rearchitecturing.
                 # kick-in the sort mechanism
                 self.sortDescriptor = self.sortDescriptor
 

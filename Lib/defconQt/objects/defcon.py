@@ -1,5 +1,6 @@
 from defcon import Font, Contour, Glyph, Point
 from defcon.objects.base import BaseObject
+from fontTools.agl import AGL2UV
 
 class TFont(Font):
     def __init__(self, *args, **kwargs):
@@ -11,6 +12,22 @@ class TFont(Font):
             kwargs["glyphPointClass"] = TPoint
         super(TFont, self).__init__(*args, **kwargs)
 
+    def newStandardGlyph(self, name, override=False, addUnicode=True, asTemplate=False, width=500):
+        if not override:
+            if name in self:
+                return None
+        # XXX(defcon): newGlyph should return the glyph
+        self.newGlyph(name)
+        glyph = self[name]
+        glyph.width = width
+        # TODO: list ought to be changeable from AGL2UV
+        if addUnicode:
+            if name in AGL2UV:
+                glyph.unicode = AGL2UV[name]
+        glyph.template = asTemplate
+        return glyph
+
+    # TODO: stop using that workaround now that we're ufo3
     def save(self, path=None, formatVersion=None):
         for glyph in self:
             if glyph.template:
