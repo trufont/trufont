@@ -328,7 +328,9 @@ class AddGlyphDialog(QDialog):
         layout = QGridLayout(self)
         self.importCharDrop = QComboBox(self)
         self.importCharDrop.addItem("Import glyphnames…")
-        self.importCharDrop.addItem("Latin-1", latin1)
+        characterSets = readCharacterSets()
+        for name, glyphNames in characterSets.items():
+            self.importCharDrop.addItem(name, glyphNames)
         self.importCharDrop.currentIndexChanged[int].connect(self.importCharacters)
         self.addGlyphEdit = QPlainTextEdit(self)
         self.addGlyphEdit.setFocus(True)
@@ -366,11 +368,11 @@ class AddGlyphDialog(QDialog):
 
     def importCharacters(self, index):
         if index == 0: return
-        charset = self.importCharDrop.currentData()
+        glyphNames = self.importCharDrop.currentData()
         editorNames = self.addGlyphEdit.toPlainText().split()
         currentNames = set(self.currentGlyphNames) ^ set(editorNames)
         changed = False
-        for name in charset.glyphNames:
+        for name in glyphNames:
             if name not in currentNames:
                 changed = True
                 editorNames.append(name)
@@ -393,8 +395,9 @@ class SortDialog(QDialog):
         self.characterSetBox.toggled.connect(self.characterSetToggle)
         self.characterSetDrop = QComboBox(self)
         self.characterSetDrop.setEnabled(False)
-        # XXX: fetch from settings
-        self.characterSetDrop.insertItem(0, "Latin 1")
+        characterSets = readCharacterSets()
+        for name, glyphNames in characterSets.items():
+            self.characterSetDrop.addItem(name, glyphNames)
         self.customSortBox = QRadioButton("Custom…", self)
         self.customSortBox.toggled.connect(self.customSortToggle)
 
@@ -407,7 +410,7 @@ class SortDialog(QDialog):
         elif isinstance(desc, CharacterSet):
             self.characterSetBox.setChecked(True)
             self.characterSetDrop.setEnabled(True)
-            # TODO: match cset name when QSettings support lands
+            self.characterSetDrop.setCurrentText(desc.name)
         elif desc[0]["type"] == "cannedDesign":
             self.smartSortBox.setChecked(True)
         else:
@@ -503,8 +506,9 @@ class SortDialog(QDialog):
         dialog = cls(sortDescriptor, parent)
         result = dialog.exec_()
         if dialog.characterSetBox.isChecked():
-            # TODO: dispatch csets when QSettings support lands
-            ret = latin1
+            data = dialog.characterSetDrop.currentData()
+            name = dialog.characterSetDrop.currentText()
+            ret = CharacterSet(data, name)
         elif dialog.customSortBox.isChecked():
             descriptors = []
             for line in dialog.customDescriptors:
@@ -812,6 +816,9 @@ class MainWindow(QMainWindow):
         doc="The sortDescriptor. Takes glyphs from the font and sorts them \
         when set.")
 
+    def getGlyphs(self):
+        return self.collectionWidget.glyphs
+
     def copy(self):
         glyphs = self.collectionWidget.glyphs
         selection = self.collectionWidget.selection
@@ -855,6 +862,10 @@ class MainWindow(QMainWindow):
                     # serialization system
                     glyph.name = name
                     glyph.unicode = uni
+
+    def settings(self):
+        dialog = SettingsDialog(self)
+        dialog.open()
 
     def markColor(self):
         color = self.sender().data()
@@ -1010,3 +1021,176 @@ class MainWindow(QMainWindow):
                 "<p>I am a new UFO-centric font editor and I aim to bring the <b>robofab</b> " \
                 "ecosystem to all main operating systems, in a fast and dependency-free " \
                 "package.</p>")
+
+class SettingsDialog(QDialog):
+    def __init__(self, parent=None):
+        super(SettingsDialog, self).__init__(parent)
+        #self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Settings")
+
+        self.tabWidget = QTabWidget(self)
+        self.tabWidget.addTab(CharacterSetTab(self), "Character sets")
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.tabWidget)
+        mainLayout.addWidget(buttonBox)
+        self.setLayout(mainLayout)
+
+    def accept(self):
+        for i in range(self.tabWidget.count()):
+            self.tabWidget.widget(i).writeValues()
+        super(SettingsDialog, self).accept()
+
+def getDefaultCharacterSet(settings=None):
+    if settings is None:
+        settings = QSettings()
+    settings.value("settings/defaultCharset", latin1.name, type=str)
+
+def readCharacterSets(settings=None):
+    if settings is None:
+        settings = QSettings()
+    size = settings.beginReadArray("charsets")
+    # TODO: maybe cache this in qApp
+    characterSets = {}
+    if not size:
+        characterSets[latin1.name] = latin1.glyphNames
+    for i in range(size):
+        settings.setArrayIndex(i)
+        charsetName = settings.value("name", type=str)
+        charsetGlyphNames = settings.value("glyphNames", type=str)
+        characterSets[charsetName] = charsetGlyphNames
+    settings.endArray()
+    return characterSets
+
+class CharacterSetTab(QWidget):
+    def __init__(self, parent=None):
+        super(CharacterSetTab, self).__init__(parent)
+
+        settings = QSettings()
+        self.defaultCharsetBox = QCheckBox("Default character set:", self)
+        self.defaultCharsetDrop = QComboBox(self)
+        defaultCharset = settings.value("settings/defaultCharset", latin1.name, type=str)
+        self.defaultCharsetBox.toggled.connect(self.toggleCharsetDrop)
+        self.defaultCharsetBox.setChecked(len(defaultCharset))
+        self.characterSets = readCharacterSets()
+        charsetNames = self.characterSets.keys()
+        self.defaultCharsetDrop.addItems(charsetNames)
+
+        self.charsetList = QListWidget(self)
+        self.charsetList.setSortingEnabled(True)
+        self.charsetContents = QTextEdit(self)
+        self.charsetContents.setAcceptRichText(False)
+        self.charsetList.currentItemChanged.connect(self.updateCharsetContents)
+        self.charsetList.itemChanged.connect(self.renameCharset)
+        self._cachedName = None
+        # Normally we should enforce this rather decently in the interface already
+        if charsetNames:
+            for charsetName in charsetNames:
+                item = QListWidgetItem(charsetName, self.charsetList)
+                item.setFlags(item.flags() | Qt.ItemIsEditable)
+            self.charsetList.setCurrentRow(0)
+        splitter = QSplitter()
+        splitter.addWidget(self.charsetList)
+        splitter.addWidget(self.charsetContents)
+        self.addCharsetButton = QPushButton("+", self)
+        self.addCharsetButton.pressed.connect(self.addCharset)
+        self.removeCharsetButton = QPushButton("-", self)
+        self.removeCharsetButton.setEnabled(len(self.characterSets) > 1)
+        self.removeCharsetButton.pressed.connect(self.removeCharset)
+        self.importButton = QPushButton("Import", self)
+        importMenu = QMenu(self)
+        importMenu.addAction("Import from current font", self.importFromCurrentFont)
+        self.importButton.setMenu(importMenu)
+
+        mainLayout = QGridLayout()
+        l = 0
+        mainLayout.addWidget(self.defaultCharsetBox, l, 0, 1, 2)
+        mainLayout.addWidget(self.defaultCharsetDrop, l, 3, 1, 3)
+        l += 1
+        mainLayout.addWidget(splitter, l, 0, 1, 6)
+        l += 1
+        mainLayout.addWidget(self.addCharsetButton, l, 0)
+        mainLayout.addWidget(self.removeCharsetButton, l, 1)
+        mainLayout.addWidget(self.importButton, l, 2)
+        self.setLayout(mainLayout)
+
+    def addCharset(self, glyphNames=[], charsetName="New character set"):
+        if charsetName in self.characterSets:
+            index = 1
+            while "%s %d" % (charsetName, index) in self.characterSets:
+                index += 1
+            charsetName = "%s %d" % (charsetName, index)
+        self.characterSets[charsetName] = glyphNames
+        item = QListWidgetItem(charsetName, self.charsetList)
+        item.setFlags(item.flags() | Qt.ItemIsEditable)
+        self.charsetList.setCurrentItem(item)
+        self.charsetList.editItem(item)
+        self.removeCharsetButton.setEnabled(True)
+
+    def removeCharset(self):
+        i = self.charsetList.currentRow()
+        text = self.charsetList.takeItem(i).text()
+        del self.characterSets[text]
+        if self.charsetList.count() < 2:
+            self.removeCharsetButton.setEnabled(False)
+
+    def renameCharset(self):
+        newKey = self.charsetList.currentItem()
+        if newKey is None: return
+        newKey = newKey.text()
+        self.characterSets[newKey] = self.characterSets[self._cachedName]
+        del self.characterSets[self._cachedName]
+
+    def importFromCurrentFont(self):
+        currentMainWindow = QApplication.instance().currentMainWindow
+        glyphs = currentMainWindow.getGlyphs()
+        info = currentMainWindow.font.info
+        name = "%s %s" % (info.familyName, info.styleName)
+        self.addCharset([glyph.name for glyph in glyphs], name)
+
+    def toggleCharsetDrop(self):
+        sender = self.sender()
+        self.defaultCharsetDrop.setEnabled(sender.isChecked())
+
+    def updateCharsetContents(self, current, previous):
+        # store content of the textEdit in the charset dict
+        if previous is not None:
+            glyphNames = self.charsetContents.toPlainText().split()
+            self.characterSets[previous.text()] = glyphNames
+        # now update the text edit to current charset
+        charsetName = current.text()
+        text = " ".join(self.characterSets[charsetName])
+        self.charsetContents.setText(text)
+        # cache current name for renames
+        self._cachedName = charsetName
+
+    def writeCharacterSets(self, settings):
+        # technically we're already enforcing that this doesn't happen
+        if not len(self.characterSets): return
+        settings.beginWriteArray("charsets", len(self.characterSets))
+        index = 0
+        for name, cset in self.characterSets.items():
+            settings.setArrayIndex(index)
+            settings.setValue("name", name)
+            settings.setValue("glyphNames", cset)
+            index += 1
+        settings.endArray()
+
+    def writeValues(self):
+        # store content of the textEdit in the charset dict
+        glyphNames = self.charsetContents.toPlainText().split()
+        currentCharset = self.charsetList.currentItem().text()
+        self.characterSets[currentCharset] = glyphNames
+
+        settings = QSettings()
+        self.writeCharacterSets(settings)
+        if not self.defaultCharsetBox.isChecked():
+            settings.setValue("settings/defaultCharset", "")
+        else:
+            defaultCharset = self.defaultCharsetDrop.currentText()
+            if defaultCharset != latin1.name:
+                settings.setValue("settings/defaultCharset", defaultCharset)
