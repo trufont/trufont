@@ -853,6 +853,8 @@ class GlyphScene(QGraphicsScene):
             if mimeData.hasFormat("application/x-defconQt-glyph-data"):
                 data = pickle.loads(mimeData.data("application/x-defconQt-glyph-data"))
                 if len(data) == 1:
+                    undo = self._glyphObject.serialize()
+                    self._dataForUndo.append(undo)
                     pen = self._glyphObject.getPointPen()
                     pasteGlyph = TGlyph()
                     pasteGlyph.deserialize(data[0])
@@ -1537,14 +1539,15 @@ class GlyphView(QGraphicsView):
             self._glyph.appendComponent(component)
 
     def setGlyph(self, glyph):
+        scene = self.scene()
         self._glyph.removeObserver(self, "Glyph.Changed")
         # TODO: consider creating a new scene instead of zeroing things out
         # manually
-        self._dataForUndo = []
-        self._dataForRedo = []
+        scene._dataForUndo = []
+        scene._dataForRedo = []
         self._glyph = glyph
         # XXX: DRY ALERT!
-        self.scene()._glyphObject = glyph
+        scene._glyphObject = glyph
         app = QApplication.instance()
         app.setCurrentGlyph(glyph)
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
