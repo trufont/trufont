@@ -84,7 +84,7 @@ class TPoint(Point):
 
     selected = property(_get_selected, _set_selected, doc="A boolean indicating the selected state of the point.")
 
-class CharacterSet(object):
+class GlyphSet(object):
     __slots__ = ["_name", "_glyphNames"]
 
     def __init__(self, glyphNames, name=None):
@@ -97,7 +97,7 @@ class CharacterSet(object):
     def _set_name(self, name):
         self._name = name
 
-    name = property(_get_name, _set_name, doc="Character set name.")
+    name = property(_get_name, _set_name, doc="Glyph set name.")
 
     def _get_glyphNames(self):
         return self._glyphNames

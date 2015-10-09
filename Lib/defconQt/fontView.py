@@ -4,7 +4,7 @@ from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.scriptingWindow import MainScriptingWindow
-from defconQt.objects.defcon import CharacterSet, TFont, TGlyph
+from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defcon import Color, Component
 from defconQt.spaceCenter import MainSpaceWindow
 # TODO: remove globs when things start to stabilize
@@ -19,7 +19,7 @@ cannedDesign = [
 ]
 sortItems = ["alphabetical", "category", "unicode", "script", "suffix",
     "decompositionBase", "weightedSuffix", "ligature"]
-latinDefault = CharacterSet(
+latinDefault = GlyphSet(
 ["space","exclam","quotesingle","quotedbl","numbersign","dollar",
 "percent","ampersand","parenleft","parenright","asterisk","plus","comma",
 "hyphen","period","slash","zero","one","two","three","four","five",
@@ -328,10 +328,10 @@ class AddGlyphDialog(QDialog):
         layout = QGridLayout(self)
         self.importCharDrop = QComboBox(self)
         self.importCharDrop.addItem("Import glyphnames…")
-        characterSets = readCharacterSets()
-        for name, glyphNames in characterSets.items():
+        glyphSets = readGlyphSets()
+        for name, glyphNames in glyphSets.items():
             self.importCharDrop.addItem(name, glyphNames)
-        self.importCharDrop.currentIndexChanged[int].connect(self.importCharacters)
+        self.importCharDrop.currentIndexChanged[int].connect(self.importGlyphs)
         self.addGlyphEdit = QPlainTextEdit(self)
         self.addGlyphEdit.setFocus(True)
 
@@ -373,12 +373,12 @@ class AddGlyphDialog(QDialog):
             if name not in dialog.currentGlyphNames:
                 newGlyphNames.append(name)
         if dialog.sortFontBox.isChecked():
-            # XXX: if we get here with previous sort being by character set,
+            # XXX: if we get here with previous sort being by glyph set,
             # should it just stick?
             sortFont = True
         return (newGlyphNames, params, result)
 
-    def importCharacters(self, index):
+    def importGlyphs(self, index):
         if index == 0: return
         glyphNames = self.importCharDrop.currentData()
         editorNames = self.addGlyphEdit.toPlainText().split()
@@ -403,13 +403,13 @@ class SortDialog(QDialog):
         self.setWindowTitle("Sort…")
 
         self.smartSortBox = QRadioButton("Smart sort", self)
-        self.characterSetBox = QRadioButton("Character set", self)
-        self.characterSetBox.toggled.connect(self.characterSetToggle)
-        self.characterSetDrop = QComboBox(self)
-        self.characterSetDrop.setEnabled(False)
-        characterSets = readCharacterSets()
-        for name, glyphNames in characterSets.items():
-            self.characterSetDrop.addItem(name, glyphNames)
+        self.glyphSetBox = QRadioButton("Glyph set", self)
+        self.glyphSetBox.toggled.connect(self.glyphSetToggle)
+        self.glyphSetDrop = QComboBox(self)
+        self.glyphSetDrop.setEnabled(False)
+        glyphSets = readGlyphSets()
+        for name, glyphNames in glyphSets.items():
+            self.glyphSetDrop.addItem(name, glyphNames)
         self.customSortBox = QRadioButton("Custom…", self)
         self.customSortBox.toggled.connect(self.customSortToggle)
 
@@ -419,10 +419,10 @@ class SortDialog(QDialog):
         if desc is None:
             # sort fetched from public.glyphOrder. no-op
             pass
-        elif isinstance(desc, CharacterSet):
-            self.characterSetBox.setChecked(True)
-            self.characterSetDrop.setEnabled(True)
-            self.characterSetDrop.setCurrentText(desc.name)
+        elif isinstance(desc, GlyphSet):
+            self.glyphSetBox.setChecked(True)
+            self.glyphSetDrop.setEnabled(True)
+            self.glyphSetDrop.setCurrentText(desc.name)
         elif desc[0]["type"] == "cannedDesign":
             self.smartSortBox.setChecked(True)
         else:
@@ -467,8 +467,8 @@ class SortDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.smartSortBox)
-        layout.addWidget(self.characterSetBox)
-        layout.addWidget(self.characterSetDrop)
+        layout.addWidget(self.glyphSetBox)
+        layout.addWidget(self.glyphSetDrop)
         layout.addWidget(self.customSortBox)
         layout.addWidget(self.customSortGroup)
         layout.addWidget(buttonBox)
@@ -517,10 +517,10 @@ class SortDialog(QDialog):
     def getDescriptor(cls, parent, sortDescriptor=None):
         dialog = cls(sortDescriptor, parent)
         result = dialog.exec_()
-        if dialog.characterSetBox.isChecked():
-            data = dialog.characterSetDrop.currentData()
-            name = dialog.characterSetDrop.currentText()
-            ret = CharacterSet(data, name)
+        if dialog.glyphSetBox.isChecked():
+            data = dialog.glyphSetDrop.currentData()
+            name = dialog.glyphSetDrop.currentText()
+            ret = GlyphSet(data, name)
         elif dialog.customSortBox.isChecked():
             descriptors = []
             for line in dialog.customDescriptors:
@@ -531,9 +531,9 @@ class SortDialog(QDialog):
             ret = cannedDesign
         return (ret, result)
 
-    def characterSetToggle(self):
+    def glyphSetToggle(self):
         checkBox = self.sender()
-        self.characterSetDrop.setEnabled(checkBox.isChecked())
+        self.glyphSetDrop.setEnabled(checkBox.isChecked())
 
     def customSortToggle(self):
         checkBox = self.sender()
@@ -549,7 +549,7 @@ class MainWindow(QMainWindow):
         self._font = None
         self._sortDescriptor = None
         self.font = font
-        self.collectionWidget.characterSelectedCallback = self._selectionChanged
+        self.collectionWidget.glyphSelectedCallback = self._selectionChanged
         self.collectionWidget.doubleClickCallback = self._glyphOpened
         # TODO: should default be True or False?
         self.collectionWidget.updateCurrentGlyph = True
@@ -610,7 +610,7 @@ class MainWindow(QMainWindow):
         fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+Alt+I")
         fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+Alt+F")
         fontMenu.addSeparator()
-        fontMenu.addAction("Sort…", self.sortCharacters)
+        fontMenu.addAction("Sort…", self.sortGlyphs)
         menuBar.addMenu(fontMenu)
 
         pythonMenu = QMenu("&Python", self)
@@ -825,7 +825,7 @@ class MainWindow(QMainWindow):
         self._font = font
         self._font.addObserver(self, "_fontChanged", "Font.Changed")
         if "public.glyphOrder" in self._font.lib:
-            self.sortDescriptor = CharacterSet(
+            self.sortDescriptor = GlyphSet(
                 self._font.lib["public.glyphOrder"])
         else:
             # TODO: cannedDesign or carry sortDescriptor from previous font?
@@ -838,7 +838,7 @@ class MainWindow(QMainWindow):
         return self._sortDescriptor
 
     def _set_sortDescriptor(self, desc):
-        if isinstance(desc, CharacterSet):
+        if isinstance(desc, GlyphSet):
             glyphs = []
             for glyphName in desc.glyphNames:
                 if glyphName in self._font:
@@ -1026,7 +1026,7 @@ class MainWindow(QMainWindow):
         else:
             app.inspectorWindow.show()
 
-    def sortCharacters(self):
+    def sortGlyphs(self):
         sortDescriptor, ok = SortDialog.getDescriptor(self, self.sortDescriptor)
         if ok:
             self.sortDescriptor = sortDescriptor
@@ -1063,7 +1063,7 @@ class SettingsDialog(QDialog):
         self.setWindowTitle("Settings")
 
         self.tabWidget = QTabWidget(self)
-        self.tabWidget.addTab(CharacterSetTab(self), "Character sets")
+        self.tabWidget.addTab(GlyphSetTab(self), "Glyph sets")
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
@@ -1079,39 +1079,39 @@ class SettingsDialog(QDialog):
             self.tabWidget.widget(i).writeValues()
         super(SettingsDialog, self).accept()
 
-def getDefaultCharacterSet(settings=None):
+def getDefaultGlyphSet(settings=None):
     if settings is None:
         settings = QSettings()
     settings.value("settings/defaultCharset", latinDefault.name, type=str)
 
-def readCharacterSets(settings=None):
+def readGlyphSets(settings=None):
     if settings is None:
         settings = QSettings()
     size = settings.beginReadArray("charsets")
     # TODO: maybe cache this in qApp
-    characterSets = {}
+    glyphSets = {}
     if not size:
-        characterSets[latinDefault.name] = latinDefault.glyphNames
+        glyphSets[latinDefault.name] = latinDefault.glyphNames
     for i in range(size):
         settings.setArrayIndex(i)
         charsetName = settings.value("name", type=str)
         charsetGlyphNames = settings.value("glyphNames", type=str)
-        characterSets[charsetName] = charsetGlyphNames
+        glyphSets[charsetName] = charsetGlyphNames
     settings.endArray()
-    return characterSets
+    return glyphSets
 
-class CharacterSetTab(QWidget):
+class GlyphSetTab(QWidget):
     def __init__(self, parent=None):
-        super(CharacterSetTab, self).__init__(parent)
+        super(GlyphSetTab, self).__init__(parent)
 
         settings = QSettings()
-        self.defaultCharsetBox = QCheckBox("Default character set:", self)
+        self.defaultCharsetBox = QCheckBox("Default glyph set:", self)
         self.defaultCharsetDrop = QComboBox(self)
         defaultCharset = settings.value("settings/defaultCharset", latinDefault.name, type=str)
         self.defaultCharsetBox.toggled.connect(self.toggleCharsetDrop)
         self.defaultCharsetBox.setChecked(len(defaultCharset))
-        self.characterSets = readCharacterSets()
-        charsetNames = self.characterSets.keys()
+        self.glyphSets = readGlyphSets()
+        charsetNames = self.glyphSets.keys()
         self.defaultCharsetDrop.addItems(charsetNames)
 
         self.charsetList = QListWidget(self)
@@ -1133,7 +1133,7 @@ class CharacterSetTab(QWidget):
         self.addCharsetButton = QPushButton("+", self)
         self.addCharsetButton.pressed.connect(self.addCharset)
         self.removeCharsetButton = QPushButton("-", self)
-        self.removeCharsetButton.setEnabled(len(self.characterSets) > 1)
+        self.removeCharsetButton.setEnabled(len(self.glyphSets) > 1)
         self.removeCharsetButton.pressed.connect(self.removeCharset)
         self.importButton = QPushButton("Import", self)
         importMenu = QMenu(self)
@@ -1152,13 +1152,13 @@ class CharacterSetTab(QWidget):
         mainLayout.addWidget(self.importButton, l, 2)
         self.setLayout(mainLayout)
 
-    def addCharset(self, glyphNames=[], charsetName="New character set"):
-        if charsetName in self.characterSets:
+    def addCharset(self, glyphNames=[], charsetName="New glyph set"):
+        if charsetName in self.glyphSets:
             index = 1
-            while "%s %d" % (charsetName, index) in self.characterSets:
+            while "%s %d" % (charsetName, index) in self.glyphSets:
                 index += 1
             charsetName = "%s %d" % (charsetName, index)
-        self.characterSets[charsetName] = glyphNames
+        self.glyphSets[charsetName] = glyphNames
         item = QListWidgetItem(charsetName, self.charsetList)
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.charsetList.setCurrentItem(item)
@@ -1168,7 +1168,7 @@ class CharacterSetTab(QWidget):
     def removeCharset(self):
         i = self.charsetList.currentRow()
         text = self.charsetList.takeItem(i).text()
-        del self.characterSets[text]
+        del self.glyphSets[text]
         if self.charsetList.count() < 2:
             self.removeCharsetButton.setEnabled(False)
 
@@ -1176,8 +1176,8 @@ class CharacterSetTab(QWidget):
         newKey = self.charsetList.currentItem()
         if newKey is None: return
         newKey = newKey.text()
-        self.characterSets[newKey] = self.characterSets[self._cachedName]
-        del self.characterSets[self._cachedName]
+        self.glyphSets[newKey] = self.glyphSets[self._cachedName]
+        del self.glyphSets[self._cachedName]
 
     def importFromCurrentFont(self):
         currentMainWindow = QApplication.instance().currentMainWindow
@@ -1194,20 +1194,20 @@ class CharacterSetTab(QWidget):
         # store content of the textEdit in the charset dict
         if previous is not None:
             glyphNames = self.charsetContents.toPlainText().split()
-            self.characterSets[previous.text()] = glyphNames
+            self.glyphSets[previous.text()] = glyphNames
         # now update the text edit to current charset
         charsetName = current.text()
-        text = " ".join(self.characterSets[charsetName])
+        text = " ".join(self.glyphSets[charsetName])
         self.charsetContents.setText(text)
         # cache current name for renames
         self._cachedName = charsetName
 
-    def writeCharacterSets(self, settings):
+    def writeGlyphSets(self, settings):
         # technically we're already enforcing that this doesn't happen
-        if not len(self.characterSets): return
-        settings.beginWriteArray("charsets", len(self.characterSets))
+        if not len(self.glyphSets): return
+        settings.beginWriteArray("charsets", len(self.glyphSets))
         index = 0
-        for name, cset in self.characterSets.items():
+        for name, cset in self.glyphSets.items():
             settings.setArrayIndex(index)
             settings.setValue("name", name)
             settings.setValue("glyphNames", cset)
@@ -1218,10 +1218,10 @@ class CharacterSetTab(QWidget):
         # store content of the textEdit in the charset dict
         glyphNames = self.charsetContents.toPlainText().split()
         currentCharset = self.charsetList.currentItem().text()
-        self.characterSets[currentCharset] = glyphNames
+        self.glyphSets[currentCharset] = glyphNames
 
         settings = QSettings()
-        self.writeCharacterSets(settings)
+        self.writeGlyphSets(settings)
         if not self.defaultCharsetBox.isChecked():
             settings.setValue("settings/defaultCharset", "")
         else:
