@@ -30,7 +30,7 @@ latinDefault = CharacterSet(
 "u","v","w","x","y","z","braceleft","bar","braceright","asciitilde","exclamdown",
 "cent","sterling","currency","yen","brokenbar","section","dieresis","copyright",
 "ordfeminine","guillemotleft","logicalnot","registered","macron","degree",
-"plusminus","twosuperior","threesuperior","acute","mu","paragraph",
+"plusminus","twosuperior","threesuperior","mu","paragraph",
 "periodcentered","onesuperior","ordmasculine","guillemotright",
 "onequarter","onehalf","threequarters","questiondown","Agrave","Aacute",
 "Acircumflex","Atilde","Adieresis","Aring","AE","Ccedilla","Egrave","Eacute",
