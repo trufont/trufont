@@ -41,9 +41,9 @@ latin1 = CharacterSet(
 "ccedilla","egrave","eacute","ecircumflex","edieresis","igrave","iacute",
 "icircumflex","idieresis","eth","ntilde","ograve","oacute","ocircumflex",
 "otilde","odieresis","divide","oslash","ugrave","uacute","ucircumflex",
-"udieresis","yacute","thorn","ydieresis","dotlessi","circumflex","caron",
-"breve","dotaccent","ring","ogonek","tilde","hungarumlaut","quoteleft",
-"quoteright","minus"], "Latin-1")
+"udieresis","yacute","thorn","ydieresis","dotlessi","acutecomb","gravecomb",
+"uni0302","uni030A","tildecomb","quoteleft","quoteright","minus"],
+"Latin-default")
 
 class Application(QApplication):
     currentGlyphChanged = pyqtSignal()
