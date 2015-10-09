@@ -31,7 +31,7 @@ latinDefault = CharacterSet(
 "cent","sterling","currency","yen","brokenbar","section","dieresis","copyright",
 "ordfeminine","guillemotleft","logicalnot","registered","macron","degree",
 "plusminus","twosuperior","threesuperior","acute","mu","paragraph",
-"periodcentered","cedilla","onesuperior","ordmasculine","guillemotright",
+"periodcentered","onesuperior","ordmasculine","guillemotright",
 "onequarter","onehalf","threequarters","questiondown","Agrave","Aacute",
 "Acircumflex","Atilde","Adieresis","Aring","AE","Ccedilla","Egrave","Eacute",
 "Ecircumflex","Edieresis","Igrave","Iacute","Icircumflex","Idieresis","Eth",
@@ -42,7 +42,7 @@ latinDefault = CharacterSet(
 "icircumflex","idieresis","eth","ntilde","ograve","oacute","ocircumflex",
 "otilde","odieresis","divide","oslash","ugrave","uacute","ucircumflex",
 "udieresis","yacute","thorn","ydieresis","dotlessi","acutecomb","gravecomb",
-"uni0302","uni030A","tildecomb","quoteleft","quoteright","minus"],
+"uni0302","uni030A","tildecomb","uni0327","quoteleft","quoteright","minus"],
 "Latin-default")
 
 class Application(QApplication):
