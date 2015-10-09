@@ -23,14 +23,20 @@ class MainSpaceWindow(QWidget):
             string = "Hello %s" % string
         self.font = font
         self.glyphs = []
-        self._subscribeToGlyphsText(string)
         self.toolbar = FontToolBar(string, pointSize, self)
         self.canvas = GlyphsCanvas(self.font, self.glyphs, pointSize, self)
         self.table = SpaceTable(self.glyphs, self)
+        self.toolbar.comboBox.currentIndexChanged[str].connect(self.canvas.setPointSize)
+        self.toolbar.textField.textEdited.connect(self._textChanged)
         self.canvas.doubleClickCallback = self._glyphOpened
         self.canvas.pointSizeCallback = self.toolbar.setPointSize
         self.canvas.selectionChangedCallback = self.table.setCurrentGlyph
         self.table.selectionChangedCallback = self.canvas.setSelected
+        # TODO: not exactly DRY
+        self.toolbar.textField.setText(string)
+        self.toolbar.textField.textEdited.emit(string)
+        app = QApplication.instance()
+        app.currentGlyphChanged.connect(self._textChanged)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.toolbar)
@@ -40,8 +46,6 @@ class MainSpaceWindow(QWidget):
         layout.setSpacing(0)
         self.setLayout(layout)
         self.resize(600, 500)
-        self.toolbar.comboBox.currentIndexChanged[str].connect(self.canvas.setPointSize)
-        self.toolbar.textField.textEdited.connect(self._textChanged)
 
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
@@ -71,17 +75,43 @@ class MainSpaceWindow(QWidget):
         glyphViewWindow = MainGfxWindow(glyph, self.parent())
         glyphViewWindow.show()
 
-    def _textChanged(self, newText):
+    def _textChanged(self):
         # unsubscribe from the old glyphs
         self._unsubscribeFromGlyphs()
         # subscribe to the new glyphs
-        self._subscribeToGlyphsText(newText)
+        left = self.textToGlyphNames(self.toolbar.leftTextField.text())
+        newText = self.textToGlyphNames(self.toolbar.textField.text())
+        right = self.textToGlyphNames(self.toolbar.rightTextField.text())
+        leftGlyphs = []
+        for name in left:
+            if name in self.font:
+                leftGlyphs.append(self.font[name])
+        rightGlyphs = []
+        for name in right:
+            if name in self.font:
+                rightGlyphs.append(self.font[name])
+        finalGlyphs = []
+        for name in newText:
+            if name in self.font:
+                finalGlyphs.extend(leftGlyphs)
+                finalGlyphs.append(self.font[name])
+                finalGlyphs.extend(rightGlyphs)
+        self._subscribeToGlyphs(finalGlyphs)
         # set the records into the view
         self.canvas.setGlyphs(self.glyphs)
         self.table.setGlyphs(self.glyphs)
 
     # Tal Leming. Edited.
     def textToGlyphNames(self, text):
+        def catchCompile():
+            if compileStack[0] == "?":
+                glyph = app.currentGlyph()
+                if glyph is not None:
+                    glyphNames.append(glyph.name)
+            elif compileStack:
+                glyphNames.append("".join(compileStack))
+
+        app = QApplication.instance()
         # escape //
         text = text.replace("//", "/slash ")
         #
@@ -102,8 +132,7 @@ class MainSpaceWindow(QWidget):
                 # space. conclude the glyph name compile.
                 if c == " ":
                     # only add the compile if something has been added to the stack.
-                    if compileStack:
-                        glyphNames.append("".join(compileStack))
+                    catchCompile()
                     compileStack = None
                 # add the character to the stack.
                 else:
@@ -113,18 +142,9 @@ class MainSpaceWindow(QWidget):
                 glyphName = self.font.unicodeData.glyphNameForUnicode(ord(c))
                 glyphNames.append(glyphName)
         # catch remaining compile.
-        if compileStack is not None and compileStack:
-            glyphNames.append("".join(compileStack))
+        if compileStack is not None:
+            catchCompile()
         return glyphNames
-
-    def _subscribeToGlyphsText(self, newText):
-        glyphs = []
-        glyphNames = self.textToGlyphNames(newText)
-
-        for gName in glyphNames:
-            if gName not in self.font: continue
-            glyphs.append(self.font[gName])
-        self._subscribeToGlyphs(glyphs)
 
     def _subscribeToGlyphs(self, glyphs):
         self.glyphs = glyphs
@@ -167,7 +187,14 @@ pointSizes = [50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500]
 class FontToolBar(QToolBar):
     def __init__(self, string, pointSize, parent=None):
         super(FontToolBar, self).__init__(parent)
+        auxiliaryWidth = self.fontMetrics().width('0')*8
+        self.leftTextField = QLineEdit(self)
+        self.leftTextField.setMaximumWidth(auxiliaryWidth)
         self.textField = QLineEdit(string, self)
+        self.rightTextField = QLineEdit(self)
+        self.rightTextField.setMaximumWidth(auxiliaryWidth)
+        self.leftTextField.textEdited.connect(self.textField.textEdited)
+        self.rightTextField.textEdited.connect(self.textField.textEdited)
         self.comboBox = QComboBox(self)
         self.comboBox.setEditable(True)
         self.comboBox.setValidator(QIntValidator(self))
@@ -213,9 +240,15 @@ class FontToolBar(QToolBar):
         #self.toolsMenu.setActiveAction(wrapLines)
         self.configBar.setMenu(self.toolsMenu)
 
+        self.addWidget(self.leftTextField)
         self.addWidget(self.textField)
+        self.addWidget(self.rightTextField)
         self.addWidget(self.comboBox)
         self.addWidget(self.configBar)
+
+    def showEvent(self, event):
+        super(FontToolBar, self).showEvent(event)
+        self.textField.setFocus(True)
 
     def setPointSize(self, pointSize):
         self.comboBox.blockSignals(True)
