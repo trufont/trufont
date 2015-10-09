@@ -4,6 +4,8 @@
   <dict>
     <key>numbersign</key>
     <string>numbersign.glif</string>
+    <key>percent</key>
+    <string>percent.glif</string>
     <key>period</key>
     <string>period.glif</string>
     <key>slash</key>
@@ -44,7 +46,5 @@
     <string>p.glif</string>
     <key>x</key>
     <string>x.glif</string>
-    <key>percent</key>
-    <string>percent.glif</string>
   </dict>
 </plist>
