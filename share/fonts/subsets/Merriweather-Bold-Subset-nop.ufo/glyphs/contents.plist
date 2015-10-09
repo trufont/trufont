@@ -46,5 +46,13 @@
     <string>p.glif</string>
     <key>x</key>
     <string>x.glif</string>
+    <key>circumflexcomb</key>
+    <string>circumflexcomb.glif</string>
+    <key>circumflexcomb.cap</key>
+    <string>circumflexcomb.cap.glif</string>
+    <key>Acircumflex</key>
+    <string>A_circumflex.glif</string>
+    <key>ocircumflex</key>
+    <string>ocircumflex.glif</string>
   </dict>
 </plist>

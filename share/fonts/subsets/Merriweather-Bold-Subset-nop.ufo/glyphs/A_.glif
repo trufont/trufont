@@ -4,6 +4,9 @@
   <unicode hex="0041"/>
   <outline>
     <contour>
+      <point x="722" y="1700" type="move" name="top"/>
+    </contour>
+    <contour>
       <point x="4" y="0" type="line"/>
       <point x="4" y="116" type="line"/>
       <point x="141" y="152" type="line"/>

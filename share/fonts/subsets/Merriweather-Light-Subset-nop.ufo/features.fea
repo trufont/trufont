@@ -2,8 +2,9 @@
 
 @GDEF_Simple = [\numbersign \percent \period \slash \zero \one \two \three \four
 	\five \six \seven \eight \nine \colon \A \O \e \n \o \p \x \Acircumflex \ocircumflex ];
+@GDEF_Mark = [\circumflexcomb \circumflexcomb.cap ];
 
 table GDEF {
-  GlyphClassDef @GDEF_Simple, , , ;
+  GlyphClassDef @GDEF_Simple, , @GDEF_Mark, ;
 
 } GDEF;
