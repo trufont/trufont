@@ -432,8 +432,13 @@ class OnCurvePointItem(QGraphicsPathItem):
             targetLen = children[selected-1].line().length()*2
         else:
             targetLen = children[selected-1].line().length()+children[propagate-1].line().length()
-        tmpLine = QLineF(newValue, QPointF(0, 0))
-        tmpLine.setLength(targetLen)
+        if not newValue.isNull():
+            tmpLine = QLineF(newValue, QPointF())
+            tmpLine.setLength(targetLen)
+        else:
+            # if newValue is null, we’d construct a zero-length line and collapse
+            # both offCurves
+            tmpLine = QLineF(QPointF(), children[propagate].pos())
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges, False)
         children[propagate].setPos(tmpLine.x2(), tmpLine.y2())
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges)
