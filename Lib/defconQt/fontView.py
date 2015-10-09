@@ -18,7 +18,7 @@ cannedDesign = [
 ]
 sortItems = ["alphabetical", "category", "unicode", "script", "suffix",
     "decompositionBase", "weightedSuffix", "ligature"]
-latin1 = CharacterSet(
+latinDefault = CharacterSet(
 ["space","exclam","quotesingle","quotedbl","numbersign","dollar",
 "percent","ampersand","parenleft","parenright","asterisk","plus","comma",
 "hyphen","period","slash","zero","one","two","three","four","five",
@@ -41,9 +41,9 @@ latin1 = CharacterSet(
 "ccedilla","egrave","eacute","ecircumflex","edieresis","igrave","iacute",
 "icircumflex","idieresis","eth","ntilde","ograve","oacute","ocircumflex",
 "otilde","odieresis","divide","oslash","ugrave","uacute","ucircumflex",
-"udieresis","yacute","thorn","ydieresis","dotlessi","circumflex","caron",
-"breve","dotaccent","ring","ogonek","tilde","hungarumlaut","quoteleft",
-"quoteright","minus"], "Latin-1")
+"udieresis","yacute","thorn","ydieresis","dotlessi","acutecomb","gravecomb",
+"uni0302","uni030A","tildecomb","quoteleft","quoteright","minus"],
+"Latin-default")
 
 class Application(QApplication):
     currentGlyphChanged = pyqtSignal()
@@ -647,7 +647,7 @@ class MainWindow(QMainWindow):
         self.font.info.capHeight = 750
         self.font.info.xHeight = 500
         self.setWindowTitle("Untitled.ufo")
-        self.sortDescriptor = latin1
+        self.sortDescriptor = latinDefault
 
     def openFile(self, path=None):
         if not path:
@@ -1042,7 +1042,7 @@ class SettingsDialog(QDialog):
 def getDefaultCharacterSet(settings=None):
     if settings is None:
         settings = QSettings()
-    settings.value("settings/defaultCharset", latin1.name, type=str)
+    settings.value("settings/defaultCharset", latinDefault.name, type=str)
 
 def readCharacterSets(settings=None):
     if settings is None:
@@ -1051,7 +1051,7 @@ def readCharacterSets(settings=None):
     # TODO: maybe cache this in qApp
     characterSets = {}
     if not size:
-        characterSets[latin1.name] = latin1.glyphNames
+        characterSets[latinDefault.name] = latinDefault.glyphNames
     for i in range(size):
         settings.setArrayIndex(i)
         charsetName = settings.value("name", type=str)
@@ -1067,7 +1067,7 @@ class CharacterSetTab(QWidget):
         settings = QSettings()
         self.defaultCharsetBox = QCheckBox("Default character set:", self)
         self.defaultCharsetDrop = QComboBox(self)
-        defaultCharset = settings.value("settings/defaultCharset", latin1.name, type=str)
+        defaultCharset = settings.value("settings/defaultCharset", latinDefault.name, type=str)
         self.defaultCharsetBox.toggled.connect(self.toggleCharsetDrop)
         self.defaultCharsetBox.setChecked(len(defaultCharset))
         self.characterSets = readCharacterSets()
@@ -1186,5 +1186,5 @@ class CharacterSetTab(QWidget):
             settings.setValue("settings/defaultCharset", "")
         else:
             defaultCharset = self.defaultCharsetDrop.currentText()
-            if defaultCharset != latin1.name:
+            if defaultCharset != latinDefault.name:
                 settings.setValue("settings/defaultCharset", defaultCharset)
