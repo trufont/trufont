@@ -1306,6 +1306,7 @@ class GlyphView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         #self.setViewportUpdateMode(QGraphicsView.BoundingRectViewportUpdate)
+        self.horizontalScrollBar().valueChanged.connect(self.scaleElements)
 
         self.setSceneSelection()
 
@@ -1602,8 +1603,11 @@ class GlyphView(QGraphicsView):
 
     def wheelEvent(self, event):
         factor = pow(1.2, event.angleDelta().y() / 120.0)
+        event.accept()
 
         self.scale(factor, factor)
+
+    def scaleElements(self):
         # TODO: stop displaying SimpleTextItems at certains sizes, maybe anchor them differently as well
         scale = self.transform().m11()
         if scale < 4:
@@ -1611,5 +1615,3 @@ class GlyphView(QGraphicsView):
                 if isinstance(item, (OnCurvePointItem, OffCurvePointItem, \
                   ResizeHandleItem, AnchorItem)):
                     item.setPointPath(scale)
-        self.update()
-        event.accept()
