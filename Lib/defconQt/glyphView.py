@@ -1357,9 +1357,7 @@ class GlyphView(QGraphicsView):
 
     def addBlues(self):
         scene = self.scene()
-        #width = self._glyph.width# * self._inverseScale
         font = self._glyph.getParent()
-        #painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
         if font is None:
             return
         attrs = ["postscriptBlueValues", "postscriptOtherBlues"]
@@ -1563,6 +1561,11 @@ class GlyphView(QGraphicsView):
         self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
         self.parent().setWindowTitle(self._glyph.name, self._glyph.getParent())
         self.redrawGlyph()
+
+    def showEvent(self, event):
+        super(GlyphView, self).showEvent(event)
+        font = self._glyph.getParent()
+        self.fitInView(0, font.info.descender, self._glyph.width, font.info.unitsPerEm, Qt.KeepAspectRatio)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MidButton):
