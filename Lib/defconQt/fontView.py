@@ -195,6 +195,14 @@ class InspectorWindow(QWidget):
         mainLayout.addWidget(transformGroup)
         self.setLayout(mainLayout)
 
+    def showEvent(self, event):
+        super(InspectorWindow, self).showEvent(event)
+        screenRect = QApplication.desktop().screenGeometry()
+        widgetRect = self.frameGeometry()
+        x = screenRect.width() - (widgetRect.width() + 20)
+        y = screenRect.center().y() - widgetRect.height() / 2
+        self.move(x, y)
+
     def hSymmetry(self):
         xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
         for contour in self._glyph:
