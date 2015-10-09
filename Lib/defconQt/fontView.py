@@ -11,6 +11,7 @@ from defconQt.spaceCenter import MainSpaceWindow
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from collections import OrderedDict
 import os, pickle, traceback
 
 cannedDesign = [
@@ -681,7 +682,7 @@ class MainWindow(QMainWindow):
         fontPath = self.sender().toolTip()
         self.openFile(fontPath)
 
-    def saveFile(self, path=None):
+    def saveFile(self, path=None, ufoFormatVersion=3):
         if path is None and self.font.path is None:
             self.saveFileAs()
         else:
@@ -693,7 +694,7 @@ class MainWindow(QMainWindow):
             for glyph in glyphs:
                 glyphNames.append(glyph.name)
             self.font.lib["public.glyphOrder"] = glyphNames
-            self.font.save(path=path)
+            self.font.save(path, ufoFormatVersion)
             self.font.dirty = False
             for glyph in self.font:
                 glyph.dirty = False
@@ -701,10 +702,19 @@ class MainWindow(QMainWindow):
             self.setWindowModified(False)
 
     def saveFileAs(self):
-        path, ok = QFileDialog.getSaveFileName(self, "Save File", '',
-                "UFO Fonts (*.ufo)")
+        fileFormats = OrderedDict([
+            ("UFO Font version 3 (*.ufo)", 3),
+            ("UFO Fonts version 2 (*.ufo)", 2),
+        ])
+        # TODO: see if OSX works nicely with UFO as files, then switch to directory
+        # on platforms that need it
+        dialog = QFileDialog(self, "Save File", None, ";;".join(fileFormats.keys()))
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        ok = dialog.exec_()
         if ok:
-            self.saveFile(path)
+            nameFilter = dialog.selectedNameFilter()
+            path = dialog.selectedFiles()[0]
+            self.saveFile(path, fileFormats[nameFilter])
             self.setWindowTitle()
         #return ok
 
