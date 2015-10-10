@@ -1042,8 +1042,8 @@ class MainWindow(QMainWindow):
                     glyphs.append(glyph)
             self.collectionWidget.glyphs = glyphs
             if sortFont:
-                # TODO: when the user add chars from a charset and no others,
-                # should we try to sort according to that charset?
+                # TODO: when the user add chars from a glyphSet and no others,
+                # should we try to sort according to that glyphSet?
                 # The above would probably warrant some rearchitecturing.
                 # kick-in the sort mechanism
                 self.sortDescriptor = self.sortDescriptor
@@ -1082,21 +1082,21 @@ class SettingsDialog(QDialog):
 def getDefaultGlyphSet(settings=None):
     if settings is None:
         settings = QSettings()
-    settings.value("settings/defaultCharset", latinDefault.name, type=str)
+    settings.value("settings/defaultGlyphSet", latinDefault.name, type=str)
 
 def readGlyphSets(settings=None):
     if settings is None:
         settings = QSettings()
-    size = settings.beginReadArray("charsets")
+    size = settings.beginReadArray("glyphSets")
     # TODO: maybe cache this in qApp
     glyphSets = {}
     if not size:
         glyphSets[latinDefault.name] = latinDefault.glyphNames
     for i in range(size):
         settings.setArrayIndex(i)
-        charsetName = settings.value("name", type=str)
-        charsetGlyphNames = settings.value("glyphNames", type=str)
-        glyphSets[charsetName] = charsetGlyphNames
+        glyphSetName = settings.value("name", type=str)
+        glyphSetGlyphNames = settings.value("glyphNames", type=str)
+        glyphSets[glyphSetName] = glyphSetGlyphNames
     settings.endArray()
     return glyphSets
 
@@ -1105,36 +1105,36 @@ class GlyphSetTab(QWidget):
         super(GlyphSetTab, self).__init__(parent)
 
         settings = QSettings()
-        self.defaultCharsetBox = QCheckBox("Default glyph set:", self)
-        self.defaultCharsetDrop = QComboBox(self)
-        defaultCharset = settings.value("settings/defaultCharset", latinDefault.name, type=str)
-        self.defaultCharsetBox.toggled.connect(self.toggleCharsetDrop)
-        self.defaultCharsetBox.setChecked(len(defaultCharset))
+        self.defaultGlyphSetBox = QCheckBox("Default glyph set:", self)
+        self.defaultGlyphSetDrop = QComboBox(self)
+        defaultGlyphSet = settings.value("settings/defaultGlyphSet", latinDefault.name, type=str)
+        self.defaultGlyphSetBox.toggled.connect(self.toggleGlyphSetDrop)
+        self.defaultGlyphSetBox.setChecked(len(defaultGlyphSet))
         self.glyphSets = readGlyphSets()
-        charsetNames = self.glyphSets.keys()
-        self.defaultCharsetDrop.addItems(charsetNames)
+        glyphSetNames = self.glyphSets.keys()
+        self.defaultGlyphSetDrop.addItems(glyphSetNames)
 
-        self.charsetList = QListWidget(self)
-        self.charsetList.setSortingEnabled(True)
-        self.charsetContents = QTextEdit(self)
-        self.charsetContents.setAcceptRichText(False)
-        self.charsetList.currentItemChanged.connect(self.updateCharsetContents)
-        self.charsetList.itemChanged.connect(self.renameCharset)
+        self.glyphSetList = QListWidget(self)
+        self.glyphSetList.setSortingEnabled(True)
+        self.glyphSetContents = QTextEdit(self)
+        self.glyphSetContents.setAcceptRichText(False)
+        self.glyphSetList.currentItemChanged.connect(self.updateGlyphSetContents)
+        self.glyphSetList.itemChanged.connect(self.renameGlyphSet)
         self._cachedName = None
         # Normally we should enforce this rather decently in the interface already
-        if charsetNames:
-            for charsetName in charsetNames:
-                item = QListWidgetItem(charsetName, self.charsetList)
+        if glyphSetNames:
+            for glyphSetName in glyphSetNames:
+                item = QListWidgetItem(glyphSetName, self.glyphSetList)
                 item.setFlags(item.flags() | Qt.ItemIsEditable)
-            self.charsetList.setCurrentRow(0)
+            self.glyphSetList.setCurrentRow(0)
         splitter = QSplitter()
-        splitter.addWidget(self.charsetList)
-        splitter.addWidget(self.charsetContents)
-        self.addCharsetButton = QPushButton("+", self)
-        self.addCharsetButton.pressed.connect(self.addCharset)
-        self.removeCharsetButton = QPushButton("-", self)
-        self.removeCharsetButton.setEnabled(len(self.glyphSets) > 1)
-        self.removeCharsetButton.pressed.connect(self.removeCharset)
+        splitter.addWidget(self.glyphSetList)
+        splitter.addWidget(self.glyphSetContents)
+        self.addGlyphSetButton = QPushButton("+", self)
+        self.addGlyphSetButton.pressed.connect(self.addGlyphSet)
+        self.removeGlyphSetButton = QPushButton("-", self)
+        self.removeGlyphSetButton.setEnabled(len(self.glyphSets) > 1)
+        self.removeGlyphSetButton.pressed.connect(self.removeGlyphSet)
         self.importButton = QPushButton("Import", self)
         importMenu = QMenu(self)
         importMenu.addAction("Import from current font", self.importFromCurrentFont)
@@ -1142,38 +1142,38 @@ class GlyphSetTab(QWidget):
 
         mainLayout = QGridLayout()
         l = 0
-        mainLayout.addWidget(self.defaultCharsetBox, l, 0, 1, 2)
-        mainLayout.addWidget(self.defaultCharsetDrop, l, 3, 1, 3)
+        mainLayout.addWidget(self.defaultGlyphSetBox, l, 0, 1, 2)
+        mainLayout.addWidget(self.defaultGlyphSetDrop, l, 3, 1, 3)
         l += 1
         mainLayout.addWidget(splitter, l, 0, 1, 6)
         l += 1
-        mainLayout.addWidget(self.addCharsetButton, l, 0)
-        mainLayout.addWidget(self.removeCharsetButton, l, 1)
+        mainLayout.addWidget(self.addGlyphSetButton, l, 0)
+        mainLayout.addWidget(self.removeGlyphSetButton, l, 1)
         mainLayout.addWidget(self.importButton, l, 2)
         self.setLayout(mainLayout)
 
-    def addCharset(self, glyphNames=[], charsetName="New glyph set"):
-        if charsetName in self.glyphSets:
+    def addGlyphSet(self, glyphNames=[], glyphSetName="New glyph set"):
+        if glyphSetName in self.glyphSets:
             index = 1
-            while "%s %d" % (charsetName, index) in self.glyphSets:
+            while "%s %d" % (glyphSetName, index) in self.glyphSets:
                 index += 1
-            charsetName = "%s %d" % (charsetName, index)
-        self.glyphSets[charsetName] = glyphNames
-        item = QListWidgetItem(charsetName, self.charsetList)
+            glyphSetName = "%s %d" % (glyphSetName, index)
+        self.glyphSets[glyphSetName] = glyphNames
+        item = QListWidgetItem(glyphSetName, self.glyphSetList)
         item.setFlags(item.flags() | Qt.ItemIsEditable)
-        self.charsetList.setCurrentItem(item)
-        self.charsetList.editItem(item)
-        self.removeCharsetButton.setEnabled(True)
+        self.glyphSetList.setCurrentItem(item)
+        self.glyphSetList.editItem(item)
+        self.removeGlyphSetButton.setEnabled(True)
 
-    def removeCharset(self):
-        i = self.charsetList.currentRow()
-        text = self.charsetList.takeItem(i).text()
+    def removeGlyphSet(self):
+        i = self.glyphSetList.currentRow()
+        text = self.glyphSetList.takeItem(i).text()
         del self.glyphSets[text]
-        if self.charsetList.count() < 2:
-            self.removeCharsetButton.setEnabled(False)
+        if self.glyphSetList.count() < 2:
+            self.removeGlyphSetButton.setEnabled(False)
 
-    def renameCharset(self):
-        newKey = self.charsetList.currentItem()
+    def renameGlyphSet(self):
+        newKey = self.glyphSetList.currentItem()
         if newKey is None: return
         newKey = newKey.text()
         self.glyphSets[newKey] = self.glyphSets[self._cachedName]
@@ -1184,28 +1184,28 @@ class GlyphSetTab(QWidget):
         glyphs = currentMainWindow.getGlyphs()
         info = currentMainWindow.font.info
         name = "%s %s" % (info.familyName, info.styleName)
-        self.addCharset([glyph.name for glyph in glyphs], name)
+        self.addGlyphSet([glyph.name for glyph in glyphs], name)
 
-    def toggleCharsetDrop(self):
+    def toggleGlyphSetDrop(self):
         sender = self.sender()
-        self.defaultCharsetDrop.setEnabled(sender.isChecked())
+        self.defaultGlyphSetDrop.setEnabled(sender.isChecked())
 
-    def updateCharsetContents(self, current, previous):
-        # store content of the textEdit in the charset dict
+    def updateGlyphSetContents(self, current, previous):
+        # store content of the textEdit in the glyphSet dict
         if previous is not None:
-            glyphNames = self.charsetContents.toPlainText().split()
+            glyphNames = self.glyphSetContents.toPlainText().split()
             self.glyphSets[previous.text()] = glyphNames
-        # now update the text edit to current charset
-        charsetName = current.text()
-        text = " ".join(self.glyphSets[charsetName])
-        self.charsetContents.setText(text)
+        # now update the text edit to current glyphSet
+        glyphSetName = current.text()
+        text = " ".join(self.glyphSets[glyphSetName])
+        self.glyphSetContents.setText(text)
         # cache current name for renames
-        self._cachedName = charsetName
+        self._cachedName = glyphSetName
 
     def writeGlyphSets(self, settings):
         # technically we're already enforcing that this doesn't happen
         if not len(self.glyphSets): return
-        settings.beginWriteArray("charsets", len(self.glyphSets))
+        settings.beginWriteArray("glyphSets", len(self.glyphSets))
         index = 0
         for name, cset in self.glyphSets.items():
             settings.setArrayIndex(index)
@@ -1215,16 +1215,16 @@ class GlyphSetTab(QWidget):
         settings.endArray()
 
     def writeValues(self):
-        # store content of the textEdit in the charset dict
-        glyphNames = self.charsetContents.toPlainText().split()
-        currentCharset = self.charsetList.currentItem().text()
-        self.glyphSets[currentCharset] = glyphNames
+        # store content of the textEdit in the glyphSet dict
+        glyphNames = self.glyphSetContents.toPlainText().split()
+        currentGlyphSet = self.glyphSetList.currentItem().text()
+        self.glyphSets[currentGlyphSet] = glyphNames
 
         settings = QSettings()
         self.writeGlyphSets(settings)
-        if not self.defaultCharsetBox.isChecked():
-            settings.setValue("settings/defaultCharset", "")
+        if not self.defaultGlyphSetBox.isChecked():
+            settings.setValue("settings/defaultGlyphSet", "")
         else:
-            defaultCharset = self.defaultCharsetDrop.currentText()
-            if defaultCharset != latinDefault.name:
-                settings.setValue("settings/defaultCharset", defaultCharset)
+            defaultGlyphSet = self.defaultGlyphSetDrop.currentText()
+            if defaultGlyphSet != latinDefault.name:
+                settings.setValue("settings/defaultGlyphSet", defaultGlyphSet)
