@@ -10,9 +10,14 @@ Dependencies:
 - [Adrien Tétar’s fork of robofab, python3-ufo3 branch]
 - [Lasse Fister’s fork of defcon, serialization-py3-ufo-3 branch]
 
+Optional:
+
+- [Adrien Tétar’s fork of ufo2fdk, python3-ufo3 branch]
+
 [Behdad Esfahbod’s fontTools]: https://github.com/behdad/fonttools
 [Adrien Tétar’s fork of robofab, python3-ufo3 branch]: https://github.com/adrientetar/robofab
 [Lasse Fister’s fork of defcon, serialization-py3-ufo-3 branch]: https://github.com/graphicore/defcon/tree/serialization-py3-ufo-3
+[Adrien Tétar’s fork of ufo2fdk, python3-ufo3 branch]: https://github.com/adrientetar/ufo2fdk
 
 Run:
 

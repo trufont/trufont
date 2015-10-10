@@ -574,6 +574,7 @@ class MainWindow(QMainWindow):
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
         fileMenu.addAction("Save &as…", self.saveFileAs, QKeySequence.SaveAs)
+        fileMenu.addAction("Export…", self.export)
         fileMenu.addAction("Reload from disk", self.reload)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
@@ -716,6 +717,29 @@ class MainWindow(QMainWindow):
             self.saveFile(path, fileFormats[nameFilter])
             self.setWindowTitle()
         #return ok
+
+    def export(self):
+        try:
+            from ufo2fdk import haveFDK, OTFCompiler
+        except Exception as e:
+            errorMessage = QErrorMessage(self)
+            errorMessage.showMessage(e)
+            return
+        if not haveFDK():
+            errorMessage = QErrorMessage(self)
+            errorMessage.showMessage("The Adobe FDK could not be found.")
+            return
+
+        path, ok = QFileDialog.getSaveFileName(self, "Save File", None,
+            "PS OpenType font (*.otf)")
+        if ok:
+            compiler = OTFCompiler()
+            # XXX: allow choosing parameters
+            reports = compiler.compile(self.font, path, checkOutlines=False,
+                autohint=True, releaseMode=True)
+
+            print(reports["autohint"])
+            print(reports["makeotf"])
 
     def setCurrentFile(self, path):
         settings = QSettings()
