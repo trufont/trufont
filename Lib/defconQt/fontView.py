@@ -12,7 +12,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from collections import OrderedDict
-import os, pickle, traceback
+import os, pickle, traceback, sys
 
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
