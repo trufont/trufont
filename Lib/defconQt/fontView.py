@@ -5,7 +5,7 @@ from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import CharacterSet, TFont, TGlyph
-from defcon import Component
+from defcon import Color, Component
 from defconQt.spaceCenter import MainSpaceWindow
 # TODO: remove globs when things start to stabilize
 from PyQt5.QtCore import *
@@ -551,7 +551,6 @@ class MainWindow(QMainWindow):
         self.font = font
         self.collectionWidget.characterSelectedCallback = self._selectionChanged
         self.collectionWidget.doubleClickCallback = self._glyphOpened
-        # XXX: should spaceCenter have this functionality as well?
         # TODO: should default be True or False?
         self.collectionWidget.updateCurrentGlyph = True
         self.collectionWidget.setFocus()
@@ -660,8 +659,12 @@ class MainWindow(QMainWindow):
 
     def openFile(self, path=None):
         if not path:
+            if sys.platform == "darwin":
+                fileFormats = "UFO Fonts (*.ufo)"
+            else:
+                fileFormats = "UFO Fonts (metainfo.plist)"
             path, ok = QFileDialog.getOpenFileName(self, "Open File", '',
-                    "UFO Fonts (metainfo.plist)")
+                    fileFormats)
             if not ok: return
         if path:
             if ".plist" in path:
@@ -781,14 +784,13 @@ class MainWindow(QMainWindow):
 
     def maybeSaveBeforeExit(self):
         if self.font.dirty:
-            title = "Me"
             if self.font.path is not None:
                 # TODO: maybe cache this font name in the Font
                 currentFont = os.path.basename(self.font.path.rstrip(os.sep))
             else:
                 currentFont = "Untitled.ufo"
             body = "Do you want to save the changes you made to “%s”?" % currentFont
-            closeDialog = QMessageBox(QMessageBox.Question, title, body,
+            closeDialog = QMessageBox(QMessageBox.Question, None, body,
                   QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
             closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
             closeDialog.setModal(True)
@@ -913,11 +915,7 @@ class MainWindow(QMainWindow):
         glyphs = self.collectionWidget.glyphs
         for key in self.collectionWidget.selection:
             glyph = glyphs[key]
-            if color is None:
-                if "public.markColor" in glyph.lib:
-                    del glyph.lib["public.markColor"]
-            else:
-                glyph.lib["public.markColor"] = ",".join(str(c) for c in color.getRgbF())
+            glyph.markColor = Color(color.getRgbF() if color is not None else None)
 
     def _fontChanged(self, notification):
         self.collectionWidget.update()
@@ -1051,11 +1049,12 @@ class MainWindow(QMainWindow):
                 self.sortDescriptor = self.sortDescriptor
 
     def about(self):
-        QMessageBox.about(self, "About Me",
-                "<h3>About Me</h3>" \
+        name = QApplication.applicationName()
+        QMessageBox.about(self, "About {}".format(name),
+                "<h3>About {}</h3>" \
                 "<p>I am a new UFO-centric font editor and I aim to bring the <b>robofab</b> " \
                 "ecosystem to all main operating systems, in a fast and dependency-free " \
-                "package.</p>")
+                "package.</p>".format(name))
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):

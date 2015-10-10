@@ -142,7 +142,7 @@ class MainSpaceWindow(QWidget):
                 glyphName = self.font.unicodeData.glyphNameForUnicode(ord(c))
                 glyphNames.append(glyphName)
         # catch remaining compile.
-        if compileStack is not None:
+        if compileStack is not None and compileStack:
             catchCompile()
         return glyphNames
 

@@ -399,18 +399,12 @@ class GlyphCollectionWidget(QWidget):
                 linesColor = cellHeaderHighlightLineColor
                 # mark color
                 if not glyph.template:
-                    # TODO: fetch via defcon dict
-                    if "public.markColor" in glyph.lib:
-                        colorStr = glyph.lib["public.markColor"].split(",")
-                        if len(colorStr) == 4:
-                            comp = []
-                            for c in colorStr:
-                                comp.append(float(c.strip()))
-                            markColor = QColor.fromRgbF(*comp)
-                            markGradient.setColorAt(1.0, markColor)
-                            markGradient.setColorAt(0.0, markColor.lighter(125))
-                            painter.fillRect(0, GlyphCellHeaderHeight, self.squareSize,
-                                  self.squareSize - GlyphCellHeaderHeight, QBrush(markGradient))
+                    if glyph.markColor is not None:
+                        markColor = QColor.fromRgbF(*tuple(glyph.markColor))
+                        markGradient.setColorAt(1.0, markColor)
+                        markGradient.setColorAt(0.0, markColor.lighter(125))
+                        painter.fillRect(0, GlyphCellHeaderHeight, self.squareSize,
+                              self.squareSize - GlyphCellHeaderHeight, QBrush(markGradient))
                     if glyph.dirty:
                         brushColor = dirtyGradient
                         linesColor = cellHeaderHighlightLineColor.darker(110)
