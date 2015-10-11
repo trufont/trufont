@@ -6,7 +6,7 @@ import os
 from PyQt5.QtGui import QIcon
 
 if len(sys.argv) > 1:
-    font = TFont(os.path.abspath(ufoFile))
+    font = TFont(os.path.abspath(sys.argv[1]))
 else:
     font = None
 
