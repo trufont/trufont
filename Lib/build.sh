@@ -1,1 +1,1 @@
-pyinstaller --console --onefile -i "defconQt/resources/app.ico"  defconQt/__main__.py
+pyinstaller --noconsole --onefile -i "defconQt/resources/app.ico"  defconQt/__main__.py
