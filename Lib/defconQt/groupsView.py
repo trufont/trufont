@@ -34,9 +34,11 @@ class GroupStackWidget(QWidget):
     def __init__(self, font, glyphs=[], parent=None):
         super(GroupStackWidget, self).__init__(parent)
         self.ascender = font.info.ascender
+        if self.ascender is None: self.ascender = 750
         self.glyphs = glyphs
         self.maxWidth = max(glyph.width for glyph in self.glyphs) if len(self.glyphs) else 300
         self.upm = font.info.unitsPerEm
+        if self.upm is None: self.upm = 1000
         self.padding = 10
         self.alignRight = False
 
@@ -238,6 +240,9 @@ class GroupsWindow(QWidget):
         currentGroup = currentGroup.text()
         glyphNames = event.mimeData().text().split(" ")
         for gName in glyphNames:
+            # TODO: should we accept template glyphs here?
+            if self.font[gName].template:
+                continue
             # Due to defcon limitations, we must fetch and update for the
             # notification to pass through
             currentGroupList = self.font.groups[currentGroup]

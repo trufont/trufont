@@ -258,27 +258,26 @@ class InspectorWindow(QWidget):
 
     def updateGlyphAttributes(self, notification=None):
         if self._blocked: return
-        name = self._glyph.name if self._glyph is not None else None
-        self.nameEdit.setText(name)
-        unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" % u for u in self._glyph.unicodes) if self._glyph is not None else None
-        self.unicodesEdit.setText(unicodes)
-        width = str(int(self._glyph.width)) if self._glyph is not None else None
-        self.widthEdit.setText(width)
-        leftSideBearing = str(int(self._glyph.leftMargin)) if self._glyph is not None else None
-        self.leftSideBearingEdit.setText(leftSideBearing)
-        rightSideBearing = str(int(self._glyph.rightMargin)) if self._glyph is not None else None
-        self.rightSideBearingEdit.setText(rightSideBearing)
         colorStr = "white"
-        if self._glyph is not None and "public.markColor" in self._glyph.lib:
-            # XXX: cleanup duplication with glyphCollectionView
-            # TODO: might well be possible to write this in a nicer way...
-            colors = self._glyph.lib["public.markColor"].split(",")
-            if len(colors) ==  4:
-                comp = []
-                for c in colors:
-                    comp.append(float(c.strip()))
-                markColor = QColor.fromRgbF(*comp)
-                colorStr = markColor.name()
+        if self._glyph is not None:
+            name = self._glyph.name
+            unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" % u for u in self._glyph.unicodes)
+            width = str(int(self._glyph.width)) if self._glyph.width else None
+            leftSideBearing = str(int(self._glyph.leftMargin)) if self._glyph.leftMargin is not None else None
+            rightSideBearing = str(int(self._glyph.rightMargin)) if self._glyph.rightMargin is not None else None
+            if self._glyph.markColor is not None:
+                colorStr = QColor.fromRgbF(*tuple(self._glyph.markColor)).name()
+        else:
+            name = None
+            unicodes = None
+            width = None
+            leftSideBearing = None
+            rightSideBearing = None
+        self.nameEdit.setText(name)
+        self.unicodesEdit.setText(unicodes)
+        self.widthEdit.setText(width)
+        self.leftSideBearingEdit.setText(leftSideBearing)
+        self.rightSideBearingEdit.setText(rightSideBearing)
         self.markColorButton.setStyleSheet("background-color: {}; \
             border: 1px solid black;".format(colorStr))
 
@@ -543,14 +542,15 @@ class MainWindow(QMainWindow):
     def __init__(self, font):
         super(MainWindow, self).__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
-        if font is None:
-            font = TFont()
 
         squareSize = 56
         self.collectionWidget = GlyphCollectionWidget(self)
         self._font = None
         self._sortDescriptor = None
-        self.font = font
+        if font is None:
+            self.newFile(True)
+        else:
+            self.font = font
         self.collectionWidget.glyphSelectedCallback = self._selectionChanged
         self.collectionWidget.doubleClickCallback = self._glyphOpened
         # TODO: should default be True or False?
@@ -644,20 +644,36 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.collectionWidget.scrollArea())
         self.resize(605, 430)
-        self.setCurrentFile(font.path)
+        if font is not None:
+            self.setCurrentFile(font.path)
         self.setWindowTitle()
 
-    def newFile(self):
-        ok = self.maybeSaveBeforeExit()
-        if not ok: return
-        self.font = TFont()
-        self.font.info.unitsPerEm = 1000
-        self.font.info.ascender = 750
-        self.font.info.descender = -250
-        self.font.info.capHeight = 750
-        self.font.info.xHeight = 500
-        self.setWindowTitle("Untitled.ufo")
-        self.sortDescriptor = latinDefault
+    def newFile(self, stickToSelf=False):
+        font = TFont()
+        font.info.unitsPerEm = 1000
+        font.info.ascender = 750
+        font.info.descender = -250
+        font.info.capHeight = 750
+        font.info.xHeight = 500
+        defaultGlyphSet = QSettings().value("settings/defaultGlyphSet",
+            latinDefault.name, type=str)
+        if defaultGlyphSet:
+            glyphNames = None
+            if defaultGlyphSet == latinDefault.name:
+                glyphNames = latinDefault.glyphNames
+            else:
+                glyphSets = readGlyphSets()
+                if defaultGlyphSet in glyphSets:
+                    glyphNames = glyphSets[defaultGlyphSet]
+            if glyphNames is not None:
+                for name in glyphNames:
+                    font.newStandardGlyph(name, asTemplate=True)
+        font.dirty = False
+        if not stickToSelf:
+            window = MainWindow(font)
+            window.show()
+        else:
+            self.font = font
 
     def openFile(self, path=None):
         if not path:

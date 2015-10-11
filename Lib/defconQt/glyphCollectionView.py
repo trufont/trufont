@@ -359,7 +359,7 @@ class GlyphCollectionWidget(QWidget):
         if event.button() == Qt.LeftButton:
             event.accept()
             index = self._findEventIndex(event)
-            if self.doubleClickCallback is not None:
+            if index is not None and self.doubleClickCallback is not None:
                 self.doubleClickCallback(self._glyphs[index])
         else:
             super(GlyphCollectionWidget, self).mousePressEvent(event)

@@ -1413,11 +1413,16 @@ class GlyphView(QGraphicsView):
         scene = self.scene()
         font = self._glyph.getParent()
         width = self._glyph.width
+        if width is None: width = 0
         item = scene.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
         item.setZValue(-1000)
         scene._widthItem = scene.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
         scene._widthItem.setZValue(-999)
-        self.centerOn(width/2, font.info.descender+font.info.unitsPerEm/2)
+        descender = font.info.descender
+        if descender is None: descender = -250
+        unitsPerEm = font.info.unitsPerEm
+        if unitsPerEm is None: unitsPerEm = 1000
+        self.centerOn(width/2, descender+unitsPerEm/2)
 
     def addBlues(self):
         scene = self.scene()
@@ -1448,10 +1453,12 @@ class GlyphView(QGraphicsView):
             ("Baseline", 0),
             ("x-height", font.info.xHeight),
             ("Cap height", font.info.capHeight),
-            ("Ascender", font.info.ascender)
+            ("Ascender", font.info.ascender),
         ]
         positions = {}
         for name, position in toDraw:
+            if position is None:
+                continue
             if position not in positions:
                 positions[position] = []
             positions[position].append(name)
@@ -1674,7 +1681,13 @@ class GlyphView(QGraphicsView):
     def showEvent(self, event):
         super(GlyphView, self).showEvent(event)
         font = self._glyph.getParent()
-        self.fitInView(0, font.info.descender, self._glyph.width, font.info.unitsPerEm, Qt.KeepAspectRatio)
+        # TODO: we should have an app-wide mechanism to handle default metrics
+        # values (that are applied to new fonts as well)
+        descender = font.info.descender
+        if descender is None: descender = -250
+        unitsPerEm = font.info.unitsPerEm
+        if unitsPerEm is None: unitsPerEm = 1000
+        self.fitInView(0, descender, self._glyph.width, unitsPerEm, Qt.KeepAspectRatio)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MidButton):
