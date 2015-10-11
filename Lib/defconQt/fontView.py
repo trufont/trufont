@@ -824,6 +824,8 @@ class MainWindow(QMainWindow):
 
     def reload(self):
         font = self._font
+        if font.path is None:
+            return
         font.reloadInfo()
         font.reloadKerning()
         font.reloadGroups()
