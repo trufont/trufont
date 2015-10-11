@@ -1,3 +1,4 @@
+from defconQt import icons_db
 from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGfxWindow
 from getpass import getuser
@@ -204,7 +205,7 @@ class FontToolBar(QToolBar):
 
         self.configBar = QPushButton(self)
         self.configBar.setFlat(True)
-        self.configBar.setIcon(QIcon("defconQt/resources/settings.svg"))
+        self.configBar.setIcon(QIcon(":/resources/settings.svg"))
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px");
         self.toolsMenu = QMenu(self)
         showKerning = self.toolsMenu.addAction("Show Kerning", self.showKerning)

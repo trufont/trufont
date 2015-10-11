@@ -1,5 +1,5 @@
 from defconQt.objects.defcon import TFont
-from defconQt import representationFactories
+from defconQt import icons_db, representationFactories
 from defconQt.fontView import Application, MainWindow
 import sys
 import os
@@ -18,7 +18,7 @@ app = Application(sys.argv)
 # TODO: http://stackoverflow.com/a/21330349/2037879
 app.setOrganizationName("A. Tétar & Co.")
 app.setApplicationName("TruFont")
-app.setWindowIcon(QIcon("defconQt/resources/app.png"))
+app.setWindowIcon(QIcon(":/resources/app.png"))
 window = MainWindow(font)
 window.show()
 sys.exit(app.exec_())

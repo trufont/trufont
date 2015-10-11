@@ -2,6 +2,7 @@ from enum import Enum
 from math import copysign
 import pickle
 from defcon import Anchor, Component
+from defconQt import icons_db
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from fontTools.misc import bezierTools
@@ -191,16 +192,16 @@ class MainGfxWindow(QMainWindow):
         selectionToolButton = toolBar.addAction("Selection", self.view.setSceneSelection)
         selectionToolButton.setCheckable(True)
         selectionToolButton.setChecked(True)
-        selectionToolButton.setIcon(QIcon("defconQt/resources/cursor.svg"))
+        selectionToolButton.setIcon(QIcon(":/resources/cursor.svg"))
         penToolButton = toolBar.addAction("Pen", self.view.setSceneDrawing)
         penToolButton.setCheckable(True)
-        penToolButton.setIcon(QIcon("defconQt/resources/curve.svg"))
+        penToolButton.setIcon(QIcon(":/resources/curve.svg"))
         rulerToolButton = toolBar.addAction("Ruler", self.view.setSceneRuler)
         rulerToolButton.setCheckable(True)
-        rulerToolButton.setIcon(QIcon("defconQt/resources/ruler.svg"))
+        rulerToolButton.setIcon(QIcon(":/resources/ruler.svg"))
         knifeToolButton = toolBar.addAction("Knife", self.view.setSceneKnife)
         knifeToolButton.setCheckable(True)
-        knifeToolButton.setIcon(QIcon("defconQt/resources/cut.svg"))
+        knifeToolButton.setIcon(QIcon(":/resources/cut.svg"))
         # http://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
