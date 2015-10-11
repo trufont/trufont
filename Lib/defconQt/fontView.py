@@ -543,6 +543,8 @@ class MainWindow(QMainWindow):
     def __init__(self, font):
         super(MainWindow, self).__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
+        if font is None:
+            font = TFont()
 
         squareSize = 56
         self.collectionWidget = GlyphCollectionWidget(self)
@@ -745,6 +747,7 @@ class MainWindow(QMainWindow):
             print(reports["makeotf"])
 
     def setCurrentFile(self, path):
+        if path is None: return
         settings = QSettings()
         recentFiles = settings.value("core/recentFiles", [], type=str)
         if path in recentFiles:
@@ -957,7 +960,11 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).resizeEvent(event)
 
     def setWindowTitle(self, title=None):
-        if title is None: title = os.path.basename(self.font.path.rstrip(os.sep))
+        if title is None:
+            if self.font.path is not None:
+                title = os.path.basename(self.font.path.rstrip(os.sep))
+            else:
+                title = "Untitled.ufo"
         super(MainWindow, self).setWindowTitle("[*]{}".format(title))
 
     def fontInfo(self):

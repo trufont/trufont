@@ -204,7 +204,7 @@ class FontToolBar(QToolBar):
 
         self.configBar = QPushButton(self)
         self.configBar.setFlat(True)
-        self.configBar.setIcon(QIcon("defconQt/resources/ic_settings_24px.svg"))
+        self.configBar.setIcon(QIcon("defconQt/resources/settings.svg"))
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px");
         self.toolsMenu = QMenu(self)
         showKerning = self.toolsMenu.addAction("Show Kerning", self.showKerning)

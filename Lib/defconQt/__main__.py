@@ -1,28 +1,24 @@
 from defconQt.objects.defcon import TFont
+from defconQt import representationFactories
 from defconQt.fontView import Application, MainWindow
 import sys
 import os
 from PyQt5.QtGui import QIcon
 
-if len(sys.argv) < 2:
-    share_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'share')
-    ufoFile = os.path.join(share_dir, 'fonts', 'subsets', 'Merriweather-Bold-Subset-nop.ufo')
-    print('Usage: %s <input.ufo>' % sys.argv[0])
-    print('Loading default sample font: "%s"' % ufoFile)
+if len(sys.argv) > 1:
+    font = TFont(os.path.abspath(ufoFile))
 else:
-    ufoFile = sys.argv[1]
-    print('Loading font file: "%s"' % ufoFile)
+    font = None
 
 #from pycallgraph import PyCallGraph
 #from pycallgraph.output import GraphvizOutput
-from defconQt import representationFactories
 representationFactories.registerAllFactories()
 #with PyCallGraph(output=GraphvizOutput()):
 app = Application(sys.argv)
 # TODO: http://stackoverflow.com/a/21330349/2037879
 app.setOrganizationName("A. Tétar & Co.")
-app.setApplicationName("defconQt")
-app.setWindowIcon(QIcon("defconQt/resources/icon.png"))
-window = MainWindow(TFont(os.path.abspath(ufoFile)))
+app.setApplicationName("TruFont")
+app.setWindowIcon(QIcon("defconQt/resources/app.png"))
+window = MainWindow(font)
 window.show()
 sys.exit(app.exec_())
