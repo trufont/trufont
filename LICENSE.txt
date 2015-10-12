@@ -1,9 +1,8 @@
-Product in development. Confidential.
-
-
-Otherwise dual-licensed under the GNU LGPL v2.1 [1] and the GNU GPL v3 [2], at your option.
-Note that defconQt uses PyQt5 as a library, which free version is provided under the GNU GPL license.
-Copyleft clause may apply, in which case the end-user is only left with choosing the GNU GPL v3 as the end-user license.
+Dual-licensed under the GNU LGPL v2.1 [1] and the GNU GPL v3 [2], at your
+option.
+Note that defconQt uses PyQt5 as a library, which free version is provided under
+the GNU GPL license. Copyleft clause may apply, in which case the end-user is
+left with choosing the GNU GPL v3 as the end-user license.
 
 For more information, please consult: http://www.gnu.org/copyleft/
 
