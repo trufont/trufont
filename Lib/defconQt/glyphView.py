@@ -312,6 +312,9 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         self.setBrush(QBrush(offCurvePointColor))
         self._needsUngrab = False
 
+    def delete(self):
+        self.parentItem()._CPDeleted()
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
             if self.scene()._integerPlane:
@@ -443,6 +446,20 @@ class OnCurvePointItem(QGraphicsPathItem):
             if pt == self._point: break
             if pt.segmentType is not None: index += 1
         return index % len(self._contour.segments)
+
+    def _CPDeleted(self):
+        pointIndex = self.getPointIndex()
+        children = self.childItems()
+        selected = 1
+        if not (children[1].isVisible() or children[1].isSelected()):
+            selected = 3
+
+        firstSibling = self._contour[pointIndex+selected-2]
+        secondSibling = self._contour[pointIndex+(selected-2)*2]
+        if firstSibling.segmentType is None and secondSibling.segmentType is None:
+            # we have two offCurves, wipe them
+            self._contour.removePoint(firstSibling)
+            self._contour.removePoint(secondSibling)
 
     def _CPMoved(self, newValue):
         pointIndex = self.getPointIndex()
@@ -851,7 +868,7 @@ class GlyphScene(QGraphicsScene):
             for item in self.selectedItems():
                 if isinstance(item, OnCurvePointItem):
                     item.delete(not event.modifiers() & Qt.ShiftModifier)
-                elif isinstance(item, (AnchorItem, ComponentItem)):
+                elif isinstance(item, (AnchorItem, ComponentItem, OffCurvePointItem)):
                     item.delete()
                 elif isinstance(item, PixmapItem):
                     self.removeItem(item)
@@ -1390,7 +1407,7 @@ class GlyphView(QGraphicsView):
         if not scene._blocked:
             # TODO: also rewind anchors and components
             for item in scene.items():
-                if isinstance(item, OnCurvePointItem) or isinstance(item, ComponentItem) or isinstance(item, AnchorItem):
+                if isinstance(item, (OnCurvePointItem, ComponentItem, AnchorItem)):
                     scene.removeItem(item)
                 elif isinstance(item, VGuidelinesTextItem):
                     item.setPos(self._glyph.width, item.y())
