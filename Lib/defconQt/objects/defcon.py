@@ -22,8 +22,7 @@ class TFont(Font):
         glyph.width = width
         # TODO: list ought to be changeable from AGL2UV
         if addUnicode:
-            if name in AGL2UV:
-                glyph.unicode = AGL2UV[name]
+            glyph.autoUnicodes()
         glyph.template = asTemplate
         return glyph
 
@@ -53,6 +52,21 @@ class TGlyph(Glyph):
             self.template = False
 
     dirty = property(BaseObject._get_dirty, _set_dirty)
+
+    def autoUnicodes(self):
+        hexes = "ABCDEF0123456789"
+        name = self.name
+        if name in AGL2UV:
+            uni = AGL2UV[name]
+        elif (name.startswith("uni") and len(name) == 7 and
+              all(c in hexes for c in name[3:])):
+            uni = int(name[3:], 16)
+        elif (name.startswith("u") and len(name) in (5, 7) and
+              all(c in hexes for c in name[1:])):
+            uni = int(name[1:], 16)
+        else:
+            return
+        self.unicodes = [uni]
 
 class TContour(Contour):
     def __init__(self, pointClass=None, **kwargs):
