@@ -638,7 +638,7 @@ class SpaceTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
-        self._blocked = False
+        self._editing = False
         self.selectionChangedCallback = None
         self._coloredColumn = None
 
@@ -648,11 +648,12 @@ class SpaceTable(QTableWidget):
         self.updateCells()
 
     def updateCells(self):
-        if self._blocked: return
         self.blockSignals(True)
-        # quit focus
-        self.setCurrentItem(None)
+        if self._editing:
+            coloredColumn = self._coloredColumn
         self.fillGlyphs()
+        if self._editing:
+            self._coloredColumn = coloredColumn
         self.blockSignals(False)
 
     def _cellEdited(self, row, col):
@@ -665,14 +666,14 @@ class SpaceTable(QTableWidget):
         # -1 because the first col contains descriptive text
         glyph = self.glyphs[col-1]
         # != comparisons avoid making glyph dirty when editor content is unchanged
-        self._blocked = True
+        self._editing = True
         if row == 1:
             if item != glyph.width: glyph.width = item
         elif row == 2:
             if item != glyph.leftMargin: glyph.leftMargin = item
         elif row == 3:
             if item != glyph.rightMargin: glyph.rightMargin = item
-        self._blocked = False
+        self._editing = False
         # defcon callbacks do the update
 
     def _itemChanged(self, current, previous):
