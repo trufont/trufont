@@ -230,7 +230,7 @@ class GlyphCollectionWidget(QWidget):
         # as is done in groupsView
         elif key == Qt.Key_Delete:
             #if self.characterDeletionCallback is not None:
-            if proceedWithDeletion() and self.selection:
+            if proceedWithDeletion(self) and self.selection:
                 # we need to del in reverse order to keep key references valid
                 for key in sorted(self._selection, reverse=True):
                     glyph = self._glyphs[key]
