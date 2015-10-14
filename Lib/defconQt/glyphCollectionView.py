@@ -24,9 +24,9 @@ voidFont = QFont(headerFont)
 voidFont.setPointSize(24)
 metrics = QFontMetrics(headerFont)
 
-def proceedWithDeletion(self):
+def proceedWithDeletion():
     closeDialog = QMessageBox(QMessageBox.Question, "", "Delete glyphs",
-      QMessageBox.Yes | QMessageBox.No, self)
+      QMessageBox.Yes | QMessageBox.No)
     closeDialog.setInformativeText("Are you sure you want to delete them?")
     closeDialog.setModal(True)
     ret = closeDialog.exec_()
@@ -228,7 +228,7 @@ class GlyphCollectionWidget(QWidget):
             self.selection = set()
         # XXX: this is specific to fontView so should be done thru subclassing of a base widget,
         # as is done in groupsView
-        elif key == Qt.Key_Delete:
+        elif key in (Qt.Key_Delete, Qt.Key_Backspace):
             #if self.characterDeletionCallback is not None:
             if proceedWithDeletion() and self.selection:
                 # we need to del in reverse order to keep key references valid

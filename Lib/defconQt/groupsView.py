@@ -20,7 +20,7 @@ class GroupListWidget(QListWidget):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if key == Qt.Key_Delete:
+        if key in (Qt.Key_Delete, Qt.Key_Backspace):
             self.parent()._groupDelete()
             event.accept()
         elif key == Qt.Key_Left:
@@ -90,7 +90,7 @@ class GroupCollectionWidget(GlyphCollectionWidget):
     # TODO: The standard QListWidget has scrollbar and does not need three times parent call.
     # Find out how to handle that properly.
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Delete:
+        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
             if self.characterDeletionCallback is not None:
                 self.characterDeletionCallback(self.selection)
             event.accept()
