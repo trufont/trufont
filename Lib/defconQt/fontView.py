@@ -5,6 +5,7 @@ from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
+from defconQt.util import platformSpecific
 from defcon import Color, Component
 from defconQt.spaceCenter import MainSpaceWindow
 # TODO: remove globs when things start to stabilize
@@ -12,7 +13,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from collections import OrderedDict
-import os, pickle, traceback, sys
+import os, pickle, traceback
 
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
@@ -677,12 +678,8 @@ class MainWindow(QMainWindow):
 
     def openFile(self, path=None):
         if not path:
-            if sys.platform == "darwin":
-                fileFormats = "UFO Fonts (*.ufo)"
-            else:
-                fileFormats = "UFO Fonts (metainfo.plist)"
             path, ok = QFileDialog.getOpenFileName(self, "Open File", '',
-                    fileFormats)
+                    platformSpecific.fileFormats)
             if not ok: return
         if path:
             if ".plist" in path:

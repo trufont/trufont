@@ -44,6 +44,7 @@ setup(name="defconQt",
         "defconQt.objects",
         "defconQt.pens",
         "defconQt.representationFactories",
+        "defconQt.util",
     ],
     package_dir={"":"Lib"}
 )

@@ -5,6 +5,7 @@ from defcon import Anchor, Component
 from defconQt import icons_db
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.pens.copySelectionPen import CopySelectionPen
+from defconQt.util import platformSpecific
 from fontTools.misc import bezierTools
 from PyQt5.QtCore import *#QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
 from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
@@ -863,7 +864,7 @@ class GlyphScene(QGraphicsScene):
             x,y = count,0
         elif key == Qt.Key_Down:
             x,y = 0,-count
-        elif key == Qt.Key_Delete:
+        elif key == platformSpecific.deleteKey:
             self._blocked = True
             for item in self.selectedItems():
                 if isinstance(item, OnCurvePointItem):

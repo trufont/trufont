@@ -1,3 +1,4 @@
+from defconQt.util import platformSpecific
 from PyQt5.QtCore import QMimeData, QRectF, QSize, Qt
 from PyQt5.QtGui import (QBrush, QColor, QCursor, QDrag, QFont, QFontMetrics,
     QKeySequence, QLinearGradient, QPainter, QPen)
@@ -228,7 +229,7 @@ class GlyphCollectionWidget(QWidget):
             self.selection = set()
         # XXX: this is specific to fontView so should be done thru subclassing of a base widget,
         # as is done in groupsView
-        elif key == Qt.Key_Delete:
+        elif key == platformSpecific.deleteKey:
             #if self.characterDeletionCallback is not None:
             if proceedWithDeletion(self) and self.selection:
                 # we need to del in reverse order to keep key references valid
