@@ -24,9 +24,9 @@ voidFont = QFont(headerFont)
 voidFont.setPointSize(24)
 metrics = QFontMetrics(headerFont)
 
-def proceedWithDeletion(self):
+def proceedWithDeletion():
     closeDialog = QMessageBox(QMessageBox.Question, "", "Delete glyphs",
-      QMessageBox.Yes | QMessageBox.No, self)
+      QMessageBox.Yes | QMessageBox.No)
     closeDialog.setInformativeText("Are you sure you want to delete them?")
     closeDialog.setModal(True)
     ret = closeDialog.exec_()
