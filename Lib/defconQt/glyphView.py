@@ -863,7 +863,7 @@ class GlyphScene(QGraphicsScene):
             x,y = count,0
         elif key == Qt.Key_Down:
             x,y = 0,-count
-        elif key == Qt.Key_Delete:
+        elif key in (Qt.Key_Delete, Qt.Key_Backspace):
             self._blocked = True
             for item in self.selectedItems():
                 if isinstance(item, OnCurvePointItem):

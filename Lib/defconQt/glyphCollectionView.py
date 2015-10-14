@@ -228,7 +228,7 @@ class GlyphCollectionWidget(QWidget):
             self.selection = set()
         # XXX: this is specific to fontView so should be done thru subclassing of a base widget,
         # as is done in groupsView
-        elif key == Qt.Key_Delete:
+        elif key in (Qt.Key_Delete, Qt.Key_Backspace):
             #if self.characterDeletionCallback is not None:
             if proceedWithDeletion() and self.selection:
                 # we need to del in reverse order to keep key references valid
