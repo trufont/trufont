@@ -3,6 +3,7 @@ from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
+from defconQt.layerSetList import LayerSetList
 from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defconQt.util import platformSpecific
@@ -191,9 +192,16 @@ class InspectorWindow(QWidget):
         transformLayout.addWidget(scaleXYBox, l, 5)
         transformGroup.setLayout(transformLayout)
 
+        layerSetGroup = QGroupBox("Layers", self)
+        layerSetGroup.setFlat(True)
+        layerSetLayout = QGridLayout(self)
+        layerSetLayout.addWidget(LayerSetList(app.currentFont()), 0, 0)
+        layerSetGroup.setLayout(layerSetLayout)
+
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(glyphGroup)
         mainLayout.addWidget(transformGroup)
+        mainLayout.addWidget(layerSetGroup)
         self.setLayout(mainLayout)
 
     def showEvent(self, event):

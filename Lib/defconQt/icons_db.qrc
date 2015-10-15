@@ -5,6 +5,7 @@
 	<file>resources/curve.svg</file>
 	<file>resources/cut.svg</file>
 	<file>resources/ruler.svg</file>
+	<file>resources/defaultColor.svg</file>
     <file>resources/settings.svg</file>
 </qresource>
 </RCC>
