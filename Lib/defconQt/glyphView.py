@@ -1,5 +1,6 @@
 from enum import Enum
 from math import copysign
+from functools import partial
 import pickle
 from defcon import Anchor, Component
 from defconQt import icons_db
@@ -8,7 +9,7 @@ from defconQt.pens.copySelectionPen import CopySelectionPen
 from defconQt.util import platformSpecific
 from fontTools.misc import bezierTools
 from PyQt5.QtCore import *#QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
-from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen
+from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen, QColorDialog
 from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
         #QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
         #QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
@@ -170,13 +171,116 @@ class AddLayerDialog(QDialog):
         name = dialog.layerNameEdit.text()
         return (name, result)
 
+
+class GenericSettings(object):
+    def __init__(self, title, parent, callback):
+        #super().__init__()
+        self._menuWidget = QMenu(title, parent)
+        self._actions = {}
+        self._callback = callback
+        for key, item in self._items:
+            self._addAction(key, *item)
+
+        if(self._presets):
+            self._menuWidget.addSeparator()
+            for i, presets in enumerate(self._presets):
+                self._addPresetAction(i, *presets)
+
+    _items = {}
+    _presets = tuple()
+
+    @property
+    def menuWidget(self):
+        return self._menuWidget
+
+    def _addAction(self, key, label, checked):
+        action = self._menuWidget.addAction(label, partial(self._callback, key))
+        action.setCheckable(True)
+        action.setChecked(checked)
+        self._actions[key] = action
+
+    def _addPresetAction(self, index, label, presets, **args):
+        self._menuWidget.addAction(label, partial(self._setPreset, index))
+
+    def _setPreset(self, index):
+        _, data = self._presets[index]
+        for key, value in data.items():
+            action = self._actions[key]
+            action.blockSignals(True)
+            action.setChecked(value)
+            action.blockSignals(False)
+        self._callback()
+
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            self.__dict__[name] = value
+            return
+        raise AttributeError('It\'s not allowed to set attributes here.', name)
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(name)
+        if name not in self._actions:
+            raise AttributeError(name)
+        return self._actions[name].isChecked()
+
+
+
+class DisplayStyleSettings(GenericSettings):
+    _presets = (
+        ('TruFont Default', dict(
+            activeLayerOnTop = True
+          , activeLayerFilled = True
+          , otherLayersFilled = False
+          , activeLayerUseLayerColor = False
+          , otherLayerUseLayerColor = True
+          , drawOtherLayers = True
+        ))
+      , ('Layer Fonts', dict(
+            activeLayerOnTop = False
+          , activeLayerFilled = True
+          , otherLayersFilled = True
+          , activeLayerUseLayerColor = True
+          , otherLayerUseLayerColor = True
+          , drawOtherLayers = True
+        ))
+    )
+
+    _items = (
+        ('activeLayerOnTop', ('Active Layer on Top', True))
+      , ('activeLayerFilled', ('Active Layer Filled', True))
+      , ('activeLayerUseLayerColor', ('Active Layer use Custom Color', False))
+      , ('otherLayersFilled', ('Other Layers Filled', False))
+      , ('otherLayerUseLayerColor', ('Other Layers use Custom Color', True))
+      , ('drawOtherLayers', ('Show Other Layers', True))
+    )
+
+
 class MainGfxWindow(QMainWindow):
     def __init__(self, glyph, parent=None):
         super(MainGfxWindow, self).__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setAttribute(Qt.WA_KeyCompression)
 
-        self.view = GlyphView(glyph, self)
+        self.view = None
+
+        self._layerSet = layerSet = glyph.layerSet
+
+        self._layerSetNotifications = []
+
+        layerSet.addObserver(self, '_layerSetLayerAdded', 'LayerSet.LayerAdded')
+        layerSet.addObserver(self, '_layerSetLayerDeleted', 'LayerSet.LayerDeleted')
+        self._layerSetNotifications.append('LayerSet.LayerAdded')
+        self._layerSetNotifications.append('LayerSet.LayerDeleted')
+
+
+        for event in ('LayerSet.LayerChanged', 'LayerSet.DefaultLayerChanged'
+                                            , 'LayerSet.LayerOrderChanged'):
+            self._layerSetNotifications.append(event)
+            layerSet.addObserver(self, '_layerSetEvents',  event)
+
+
+
         menuBar = self.menuBar()
 
         fileMenu = QMenu("&File", self)
@@ -187,27 +291,39 @@ class MainGfxWindow(QMainWindow):
         glyphMenu.addAction("&Jump", self.changeGlyph, "J")
         menuBar.addMenu(glyphMenu)
 
-        toolBar = QToolBar(self)
+
+        self._displaySettings = DisplayStyleSettings("&Display", self, self._displayChanged)
+        menuBar.addMenu(self._displaySettings.menuWidget)
+
+        self._toolBar = toolBar = QToolBar(self)
         toolBar.setMovable(False)
         toolBar.setContentsMargins(2, 0, 2, 0)
-        selectionToolButton = toolBar.addAction("Selection", self.view.setSceneSelection)
+        selectionToolButton = toolBar.addAction("Selection", self._redirect('view', 'setSceneSelection'))
         selectionToolButton.setCheckable(True)
         selectionToolButton.setChecked(True)
         selectionToolButton.setIcon(QIcon(":/resources/cursor.svg"))
-        penToolButton = toolBar.addAction("Pen", self.view.setSceneDrawing)
+        penToolButton = toolBar.addAction("Pen", self._redirect('view', 'setSceneDrawing'))
         penToolButton.setCheckable(True)
         penToolButton.setIcon(QIcon(":/resources/curve.svg"))
-        rulerToolButton = toolBar.addAction("Ruler", self.view.setSceneRuler)
+        rulerToolButton = toolBar.addAction("Ruler", self._redirect('view', 'setSceneRuler'))
         rulerToolButton.setCheckable(True)
         rulerToolButton.setIcon(QIcon(":/resources/ruler.svg"))
-        knifeToolButton = toolBar.addAction("Knife", self.view.setSceneKnife)
+        knifeToolButton = toolBar.addAction("Knife", self._redirect('view', 'setSceneKnife'))
         knifeToolButton.setCheckable(True)
         knifeToolButton.setIcon(QIcon(":/resources/cut.svg"))
+
         # http://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         toolBar.addWidget(spacer)
-        toolBar.addWidget(self.view.currentLayerBox())
+        self._currentLayerBox = QComboBox(self)
+        self._currentLayerBox.currentIndexChanged.connect(self._changeLayerHandler)
+        toolBar.addWidget(self._currentLayerBox)
+
+        self._layerColorButton = toolBar.addAction(
+                    "Layer Color (shift + click to remove the color)",
+                    self._chooseLayerColor)
+
         toolsGroup = QActionGroup(self)
         toolsGroup.addAction(selectionToolButton)
         toolsGroup.addAction(penToolButton)
@@ -217,21 +333,177 @@ class MainGfxWindow(QMainWindow):
 
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
         createAnchorAction = QAction("Add Anchor…", self)
-        createAnchorAction.triggered.connect(self.view.createAnchor)
+        createAnchorAction.triggered.connect(self._redirect('view', 'createAnchor'))
         self.addAction(createAnchorAction)
         createComponentAction = QAction("Add Component…", self)
-        createComponentAction.triggered.connect(self.view.createComponent)
+        createComponentAction.triggered.connect(self._redirect('view', 'createComponent'))
         self.addAction(createComponentAction)
 
-        self.setCentralWidget(self.view)
+        for layer in self._layerSet:
+            self._listenToLayer(layer)
+
+        self._changeGlyph(glyph)
+        self._updateComboBox()
+
         self.setWindowTitle(glyph.name, glyph.getParent())
         self.adjustSize()
+
+    def _changeGlyph(self, glyph):
+        oldView = self.view
+        if oldView:
+            # Preserve the selected layer (by setting the glyph from that layer)
+            # Todo: If that layer is already in the glyph, it would be a little bit
+            # harder to create it here and may be better or worse. Worse becaue
+            # we'd alter the data without being explicitly asked to do so.
+            # Ask someone who does UX.
+            if oldView.layer is not glyph.layer and glyph.name in oldView.layer:
+                glyph = oldView.layer[glyph.name]
+            oldView.hide()
+            oldView.deleteLater()
+
+        self.view = GlyphView(glyph, self._displaySettings, self)
+        # Preserve the zoom level of the oldView.
+        # TODO: is there more state that we need to carry over to the next
+        # GlyphView? If yes, we should make an interface for a
+        # predecessor -> successor transformation
+        if oldView:
+            self.view.setTransform(oldView.transform())
+
+        self._setlayerColorButtonColor()
+
+        app = QApplication.instance()
+        app.setCurrentGlyph(glyph)
+        self.setWindowTitle(glyph.name, glyph.getParent())
+
+        # switch
+        self.setCentralWidget(self.view)
+
+    def _executeRemoteCommand(self, targetName, commandName, *args, **kwds):
+        """
+        Execute a method named `commandName` on the attribute named `targetName`.
+        This strongly suggest that there is always a known interface at self.{targetName}
+        See MainGfxWindow._redirect
+        """
+        target = getattr(self, targetName)
+        command = getattr(target, commandName)
+        command(*args, **kwds)
+
+    def _redirect(self, target, command):
+        """
+        This creates an indirection to permanently connect an event to a
+        property that may (will) change its identity.
+        """
+        return partial(self._executeRemoteCommand, target, command)
+
+    def _layerSetEvents(self, notification):
+        layerSet = notification.object
+        assert layerSet is self._layerSet
+        self._updateComboBox()
+
+
+    def _layerSetLayerDeleted(self, notification):
+        self._layerSetEvents(notification)
+        self._changeLayerHandler(0)
+
+    def _layerSetLayerAdded(self, notification):
+        self._layerSetEvents(notification)
+        layerName = notification.data['name']
+        layer = self._layerSet[layerName]
+        self.view.layerAdded(layer)
+        self._listenToLayer(layer)
+
+    def _listenToLayer(self, layer, remove=False):
+        if remove:
+            layer.removeObserver(self, 'Layer.ColorChanged')
+        else:
+            layer.addObserver(self, '_layerColorChange', 'Layer.ColorChanged')
+
+    def _chooseLayerColor(self):
+        if QApplication.keyboardModifiers() & Qt.ShiftModifier:
+            # reset to default color, i.e. delete the layer color
+            color = None
+        else:
+            startColor = self.view.getLayerColor() or QColor('limegreen')
+            qColor = QColorDialog.getColor(startColor, self, options=QColorDialog.ShowAlphaChannel)
+            if not qColor.isValid():
+                # cancelled
+                return
+            color = qColor.getRgbF()
+        # will trigger Layer.ColorChanged
+        self.view.layer.color = color
+
+    def _layerColorChange(self, notification):
+        layer = notification.object
+        if layer is self.view.layer:
+            self._setlayerColorButtonColor()
+
+    def _setlayerColorButtonColor(self):
+        color = self.view.getLayerColor()
+        if color is None:
+            icon = QIcon(":/resources/defaultColor.svg")
+        else:
+            # set the layer color to the button
+            pixmap = QPixmap(100, 100)
+            pixmap.fill(color)
+            icon = QIcon(pixmap)
+        self._layerColorButton.setIcon(icon)
+
+    def _updateComboBox(self):
+        comboBox = self._currentLayerBox
+        comboBox.blockSignals(True)
+        comboBox.clear()
+        for layer in self._layerSet:
+            comboBox.addItem(layer.name, layer)
+            if layer == self.view.layer:
+                comboBox.setCurrentText(layer.name)
+                continue
+        comboBox.addItem("New layer...", None)
+        comboBox.blockSignals(False)
+
+    def _setComboboxIndex(self, index):
+        comboBox = self._currentLayerBox
+        comboBox.blockSignals(True)
+        comboBox.setCurrentIndex(index)
+        comboBox.blockSignals(False)
+
+    def _makeNewLayerViaDialog(self):
+        newLayerName, ok = AddLayerDialog.getNewLayerName(self)
+        if ok:
+            # this should cause self._layerSetLayerAdded to be executed
+            self._layerSet.newLayer(newLayerName)
+            return self._layerSet[newLayerName]
+        else:
+            return None
+
+    def _changeLayerHandler(self, newLayerIndex):
+        comboBox = self._currentLayerBox
+        layer = comboBox.itemData(newLayerIndex)
+        if layer is None:
+            layer = self._makeNewLayerViaDialog()
+            if layer is None:
+                # restore comboBox to active index
+                index = self._layerSet.layerOrder.index(self.view.layer.name)
+                self._setComboboxIndex(index)
+                return
+
+        self.view.changeCurrentLayer(layer)
+        self._updateComboBox()
+        self._setlayerColorButtonColor()
+
+        app = QApplication.instance()
+        # setting the layer-glyph here
+        app.setCurrentGlyph(self.view._glyph)
 
     def changeGlyph(self):
         glyph = self.view._glyph
         newGlyph, ok = GotoDialog.getNewGlyph(self, glyph)
         if ok and newGlyph is not None:
-            self.view.setGlyph(newGlyph)
+            self._changeGlyph(newGlyph)
+            self._updateComboBox()
+
+    def _displayChanged(self, *args):
+        # redraw the view
+        self.view.redraw()
 
     def event(self, event):
         if event.type() == QEvent.WindowActivate:
@@ -240,11 +512,15 @@ class MainGfxWindow(QMainWindow):
         return super(MainGfxWindow, self).event(event)
 
     def closeEvent(self, event):
-        self.view._glyph.removeObserver(self, "Glyph.Changed")
-        event.accept()
+        for name in self._layerSetNotifications:
+            self._layerSet.removeObserver(self, name)
 
-    def _glyphChanged(self, notification):
-        self.view._glyphChanged(notification)
+        for layer in self._layerSet:
+            self._listenToLayer(layer, remove=True)
+
+        self.view = None
+
+        event.accept()
 
     def setWindowTitle(self, title, font=None):
         if font is not None: title = "%s – %s %s" % (title, font.info.familyName, font.info.styleName)
@@ -677,7 +953,6 @@ class ComponentItem(QGraphicsPathItem):
         super(ComponentItem, self).__init__(path, parent)
         self._component = component
         self.setTransform(QTransform(*component.transformation))
-        self.setBrush(QBrush(componentFillColor))
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -784,7 +1059,7 @@ class PixmapItem(QGraphicsPixmapItem):
         return value
 
 class GlyphScene(QGraphicsScene):
-    def __init__(self, parent):
+    def __init__(self, parent, sceneAddedItems=None):
         super(GlyphScene, self).__init__(parent)
         self._editing = False
         self._integerPlane = True
@@ -795,6 +1070,10 @@ class GlyphScene(QGraphicsScene):
         self._knifeLine = None
         self._dataForUndo = []
         self._dataForRedo = []
+
+        # if this is an array, the Glyphview will clean up all contents
+        # when redrawing the active layer
+        self._sceneAddedItems = sceneAddedItems
 
         font = self.font()
         font.setFamily("Roboto Mono")
@@ -808,6 +1087,12 @@ class GlyphScene(QGraphicsScene):
         return view._glyph
 
     _glyphObject = property(_get_glyphObject, doc="Get the current glyph in the view.")
+
+    def _addRegisterItem(self, item):
+        """The parent object will take care of removing these again"""
+        if self._sceneAddedItems is not None:
+            self._sceneAddedItems.append(item)
+        self.addItem(item)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -832,7 +1117,7 @@ class GlyphScene(QGraphicsScene):
             return
         pos = event.scenePos()
         newPix = PixmapItem(pos.x(), pos.y(), dragPix)
-        self.addItem(newPix)
+        self._addRegisterItem(newPix)
         event.acceptProposedAction()
 
     def getItemForPoint(self, point):
@@ -1023,7 +1308,7 @@ class GlyphScene(QGraphicsScene):
                 else:
                     lastContour.addPoint((x,y), "line")
                 item = OnCurvePointItem(x, y, False, lastContour, lastContour[-1], self.getViewScale())
-                self.addItem(item)
+                self._addRegisterItem(item)
                 for _ in range(2):
                     lineObj = HandleLineItem(0, 0, 0, 0, item)
                     CPObject = OffCurvePointItem(0, 0, item)
@@ -1038,7 +1323,7 @@ class GlyphScene(QGraphicsScene):
             nextC.addPoint((x,y), "move")
 
             item = OnCurvePointItem(x, y, False, self._glyphObject[-1], self._glyphObject[-1][-1], self.getViewScale())
-            self.addItem(item)
+            self._addRegisterItem(item)
             for _ in range(2):
                 lineObj = HandleLineItem(0, 0, 0, 0, item)
                 CPObject = OffCurvePointItem(0, 0, item)
@@ -1341,17 +1626,30 @@ class GlyphScene(QGraphicsScene):
         self._cachedIntersections = []
         event.accept()
 
+
 class GlyphView(QGraphicsView):
-    def __init__(self, glyph, parent=None):
+    def __init__(self, glyph, settings, parent=None):
         super(GlyphView, self).__init__(parent)
-        self._glyph = glyph
-        self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
-        self._glyph.layerSet.addObserver(self, "_layersChanged", "LayerSet.Changed")
+
+        # wont change during lifetime
+        self._layerSet = layerSet = glyph.layerSet
+        self._name = glyph.name
+        self._settings = settings
+
+        # we got the individual layers as keys => pathItem
+        # we got string keys => [list of scene items] like 'components'
+        self._sceneItems = {}
+
+        # will change during lifetime
+        self._layer = glyph.layer
+
         self._impliedPointSize = 1000
         self._pointSize = None
 
+        # apparently unused code
         self._inverseScale = 0.1
         self._scale = 10
+
         self._noPointSizePadding = 200
         self._drawStroke = True
         self._showOffCurvePoints = True
@@ -1359,14 +1657,11 @@ class GlyphView(QGraphicsView):
         self._showMetricsTitles = True
 
         self.setBackgroundBrush(QBrush(Qt.lightGray))
-        self.setScene(GlyphScene(self))
+        self.setScene(GlyphScene(self, self._getSceneItems('scene-added-items')))
         font = self.font()
         font.setFamily("Roboto Mono")
         font.setFixedPitch(True)
         self.setFont(font)
-
-        self._currentLayerBox = QComboBox(self)
-        self._currentLayerBox.currentIndexChanged.connect(self._currentLayerChanged)
 
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
@@ -1380,53 +1675,117 @@ class GlyphView(QGraphicsView):
         self.addBackground()
         self.addBlues()
         self.addHorizontalMetrics()
-        self.addOtherLayersOutlines()
-        self.addOutlines()
-        self.addComponents()
-        self.addAnchors()
-        self.addPoints()
 
-    def currentLayerBox(self):
-        return self._currentLayerBox
+        for layer in layerSet:
+            if self._name not in layer:
+                self._listenToLayer(layer)
+            else:
+                self._listenToGlyph(layer)
+        self._listenToLayerSet()
+
+        self.changeCurrentLayer(self._layer)
+
+
+    @property
+    def _glyph(self):
+        # instead of a getter we could change the glyph each time
+        # self._layer is changed. However, it might be that the glyph
+        # is not ready when the layer is set
+        return self._layer[self._name]
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def layer(self):
+        return self._layer
+
+    @property
+    def defaultWidth(self):
+        defaultLayer = self._layerSet[None]
+        return defaultLayer[self._name].width \
+                                    if self._name in defaultLayer else 0
+
+    def _listenToLayerSet(self):
+        self._layerSet.addObserver(self, '_layerDeleted', 'LayerSet.LayerWillBeDeleted')
+        self._layerSet.addObserver(self, '_layerGenericVisualChange', 'LayerSet.LayerOrderChanged')
+
+    def _listenToLayer(self, layer, remove=False):
+        if remove:
+            layer.removeObserver(self, 'Layer.GlyphAdded')
+        else:
+            layer.addObserver(self, '_layerGlyphAdded', 'Layer.GlyphAdded')
+
+    def _layerGenericVisualChange(self, notification):
+        self.redraw()
+
+    def _listenToGlyph(self, layer):
+        layer[self._name].addObserver(self, "_glyphChanged", "Glyph.Changed")
+        layer.addObserver(self, '_layerGenericVisualChange', 'Layer.ColorChanged')
+
+    def layerAdded(self, layer):
+        self._listenToLayer(layer)
+
+    def _layerGlyphAdded(self, notification):
+        glyphName = notification.data['name']
+        # the layer will emit this for each new glyph
+        if glyphName != self._name:
+            return
+        layer = notification.object
+        self._listenToLayer(layer, remove=True)
+        self._listenToGlyph(layer)
+        self.redraw()
+
+    def _layerDeleted(self, notification):
+        layerName = notification.data['name']
+        layer = self._layerSet[layerName]
+        self._removeLayerPath(layer)
 
     def _glyphChanged(self, notification):
         # TODO: maybe detect sidebearing changes (space center) and then only
         # translate elements rather than reconstructing them.
         # Also we lose selection when reconstructing, rf does not when changing
         # sp.center values.
-        self.redrawGlyph()
+        glyph = notification.object
+        layer = glyph.layer
+        if layer is self._layer:
+            self.activeGlyphChanged()
+        else:
+            self.updateLayerPath(layer)
 
-    # TODO: diagnose notifications count
-    def _layersChanged(self, notification):
-        self.redrawGlyph()
-        self.redrawOtherLayers()
+    def redraw(self):
+        self._getSceneItems('scene-added-items', clear=True)
+        self.updateLayerAssets()
+        self.drawAllLayers()
+        self.addAnchors()
+        self.addPoints()
 
-    def redrawGlyph(self):
-        path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
+    def updateLayerAssets(self):
+        for item in self._getSceneItems('hMetricLabels'):
+            item.setPos(self._glyph.width, item.y())
+
+    def activeGlyphChanged(self):
+        # For now, we'll assume not scene._blocked == moving UI points
+        # this will not be the case anymore when drag sidebearings pops up
         scene = self.scene()
-        scene._outlineItem.setPath(path)
-        if not scene._blocked:
-            # TODO: also rewind anchors and components
-            for item in scene.items():
-                if isinstance(item, (OnCurvePointItem, ComponentItem, AnchorItem)):
-                    scene.removeItem(item)
-                elif isinstance(item, VGuidelinesTextItem):
-                    item.setPos(self._glyph.width, item.y())
+        if scene._blocked:
+            self.updateActiveLayerPath()
+            return
+        self.updateActiveLayer()
 
-            self.addComponents()
-            self.addAnchors()
-            self.addPoints()
-            # For now, we'll assume not scene._blocked == moving UI points
-            # this will not be the case anymore when drag sidebearings pops up
-            scene._widthItem.setRect(0, -1000, self._glyph.width, 3000)
+    def updateActiveLayer(self):
+        self._getSceneItems('scene-added-items', clear=True)
+        self.updateLayerAssets()
 
-    def redrawOtherLayers(self):
+        self.updateActiveLayerPath()
+        self.addComponents()
+        self.addAnchors()
+        self.addPoints()
+
+        # this is related to addBackground
         scene = self.scene()
-        for item in scene.items():
-            # XXX: discriminate better
-            if isinstance(item, QGraphicsPathItem) and item.zValue() == -997:
-                scene.removeItem(item)
-        self.addOtherLayersOutlines()
+        scene._widthItem.setRect(0, -1000, self._glyph.width, 3000)
 
     def addBackground(self):
         scene = self.scene()
@@ -1486,6 +1845,9 @@ class GlyphView(QGraphicsView):
             y = roundPosition(position)
             item = scene.addLine(-1000, y, 2000, y, QPen(metricsColor))
             item.setZValue(-997)
+
+
+        labels = self._getSceneItems('hMetricLabels', clear=True)
         # text
         if self._showMetricsTitles:# and self._impliedPointSize > 150:
             fontSize = 9# * self._inverseScale
@@ -1500,56 +1862,164 @@ class GlyphView(QGraphicsView):
                 item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
                 item.setPos(width, y)
                 item.setZValue(-997)
+                labels.append(item)
                 scene.addItem(item)
 
-    def addOtherLayersOutlines(self):
-        comboBox = self._currentLayerBox
-        comboBox.blockSignals(True)
-        comboBox.clear()
-        scene = self.scene()
-        layerSet = self._glyph.layerSet
-        for layer in layerSet:
-            comboBox.addItem(layer.name, layer)
-            if layer == self._glyph.layer:
-                comboBox.setCurrentText(layer.name)
-                continue
-            if not self._glyph.name in layer:
-                continue
-            path = layer[self._glyph.name].getRepresentation("defconQt.NoComponentsQPainterPath")
-            if layer.color is not None:
-                layerColor = QColor.fromRgbF(tuple(layer.color))
-            else:
-                layerColor = Qt.black
-            item = scene.addPath(path, QPen(layerColor))
-            item.setZValue(-997)
-        comboBox.addItem("New layer...", None)
-        comboBox.blockSignals(False)
+    def getLayerColor(self, layer=None):
+        if layer is None:
+            layer = self._layer
+        if layer.color is not None:
+            return QColor.fromRgbF(*layer.color)
+        return None
 
-    def addOutlines(self):
+
+    def _getDrawingStyleForLayer(self, layer, kind=None):
+        isActive = layer is self._layer
+        isFilled = self._settings.activeLayerFilled \
+                    if isActive else self._settings.otherLayersFilled
+        isOutlined = not isFilled
+        useLayerColor = self._settings.activeLayerUseLayerColor \
+                    if isActive else self._settings.otherLayerUseLayerColor
+
+        if useLayerColor:
+            brushcolor = self.getLayerColor(layer) or Qt.black
+            pencolor = brushcolor
+        else:
+            # default app colors
+            brushcolor = fillColor if kind != 'component' else componentFillColor
+            pencolor = Qt.black
+
+        if isOutlined:
+            pen = QPen(pencolor)
+            brush = QBrush(Qt.NoBrush)
+        else:
+            pen = QPen(Qt.NoPen)
+            brush = QBrush(brushcolor)
+
+        if isActive and not useLayerColor:
+            # The originally released app did fall back to QT's default
+            #  behavior i.e. no pen defined, so I preserve this here
+            if isOutlined: brush = None # like Qt.NoBrush
+            else: pen = None # like Qt.black
+        return (pen, brush)
+
+
+
+    @property
+    def _activeLayerZValue(self):
+        return -995 if not self._settings.activeLayerOnTop else -993
+
+    def drawAllLayers(self):
+        activeLayer = self._layer
+        # all layers before the active layer are -996
+        # the active layer is -995 or -993 if self._settings.activeLayerOnTop == True
+        # all layers after the active layer are -996
+        zValue = -996
+        for layer in reversed(list(self._layerSet)):
+            if self._name not in layer:
+                continue
+            isActiveLayer = layer is activeLayer
+            if isActiveLayer:
+                zValue = self._activeLayerZValue
+            elif not self._settings.drawOtherLayers:
+                self._removeLayerPath(layer)
+                continue
+            self.drawLayer(layer, zValue)
+            if isActiveLayer:
+                zValue = -994
+
+    def _removeLayerPath(self, layer):
         scene = self.scene()
-        path = self._glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-        scene._outlineItem = scene.addPath(path, brush=QBrush(fillColor))
-        scene._outlineItem.setZValue(-995)
+        item = self._sceneItems.get(layer, None)
+        if item is not None:
+            scene.removeItem(item)
+        if layer in self._sceneItems:
+            del self._sceneItems[layer]
+
+    def drawLayer(self, layer, zValue):
+        scene = self.scene()
+        glyph = layer[self._name]
+        self._removeLayerPath(layer)
+
+        isActiveLayer = layer is self._layer
+        if isActiveLayer:
+            representationKey = "defconQt.NoComponentsQPainterPath"
+        else:
+            representationKey = "defconQt.QPainterPath"
+
+        path = glyph.getRepresentation(representationKey)
+        item = QGraphicsPathItem()
+        item.setPath(path)
+
+        pen, brush = self._getDrawingStyleForLayer(layer)
+        if pen: item.setPen(pen)
+        if brush: item.setBrush(brush)
+
+        item.setZValue(zValue)
+
+        self._sceneItems[layer] = item
+        scene.addItem(item)
+        if isActiveLayer:
+            # FIXME: don't like this
+            scene._outlineItem = item
+            self.addComponents()
+        return item
+
+    def updateActiveLayerPath(self):
+        self.updateLayerPath(self._layer, representationKey="defconQt.NoComponentsQPainterPath")
+
+    def updateLayerPath(self, layer, representationKey="defconQt.QPainterPath"):
+        glyph = layer[self._name]
+        scene = self.scene()
+        path = glyph.getRepresentation(representationKey)
+        self._sceneItems[layer].setPath(path)
+
+    def _getSceneItems(self, key, clear=False):
+        items = self._sceneItems.get(key, None)
+        if items is None:
+            items = []
+            self._sceneItems[key] = items
+        elif clear:
+            scene = self.scene()
+            for item in items:
+                scene.removeItem(item)
+            del items[:]
+        return items
 
     def addComponents(self):
         scene = self.scene()
-        font = self._glyph.getParent()
-        for component in self._glyph.components:
-            glyph = font[component.baseGlyph]
-            path = glyph.getRepresentation("defconQt.QPainterPath")
+        layer = self._layer
+        glyph = self._glyph
+
+        pen, brush = self._getDrawingStyleForLayer(layer, kind='component')
+        components = self._getSceneItems('components', clear=True)
+        for component in glyph.components:
+            if component.baseGlyph not in layer:
+                continue
+            componentGlyph = layer[component.baseGlyph]
+            path = componentGlyph.getRepresentation("defconQt.QPainterPath")
             item = ComponentItem(path, component)
-            item.setZValue(-996)
+            if pen: item.setPen(pen)
+            if brush: item.setBrush(brush)
+            item.setZValue(self._activeLayerZValue)
+            components.append(item)
             scene.addItem(item)
 
     def addAnchors(self):
         scene = self.scene()
+        anchors = self._getSceneItems('anchors', clear=True)
+
         for anchor in self._glyph.anchors:
             item = AnchorItem(anchor, self.transform().m11())
-            item.setZValue(-996)
+            item.setZValue(-992)
+            anchors.append(item)
             scene.addItem(item)
 
     def addPoints(self):
         scene = self.scene()
+
+        pointItems = self._getSceneItems('points', clear=True)
+
         # work out appropriate sizes and
         # skip if the glyph is too small
         pointSize = self._impliedPointSize
@@ -1582,6 +2052,7 @@ class GlyphView(QGraphicsView):
                 points.append((x, y))
                 item = OnCurvePointItem(x, y, onCurve.isSmooth, self._glyph[onCurve.contourIndex],
                     self._glyph[onCurve.contourIndex][onCurve.pointIndex], scale)
+                pointItems.append(item)
                 scene.addItem(item)
                 # off curve
                 for CP in [onCurve.prevCP, onCurve.nextCP]:
@@ -1637,7 +2108,7 @@ class GlyphView(QGraphicsView):
                 self._drawTextAtPoint(text, attributes, (posX, posY), 3)
         '''
 
-    def createAnchor(self):
+    def createAnchor(self, *args):
         scene = self.scene()
         pos = scene._rightClickPos
         if scene._integerPlane:
@@ -1651,51 +2122,42 @@ class GlyphView(QGraphicsView):
             anchor.name = newAnchorName
             self._glyph.appendAnchor(anchor)
 
-    def createComponent(self):
+    def createComponent(self, *args):
         newGlyph, ok = AddComponentDialog.getNewGlyph(self, self._glyph)
         if ok and newGlyph is not None:
             component = Component()
             component.baseGlyph = newGlyph.name
             self._glyph.appendComponent(component)
 
-    def _currentLayerChanged(self, newLayerIndex):
-        comboBox = self.sender()
-        newLayer = comboBox.itemData(newLayerIndex)
-        if newLayer is None:
-            # add a new layer
-            newLayerName, ok = AddLayerDialog.getNewLayerName(self)
-            if ok:
-                self._glyph.layerSet.newLayer(newLayerName)
-                self._currentLayerBox.blockSignals(True)
-                self._currentLayerBox.setCurrentText(newLayerName)
-                self._currentLayerBox.blockSignals(False)
-                newLayer = self._glyph.layerSet[newLayerName]
-            else:
-                return
-        if not self._glyph.name in newLayer:
-            newLayer.newGlyph(self._glyph.name)
-            # TODO: generalize this out, can’t use newStandardGlyph unfortunately
-            newLayer[self._glyph.name].width = self._glyph.width
-            newLayer[self._glyph.name].template = True
-        newGlyph = newLayer[self._glyph.name]
-        self.setGlyph(newGlyph)
+    def _makeLayerGlyph(self, layer):
+        name = self._name
+        layer.newGlyph(name)
+        glyph = layer[name]
+        # TODO: generalize this out, can’t use newStandardGlyph unfortunately
+        glyph.width = self.defaultWidth
 
-    def setGlyph(self, glyph):
+        # This prevents the empty glyph from being saved.
+        # TGlyph sets it to False when the glyph is marked as dirty
+        glyph.template = True
+        return glyph
+
+    def changeCurrentLayer(self, layer):
+        name = self._name
+
+        # set current layer
+        self._layer = layer
+
+        if name in layer:
+            # please redraw
+            self.redraw()
+        else:
+            # no need to redraw, will happen within _layerGlyphAdded
+            self._makeLayerGlyph(layer)
+
+        # TODO: Undo data does not keep track of different layers
         scene = self.scene()
-        self._glyph.removeObserver(self, "Glyph.Changed")
-        self._glyph.layerSet.removeObserver(self, "LayerSet.Changed")
-        # TODO: consider creating a new scene instead of zeroing things out
-        # manually
         scene._dataForUndo = []
         scene._dataForRedo = []
-        self._glyph = glyph
-        app = QApplication.instance()
-        app.setCurrentGlyph(glyph)
-        self._glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
-        self._glyph.layerSet.addObserver(self, "_layersChanged", "LayerSet.Changed")
-        self.parent().setWindowTitle(self._glyph.name, self._glyph.getParent())
-        self.redrawGlyph()
-        self.redrawOtherLayers()
 
     def showEvent(self, event):
         super(GlyphView, self).showEvent(event)

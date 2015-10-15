@@ -3,6 +3,7 @@ from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
+from defconQt.layerSetList import LayerSetList
 from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defconQt.util import platformSpecific
@@ -75,7 +76,7 @@ class Application(QApplication):
 MAX_RECENT_FILES = 6
 
 class InspectorWindow(QWidget):
-    def __init__(self):
+    def __init__(self, font):
         super(InspectorWindow, self).__init__(flags=Qt.Tool)
         self.setWindowTitle("Inspector")
         self._blocked = False
@@ -191,9 +192,16 @@ class InspectorWindow(QWidget):
         transformLayout.addWidget(scaleXYBox, l, 5)
         transformGroup.setLayout(transformLayout)
 
+        layerSetGroup = QGroupBox("Layers", self)
+        layerSetGroup.setFlat(True)
+        layerSetLayout = QGridLayout(self)
+        layerSetLayout.addWidget(LayerSetList(font), 0, 0)
+        layerSetGroup.setLayout(layerSetLayout)
+
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(glyphGroup)
         mainLayout.addWidget(transformGroup)
+        mainLayout.addWidget(layerSetGroup)
         self.setLayout(mainLayout)
 
     def showEvent(self, event):
@@ -1040,7 +1048,8 @@ class MainWindow(QMainWindow):
     def inspector(self):
         app = QApplication.instance()
         if not hasattr(app, 'inspectorWindow'):
-            app.inspectorWindow = InspectorWindow()
+            # FIXME: when font changes, this becomes invalid
+            app.inspectorWindow = InspectorWindow(self.font)
             app.inspectorWindow.show()
         elif app.inspectorWindow.isVisible():
             # toggle
