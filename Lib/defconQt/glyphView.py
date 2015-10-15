@@ -452,7 +452,7 @@ class OnCurvePointItem(QGraphicsPathItem):
         pointIndex = self.getPointIndex()
         children = self.childItems()
         selected = 1
-        if not (children[1].isVisible() or children[1].isSelected()):
+        if not (children[1].isVisible() and children[1].isSelected()):
             selected = 3
 
         firstSibling = self._contour[pointIndex+selected-2]
