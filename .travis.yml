@@ -1,0 +1,21 @@
+language: python
+python:
+  - "3.4"
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq -y python3-pyqt5 python3-flake8
+  - git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab
+  - git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon
+  - git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk
+  - git clone --depth=1 https://github.com/behdad/fonttools.git
+install:
+  - cd fonttools; python setup.py install; cd ..
+  - cd defcon; python setup.py install; cd ..
+  - cd robofab; python setup.py install; cd ..
+  - cd ufo2fdk; python setup.py install; cd ..
+# commands to run tests
+script:
+  - flake8 --config=setup.cfg Lib/defconQt
+# use Ubuntu 14.04LTS trusty
+sudo: required
+dist: trusty
