@@ -543,6 +543,7 @@ smoothWidth = smoothHeight = roundPosition(onCurveSmoothPointSize)# * self._inve
 smoothHalf = smoothWidth / 2.0
 onCurvePenWidth = 1.5
 offCurvePenWidth = 1.0
+startItemDist = 10
 
 anchorSize = 11
 anchorWidth = anchorHeight = roundPosition(anchorSize)
@@ -877,6 +878,44 @@ class OnCurvePointItem(QGraphicsPathItem):
             pen.setColor(onCurvePointStrokeColor)
         self.setPen(pen)
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
+
+class StartPointItem(QGraphicsPathItem):
+    def __init__(self, x, y, angle, scale=1, parent=None):
+        super(StartPointItem, self).__init__(parent)
+        self._angle = 360 - angle
+
+        self.setPointPath(scale)
+        self.setPos(x, y)
+        self.setZValue(-996)
+
+    def setPointPath(self, scale=None):
+        if scale is None:
+            scene = self.scene()
+            if scene is not None:
+                scale = scene.getViewScale()
+            else:
+                scale = 1
+        if scale > 1.30: scale = 1.30
+        elif scale < .6: scale = .6
+        self.prepareGeometryChange()
+        dist = startItemDist / scale
+        path = QPainterPath()
+        line = QLineF(0, 0, 0+dist, 0)
+        line2 = QLineF(line)
+        line.setAngle(self._angle-90)
+        path.lineTo(line.x2(), line.y2())
+        line2.setAngle(self._angle)
+        line2.translate(line.p2()-line.p1())
+        path.lineTo(line2.x2(), line2.y2())
+        line.setP1(line2.p2())
+        line.setAngle(line.angle() - 27.5)
+        line.setLength(2*dist/5)
+        line2.setLength(line2.length() + .5)
+        path.moveTo(line.x2(), line.y2())
+        path.lineTo(line2.x2(), line2.y2())
+        line.setAngle(line.angle() + 55)
+        path.lineTo(line.x2(), line.y2())
+        self.setPath(path)
 
 class AnchorItem(QGraphicsPathItem):
     def __init__(self, anchor, scale=1, parent=None):
@@ -1643,14 +1682,6 @@ class GlyphView(QGraphicsView):
         # will change during lifetime
         self._layer = glyph.layer
 
-        self._impliedPointSize = 1000
-        self._pointSize = None
-
-        # apparently unused code
-        self._inverseScale = 0.1
-        self._scale = 10
-
-        self._noPointSizePadding = 200
         self._drawStroke = True
         self._showOffCurvePoints = True
         self._showOnCurvePoints = True
@@ -1766,7 +1797,7 @@ class GlyphView(QGraphicsView):
             item.setPos(self._glyph.width, item.y())
 
     def activeGlyphChanged(self):
-        # For now, we'll assume not scene._blocked == moving UI points
+        # For now, we'll assume that scene._blocked == moving UI points
         # this will not be the case anymore when drag sidebearings pops up
         scene = self.scene()
         if scene._blocked:
@@ -1963,6 +1994,7 @@ class GlyphView(QGraphicsView):
             # FIXME: don't like this
             scene._outlineItem = item
             self.addComponents()
+            self.addStartPoints()
         return item
 
     def updateActiveLayerPath(self):
@@ -1973,6 +2005,7 @@ class GlyphView(QGraphicsView):
         scene = self.scene()
         path = glyph.getRepresentation(representationKey)
         self._sceneItems[layer].setPath(path)
+        self.addStartPoints()
 
     def _getSceneItems(self, key, clear=False):
         items = self._sceneItems.get(key, None)
@@ -2015,79 +2048,45 @@ class GlyphView(QGraphicsView):
             anchors.append(item)
             scene.addItem(item)
 
+    def addStartPoints(self):
+        scene = self.scene()
+        startPointItems = self._getSceneItems('startPoints', clear=True)
+        startPointsData = self._glyph.getRepresentation("defconQt.StartPointsInformation")
+        path = QPainterPath()
+        for point, angle in startPointsData:
+            x, y = point
+            if angle is not None:
+                item = StartPointItem(x, y, angle, self.transform().m11())
+                startPointItems.append(item)
+                scene.addItem(item)
+
     def addPoints(self):
         scene = self.scene()
-
         pointItems = self._getSceneItems('points', clear=True)
-
-        # work out appropriate sizes and
-        # skip if the glyph is too small
-        pointSize = self._impliedPointSize
-        if pointSize > 550:
-            startPointSize = 21
-            offCurvePointSize = 5
-            onCurvePointSize = 6
-            onCurveSmoothPointSize = 7
-        elif pointSize > 250:
-            startPointSize = 15
-            offCurvePointSize = 3
-            onCurvePointSize = 4
-            onCurveSmoothPointSize = 5
-        elif pointSize > 175:
-            startPointSize = 9
-            offCurvePointSize = 1
-            onCurvePointSize = 2
-            onCurveSmoothPointSize = 3
-        else:
-            return
         # use the data from the outline representation
         outlineData = self._glyph.getRepresentation("defconQt.OutlineInformation")
-        points = [] # TODO: remove this unless we need it # useful for text drawing, add it
-        startObjects = []
         scale = self.transform().m11()
-        if outlineData["onCurvePoints"]:
-            for onCurve in outlineData["onCurvePoints"]:
-                # on curve
-                x, y = onCurve.x, onCurve.y
-                points.append((x, y))
-                item = OnCurvePointItem(x, y, onCurve.isSmooth, self._glyph[onCurve.contourIndex],
-                    self._glyph[onCurve.contourIndex][onCurve.pointIndex], scale)
-                pointItems.append(item)
-                scene.addItem(item)
-                # off curve
-                for CP in [onCurve.prevCP, onCurve.nextCP]:
-                    if CP:
-                        cx, cy = CP
-                        # line
-                        lineObj = HandleLineItem(0, 0, cx-x, cy-y, item)
-                        # point
-                        points.append((cx, cy))
-                        CPObject = OffCurvePointItem(cx-x, cy-y, item)
-                    else:
-                        lineObj = HandleLineItem(0, 0, 0, 0, item)
-                        #lineObj.setVisible(False)
-                        CPObject = OffCurvePointItem(0, 0, item)
-                        CPObject.setVisible(False)
-        '''
-        # start point
-        if self._showOnCurvePoints and outlineData["startPoints"]:
-            startWidth = startHeight = roundPosition(startPointSize)# * self._inverseScale)
-            startHalf = startWidth / 2.0
-            for point, angle in outlineData["startPoints"]:
-                x, y = point
-                # TODO: do we really need to special-case with Qt?
-                if angle is not None:
-                    path = QPainterPath()
-                    path.moveTo(x, y)
-                    path.arcTo(x-startHalf, y-startHalf, 2*startHalf, 2*startHalf, angle-90, -180)
-                    item = scene.addPath(path, QPen(Qt.NoPen), QBrush(self._startPointColor))
-                    startObjects.append(item)
-                    #path.closeSubpath()
+        for onCurve in outlineData:
+            # on curve
+            x, y = onCurve.x, onCurve.y
+            item = OnCurvePointItem(x, y, onCurve.isSmooth, self._glyph[onCurve.contourIndex],
+                self._glyph[onCurve.contourIndex][onCurve.pointIndex], scale)
+            pointItems.append(item)
+            scene.addItem(item)
+            # off curve
+            for CP in [onCurve.prevCP, onCurve.nextCP]:
+                if CP:
+                    cx, cy = CP
+                    # line
+                    lineObj = HandleLineItem(0, 0, cx-x, cy-y, item)
+                    # point
+                    CPObject = OffCurvePointItem(cx-x, cy-y, item)
                 else:
-                    item = scene.addEllipse(x-startHalf, y-startHalf, startWidth, startHeight,
-                        QPen(Qt.NoPen), QBrush(self._startPointColor))
-                    startObjects.append(item)
-            #s.addPath(path, QPen(Qt.NoPen), brush=QBrush(self._startPointColor))
+                    lineObj = HandleLineItem(0, 0, 0, 0, item)
+                    #lineObj.setVisible(False)
+                    CPObject = OffCurvePointItem(0, 0, item)
+                    CPObject.setVisible(False)
+        '''
         # text
         if self._showPointCoordinates and coordinateSize:
             fontSize = 9 * self._inverseScale
@@ -2215,5 +2214,5 @@ class GlyphView(QGraphicsView):
         if scale < 4:
             for item in self.scene().items():
                 if isinstance(item, (OnCurvePointItem, OffCurvePointItem, \
-                  ResizeHandleItem, AnchorItem)):
+                  ResizeHandleItem, AnchorItem, StartPointItem)):
                     item.setPointPath(scale)

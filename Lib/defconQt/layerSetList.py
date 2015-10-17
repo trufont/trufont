@@ -1,15 +1,16 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence, QColor, QPixmap, QIcon
-from PyQt5.QtWidgets import QWidget, QMenu, QListWidget, QListWidgetItem, \
-                            QAbstractItemView, QVBoxLayout, QAction, QColorDialog
+from PyQt5.QtWidgets import (QApplication, QWidget, QMenu, QListWidget,
+    QListWidgetItem, QAbstractItemView, QVBoxLayout, QAction, QColorDialog)
 from defconQt import icons_db
 from defconQt.glyphView import AddLayerDialog
 
 class LayerSetList(QListWidget):
-    def __init__(self, font, parent=None, *args, **kwds):
-        super().__init__(parent, *args, **kwds)
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
 
-        self._layerSet = font.layers
+        app = QApplication.instance()
+        self._layerSet = app.currentFont().layers
 
         self.setDragDropMode(QAbstractItemView.InternalMove)
 
@@ -45,13 +46,13 @@ class LayerSetList(QListWidget):
         self.addAction(action)
 
         self._layerSet.addObserver(self, '_update', 'LayerSet.Changed')
-
         self._update()
+
+        app.currentFontChanged.connect(self.updateFont)
 
     def _update(self, *args):
         index = self.currentRow()
-        while self.count():
-            self.takeItem(self.count()-1)
+        self.clear()
         for i, layer in enumerate(self._layerSet):
             item = self._makeItem(layer)
             self.addItem(item)
@@ -133,3 +134,11 @@ class LayerSetList(QListWidget):
         if not layer:
             return
         layer.color = None
+
+    def updateFont(self):
+        if self._layerSet is not None:
+            self._layerSet.removeObserver(self, 'LayerSet.Changed')
+        currentFont = QApplication.instance().currentFont()
+        self._layerSet = currentFont.layers
+        self._layerSet.addObserver(self, '_update', 'LayerSet.Changed')
+        self._update()

@@ -31,6 +31,7 @@ class MainScriptingWindow(QMainWindow):
             "AllFonts": app.allFonts,
             "CurrentFont": app.currentFont,
             "CurrentGlyph": app.currentGlyph,
+            "rootHandle": self,
         }
         try:
             code = compile(script, "<string>", "exec")

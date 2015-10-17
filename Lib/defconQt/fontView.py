@@ -48,11 +48,13 @@ latinDefault = GlyphSet(
 "uni0327","quoteleft","quoteright","minus"],"Latin-default")
 
 class Application(QApplication):
+    currentFontChanged = pyqtSignal()
     currentGlyphChanged = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(Application, self).__init__(*args, **kwargs)
         self._currentGlyph = None
+        self._currentMainWindow = None
 
     def allFonts(self):
         fonts = []
@@ -62,7 +64,7 @@ class Application(QApplication):
                 return fonts
 
     def currentFont(self):
-        return self.currentMainWindow._font
+        return self._currentMainWindow._font
 
     def currentGlyph(self):
         return self._currentGlyph
@@ -72,6 +74,27 @@ class Application(QApplication):
             return
         self._currentGlyph = glyph
         self.currentGlyphChanged.emit()
+        # update currentMainWindow if we need to.
+        # XXX: find a way to update currentMainWindow when we switch to any
+        # child of a MainWindow instead of the MainWindow itself.
+        # Currently, what's below serves for the glyphView but should probably
+        # be expanded.
+        font = glyph.getParent()
+        if font != self.currentFont():
+            for window in QApplication.topLevelWidgets():
+                if isinstance(window, MainWindow):
+                    if window._font == font:
+                        self.setCurrentMainWindow(window)
+                        break
+
+    def currentMainWindow(self):
+        return self._currentMainWindow
+
+    def setCurrentMainWindow(self, mainWindow):
+        if mainWindow == self._currentMainWindow:
+            return
+        self._currentMainWindow = mainWindow
+        self.currentFontChanged.emit()
 
 MAX_RECENT_FILES = 6
 
@@ -630,6 +653,7 @@ class MainWindow(QMainWindow):
 
         windowMenu = QMenu("&Windows", self)
         action = windowMenu.addAction("&Inspector", self.inspector, "Ctrl+I")
+        # XXX: we're getting duplicate shortcut when we spawn a new window...
         action.setShortcutContext(Qt.ApplicationShortcut)
         windowMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Alt+S")
         windowMenu.addAction("&Groups window", self.fontGroups, "Ctrl+Alt+G")
@@ -972,7 +996,7 @@ class MainWindow(QMainWindow):
     def event(self, event):
         if event.type() == QEvent.WindowActivate:
             app = QApplication.instance()
-            app.currentMainWindow = self
+            app.setCurrentMainWindow(self)
             lastSelectedGlyph = self.collectionWidget.lastSelectedGlyph()
             if lastSelectedGlyph is not None:
                 app.setCurrentGlyph(lastSelectedGlyph)
@@ -1051,6 +1075,8 @@ class MainWindow(QMainWindow):
             app.inspectorWindow = InspectorWindow()
             app.inspectorWindow.show()
         elif app.inspectorWindow.isVisible():
+            # TODO: do this only if the widget is user-visible, otherwise the
+            # key press feels as if it did nothing
             # toggle
             app.inspectorWindow.close()
         else:

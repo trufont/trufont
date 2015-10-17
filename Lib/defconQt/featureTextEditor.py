@@ -33,7 +33,8 @@ class MainEditWindow(QMainWindow):
 
     def closeEvent(self, event):
         if self.editor.document().isModified():
-            closeDialog = QMessageBox(QMessageBox.Question, "Me", "Save your changes?",
+            name = QApplication.applicationName()
+            closeDialog = QMessageBox(QMessageBox.Question, name, "Save your changes?",
                   QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
             closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
             closeDialog.setModal(True)
