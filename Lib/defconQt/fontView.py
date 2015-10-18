@@ -218,7 +218,7 @@ class InspectorWindow(QWidget):
         layerSetGroup = QGroupBox("Layers", self)
         layerSetGroup.setFlat(True)
         layerSetLayout = QGridLayout(self)
-        layerSetLayout.addWidget(LayerSetList(app.currentFont()), 0, 0)
+        layerSetLayout.addWidget(LayerSetList(), 0, 0)
         layerSetGroup.setLayout(layerSetLayout)
 
         mainLayout = QVBoxLayout()
