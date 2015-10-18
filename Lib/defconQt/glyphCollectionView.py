@@ -3,7 +3,7 @@ from PyQt5.QtCore import QMimeData, QRectF, QSize, Qt
 from PyQt5.QtGui import (QBrush, QColor, QCursor, QDrag, QFont, QFontMetrics,
     QKeySequence, QLinearGradient, QPainter, QPen)
 from PyQt5.QtWidgets import QApplication, QMessageBox, QScrollArea, QWidget
-import math
+import math, time, unicodedata
 
 cellGridColor = QColor(130, 130, 130)
 cellHeaderBaseColor = QColor(230, 230, 230)
@@ -24,6 +24,8 @@ headerFont.setPointSize(8)
 voidFont = QFont(headerFont)
 voidFont.setPointSize(24)
 metrics = QFontMetrics(headerFont)
+
+arrowKeys = (Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right)
 
 def proceedWithDeletion(self):
     closeDialog = QMessageBox(QMessageBox.Question, "", "Delete glyphs",
@@ -49,6 +51,8 @@ class GlyphCollectionWidget(QWidget):
         self._selection = set()
         self._oldSelection = None
         self._lastSelectedCell = None
+        self._inputString = ""
+        self._lastKeyInputTime = None
 
         self.characterSelectedCallback = None
         self.doubleClickCallback = None
@@ -220,9 +224,13 @@ class GlyphCollectionWidget(QWidget):
     def keyPressEvent(self, event):
         key = event.key()
         modifiers = event.modifiers()
-        if key == Qt.Key_Up or key == Qt.Key_Down or key == Qt.Key_Left \
-            or key == Qt.Key_Right:
+        if key in arrowKeys:
             self._arrowKeyPressEvent(event)
+        elif key == Qt.Key_Enter:
+            index = self._lastSelectedCell
+            if index is not None and self.doubleClickCallback is not None:
+                # TODO: does it still make sense to call this doubleClickCallback?
+                self.doubleClickCallback(self._glyphs[index])
         elif event.matches(QKeySequence.SelectAll):
             self.selection = set(range(len(self._glyphs)))
         elif key == Qt.Key_D and modifiers & Qt.ControlModifier:
@@ -244,6 +252,66 @@ class GlyphCollectionWidget(QWidget):
                         # XXX: have template setter clear glyph content
                         glyph.template = True
                 self.selection = set()
+        elif modifiers in (Qt.NoModifier, Qt.ShiftModifier) and \
+            unicodedata.category(event.text()) != "Cc":
+            # adapted from defconAppkit
+            # get the current time
+            rightNow = time.time()
+            # no time defined. define it.
+            if self._lastKeyInputTime is None:
+                self._lastKeyInputTime = rightNow
+            # if the last input was too long ago,
+            # clear away the old input
+            if rightNow - self._lastKeyInputTime > 0.75:
+                self._inputString = ""
+            # reset the clock
+            self._lastKeyInputTime = rightNow
+            self._inputString = self._inputString + event.text()
+
+            match = None
+            matchIndex = None
+            lastResort = None
+            lastResortIndex = None
+            for index, glyph in enumerate(self._glyphs):
+                item = glyph.name
+                # if the item starts with the input string, it is considered a match
+                if item.startswith(self._inputString):
+                    if match is None:
+                        match = item
+                        matchIndex = index
+                        continue
+                    # only if the item is less than the previous match is it a more relevant match
+                    # example:
+                    # given this order: sys, signal
+                    # and this input string: s
+                    # sys will be the first match, but signal is the more accurate match
+                    if item < match:
+                        match = item
+                        matchIndex = index
+                        continue
+                # if the item is greater than the input string,it can be used as a last resort
+                # example:
+                # given this order: vanilla, zipimport
+                # and this input string: x
+                # zipimport will be used as the last resort
+                if item > self._inputString:
+                    if lastResort is None:
+                        lastResort = item
+                        lastResortIndex = index
+                        continue
+                    # if existing the last resort is greater than the item
+                    # the item is a closer match to the input string
+                    if lastResort > item:
+                        lastResort = item
+                        lastResortIndex
+
+            if matchIndex is not None:
+                newSelection = matchIndex
+            elif lastResortIndex is not None:
+                newSelection = lastResortIndex
+            if newSelection is not None:
+                self.selection = {newSelection}
+                self.lastSelectedCell = newSelection
         else:
             super(GlyphCollectionWidget, self).keyPressEvent(event)
             return
