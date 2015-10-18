@@ -226,7 +226,7 @@ class GlyphCollectionWidget(QWidget):
         modifiers = event.modifiers()
         if key in arrowKeys:
             self._arrowKeyPressEvent(event)
-        elif key == Qt.Key_Enter:
+        elif key == Qt.Key_Return:
             index = self._lastSelectedCell
             if index is not None and self.doubleClickCallback is not None:
                 # TODO: does it still make sense to call this doubleClickCallback?
