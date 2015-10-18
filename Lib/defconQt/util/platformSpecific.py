@@ -10,6 +10,15 @@ if sys.platform == "darwin":
 else:
     fileFormats = "UFO Fonts (metainfo.plist)"
 
+# ---------
+# Font size
+# ---------
+
+if sys.platform == "darwin":
+    headerPointSize = 11
+else:
+    headerPointSize = 8
+
 # ----
 # Keys
 # ----
