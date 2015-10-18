@@ -303,7 +303,8 @@ class GlyphCollectionWidget(QWidget):
                     # the item is a closer match to the input string
                     if lastResort > item:
                         lastResort = item
-                        lastResortIndex
+                        lastResortIndex = index
+                        continue
 
             if matchIndex is not None:
                 newSelection = matchIndex
