@@ -957,8 +957,11 @@ class MainWindow(QMainWindow):
                     glyph.unicode = uni
 
     def settings(self):
-        settingsWindow = SettingsDialog(self)
-        settingsWindow.show()
+        if hasattr(self, 'settingsWindow') and self.settingsWindow.isVisible():
+            self.settingsWindow.raise_()
+        else:
+            self.settingsWindow = SettingsDialog(self)
+            self.settingsWindow.show()
 
     def markColor(self):
         color = self.sender().data()
