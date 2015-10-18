@@ -957,8 +957,8 @@ class MainWindow(QMainWindow):
                     glyph.unicode = uni
 
     def settings(self):
-        dialog = SettingsDialog(self)
-        dialog.open()
+        settingsWindow = SettingsDialog(self)
+        settingsWindow.show()
 
     def markColor(self):
         color = self.sender().data()
