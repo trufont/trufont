@@ -1,4 +1,4 @@
-from defconQt import icons_db
+from defconQt import icons_db  # noqa
 from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGfxWindow
 from getpass import getuser
@@ -488,10 +488,11 @@ class GlyphsCanvas(QWidget):
         # XXX: shouldnt set focus if we are in input field...
         self.setFocus(Qt.MouseFocusReason)
         if event.button() == Qt.LeftButton:
-            if self._verticalFlip:
-                baselineShift = -self.descender
-            else:
-                baselineShift = self.ascender
+            # XXX: investigate, baselineShift is unused
+            # if self._verticalFlip:
+            #     baselineShift = -self.descender
+            # else:
+            #     baselineShift = self.ascender
             found = False
             line = \
                 (event.y() - self.padding) // (self.ptSize * self._lineHeight)
@@ -522,14 +523,14 @@ class GlyphsCanvas(QWidget):
             event.accept()
             self.update()
         else:
-            super(GlyphCanvas, self).mousePressEvent(event)
+            super(GlyphsCanvas, self).mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton and self._selected is not None:
             if self.doubleClickCallback is not None:
                 self.doubleClickCallback(self.glyphs[self._selected])
         else:
-            super(GlyphCanvas, self).mouseDoubleClickEvent(event)
+            super(GlyphsCanvas, self).mouseDoubleClickEvent(event)
 
     def paintEvent(self, event):
         linePen = QPen(Qt.black)

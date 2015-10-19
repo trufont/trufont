@@ -125,10 +125,10 @@ class LayerSetList(QListWidget):
         if not layer:
             return
 
-        startColor = layer.color and QColor.fromRgbF(*layer.color) or \
+        newColor = layer.color and QColor.fromRgbF(*layer.color) or \
             QColor('limegreen')
         qcolor = QColorDialog.getColor(
-            startColor, self, options=QColorDialog.ShowAlphaChannel)
+            newColor, self, options=QColorDialog.ShowAlphaChannel)
         if not qcolor.isValid():
             # cancelled
             return

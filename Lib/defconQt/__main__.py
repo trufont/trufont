@@ -1,5 +1,6 @@
 from defconQt.objects.defcon import TFont
 from defconQt import representationFactories
+from defconQt import icons_db  # noqa
 from defconQt.fontView import Application, MainWindow
 import sys
 import os

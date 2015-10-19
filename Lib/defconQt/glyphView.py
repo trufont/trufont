@@ -3,7 +3,7 @@ from math import copysign
 from functools import partial
 import pickle
 from defcon import Anchor, Component
-from defconQt import icons_db
+from defconQt import icons_db  # noqa
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from defconQt.util import platformSpecific
@@ -802,7 +802,6 @@ class OnCurvePointItem(QGraphicsPathItem):
         else:
             selected = 3
             propagate = 1
-        curValue = children[selected].pos()
         line = children[selected - 1].line()
         children[selected - 1].setLine(line.x1(),
                                        line.y1(), newValue.x(), newValue.y())
@@ -1055,7 +1054,6 @@ class AnchorItem(QGraphicsPathItem):
     def paint(self, painter, option, widget):
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
-        pen = self.pen()
         if option.state & QStyle.State_Selected:
             self.setBrush(anchorSelectionColor)
         else:
@@ -1460,7 +1458,7 @@ class GlyphScene(QGraphicsScene):
                     self.getViewScale())
                 self._addRegisterItem(item)
                 for _ in range(2):
-                    lineObj = HandleLineItem(0, 0, 0, 0, item)
+                    HandleLineItem(0, 0, 0, 0, item)
                     CPObject = OffCurvePointItem(0, 0, item)
                     CPObject.setVisible(False)
                 if isLastOffCurve:
@@ -1478,7 +1476,7 @@ class GlyphScene(QGraphicsScene):
                 self.getViewScale())
             self._addRegisterItem(item)
             for _ in range(2):
-                lineObj = HandleLineItem(0, 0, 0, 0, item)
+                HandleLineItem(0, 0, 0, 0, item)
                 CPObject = OffCurvePointItem(0, 0, item)
                 CPObject.setVisible(False)
             self._editing = True
@@ -2161,7 +2159,7 @@ class GlyphView(QGraphicsView):
     def updateLayerPath(self, layer,
                         representationKey="defconQt.QPainterPath"):
         glyph = layer[self._name]
-        scene = self.scene()
+        # scene = self.scene()  # unused
         path = glyph.getRepresentation(representationKey)
         self._sceneItems[layer].setPath(path)
         self.addStartPoints()
@@ -2214,7 +2212,7 @@ class GlyphView(QGraphicsView):
         startPointItems = self._getSceneItems('startPoints', clear=True)
         startPointsData = self._glyph.getRepresentation(
             "defconQt.StartPointsInformation")
-        path = QPainterPath()
+        # path = QPainterPath()  # unused
         for point, angle in startPointsData:
             x, y = point
             if angle is not None:
@@ -2244,12 +2242,11 @@ class GlyphView(QGraphicsView):
                 if CP:
                     cx, cy = CP
                     # line
-                    lineObj = HandleLineItem(0, 0, cx - x, cy - y, item)
+                    HandleLineItem(0, 0, cx - x, cy - y, item)
                     # point
                     CPObject = OffCurvePointItem(cx - x, cy - y, item)
                 else:
-                    lineObj = HandleLineItem(0, 0, 0, 0, item)
-                    # lineObj.setVisible(False)
+                    HandleLineItem(0, 0, 0, 0, item)
                     CPObject = OffCurvePointItem(0, 0, item)
                     CPObject.setVisible(False)
         '''

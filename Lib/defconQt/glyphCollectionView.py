@@ -17,8 +17,6 @@ cellSelectionColor = QColor.fromRgbF(.2, .3, .7, .15)
 GlyphCellBufferHeight = .2
 GlyphCellHeaderHeight = 14
 
-# TODO: consider extracting each platform-specific thing (fonts, shortcuts) in
-# a autpurposed folder
 headerFont = QFont()
 headerFont.setFamily('Lucida Sans Unicode')
 headerFont.insertSubstitution('Lucida Sans Unicode', 'Lucida Grande')
@@ -265,7 +263,7 @@ class GlyphCollectionWidget(QWidget):
                     glyph = self._glyphs[key]
                     font = glyph.getParent()
                     if modifiers & Qt.ShiftModifier:
-                        del self.font[gName]
+                        del font[glyph.name]
                         # XXX: need a del fn in property
                         del self._glyphs[key]
                     else:
@@ -414,7 +412,7 @@ class GlyphCollectionWidget(QWidget):
                 mimeData.setText(glyphList)
                 drag.setMimeData(mimeData)
 
-                dropAction = drag.exec_()
+                drag.exec_()
                 self._maybeDragPosition = None
                 event.accept()
                 return
@@ -614,8 +612,6 @@ class GlyphCollectionWidget(QWidget):
                         row * self.squareSize + GlyphCellHeaderHeight,
                         self.squareSize,
                         self.squareSize - GlyphCellHeaderHeight)
-                    # TODO: need to flag template glyphs as to whether they
-                    # have unicodings or not
                     if glyph.unicode is not None:
                         text = chr(glyph.unicode)
                     else:

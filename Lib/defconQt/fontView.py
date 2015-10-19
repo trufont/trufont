@@ -9,7 +9,6 @@ from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defconQt.util import platformSpecific
 from defcon import Color, Component
 from defconQt.spaceCenter import MainSpaceWindow
-# TODO: remove globs when things start to stabilize
 from PyQt5.QtCore import (
     pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
 from PyQt5.QtGui import (
@@ -381,11 +380,10 @@ class InspectorWindow(QWidget):
         self._glyph.rightMargin = int(self.nameEdit.text())
         self._blocked = False
 
-# TODO: implement Frederik's Glyph Construction Builder
-
 
 class AddGlyphDialog(QDialog):
 
+    # TODO: implement Frederik's Glyph Construction Builder
     def __init__(self, currentGlyphs=None, parent=None):
         super(AddGlyphDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -430,7 +428,6 @@ class AddGlyphDialog(QDialog):
     def getNewGlyphNames(cls, parent, currentGlyphs=None):
         dialog = cls(currentGlyphs, parent)
         result = dialog.exec_()
-        sortFont = False
         params = dict(
             addUnicode=dialog.addUnicodeBox.isChecked(),
             asTemplate=dialog.addAsTemplateBox.isChecked(),
@@ -441,10 +438,6 @@ class AddGlyphDialog(QDialog):
         for name in dialog.addGlyphEdit.toPlainText().split():
             if name not in dialog.currentGlyphNames:
                 newGlyphNames.append(name)
-        if dialog.sortFontBox.isChecked():
-            # XXX: if we get here with previous sort being by glyph set,
-            # should it just stick?
-            sortFont = True
         return (newGlyphNames, params, result)
 
     def importGlyphs(self, index):
@@ -639,7 +632,6 @@ class MainWindow(QMainWindow):
         self.collectionWidget.setFocus()
 
         menuBar = self.menuBar()
-        settings = QSettings()
         # TODO: make shortcuts platform-independent
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("&New…", self.newFile, QKeySequence.New)
@@ -974,7 +966,6 @@ class MainWindow(QMainWindow):
 
     def copy(self):
         glyphs = self.collectionWidget.glyphs
-        selection = self.collectionWidget.selection
         pickled = []
         for index in sorted(self.collectionWidget.selection):
             pickled.append(glyphs[index].serialize())
@@ -986,7 +977,6 @@ class MainWindow(QMainWindow):
 
     def copyAsComponent(self):
         glyphs = self.collectionWidget.glyphs
-        selection = self.collectionWidget.selection
         pickled = []
         for index in sorted(self.collectionWidget.selection):
             glyph = glyphs[index]
