@@ -1,4 +1,60 @@
-To install this package, type the following in the command line:
+# Dependencies
 
-  python setup.py install
+## Python 3
 
+Learn more: https://docs.python.org/3
+
+MacOS X: Install with [homebrew](http://brew.sh),
+
+    sudo xcodebuild -license ;
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ;
+    brew install python3 ;
+
+## PyQt5
+
+Learn more: https://www.riverbankcomputing.com/software/pyqt
+
+MacOS X: Install with homebrew, or re-install with DBus support,
+
+    brew remove qt5 && brew install qt5 --with-d-bus ;
+
+## fontTools
+
+Learn more: https://github.com/behdad/fonttools
+
+    git clone https://github.com/behdad/fonttools ;
+    cd fonttools/ ;
+    sudo python3 setup.py install ;
+
+## RoboFab
+
+Learn more: http://www.robofab.com
+
+In particular, https://github.com/trufont/robofab/tree/python3-ufo3
+
+    git clone https://github.com/trufont/robofab ;
+    cd robofab ;
+    sudo python3 setup.py install ;
+
+## defcon
+
+Homepage: https://readthedocs.org/projects/ts-defcon
+
+In particular, https://github.com/trufont/defcon/tree/python3-ufo3
+
+    git clone https://github.com/trufont/defcon ;
+    cd robofab ;
+    sudo python3 setup.py install ;
+
+# Trufont
+
+Homepage: https://trufont.github.io
+
+    git clone https://github.com/trufont/trufont ;
+    cd trufront ;
+    sudo python3 setup.py install ;
+
+Or to run from source,
+
+   cd trufont/Lib/ ; 
+   python3 -m defconQt ;
