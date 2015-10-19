@@ -3,7 +3,7 @@ from PyQt5.QtGui import QKeySequence, QColor, QPixmap, QIcon
 from PyQt5.QtWidgets import (
     QApplication, QListWidget, QListWidgetItem, QAbstractItemView, QAction,
     QColorDialog)
-# from defconQt import icons_db
+from defconQt import icons_db  # noqa
 from defconQt.glyphView import AddLayerDialog
 
 
