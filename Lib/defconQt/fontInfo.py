@@ -1,12 +1,19 @@
-from PyQt5.QtCore import *#QDate, QDateTime, QTime, Qt
-from PyQt5.QtGui import *#QDoubleValidator, QIntValidator
-from PyQt5.QtWidgets import *#QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QScrollArea, QTabWidget, QVBoxLayout, QWidget
+from PyQt5.QtCore import QDate, QDateTime, QTime, Qt
+from PyQt5.QtGui import QDoubleValidator, QIntValidator
+from PyQt5.QtWidgets import (
+    QCheckBox, QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox,
+    QGridLayout, QGroupBox, QLabel, QLineEdit, QPlainTextEdit, QTabWidget,
+    QVBoxLayout, QWidget)
+
 
 class InfoTabWidget(QTabWidget):
+
     def addNamedTab(self, tab):
         self.addTab(tab, tab.name)
 
+
 class TabDialog(QDialog):
+
     def __init__(self, font, parent=None):
         super(TabDialog, self).__init__(parent)
         self.font = font
@@ -17,7 +24,8 @@ class TabDialog(QDialog):
         self.tabWidget.addNamedTab(OpenTypeTab(self.font))
         self.tabWidget.addNamedTab(PostScriptTab(self.font))
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
 
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
@@ -27,12 +35,14 @@ class TabDialog(QDialog):
         mainLayout.addWidget(buttonBox)
         self.setLayout(mainLayout)
 
-        self.setWindowTitle("Font Info – %s %s" % (self.font.info.familyName, self.font.info.styleName))
+        self.setWindowTitle("Font Info – %s %s" % (
+            self.font.info.familyName, self.font.info.styleName))
 
     def accept(self):
         for i in range(self.tabWidget.count()):
             self.tabWidget.widget(i).writeValues(self.font)
         super(TabDialog, self).accept()
+
 
 class GeneralTab(QWidget):
     name = "General"
@@ -58,19 +68,22 @@ class GeneralTab(QWidget):
         mainLayout.addWidget(self.designerEdit, 1, 1, 1, 5)
 
         designerURLLabel = QLabel("Designer URL:", self)
-        self.designerURLEdit = QLineEdit(font.info.openTypeNameDesignerURL, self)
+        self.designerURLEdit = QLineEdit(
+            font.info.openTypeNameDesignerURL, self)
 
         mainLayout.addWidget(designerURLLabel, 2, 0)
         mainLayout.addWidget(self.designerURLEdit, 2, 1, 1, 5)
 
         manufacturerLabel = QLabel("Manufacturer:", self)
-        self.manufacturerEdit = QLineEdit(font.info.openTypeNameManufacturer, self)
+        self.manufacturerEdit = QLineEdit(
+            font.info.openTypeNameManufacturer, self)
 
         mainLayout.addWidget(manufacturerLabel, 3, 0)
         mainLayout.addWidget(self.manufacturerEdit, 3, 1, 1, 5)
 
         manufacturerURLLabel = QLabel("Manufacturer URL:", self)
-        self.manufacturerURLEdit = QLineEdit(font.info.openTypeNameManufacturerURL, self)
+        self.manufacturerURLEdit = QLineEdit(
+            font.info.openTypeNameManufacturerURL, self)
 
         mainLayout.addWidget(manufacturerURLLabel, 4, 0)
         mainLayout.addWidget(self.manufacturerURLEdit, 4, 1, 1, 5)
@@ -81,15 +94,22 @@ class GeneralTab(QWidget):
         mainLayout.addWidget(copyrightLabel, 5, 0)
         mainLayout.addWidget(self.copyrightEdit, 5, 1, 1, 5)
 
-        # TODO: give visual feedback of input data validity using QLineEdit lose focus event
-        # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/
+        # TODO: give visual feedback of input data validity using QLineEdit
+        # lose focus event
+        # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/ # noqa
         versionLabel = QLabel("Version:", self)
-        versionMajor = str(font.info.versionMajor) if font.info.versionMajor is not None else ''
+        if font.info.versionMajor is not None:
+            versionMajor = str(font.info.versionMajor)
+        else:
+            versionMajor = ''
         self.versionMajorEdit = QLineEdit(versionMajor, self)
         self.versionMajorEdit.setAlignment(Qt.AlignRight)
         self.versionMajorEdit.setValidator(QIntValidator(self))
         versionDotLabel = QLabel(".", self)
-        versionMinor = str(font.info.versionMinor) if font.info.versionMinor is not None else ''
+        if font.info.versionMinor is not None:
+            versionMinor = str(font.info.versionMinor)
+        else:
+            versionMinor = ''
         self.versionMinorEdit = QLineEdit(versionMinor, self)
         validator = QIntValidator(self)
         validator.setBottom(0)
@@ -102,7 +122,8 @@ class GeneralTab(QWidget):
 
         dateCreatedLabel = QLabel("Date created:", self)
         dateTime = QDateTime()
-        #dateTime.fromString(font.info.openTypeHeadCreated, "yyyy/MM/dd hh:mm:ss") # XXX: why does this not work?
+        # dateTime.fromString(font.info.openTypeHeadCreated, "yyyy/MM/dd
+        # hh:mm:ss") # XXX: why does this not work?
         dateCreated = font.info.openTypeHeadCreated
         if dateCreated:
             parse = dateCreated.split(" ")
@@ -144,30 +165,68 @@ class GeneralTab(QWidget):
 
     def writeValues(self, font):
         familyName = self.familyNameEdit.text()
-        font.info.familyName = familyName if familyName != '' else None
+        if familyName != '':
+            font.info.familyName = familyName
+        else:
+            font.info.trademark = None
         styleName = self.styleNameEdit.text()
-        font.info.styleName = styleName if styleName != '' else None
+        if styleName != '':
+            font.info.styleName = styleName
+        else:
+            font.info.trademark = None
         designer = self.designerEdit.text()
-        font.info.openTypeNameDesigner = designer if designer != '' else None
+        if designer != '':
+            font.info.openTypeNameDesigner = designer
+        else:
+            font.info.trademark = None
         designerURL = self.designerURLEdit.text()
-        font.info.openTypeNameDesignerURL = designerURL if designerURL != '' else None
+        if designerURL != '':
+            font.info.openTypeNameDesignerURL = designerURL
+        else:
+            font.info.trademark = None
         manufacturer = self.manufacturerEdit.text()
-        font.info.openTypeNameManufacturer = manufacturer if manufacturer != '' else None
+        if manufacturer != '':
+            font.info.openTypeNameManufacturer = manufacturer
+        else:
+            font.info.trademark = None
         manufacturerURL = self.manufacturerURLEdit.text()
-        font.info.openTypeNameManufacturerURL = manufacturerURL if manufacturerURL != '' else None
+        if manufacturerURL != '':
+            font.info.openTypeNameManufacturerURL = manufacturerURL
+        else:
+            font.info.trademark = None
         copyright = self.copyrightEdit.text()
-        font.info.copyright = copyright if copyright != '' else None
+        if copyright != '':
+            font.info.copyright = copyright
+        else:
+            font.info.trademark = None
         versionMajor = self.versionMajorEdit.text()
-        font.info.versionMajor = int(versionMajor) if versionMajor else None
+        if versionMajor:
+            font.info.versionMajor = int(versionMajor)
+        else:
+            font.info.versionMajor = None
         versionMinor = self.versionMinorEdit.text()
-        font.info.versionMinor = int(versionMinor) if versionMinor else None
-        font.info.openTypeHeadCreated = self.dateCreatedEdit.dateTime().toString("yyyy/MM/dd hh:mm:ss")
+        if versionMinor:
+            font.info.versionMinor = int(versionMinor)
+        else:
+            font.info.versionMinor = None
+        font.info.openTypeHeadCreated = self.dateCreatedEdit.dateTime(
+        ).toString("yyyy/MM/dd hh:mm:ss")
         license = self.licenseEdit.text()
-        font.info.openTypeNameLicense = license if license != '' else None
+        if license != '':
+            font.info.openTypeNameLicense = license
+        else:
+            font.info.trademark = None
         licenseURL = self.licenseURLEdit.text()
-        font.info.openTypeNameLicenseURL = licenseURL if licenseURL != '' else None
+        if licenseURL != '':
+            font.info.openTypeNameLicenseURL = licenseURL
+        else:
+            font.info.trademark = None
         trademark = self.trademarkEdit.text()
-        font.info.trademark = trademark if trademark != '' else None
+        if trademark != '':
+            font.info.trademark = trademark
+        else:
+            font.info.trademark = None
+
 
 class MetricsTab(QWidget):
     name = "Metrics"
@@ -184,11 +243,16 @@ class MetricsTab(QWidget):
         items = ["None", "Regular", "Italic", "Bold", "Bold Italic"]
         self.styleMapStyleDrop.insertItems(0, items)
         sn = font.info.styleMapStyleName
-        if sn == "regular": self.styleMapStyleDrop.setCurrentIndex(1)
-        elif sn == "regular italic": self.styleMapStyleDrop.setCurrentIndex(2)
-        elif sn == "bold": self.styleMapStyleDrop.setCurrentIndex(3)
-        elif sn == "bold italic": self.styleMapStyleDrop.setCurrentIndex(4)
-        else: self.styleMapStyleDrop.setCurrentIndex(0)
+        if sn == "regular":
+            self.styleMapStyleDrop.setCurrentIndex(1)
+        elif sn == "regular italic":
+            self.styleMapStyleDrop.setCurrentIndex(2)
+        elif sn == "bold":
+            self.styleMapStyleDrop.setCurrentIndex(3)
+        elif sn == "bold italic":
+            self.styleMapStyleDrop.setCurrentIndex(4)
+        else:
+            self.styleMapStyleDrop.setCurrentIndex(0)
 
         mainLayout.addWidget(styleMapFamilyLabel, 0, 0)
         mainLayout.addWidget(self.styleMapFamilyEdit, 0, 1, 1, 3)
@@ -196,19 +260,22 @@ class MetricsTab(QWidget):
         mainLayout.addWidget(self.styleMapStyleDrop, 0, 5)
 
         unitsPerEmLabel = QLabel("Units per em:", self)
-        unitsPerEm = str(font.info.unitsPerEm) if font.info.unitsPerEm is not None else ''
+        unitsPerEm = str(
+            font.info.unitsPerEm) if font.info.unitsPerEm is not None else ''
         self.unitsPerEmEdit = QLineEdit(unitsPerEm, self)
         validator = QIntValidator(self)
         validator.setBottom(0)
         self.unitsPerEmEdit.setValidator(validator)
 
         ascenderLabel = QLabel("Ascender:", self)
-        ascender = str(font.info.ascender) if font.info.ascender is not None else ''
+        ascender = str(
+            font.info.ascender) if font.info.ascender is not None else ''
         self.ascenderEdit = QLineEdit(ascender, self)
         self.ascenderEdit.setValidator(QIntValidator(self))
 
         capHeightLabel = QLabel("Cap height:", self)
-        capHeight = str(font.info.capHeight) if font.info.capHeight is not None else ''
+        capHeight = str(
+            font.info.capHeight) if font.info.capHeight is not None else ''
         self.capHeightEdit = QLineEdit(capHeight, self)
         self.capHeightEdit.setValidator(QIntValidator(self))
 
@@ -220,17 +287,20 @@ class MetricsTab(QWidget):
         mainLayout.addWidget(self.capHeightEdit, 1, 5)
 
         italicAngleLabel = QLabel("Italic angle:", self)
-        italicAngle = str(font.info.italicAngle) if font.info.italicAngle is not None else ''
+        italicAngle = str(
+            font.info.italicAngle) if font.info.italicAngle is not None else ''
         self.italicAngleEdit = QLineEdit(italicAngle, self)
         self.italicAngleEdit.setValidator(QDoubleValidator(self))
 
         descenderLabel = QLabel("Descender:", self)
-        descender = str(font.info.descender) if font.info.descender is not None else ''
+        descender = str(
+            font.info.descender) if font.info.descender is not None else ''
         self.descenderEdit = QLineEdit(descender, self)
         self.descenderEdit.setValidator(QIntValidator(self))
 
         xHeightLabel = QLabel("x-height:", self)
-        xHeight = str(font.info.xHeight) if font.info.xHeight is not None else ''
+        xHeight = str(
+            font.info.xHeight) if font.info.xHeight is not None else ''
         self.xHeightEdit = QLineEdit(xHeight, self)
         self.xHeightEdit.setValidator(QIntValidator(self))
 
@@ -251,27 +321,69 @@ class MetricsTab(QWidget):
 
     def writeValues(self, font):
         styleMapFamilyName = self.styleMapFamilyEdit.text()
-        font.info.styleMapFamilyName = styleMapFamilyName if styleMapFamilyName != '' else None
+        if styleMapFamilyName != '':
+            font.info.styleMapFamilyName = styleMapFamilyName
+        else:
+            font.info.styleMapFamilyName = None
         sn = self.styleMapStyleDrop.currentIndex()
-        if sn == 1: font.info.styleMapStyleName = "regular"
-        elif sn == 2: font.info.styleMapStyleName = "italic"
-        elif sn == 3: font.info.styleMapStyleName = "bold"
-        elif sn == 4: font.info.styleMapStyleName = "bold italic"
-        else: font.info.styleMapStyleName = None
+        if sn == 1:
+            font.info.styleMapStyleName = "regular"
+        elif sn == 2:
+            font.info.styleMapStyleName = "italic"
+        elif sn == 3:
+            font.info.styleMapStyleName = "bold"
+        elif sn == 4:
+            font.info.styleMapStyleName = "bold italic"
+        else:
+            font.info.styleMapStyleName = None
         unitsPerEm = self.unitsPerEmEdit.text()
-        font.info.unitsPerEm = float(unitsPerEm) if "." in unitsPerEm else int(unitsPerEm) if unitsPerEm else None
+        if "." in unitsPerEm:
+            font.info.unitsPerEm = float(unitsPerEm)
+        elif unitsPerEm:
+            font.info.unitsPerEm = int(unitsPerEm)
+        else:
+            font.info.unitsPerEm = None
         italicAngle = self.italicAngleEdit.text()
-        font.info.italicAngle = float(italicAngle) if "." in italicAngle else int(italicAngle) if italicAngle else None
+        if "." in italicAngle:
+            font.info.italicAngle = float(italicAngle)
+        elif italicAngle:
+            font.info.italicAngle = int(italicAngle)
+        else:
+            font.info.italicAngle = None
         ascender = self.ascenderEdit.text()
-        font.info.ascender = float(ascender) if "." in ascender else int(ascender) if ascender else None
+        if "." in ascender:
+            font.info.ascender = float(ascender)
+        elif ascender:
+            font.info.ascender = int(ascender)
+        else:
+            font.info.ascender = None
         descender = self.descenderEdit.text()
-        font.info.descender = float(descender) if "." in descender else int(descender) if descender else None
+        if "." in descender:
+            font.info.descender = float(descender)
+        elif descender:
+            font.info.descender = int(descender)
+        else:
+            font.info.descender = None
         capHeight = self.capHeightEdit.text()
-        font.info.capHeight = float(capHeight) if "." in capHeight else int(capHeight) if capHeight else None
+        if "." in capHeight:
+            font.info.capHeight = float(capHeight)
+        elif capHeight:
+            font.info.capHeight = int(capHeight)
+        else:
+            font.info.capHeight = None
         xHeight = self.xHeightEdit.text()
-        font.info.xHeight = float(xHeight) if "." in xHeight else int(xHeight) if xHeight else None
+        if "." in xHeight:
+            font.info.xHeight = float(xHeight)
+        elif xHeight:
+            font.info.xHeight = int(xHeight)
+        else:
+            font.info.xHeight = None
         note = self.noteEdit.toPlainText()
-        font.info.note = note if note != '' else None
+        if note != '':
+            font.info.note = note
+        else:
+            font.info.note = None
+
 
 class OpenTypeTab(QWidget):
     name = "OpenType"
@@ -280,23 +392,28 @@ class OpenTypeTab(QWidget):
         super(OpenTypeTab, self).__init__(parent)
 
         nameGroup = QGroupBox("name table", self)
-        #nameGroup.setFlat(True)
+        # nameGroup.setFlat(True)
         nameLayout = QGridLayout(self)
 
         preferredFamilyNameLabel = QLabel("Pref. Family Name:", self)
-        self.preferredFamilyNameEdit = QLineEdit(font.info.openTypeNamePreferredFamilyName, self)
+        self.preferredFamilyNameEdit = QLineEdit(
+            font.info.openTypeNamePreferredFamilyName, self)
 
         preferredSubfamilyNameLabel = QLabel("Pref. Subfamily Name:", self)
-        self.preferredSubfamilyNameEdit = QLineEdit(font.info.openTypeNamePreferredSubfamilyName, self)
+        self.preferredSubfamilyNameEdit = QLineEdit(
+            font.info.openTypeNamePreferredSubfamilyName, self)
 
         compatibleFullNameLabel = QLabel("Compatible Full Name:", self)
-        self.compatibleFullNameEdit = QLineEdit(font.info.openTypeNameCompatibleFullName, self)
+        self.compatibleFullNameEdit = QLineEdit(
+            font.info.openTypeNameCompatibleFullName, self)
 
         WWSFamilyNameLabel = QLabel("WWS Family Name:", self)
-        self.WWSFamilyNameEdit = QLineEdit(font.info.openTypeNameWWSFamilyName, self)
+        self.WWSFamilyNameEdit = QLineEdit(
+            font.info.openTypeNameWWSFamilyName, self)
 
         WWSSubfamilyNameLabel = QLabel("WWS Subfamily Name:", self)
-        self.WWSSubfamilyNameEdit = QLineEdit(font.info.openTypeNameWWSSubfamilyName, self)
+        self.WWSSubfamilyNameEdit = QLineEdit(
+            font.info.openTypeNameWWSSubfamilyName, self)
 
         versionLabel = QLabel("Version:", self)
         self.versionEdit = QLineEdit(font.info.openTypeNameVersion, self)
@@ -305,7 +422,8 @@ class OpenTypeTab(QWidget):
         self.uniqueIDEdit = QLineEdit(font.info.openTypeNameUniqueID, self)
 
         descriptionLabel = QLabel("Description:", self)
-        self.descriptionEdit = QLineEdit(font.info.openTypeNameDescription, self)
+        self.descriptionEdit = QLineEdit(
+            font.info.openTypeNameDescription, self)
 
         sampleTextLabel = QLabel("Sample text:", self)
         self.sampleTextEdit = QLineEdit(font.info.openTypeNameSampleText, self)
@@ -336,36 +454,54 @@ class OpenTypeTab(QWidget):
         nameGroup.setLayout(nameLayout)
 
         hheaGroup = QGroupBox("hhea table", self)
-        #hheaGroup.setFlat(True)
+        # hheaGroup.setFlat(True)
         hheaLayout = QGridLayout(self)
 
         ascenderLabel = QLabel("Ascender:", self)
-        ascender = str(font.info.openTypeHheaAscender) if font.info.openTypeHheaAscender is not None else ''
+        if font.info.openTypeHheaAscender is not None:
+            ascender = str(font.info.openTypeHheaAscender)
+        else:
+            ascender = ''
         self.ascenderEdit = QLineEdit(ascender, self)
         self.ascenderEdit.setValidator(QIntValidator(self))
 
         descenderLabel = QLabel("Descender:", self)
-        descender = str(font.info.openTypeHheaDescender) if font.info.openTypeHheaDescender is not None else ''
+        if font.info.openTypeHheaDescender is not None:
+            descender = str(font.info.openTypeHheaDescender)
+        else:
+            descender = ''
         self.descenderEdit = QLineEdit(descender, self)
         self.descenderEdit.setValidator(QIntValidator(self))
 
         lineGapLabel = QLabel("LineGap:", self)
-        lineGap = str(font.info.openTypeHheaLineGap) if font.info.openTypeHheaLineGap is not None else ''
+        if font.info.openTypeHheaLineGap is not None:
+            lineGap = str(font.info.openTypeHheaLineGap)
+        else:
+            lineGap = ''
         self.lineGapEdit = QLineEdit(lineGap, self)
         self.lineGapEdit.setValidator(QIntValidator(self))
 
         caretSlopeRiseLabel = QLabel("caretSlopeRise:", self)
-        caretSlopeRise = str(font.info.openTypeHheaCaretSlopeRise) if font.info.openTypeHheaCaretSlopeRise is not None else ''
+        if font.info.openTypeHheaCaretSlopeRise is not None:
+            caretSlopeRise = str(font.info.openTypeHheaCaretSlopeRise)
+        else:
+            caretSlopeRise = ''
         self.caretSlopeRiseEdit = QLineEdit(caretSlopeRise, self)
         self.caretSlopeRiseEdit.setValidator(QIntValidator(self))
 
         caretSlopeRunLabel = QLabel("caretSlopeRun:", self)
-        caretSlopeRun = str(font.info.openTypeHheaCaretSlopeRun) if font.info.openTypeHheaCaretSlopeRun is not None else ''
+        if font.info.openTypeHheaCaretSlopeRun is not None:
+            caretSlopeRun = str(font.info.openTypeHheaCaretSlopeRun)
+        else:
+            caretSlopeRun = ''
         self.caretSlopeRunEdit = QLineEdit(caretSlopeRun, self)
         self.caretSlopeRunEdit.setValidator(QIntValidator(self))
 
         caretOffsetLabel = QLabel("caretOffset:", self)
-        caretOffset = str(font.info.openTypeHheaCaretOffset) if font.info.openTypeHheaCaretOffset is not None else ''
+        if font.info.openTypeHheaCaretOffset is not None:
+            caretOffset = str(font.info.openTypeHheaCaretOffset)
+        else:
+            caretOffset = ''
         self.caretOffsetEdit = QLineEdit(caretOffset, self)
         self.caretOffsetEdit.setValidator(QIntValidator(self))
 
@@ -387,36 +523,54 @@ class OpenTypeTab(QWidget):
         hheaGroup.setLayout(hheaLayout)
 
         vheaGroup = QGroupBox("vhea table", self)
-        #vheaGroup.setFlat(True)
+        # vheaGroup.setFlat(True)
         vheaLayout = QGridLayout(self)
 
         vertTypoAscenderLabel = QLabel("vertTypoAscender:", self)
-        vertTypoAscender = str(font.info.openTypeVheaVertTypoAscender) if font.info.openTypeVheaVertTypoAscender is not None else ''
+        if font.info.openTypeVheaVertTypoAscender is not None:
+            vertTypoAscender = str(font.info.openTypeVheaVertTypoAscender)
+        else:
+            vertTypoAscender = ''
         self.vertTypoAscenderEdit = QLineEdit(vertTypoAscender, self)
         self.vertTypoAscenderEdit.setValidator(QIntValidator(self))
 
         vertTypoDescenderLabel = QLabel("vertTypoDescender:", self)
-        vertTypoDescender = str(font.info.openTypeVheaVertTypoDescender) if font.info.openTypeVheaVertTypoDescender is not None else ''
+        if font.info.openTypeVheaVertTypoDescender is not None:
+            vertTypoDescender = str(font.info.openTypeVheaVertTypoDescender)
+        else:
+            vertTypoDescender = ''
         self.vertTypoDescenderEdit = QLineEdit(vertTypoDescender, self)
         self.vertTypoDescenderEdit.setValidator(QIntValidator(self))
 
         vertTypoLineGapLabel = QLabel("vertTypoLineGap:", self)
-        vertTypoLineGap = str(font.info.openTypeVheaVertTypoLineGap) if font.info.openTypeVheaVertTypoLineGap is not None else ''
+        if font.info.openTypeVheaVertTypoLineGap is not None:
+            vertTypoLineGap = str(font.info.openTypeVheaVertTypoLineGap)
+        else:
+            vertTypoLineGap = ''
         self.vertTypoLineGapEdit = QLineEdit(vertTypoLineGap, self)
         self.vertTypoLineGapEdit.setValidator(QIntValidator(self))
 
         vheaCaretSlopeRiseLabel = QLabel("caretSlopeRise:", self)
-        vheaCaretSlopeRise = str(font.info.openTypeVheaCaretSlopeRise) if font.info.openTypeVheaCaretSlopeRise is not None else ''
+        if font.info.openTypeVheaCaretSlopeRise is not None:
+            vheaCaretSlopeRise = str(font.info.openTypeVheaCaretSlopeRise)
+        else:
+            vheaCaretSlopeRise = ''
         self.vheaCaretSlopeRiseEdit = QLineEdit(vheaCaretSlopeRise, self)
         self.vheaCaretSlopeRiseEdit.setValidator(QIntValidator(self))
 
         vheaCaretSlopeRunLabel = QLabel("caretSlopeRun:", self)
-        vheaCaretSlopeRun = str(font.info.openTypeVheaCaretSlopeRun) if font.info.openTypeVheaCaretSlopeRun is not None else ''
+        if font.info.openTypeVheaCaretSlopeRun is not None:
+            vheaCaretSlopeRun = str(font.info.openTypeVheaCaretSlopeRun)
+        else:
+            vheaCaretSlopeRun = ''
         self.vheaCaretSlopeRunEdit = QLineEdit(vheaCaretSlopeRun, self)
         self.vheaCaretSlopeRunEdit.setValidator(QIntValidator(self))
 
         vheaCaretOffsetLabel = QLabel("caretOffset:", self)
-        vheaCaretOffset = str(font.info.openTypeVheaCaretOffset) if font.info.openTypeVheaCaretOffset is not None else ''
+        if font.info.openTypeVheaCaretOffset is not None:
+            vheaCaretOffset = str(font.info.openTypeVheaCaretOffset)
+        else:
+            vheaCaretOffset = ''
         self.vheaCaretOffsetEdit = QLineEdit(vheaCaretOffset, self)
         self.vheaCaretOffsetEdit.setValidator(QIntValidator(self))
 
@@ -445,47 +599,112 @@ class OpenTypeTab(QWidget):
 
     def writeValues(self, font):
         preferredFamilyName = self.preferredFamilyNameEdit.text()
-        font.info.openTypeNamePreferredFamilyName = preferredFamilyName if preferredFamilyName != '' else None
+        if preferredFamilyName != '':
+            font.info.openTypeNamePreferredFamilyName = preferredFamilyName
+        else:
+            font.info.openTypeNamePreferredFamilyName = None
         preferredSubfamilyName = self.preferredSubfamilyNameEdit.text()
-        font.info.openTypeNamePreferredSubfamilyName = preferredSubfamilyName if preferredSubfamilyName != '' else None
+        if preferredSubfamilyName != '':
+            font.info.openTypeNamePreferredSubfamilyName = \
+                preferredSubfamilyName
+        else:
+            font.info.openTypeNamePreferredSubfamilyName = None
         WWSFamilyName = self.WWSFamilyNameEdit.text()
-        font.info.openTypeNameWWSFamilyName = WWSFamilyName if WWSFamilyName != '' else None
+        if WWSFamilyName != '':
+            font.info.openTypeNameWWSFamilyName = WWSFamilyName
+        else:
+            font.info.openTypeNameWWSFamilyName = None
         WWSSubfamilyName = self.WWSSubfamilyNameEdit.text()
-        font.info.openTypeNameWWSSubfamilyName = WWSSubfamilyName if WWSSubfamilyName != '' else None
+        if WWSSubfamilyName != '':
+            font.info.openTypeNameWWSSubfamilyName = WWSSubfamilyName
+        else:
+            font.info.openTypeNameWWSSubfamilyName = None
         compatibleFullName = self.compatibleFullNameEdit.text()
-        font.info.openTypeNameCompatibleFullName = compatibleFullName if compatibleFullName != '' else None
+        if compatibleFullName != '':
+            font.info.openTypeNameCompatibleFullName = compatibleFullName
+        else:
+            font.info.openTypeNameCompatibleFullName = None
         version = self.versionEdit.text()
-        font.info.openTypeNameVersion = version if version != '' else None
+        if version != '':
+            font.info.openTypeNameVersion = version
+        else:
+            font.info.openTypeNameVersion = None
         uniqueID = self.uniqueIDEdit.text()
-        font.info.openTypeNameUniqueID = uniqueID if uniqueID != '' else None
+        if uniqueID != '':
+            font.info.openTypeNameUniqueID = uniqueID
+        else:
+            font.info.openTypeNameUniqueID = None
         description = self.descriptionEdit.text()
-        font.info.openTypeNameDescription = description if description != '' else None
+        if description != '':
+            font.info.openTypeNameDescription = description
+        else:
+            font.info.openTypeNameDescription = None
         sampleText = self.sampleTextEdit.text()
-        font.info.openTypeNameSampleText = sampleText if sampleText != '' else None
+        if sampleText != '':
+            font.info.openTypeNameSampleText = sampleText
+        else:
+            font.info.openTypeNameSampleText = None
         ascender = self.ascenderEdit.text()
-        font.info.openTypeHheaAscender = int(ascender) if ascender != '' else None
+        if ascender != '':
+            font.info.openTypeHheaAscender = int(ascender)
+        else:
+            font.info.openTypeHheaAscender = None
         descender = self.descenderEdit.text()
-        font.info.openTypeHheaDescender = int(descender) if descender != '' else None
+        if descender != '':
+            font.info.openTypeHheaDescender = int(descender)
+        else:
+            font.info.openTypeHheaDescender = None
         lineGap = self.lineGapEdit.text()
-        font.info.openTypeHheaLineGap = int(lineGap) if lineGap != '' else None
+        if lineGap != '':
+            font.info.openTypeHheaLineGap = int(lineGap)
+        else:
+            font.info.openTypeHheaLineGap = None
         caretSlopeRise = self.caretSlopeRiseEdit.text()
-        font.info.openTypeHheaCaretSlopeRise = int(caretSlopeRise) if caretSlopeRise != '' else None
+        if caretSlopeRise != '':
+            font.info.openTypeHheaCaretSlopeRise = int(caretSlopeRise)
+        else:
+            font.info.openTypeHheaCaretSlopeRise = None
         caretSlopeRun = self.caretSlopeRunEdit.text()
-        font.info.openTypeHheaCaretSlopeRun = int(caretSlopeRun) if caretSlopeRun != '' else None
+        if caretSlopeRun != '':
+            font.info.openTypeHheaCaretSlopeRun = int(caretSlopeRun)
+        else:
+            font.info.openTypeHheaCaretSlopeRun = None
         caretOffset = self.caretOffsetEdit.text()
-        font.info.openTypeHheaCaretOffset = int(caretOffset) if caretOffset != '' else None
+        if caretOffset != '':
+            font.info.openTypeHheaCaretOffset = int(caretOffset)
+        else:
+            font.info.openTypeHheaCaretOffset = None
         vertTypoAscender = self.vertTypoAscenderEdit.text()
-        font.info.openTypeVheaAscender = int(vertTypoAscender) if vertTypoAscender != '' else None
+        if vertTypoAscender != '':
+            font.info.openTypeVheaAscender = int(vertTypoAscender)
+        else:
+            font.info.openTypeVheaAscender = None
         vertTypoDescender = self.vertTypoDescenderEdit.text()
-        font.info.openTypeVheaDescender = int(vertTypoDescender) if vertTypoDescender != '' else None
+        if vertTypoDescender != '':
+            font.info.openTypeVheaDescender = int(vertTypoDescender)
+        else:
+            font.info.openTypeVheaDescender = None
         vertTypoLineGap = self.vertTypoLineGapEdit.text()
-        font.info.openTypeVheaLineGap = int(vertTypoLineGap) if vertTypoLineGap != '' else None
+        if vertTypoLineGap != '':
+            font.info.openTypeVheaLineGap = int(vertTypoLineGap)
+        else:
+            font.info.openTypeVheaLineGap = None
         vheaCaretSlopeRise = self.vheaCaretSlopeRiseEdit.text()
-        font.info.openTypeVheaCaretSlopeRise = int(vheaCaretSlopeRise) if vheaCaretSlopeRise != '' else None
+        if vheaCaretSlopeRise != '':
+            font.info.openTypeVheaCaretSlopeRise = int(vheaCaretSlopeRise)
+        else:
+            font.info.openTypeVheaCaretSlopeRise = None
         vheaCaretSlopeRun = self.vheaCaretSlopeRunEdit.text()
-        font.info.openTypeVheaCaretSlopeRun = int(vheaCaretSlopeRun) if vheaCaretSlopeRun != '' else None
+        if vheaCaretSlopeRun != '':
+            font.info.openTypeVheaCaretSlopeRun = int(vheaCaretSlopeRun)
+        else:
+            font.info.openTypeVheaCaretSlopeRun = None
         vheaCaretOffset = self.vheaCaretOffsetEdit.text()
-        font.info.openTypeVheaCaretOffset = int(vheaCaretOffset) if vheaCaretOffset != '' else None
+        if vheaCaretOffset != '':
+            font.info.openTypeVheaCaretOffset = int(vheaCaretOffset)
+        else:
+            font.info.openTypeVheaCaretOffset = None
+
 
 class PostScriptTab(QWidget):
     name = "Postscript"
@@ -494,7 +713,7 @@ class PostScriptTab(QWidget):
         super(PostScriptTab, self).__init__(parent)
 
         namingGroup = QGroupBox("Naming", self)
-        #namingGroup.setFlat(True)
+        # namingGroup.setFlat(True)
         namingLayout = QGridLayout(self)
 
         fontNameLabel = QLabel("FontName:", self)
@@ -507,7 +726,10 @@ class PostScriptTab(QWidget):
         self.weightNameEdit = QLineEdit(font.info.postscriptWeightName, self)
 
         uniqueIDLabel = QLabel("Unique ID:", self)
-        uniqueID = str(font.info.postscriptUniqueID) if font.info.postscriptUniqueID is not None else ''
+        if font.info.postscriptUniqueID is not None:
+            uniqueID = str(font.info.postscriptUniqueID)
+        else:
+            uniqueID = ''
         self.uniqueIDEdit = QLineEdit(uniqueID, self)
         self.uniqueIDEdit.setValidator(QIntValidator(self))
 
@@ -524,23 +746,27 @@ class PostScriptTab(QWidget):
         namingGroup.setLayout(namingLayout)
 
         hintingGroup = QGroupBox("Hinting", self)
-        #hintingGroup.setFlat(True)
+        # hintingGroup.setFlat(True)
         hintingLayout = QGridLayout(self)
 
         blueValuesLabel = QLabel("Blue values:", self)
-        blueValues = " ".join(str(val) for val in font.info.postscriptBlueValues)
+        blueValues = " ".join(str(val)
+                              for val in font.info.postscriptBlueValues)
         self.blueValuesEdit = QLineEdit(blueValues, self)
 
         otherBluesLabel = QLabel("Other blues:", self)
-        otherBlues = " ".join(str(val) for val in font.info.postscriptOtherBlues)
+        otherBlues = " ".join(str(val)
+                              for val in font.info.postscriptOtherBlues)
         self.otherBluesEdit = QLineEdit(otherBlues, self)
 
         familyBluesLabel = QLabel("Family blues:", self)
-        familyBlues = " ".join(str(val) for val in font.info.postscriptFamilyBlues)
+        familyBlues = " ".join(str(val)
+                               for val in font.info.postscriptFamilyBlues)
         self.familyBluesEdit = QLineEdit(familyBlues, self)
 
         familyOtherBluesLabel = QLabel("Family other blues:", self)
-        familyOtherBlues = " ".join(str(val) for val in font.info.postscriptFamilyOtherBlues)
+        familyOtherBlues = " ".join(
+            str(val) for val in font.info.postscriptFamilyOtherBlues)
         self.familyOtherBluesEdit = QLineEdit(familyOtherBlues, self)
 
         l = 0
@@ -556,7 +782,10 @@ class PostScriptTab(QWidget):
         l += 1
 
         blueFuzzLabel = QLabel("Blue fuzz:", self)
-        blueFuzz = str(font.info.postscriptBlueFuzz) if font.info.postscriptBlueFuzz is not None else ''
+        if font.info.postscriptBlueFuzz is not None:
+            blueFuzz = str(font.info.postscriptBlueFuzz)
+        else:
+            blueFuzz = ''
         self.blueFuzzEdit = QLineEdit(blueFuzz, self)
         self.blueFuzzEdit.setValidator(QDoubleValidator(self))
 
@@ -565,7 +794,10 @@ class PostScriptTab(QWidget):
         self.stemSnapHEdit = QLineEdit(stemSnapH, self)
 
         blueScaleLabel = QLabel("Blue scale:", self)
-        blueScale = str(font.info.postscriptBlueScale) if font.info.postscriptBlueScale is not None else ''
+        if font.info.postscriptBlueScale is not None:
+            blueScale = str(font.info.postscriptBlueScale)
+        else:
+            blueScale = ''
         self.blueScaleEdit = QLineEdit(blueScale, self)
         self.blueScaleEdit.setValidator(QDoubleValidator(self))
 
@@ -574,7 +806,10 @@ class PostScriptTab(QWidget):
         self.stemSnapVEdit = QLineEdit(stemSnapV, self)
 
         blueShiftLabel = QLabel("Blue shift:", self)
-        blueShift = str(font.info.postscriptBlueShift) if font.info.postscriptBlueShift is not None else ''
+        if font.info.postscriptBlueShift is not None:
+            blueShift = str(font.info.postscriptBlueShift)
+        else:
+            blueShift = ''
         self.blueShiftEdit = QLineEdit(blueShift, self)
         self.blueShiftEdit.setValidator(QDoubleValidator(self))
 
@@ -582,8 +817,10 @@ class PostScriptTab(QWidget):
         forceBold = font.info.postscriptForceBold
         self.forceBoldBox = QCheckBox(self)
         self.forceBoldBox.setTristate()
-        if forceBold is None: self.forceBoldBox.setCheckState(Qt.PartiallyChecked)
-        else: self.forceBoldBox.setChecked(forceBold)
+        if forceBold is None:
+            self.forceBoldBox.setCheckState(Qt.PartiallyChecked)
+        else:
+            self.forceBoldBox.setChecked(forceBold)
 
         hintingLayout.addWidget(blueFuzzLabel, l, 0)
         hintingLayout.addWidget(self.blueFuzzEdit, l, 1, 1, 2)
@@ -602,31 +839,46 @@ class PostScriptTab(QWidget):
         hintingGroup.setLayout(hintingLayout)
 
         metricsGroup = QGroupBox("Metrics", self)
-        #metricsGroup.setFlat(True)
+        # metricsGroup.setFlat(True)
         metricsLayout = QGridLayout(self)
 
         defaultWidthXLabel = QLabel("DefaultWidthX:", self)
-        defaultWidthX = str(font.info.postscriptDefaultWidthX) if font.info.postscriptDefaultWidthX is not None else ''
+        if font.info.postscriptDefaultWidthX is not None:
+            defaultWidthX = str(font.info.postscriptDefaultWidthX)
+        else:
+            defaultWidthX = ''
         self.defaultWidthXEdit = QLineEdit(defaultWidthX, self)
         self.defaultWidthXEdit.setValidator(QDoubleValidator(self))
 
         underlineThicknessLabel = QLabel("UnderlineThickness:", self)
-        underlineThickness = str(font.info.postscriptUnderlineThickness) if font.info.postscriptUnderlineThickness is not None else ''
+        if font.info.postscriptUnderlineThickness is not None:
+            underlineThickness = str(font.info.postscriptUnderlineThickness)
+        else:
+            underlineThickness = ''
         self.underlineThicknessEdit = QLineEdit(underlineThickness, self)
         self.underlineThicknessEdit.setValidator(QDoubleValidator(self))
 
         nominalWidthXLabel = QLabel("NominalWidthX:", self)
-        nominalWidthX = str(font.info.postscriptNominalWidthX) if font.info.postscriptNominalWidthX is not None else ''
+        if font.info.postscriptNominalWidthX is not None:
+            nominalWidthX = str(font.info.postscriptNominalWidthX)
+        else:
+            nominalWidthX = ''
         self.nominalWidthXEdit = QLineEdit(nominalWidthX, self)
         self.nominalWidthXEdit.setValidator(QDoubleValidator(self))
 
         underlinePositionLabel = QLabel("UnderlinePosition:", self)
-        underlinePosition = str(font.info.postscriptUnderlinePosition) if font.info.postscriptUnderlinePosition is not None else ''
+        if font.info.postscriptUnderlinePosition is not None:
+            underlinePosition = str(font.info.postscriptUnderlinePosition)
+        else:
+            underlinePosition = ''
         self.underlinePositionEdit = QLineEdit(underlinePosition, self)
         self.underlinePositionEdit.setValidator(QDoubleValidator(self))
 
         slantAngleLabel = QLabel("SlantAngle:", self)
-        slantAngle = str(font.info.postscriptSlantAngle) if font.info.postscriptSlantAngle is not None else ''
+        if font.info.postscriptSlantAngle is not None:
+            slantAngle = str(font.info.postscriptSlantAngle)
+        else:
+            slantAngle = ''
         self.slantAngleEdit = QLineEdit(slantAngle, self)
         self.slantAngleEdit.setValidator(QDoubleValidator(self))
 
@@ -634,8 +886,10 @@ class PostScriptTab(QWidget):
         isFixedPitch = font.info.postscriptIsFixedPitch
         self.isFixedPitchBox = QCheckBox(self)
         self.isFixedPitchBox.setTristate()
-        if isFixedPitch is None: self.isFixedPitchBox.setCheckState(Qt.PartiallyChecked)
-        else: self.isFixedPitchBox.setChecked(isFixedPitch)
+        if isFixedPitch is None:
+            self.isFixedPitchBox.setCheckState(Qt.PartiallyChecked)
+        else:
+            self.isFixedPitchBox.setChecked(isFixedPitch)
 
         l = 0
         metricsLayout.addWidget(defaultWidthXLabel, l, 0)
@@ -655,20 +909,24 @@ class PostScriptTab(QWidget):
         metricsGroup.setLayout(metricsLayout)
 
         charactersGroup = QGroupBox("Characters", self)
-        #charactersGroup.setFlat(True)
+        # charactersGroup.setFlat(True)
         charactersLayout = QGridLayout(self)
 
         defaultCharacterLabel = QLabel("Default character:", self)
-        self.defaultCharacterEdit = QLineEdit(font.info.postscriptDefaultCharacter, self)
+        self.defaultCharacterEdit = QLineEdit(
+            font.info.postscriptDefaultCharacter, self)
 
         windowsCharacterSetLabel = QLabel("Windows character set:", self)
         self.windowsCharacterSetDrop = QComboBox(self)
-        items = ["None", "ANSI", "Default", "Symbol", "Macintosh", "Shift JIS", "Hangul", "Hangul (Johab)", "GB2312",
-            "Chinese BIG5", "Greek", "Turkish", "Vietnamese", "Hebrew", "Arabic", "Baltic", "Bitstream",
+        items = [
+            "None", "ANSI", "Default", "Symbol", "Macintosh", "Shift JIS",
+            "Hangul", "Hangul (Johab)", "GB2312", "Chinese BIG5", "Greek",
+            "Turkish", "Vietnamese", "Hebrew", "Arabic", "Baltic", "Bitstream",
             "Cyrillic", "Thai", "Eastern European", "OEM"]
         self.windowsCharacterSetDrop.insertItems(0, items)
         if font.info.postscriptWindowsCharacterSet is not None:
-            self.windowsCharacterSetDrop.setCurrentIndex(font.info.postscriptWindowsCharacterSet)
+            self.windowsCharacterSetDrop.setCurrentIndex(
+                font.info.postscriptWindowsCharacterSet)
 
         l = 0
         charactersLayout.addWidget(defaultCharacterLabel, l, 0)
@@ -686,13 +944,25 @@ class PostScriptTab(QWidget):
 
     def writeValues(self, font):
         fontName = self.fontNameEdit.text()
-        font.info.postscriptFontName = fontName if fontName != '' else None
+        if fontName != '':
+            font.info.postscriptFontName = fontName
+        else:
+            font.info.postscriptFontName = None
         fullName = self.fullNameEdit.text()
-        font.info.postscriptFullName = fullName if fullName != '' else None
+        if fullName != '':
+            font.info.postscriptFullName = fullName
+        else:
+            font.info.postscriptFullName = None
         weightName = self.weightNameEdit.text()
-        font.info.postscriptWeightName = weightName if weightName != '' else None
+        if weightName != '':
+            font.info.postscriptWeightName = weightName
+        else:
+            font.info.postscriptWeightName = None
         uniqueID = self.uniqueIDEdit.text()
-        font.info.postscriptUniqueID = int(uniqueID) if uniqueID != '' else None
+        if uniqueID != '':
+            font.info.postscriptUniqueID = int(uniqueID)
+        else:
+            font.info.postscriptUniqueID = None
         blueValues = self.blueValuesEdit.text().split(" ")
         if blueValues is None:
             font.info.postscriptBlueValues = None
@@ -730,11 +1000,24 @@ class PostScriptTab(QWidget):
                     blues.append(int(blue))
             font.info.postscriptFamilyOtherBlues = blues
         blueFuzz = self.blueFuzzEdit.text()
-        font.info.postscriptBlueFuzz = float(blueFuzz) if "." in blueFuzz else int(blueFuzz) if blueFuzz != '' else None
+        if "." in blueFuzz:
+            font.info.postscriptBlueFuzz = float(blueFuzz)
+        elif blueFuzz != '':
+            font.info.postscriptBlueFuzz = int(blueFuzz)
+        else:
+            font.info.postscriptBlueFuzz = None
         blueScale = self.blueScaleEdit.text()
-        font.info.postscriptBlueScale = float(blueScale) if blueScale != '' else None
+        if blueScale != '':
+            font.info.postscriptBlueScale = float(blueScale)
+        else:
+            font.info.postscriptBlueScale = None
         blueShift = self.blueShiftEdit.text()
-        font.info.postscriptBlueShift = float(blueShift) if "." in blueShift else int(blueShift) if blueShift != '' else None
+        if "." in blueShift:
+            font.info.postscriptBlueShift = float(blueShift)
+        elif blueShift != '':
+            font.info.postscriptBlueShift = int(blueShift)
+        else:
+            font.info.postscriptBlueShift = None
         stemSnapH = self.stemSnapHEdit.text().split(" ")
         if stemSnapH is None:
             font.info.postscriptStemSnapH = None
@@ -759,22 +1042,51 @@ class PostScriptTab(QWidget):
         else:
             font.info.postscriptForceBold = bool(forceBold)
         defaultWidthX = self.defaultWidthXEdit.text()
-        font.info.postscriptDefaultWidthX = float(defaultWidthX) if "." in defaultWidthX else int(defaultWidthX) if defaultWidthX != '' else None
+        if "." in defaultWidthX:
+            font.info.postscriptDefaultWidthX = float(defaultWidthX)
+        elif defaultWidthX != '':
+            font.info.postscriptDefaultWidthX = int(defaultWidthX)
+        else:
+            font.info.postscriptDefaultWidthX = None
         nominalWidthX = self.nominalWidthXEdit.text()
-        font.info.postscriptNominalWidthX = float(nominalWidthX) if "." in nominalWidthX else int(nominalWidthX) if nominalWidthX != '' else None
+        if "." in nominalWidthX:
+            font.info.postscriptNominalWidthX = float(nominalWidthX)
+        elif nominalWidthX != '':
+            font.info.postscriptNominalWidthX = int(nominalWidthX)
+        else:
+            font.info.postscriptNominalWidthX = None
         underlineThickness = self.underlineThicknessEdit.text()
-        font.info.postscriptUnderlineThickness = float(underlineThickness) if "." in underlineThickness else int(underlineThickness) if underlineThickness != '' else None
+        if "." in underlineThickness:
+            font.info.postscriptUnderlineThickness = float(underlineThickness)
+        elif underlineThickness != '':
+            font.info.postscriptUnderlineThickness = \
+                int(underlineThickness)
+        else:
+            font.info.postscriptUnderlineThickness = None
         underlinePosition = self.underlinePositionEdit.text()
-        font.info.postscriptUnderlinePosition = float(underlinePosition) if "." in underlinePosition else int(underlinePosition) if underlinePosition != '' else None
+        if "." in underlinePosition:
+            font.info.postscriptUnderlinePosition = float(underlinePosition)
+        elif underlinePosition != '':
+            font.info.postscriptUnderlinePosition = int(underlinePosition)
+        else:
+            font.info.postscriptUnderlinePosition = None
         slantAngle = self.slantAngleEdit.text()
-        font.info.postscriptSlantAngle = float(slantAngle) if "." in slantAngle else int(slantAngle) if slantAngle != '' else None
+        if "." in slantAngle:
+            font.info.postscriptSlantAngle = float(slantAngle)
+        elif slantAngle != '':
+            font.info.postscriptSlantAngle = int(slantAngle)
+        else:
+                font.info.postscriptSlantAngle = None
         isFixedPitch = self.isFixedPitchBox.checkState()
         if isFixedPitch == Qt.PartiallyChecked:
             font.info.postscriptIsFixedPitch = None
         else:
             font.info.postscriptIsFixedPitch = bool(isFixedPitch)
         defaultCharacter = self.defaultCharacterEdit.text()
-        font.info.postscriptDefaultCharacter = defaultCharacter if defaultCharacter != '' else None
+        if defaultCharacter != '':
+            font.info.postscriptDefaultCharacter = defaultCharacter
+        else:
+            font.info.postscriptDefaultCharacter = None
         windowsCharacterSet = self.windowsCharacterSetDrop.currentIndex()
         if windowsCharacterSet == 0:
             font.info.postscriptWindowsCharacterSet = None

@@ -2,10 +2,13 @@ from defconQt.baseCodeEditor import CodeEditor, CodeHighlighter
 from keyword import kwlist
 import traceback
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QFont, QKeySequence, QTextCharFormat, QTextCursor
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QPlainTextEdit
+from PyQt5.QtGui import (
+    QColor, QFont, QKeySequence, QTextCharFormat, QTextCursor)
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu
+
 
 class MainScriptingWindow(QMainWindow):
+
     def __init__(self):
         super(MainScriptingWindow, self).__init__()
 
@@ -39,6 +42,7 @@ class MainScriptingWindow(QMainWindow):
         except:
             print(traceback.format_exc())
 
+
 class PythonEditor(CodeEditor):
     autocomplete = {
         Qt.Key_ParenLeft: "()",
@@ -69,21 +73,25 @@ class PythonEditor(CodeEditor):
             cursor = self.textCursor()
             ok = cursor.movePosition(QTextCursor.PreviousCharacter)
             if ok:
-                ok = cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 2)
+                ok = cursor.movePosition(
+                    QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 2)
                 if ok and cursor.selectedText() in self.autocomplete.values():
                     cursor.removeSelectedText()
                     event.accept()
                     return
         super(PythonEditor, self).keyPressEvent(event)
 
+
 class PythonHighlighter(CodeHighlighter):
+
     def __init__(self, parent=None):
         super(PythonHighlighter, self).__init__(parent)
 
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground(QColor(34, 34, 34))
         keywordFormat.setFontWeight(QFont.Bold)
-        self.highlightingRules.append(("\\b(%s)\\b" % ("|".join(kwlist)), keywordFormat))
+        self.highlightingRules.append(
+            ("\\b(%s)\\b" % ("|".join(kwlist)), keywordFormat))
 
         singleLineCommentFormat = QTextCharFormat()
         singleLineCommentFormat.setForeground(Qt.darkGray)
@@ -91,8 +99,10 @@ class PythonHighlighter(CodeHighlighter):
 
         classOrFnNameFormat = QTextCharFormat()
         classOrFnNameFormat.setForeground(QColor(96, 106, 161))
-        self.highlightingRules.append(("(?<=\\bclass\\s|def\\s\\b)\\s*(\\w+)", classOrFnNameFormat))
+        self.highlightingRules.append(
+            ("(?<=\\bclass\\s|def\\s\\b)\\s*(\\w+)", classOrFnNameFormat))
 
         quotationFormat = QTextCharFormat()
         quotationFormat.setForeground(QColor(223, 17, 68))
-        self.highlightingRules.append(("'.*'|[\"]{1,3}.*[\"]{1,3}", quotationFormat))
+        self.highlightingRules.append(
+            ("'.*'|[\"]{1,3}.*[\"]{1,3}", quotationFormat))

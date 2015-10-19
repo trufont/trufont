@@ -2,18 +2,23 @@ from defconQt import icons_db
 from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGfxWindow
 from getpass import getuser
-from PyQt5.QtCore import *#QAbstractTableModel, QEvent, QSize, Qt
-from PyQt5.QtGui import *#(QBrush, QColor, QFont, QIcon, QKeySequence, QLinearGradient, QPainter,
-        #QPainterPath, QPalette, QPen)
-from PyQt5.QtWidgets import *#(QAbstractItemView, QActionGroup, QApplication, QComboBox, QGridLayout, QLabel, QLineEdit,
-        #QMainWindow, QMenu, QPushButton, QScrollArea, QStyledItemDelegate, QTableView, QTableWidget, QTableWidgetItem, QVBoxLayout, QSizePolicy, QSpinBox, QToolBar, QWidget)
+from PyQt5.QtCore import QEvent, QSize, Qt
+from PyQt5.QtGui import (
+    QBrush, QColor, QIcon, QIntValidator, QKeySequence, QPainter, QPen)
+from PyQt5.QtWidgets import (
+    QAbstractItemView, QActionGroup, QApplication, QComboBox, QLineEdit, QMenu,
+    QPushButton, QScrollArea, QStyledItemDelegate, QTableWidget,
+    QTableWidgetItem, QVBoxLayout, QSizePolicy, QToolBar, QWidget)
 
 defaultPointSize = 150
 glyphSelectionColor = QColor(cellSelectionColor)
 glyphSelectionColor.setAlphaF(.09)
 
+
 class MainSpaceWindow(QWidget):
-    def __init__(self, font, string=None, pointSize=defaultPointSize, parent=None):
+
+    def __init__(self, font, string=None, pointSize=defaultPointSize,
+                 parent=None):
         super(MainSpaceWindow, self).__init__(parent, Qt.Window)
 
         if string is None:
@@ -27,7 +32,8 @@ class MainSpaceWindow(QWidget):
         self.toolbar = FontToolBar(string, pointSize, self)
         self.canvas = GlyphsCanvas(self.font, self.glyphs, pointSize, self)
         self.table = SpaceTable(self.glyphs, self)
-        self.toolbar.comboBox.currentIndexChanged[str].connect(self.canvas.setPointSize)
+        self.toolbar.comboBox.currentIndexChanged[
+            str].connect(self.canvas.setPointSize)
         self.toolbar.textField.textEdited.connect(self._textChanged)
         self.canvas.doubleClickCallback = self._glyphOpened
         self.canvas.pointSizeCallback = self.toolbar.setPointSize
@@ -50,7 +56,8 @@ class MainSpaceWindow(QWidget):
 
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
-        self.setWindowTitle("Space center – %s %s" % (self.font.info.familyName, self.font.info.styleName))
+        self.setWindowTitle("Space center – %s %s" % (
+            self.font.info.familyName, self.font.info.styleName))
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
@@ -123,7 +130,8 @@ class MainSpaceWindow(QWidget):
             if c == "/":
                 # finishing a previous compile.
                 if compileStack is not None:
-                    # only add the compile if something has been added to the stack.
+                    # only add the compile if something has been added to the
+                    # stack.
                     if compileStack:
                         glyphNames.append("".join(compileStack))
                 # reset the stack.
@@ -132,7 +140,8 @@ class MainSpaceWindow(QWidget):
             elif compileStack is not None:
                 # space. conclude the glyph name compile.
                 if c == " ":
-                    # only add the compile if something has been added to the stack.
+                    # only add the compile if something has been added to the
+                    # stack.
                     catchCompile()
                     compileStack = None
                 # add the character to the stack.
@@ -164,7 +173,7 @@ class MainSpaceWindow(QWidget):
                 continue
             handledGlyphs.add(glyph)
             glyph.removeObserver(self, "Glyph.Changed")
-        #self.glyphs = None
+        # self.glyphs = None
 
     def setGlyphs(self, glyphs):
         # unsubscribe from the old glyphs
@@ -173,22 +182,28 @@ class MainSpaceWindow(QWidget):
         self._subscribeToGlyphs(glyphs)
         glyphNames = []
         for glyph in glyphs:
-            glyphNames.append(chr(glyph.unicode) if glyph.unicode else "".join(("/", glyph.name, " ")))
+            if glyph.unicode:
+                glyphNames.append(chr(glyph.unicode))
+            else:
+                glyphNames.append("".join(("/", glyph.name, " ")))
         self.toolbar.textField.setText("".join(glyphNames))
         # set the records into the view
         self.canvas.setGlyphs(self.glyphs)
         self.table.setGlyphs(self.glyphs)
 
     def resizeEvent(self, event):
-        if self.isVisible(): self.canvas._sizeEvent(event)
+        if self.isVisible():
+            self.canvas._sizeEvent(event)
         super(MainSpaceWindow, self).resizeEvent(event)
 
 pointSizes = [50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500]
 
+
 class FontToolBar(QToolBar):
+
     def __init__(self, string, pointSize, parent=None):
         super(FontToolBar, self).__init__(parent)
-        auxiliaryWidth = self.fontMetrics().width('0')*8
+        auxiliaryWidth = self.fontMetrics().width('0') * 8
         self.leftTextField = QLineEdit(self)
         self.leftTextField.setMaximumWidth(auxiliaryWidth)
         self.textField = QLineEdit(string, self)
@@ -206,11 +221,13 @@ class FontToolBar(QToolBar):
         self.configBar = QPushButton(self)
         self.configBar.setFlat(True)
         self.configBar.setIcon(QIcon(":/resources/settings.svg"))
-        self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px");
+        self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px")
         self.toolsMenu = QMenu(self)
-        showKerning = self.toolsMenu.addAction("Show Kerning", self.showKerning)
+        showKerning = self.toolsMenu.addAction(
+            "Show Kerning", self.showKerning)
         showKerning.setCheckable(True)
-        showMetrics = self.toolsMenu.addAction("Show Metrics", self.showMetrics)
+        showMetrics = self.toolsMenu.addAction(
+            "Show Metrics", self.showMetrics)
         showMetrics.setCheckable(True)
         self.toolsMenu.addSeparator()
         wrapLines = self.toolsMenu.addAction("Wrap lines", self.wrapLines)
@@ -218,13 +235,15 @@ class FontToolBar(QToolBar):
         noWrapLines = self.toolsMenu.addAction("No wrap", self.noWrapLines)
         noWrapLines.setCheckable(True)
         self.toolsMenu.addSeparator()
-        verticalFlip = self.toolsMenu.addAction("Vertical flip", self.verticalFlip)
+        verticalFlip = self.toolsMenu.addAction(
+            "Vertical flip", self.verticalFlip)
         verticalFlip.setCheckable(True)
         """
         lineHeight = QWidgetAction(self.toolsMenu)
         lineHeight.setText("Line height:")
         lineHeightSlider = QSlider(Qt.Horizontal, self)
-        # QSlider works with integers so we'll just divide by 100 what comes out of it
+        # QSlider works with integers so we'll just divide by 100 what comes
+        # out of it
         lineHeightSlider.setMinimum(80)
         lineHeightSlider.setMaximum(160)
         lineHeightSlider.setValue(100)
@@ -238,7 +257,7 @@ class FontToolBar(QToolBar):
         wrapLinesGroup.addAction(wrapLines)
         wrapLinesGroup.addAction(noWrapLines)
         wrapLines.setChecked(True)
-        #self.toolsMenu.setActiveAction(wrapLines)
+        # self.toolsMenu.setActiveAction(wrapLines)
         self.configBar.setMenu(self.toolsMenu)
 
         self.addWidget(self.leftTextField)
@@ -277,7 +296,9 @@ class FontToolBar(QToolBar):
     def noWrapLines(self):
         self.parent().canvas.setWrapLines(False)
 
+
 class GlyphsCanvas(QWidget):
+
     def __init__(self, font, glyphs, pointSize=defaultPointSize, parent=None):
         super(GlyphsCanvas, self).__init__(parent)
         # XXX: make canvas font-agnostic as in defconAppkit and use
@@ -310,7 +331,8 @@ class GlyphsCanvas(QWidget):
 
     def calculateScale(self):
         scale = self.ptSize / self.upm
-        if scale < .01: scale = 0.01
+        if scale < .01:
+            scale = 0.01
         self.scale = scale
 
     def setShowKerning(self, showKerning):
@@ -330,27 +352,36 @@ class GlyphsCanvas(QWidget):
         self.update()
 
     def setWrapLines(self, wrapLines):
-        if self._wrapLines == wrapLines: return
+        if self._wrapLines == wrapLines:
+            return
         self._wrapLines = wrapLines
         if self._wrapLines:
-            sw = self._scrollArea.verticalScrollBar().width() + self._scrollArea.contentsMargins().right()
-            self.resize(self.parent().parent().parent().width() - sw, self.height())
-            self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            sw = self._scrollArea.verticalScrollBar().width(
+            ) + self._scrollArea.contentsMargins().right()
+            self.resize(self.parent().parent().parent().width() -
+                        sw, self.height())
+            self._scrollArea.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarAlwaysOff)
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
-            sh = self._scrollArea.horizontalScrollBar().height() + self._scrollArea.contentsMargins().bottom()
-            self.resize(self.width(), self.parent().parent().parent().height() - sh)
+            sh = self._scrollArea.horizontalScrollBar().height(
+            ) + self._scrollArea.contentsMargins().bottom()
+            self.resize(self.width(), self.parent(
+            ).parent().parent().height() - sh)
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.update()
 
     def fetchFontMetrics(self):
         self.ascender = self.font.info.ascender
-        if self.ascender is None: self.ascender = 750
+        if self.ascender is None:
+            self.ascender = 750
         self.descender = self.font.info.descender
-        if self.descender is None: self.descender = 250
+        if self.descender is None:
+            self.descender = 250
         self.upm = self.font.info.unitsPerEm
-        if self.upm is None or not self.upm > 0: self.upm = 1000
+        if self.upm is None or not self.upm > 0:
+            self.upm = 1000
 
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
@@ -374,28 +405,35 @@ class GlyphsCanvas(QWidget):
                     break
                 cur_len += len(li)
             if line > -1:
-                x = self.padding + pos + width/2
-                y = self.padding + (line+.5)*self.ptSize*self._lineHeight
-                self._scrollArea.ensureVisible(x, y, width/2+20, .5*self.ptSize*self._lineHeight+20)
+                x = self.padding + pos + width / 2
+                y = self.padding + (line + .5) * self.ptSize * self._lineHeight
+                self._scrollArea.ensureVisible(
+                    x, y, width / 2 + 20,
+                    .5 * self.ptSize * self._lineHeight + 20)
         self.update()
 
     def _sizeEvent(self, event):
         if self._wrapLines:
-            sw = self._scrollArea.verticalScrollBar().width() + self._scrollArea.contentsMargins().right()
+            sw = self._scrollArea.verticalScrollBar().width(
+            ) + self._scrollArea.contentsMargins().right()
             self.resize(event.size().width() - sw, self.height())
         else:
-            sh = self._scrollArea.horizontalScrollBar().height() + self._scrollArea.contentsMargins().bottom()
+            sh = self._scrollArea.horizontalScrollBar().height(
+            ) + self._scrollArea.contentsMargins().bottom()
             self.resize(self.width(), event.size().height() - sh)
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
-            # TODO: should it snap to predefined pointSizes? is the scaling factor okay?
+            # TODO: should it snap to predefined pointSizes?
+            #       is the scaling factor okay?
             # XXX: current alg. is not reversible...
             decay = event.angleDelta().y() / 120.0
             scale = round(self.ptSize / 10)
-            if scale == 0 and decay >= 0: scale = 1
+            if scale == 0 and decay >= 0:
+                scale = 1
             newPointSize = self.ptSize + int(decay) * scale
-            if newPointSize <= 0: return
+            if newPointSize <= 0:
+                return
 
             self.setPointSize(newPointSize)
             if self.pointSizeChangedCallback is not None:
@@ -455,7 +493,8 @@ class GlyphsCanvas(QWidget):
             else:
                 baselineShift = self.ascender
             found = False
-            line = (event.y() - self.padding) // (self.ptSize*self._lineHeight)
+            line = \
+                (event.y() - self.padding) // (self.ptSize * self._lineHeight)
             # XXX: Shouldnt // yield an int?
             line = int(line)
             if line >= len(self._positions):
@@ -470,13 +509,14 @@ class GlyphsCanvas(QWidget):
             x = event.x() - self.padding
             for index, data in enumerate(self._positions[line]):
                 pos, width = data
-                if pos <= x and pos+width > x:
+                if pos <= x and pos + width > x:
                     count = 0
                     for i in range(line):
                         count += len(self._positions[i])
-                    self._selected = count+index
+                    self._selected = count + index
                     found = True
-            if not found: self._selected = None
+            if not found:
+                self._selected = None
             if self.selectionChangedCallback is not None:
                 self.selectionChangedCallback(self._selected)
             event.accept()
@@ -495,9 +535,10 @@ class GlyphsCanvas(QWidget):
         linePen = QPen(Qt.black)
         linePen.setWidth(3)
         width = self.width() / self.scale
+
         def paintLineMarks(painter):
             painter.save()
-            painter.scale(self.scale, yDirection*self.scale)
+            painter.scale(self.scale, yDirection * self.scale)
             painter.setPen(linePen)
             painter.drawLine(0, self.ascender, width, self.ascender)
             painter.drawLine(0, 0, width, 0)
@@ -513,23 +554,30 @@ class GlyphsCanvas(QWidget):
         else:
             baselineShift = self.ascender
             yDirection = -1
-        painter.translate(self.padding, self.padding+baselineShift*self.scale*self._lineHeight)
+        painter.translate(self.padding, self.padding +
+                          baselineShift * self.scale * self._lineHeight)
         # TODO: scale painter here to avoid g*scale everywhere below
 
         cur_width = 0
         lines = 1
         self._positions = [[]]
-        if self._showMetrics: paintLineMarks(painter)
+        if self._showMetrics:
+            paintLineMarks(painter)
         for index, glyph in enumerate(self.glyphs):
             # line wrapping
-            gWidth = glyph.width*self.scale
+            gWidth = glyph.width * self.scale
             doKern = index > 0 and self._showKerning and cur_width > 0
             if doKern:
-                kern = self.lookupKerningValue(self.glyphs[index-1].name, glyph.name)*self.scale
-            else: kern = 0
-            if self._wrapLines and cur_width + gWidth + kern + 2*self.padding > self.width():
-                painter.translate(-cur_width, self.ptSize*self._lineHeight)
-                if self._showMetrics: paintLineMarks(painter)
+                kern = self.lookupKerningValue(
+                    self.glyphs[index - 1].name, glyph.name) * self.scale
+            else:
+                kern = 0
+            if (self._wrapLines and
+                    cur_width + gWidth + kern + 2 * self.padding >
+                    self.width()):
+                painter.translate(-cur_width, self.ptSize * self._lineHeight)
+                if self._showMetrics:
+                    paintLineMarks(painter)
                 self._positions.append([(0, gWidth)])
                 cur_width = gWidth
                 lines += 1
@@ -537,29 +585,36 @@ class GlyphsCanvas(QWidget):
                 if doKern:
                     painter.translate(kern, 0)
                 self._positions[-1].append((cur_width, gWidth))
-                cur_width += gWidth+kern
+                cur_width += gWidth + kern
             glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
             painter.save()
-            painter.scale(self.scale, yDirection*self.scale)
+            painter.scale(self.scale, yDirection * self.scale)
             if self._showMetrics:
-                halfDescent = self.descender/2
+                halfDescent = self.descender / 2
                 painter.drawLine(0, 0, 0, halfDescent)
                 painter.drawLine(glyph.width, 0, glyph.width, halfDescent)
             if self._selected is not None and index == self._selected:
-                painter.fillRect(0, self.descender, glyph.width, self.upm, glyphSelectionColor)
+                painter.fillRect(0, self.descender, glyph.width,
+                                 self.upm, glyphSelectionColor)
             painter.fillPath(glyphPath, Qt.black)
             painter.restore()
             painter.translate(gWidth, 0)
 
         scrollMargins = self._scrollArea.contentsMargins()
-        innerHeight = self._scrollArea.height() - scrollMargins.top() - scrollMargins.bottom()
+        innerHeight = self._scrollArea.height() - scrollMargins.top() - \
+            scrollMargins.bottom()
         if not self._wrapLines:
-            innerWidth = self._scrollArea.width() - scrollMargins.left() - scrollMargins.right()
-            width = max(innerWidth, cur_width+self.padding*2)
-        else: width = self.width()
-        self.resize(width, max(innerHeight, lines*self.ptSize*self._lineHeight+2*self.padding))
+            innerWidth = self._scrollArea.width() - scrollMargins.left() - \
+                scrollMargins.right()
+            width = max(innerWidth, cur_width + self.padding * 2)
+        else:
+            width = self.width()
+        self.resize(width, max(innerHeight, lines * self.ptSize *
+                               self._lineHeight + 2 * self.padding))
+
 
 class SpaceTableWidgetItem(QTableWidgetItem):
+
     def setData(self, role, value):
         if role & Qt.EditRole:
             # don't set empty data
@@ -568,10 +623,13 @@ class SpaceTableWidgetItem(QTableWidgetItem):
                 return
         super(SpaceTableWidgetItem, self).setData(role, value)
 
+
 class GlyphCellItemDelegate(QStyledItemDelegate):
+
     def createEditor(self, parent, option, index):
-        editor = super(GlyphCellItemDelegate, self).createEditor(parent, option, index)
-        #editor.setAlignment(Qt.AlignCenter)
+        editor = super(GlyphCellItemDelegate, self).createEditor(
+            parent, option, index)
+        # editor.setAlignment(Qt.AlignCenter)
         editor.setValidator(QIntValidator(self))
         return editor
 
@@ -599,22 +657,24 @@ class GlyphCellItemDelegate(QStyledItemDelegate):
                     if modifiers & Qt.ControlModifier:
                         chg *= 10
                 cur = int(editor.text())
-                editor.setText(str(cur+chg))
+                editor.setText(str(cur + chg))
             self.commitData.emit(editor)
             editor.selectAll()
             return True
         return False
 
+
 class SpaceTable(QTableWidget):
+
     def __init__(self, glyphs, parent=None):
         self.glyphs = glyphs
-        super(SpaceTable, self).__init__(4, len(glyphs)+1, parent)
+        super(SpaceTable, self).__init__(4, len(glyphs) + 1, parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self.setItemDelegate(GlyphCellItemDelegate(self))
         # XXX: dunno why but without updating col count
         # scrollbar reports incorrect height...
         # fillGlyphs() will change this value back
-        self.setColumnCount(len(self.glyphs)+2)
+        self.setColumnCount(len(self.glyphs) + 2)
         data = [None, "Width", "Left", "Right"]
         self._fgOverride = SpaceTableWidgetItem().foreground()
         for index, title in enumerate(data):
@@ -623,14 +683,15 @@ class SpaceTable(QTableWidget):
             item.setForeground(self._fgOverride)
             self.setItem(index, 0, item)
         # let's use this one column to compute the width of others
-        self._cellWidth = .5*self.columnWidth(0)
+        self._cellWidth = .5 * self.columnWidth(0)
         self.setColumnWidth(0, self._cellWidth)
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
 
         # always show a scrollbar to fix layout
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed))
+        self.setSizePolicy(QSizePolicy(
+            QSizePolicy.Preferred, QSizePolicy.Fixed))
         self.fillGlyphs()
         self.resizeRowsToContents()
         self.currentItemChanged.connect(self._itemChanged)
@@ -657,22 +718,28 @@ class SpaceTable(QTableWidget):
         self.blockSignals(False)
 
     def _cellEdited(self, row, col):
-        if row == 0 or col == 0: return
+        if row == 0 or col == 0:
+            return
         item = self.item(row, col).text()
         # Glyphs that do not have outlines leave empty cells, can't convert
         # that to a scalar
-        if not item: return
+        if not item:
+            return
         item = int(item)
         # -1 because the first col contains descriptive text
-        glyph = self.glyphs[col-1]
-        # != comparisons avoid making glyph dirty when editor content is unchanged
+        glyph = self.glyphs[col - 1]
+        # != comparisons avoid making glyph dirty when editor content is
+        # unchanged
         self._editing = True
         if row == 1:
-            if item != glyph.width: glyph.width = item
+            if item != glyph.width:
+                glyph.width = item
         elif row == 2:
-            if item != glyph.leftMargin: glyph.leftMargin = item
+            if item != glyph.leftMargin:
+                glyph.leftMargin = item
         elif row == 3:
-            if item != glyph.rightMargin: glyph.rightMargin = item
+            if item != glyph.rightMargin:
+                glyph.rightMargin = item
         self._editing = False
         # defcon callbacks do the update
 
@@ -715,10 +782,10 @@ class SpaceTable(QTableWidget):
         self.blockSignals(True)
         if glyphIndex is not None:
             # so we can scroll to the item
-            self.setCurrentCell(1, glyphIndex+1)
+            self.setCurrentCell(1, glyphIndex + 1)
         self.setCurrentItem(None)
         if glyphIndex is not None:
-            self.colorColumn(glyphIndex+1)
+            self.colorColumn(glyphIndex + 1)
         else:
             self.colorColumn(glyphIndex)
         self.blockSignals(False)
@@ -727,25 +794,27 @@ class SpaceTable(QTableWidget):
         def glyphTableWidgetItem(content, disableCell=False):
             if isinstance(content, float):
                 content = round(content)
-            if content is not None: content = str(content)
+            if content is not None:
+                content = str(content)
             item = SpaceTableWidgetItem(content)
             if disableCell:
                 item.setFlags(Qt.NoItemFlags)
                 item.setForeground(self._fgOverride)
-            elif content is None: item.setFlags(Qt.ItemIsEnabled)
+            elif content is None:
+                item.setFlags(Qt.ItemIsEnabled)
             # TODO: should fields be centered? I find left-aligned more
             # natural to read, personally...
-            #item.setTextAlignment(Qt.AlignCenter)
+            # item.setTextAlignment(Qt.AlignCenter)
             return item
 
-        self.setColumnCount(len(self.glyphs)+1)
+        self.setColumnCount(len(self.glyphs) + 1)
         for index, glyph in enumerate(self.glyphs):
             # TODO: see about allowing glyph name edit here
-            self.setItem(0, index+1, glyphTableWidgetItem(glyph.name, True))
-            self.setItem(1, index+1, glyphTableWidgetItem(glyph.width))
-            self.setItem(2, index+1, glyphTableWidgetItem(glyph.leftMargin))
-            self.setItem(3, index+1, glyphTableWidgetItem(glyph.rightMargin))
-            self.setColumnWidth(index+1, self._cellWidth)
+            self.setItem(0, index + 1, glyphTableWidgetItem(glyph.name, True))
+            self.setItem(1, index + 1, glyphTableWidgetItem(glyph.width))
+            self.setItem(2, index + 1, glyphTableWidgetItem(glyph.leftMargin))
+            self.setItem(3, index + 1, glyphTableWidgetItem(glyph.rightMargin))
+            self.setColumnWidth(index + 1, self._cellWidth)
 
     def wheelEvent(self, event):
         cur = self.horizontalScrollBar().value()

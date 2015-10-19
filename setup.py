@@ -1,21 +1,20 @@
 #!/usr/bin/env python
-
-import sys
+# import sys
 from distutils.core import setup
 
 try:
-    import fontTools
+    import fontTools  # noqa
 except:
     print("*** Warning: defcon requires FontTools, see:")
     print("    fonttools.sf.net")
 
 try:
-    import robofab
+    import robofab  # noqa
 except:
     print("*** Warning: defcon requires RoboFab, see:")
     print("    robofab.com")
 
-#if "sdist" in sys.argv:
+# if "sdist" in sys.argv:
 #    import os
 #    import subprocess
 #    import shutil
@@ -31,13 +30,13 @@ except:
 #    shutil.rmtree(doctrees)
 
 
-
-setup(name="defconQt",
+setup(
+    name="defconQt",
     version="0.1.0",
     description="A set of Qt interface objects for working with font data.",
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
-#    url="",
+    # url="",
     license="GNU LGPL 2.1/GNU GPL v3",
     packages=[
         "defconQt",
@@ -46,5 +45,5 @@ setup(name="defconQt",
         "defconQt.representationFactories",
         "defconQt.util",
     ],
-    package_dir={"":"Lib"}
+    package_dir={"": "Lib"}
 )

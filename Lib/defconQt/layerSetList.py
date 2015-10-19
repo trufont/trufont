@@ -1,11 +1,14 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence, QColor, QPixmap, QIcon
-from PyQt5.QtWidgets import (QApplication, QWidget, QMenu, QListWidget,
-    QListWidgetItem, QAbstractItemView, QVBoxLayout, QAction, QColorDialog)
-from defconQt import icons_db
+from PyQt5.QtWidgets import (
+    QApplication, QListWidget, QListWidgetItem, QAbstractItemView, QAction,
+    QColorDialog)
+# from defconQt import icons_db
 from defconQt.glyphView import AddLayerDialog
 
+
 class LayerSetList(QListWidget):
+
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
@@ -27,7 +30,7 @@ class LayerSetList(QListWidget):
 
         action = QAction("Change &Name", self)
         action.setShortcuts(QKeySequence('n'))
-        action.triggered.connect(lambda : self.editItem(self.currentItem()))
+        action.triggered.connect(lambda: self.editItem(self.currentItem()))
         self.addAction(action)
 
         action = QAction("Change &Color", self)
@@ -81,7 +84,7 @@ class LayerSetList(QListWidget):
 
         item.setFlags(item.flags() | Qt.ItemIsEditable)
 
-        return item;
+        return item
 
     def _getCurrentLayer(self):
         item = self.currentItem()
@@ -99,7 +102,7 @@ class LayerSetList(QListWidget):
             # because I think we can't handle a font without a default layer
             # TODO: try this
             return
-        del self._layerSet[layer.name];
+        del self._layerSet[layer.name]
 
     def _reordered(self, *args):
         # get a new layer order
@@ -122,8 +125,10 @@ class LayerSetList(QListWidget):
         if not layer:
             return
 
-        startColor = layer.color and QColor.fromRgbF(*layer.color) or QColor('limegreen')
-        qcolor = QColorDialog.getColor(startColor, self, options=QColorDialog.ShowAlphaChannel)
+        startColor = layer.color and QColor.fromRgbF(*layer.color) or \
+            QColor('limegreen')
+        qcolor = QColorDialog.getColor(
+            startColor, self, options=QColorDialog.ShowAlphaChannel)
         if not qcolor.isValid():
             # cancelled
             return

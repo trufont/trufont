@@ -1,10 +1,13 @@
-from PyQt5.QtCore import QRegularExpression, Qt
-from PyQt5.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCursor
+from PyQt5.QtCore import QRegularExpression, Qt, QSize
+from PyQt5.QtGui import (
+    QColor, QFont, QPainter, QSyntaxHighlighter, QTextCursor)
 from PyQt5.QtWidgets import QPlainTextEdit, QWidget
 
 # maybe add closeEvent
 
+
 class LineNumberArea(QWidget):
+
     def __init__(self, editor):
         super(LineNumberArea, self).__init__(editor)
 
@@ -14,7 +17,9 @@ class LineNumberArea(QWidget):
     def paintEvent(self, event):
         self.parent().lineNumberAreaPaintEvent(event)
 
+
 class CodeEditor(QPlainTextEdit):
+
     def __init__(self, text=None, parent=None):
         super(CodeEditor, self).__init__(parent)
         # https://gist.github.com/murphyrandle/2921575
@@ -44,14 +49,17 @@ class CodeEditor(QPlainTextEdit):
 
         block = self.firstVisibleBlock()
         blockNumber = block.blockNumber()
-        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
+        top = int(
+            self.blockBoundingGeometry(block).translated(
+                self.contentOffset()).top())
         bottom = top + int(self.blockBoundingRect(block).height())
 
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(blockNumber + 1)
                 painter.drawText(4, top, self.lineNumbers.width() - 8,
-                    self.fontMetrics().height(), Qt.AlignRight, number)
+                                 self.fontMetrics().height(), Qt.AlignRight,
+                                 number)
             block = block.next()
             top = bottom
             bottom = top + int(self.blockBoundingRect(block).height())
@@ -64,7 +72,8 @@ class CodeEditor(QPlainTextEdit):
             top /= 10
             digits += 1
         # Avoid too frequent geometry changes
-        if digits < 3: digits = 3
+        if digits < 3:
+            digits = 3
         return 10 + self.fontMetrics().width('9') * digits
 
     def updateLineNumberArea(self, rect, dy):
@@ -72,7 +81,7 @@ class CodeEditor(QPlainTextEdit):
             self.lineNumbers.scroll(0, dy)
         else:
             self.lineNumbers.update(0, rect.y(), self.lineNumbers.width(),
-                rect.height())
+                                    rect.height())
 
         if rect.contains(self.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
@@ -84,7 +93,7 @@ class CodeEditor(QPlainTextEdit):
         super(CodeEditor, self).resizeEvent(event)
         cr = self.contentsRect()
         self.lineNumbers.setGeometry(cr.left(), cr.top(),
-            self.lineNumberAreaWidth(), cr.height())
+                                     self.lineNumberAreaWidth(), cr.height())
 
     def findLineIndentLevel(self, cursor):
         indent = 0
@@ -93,12 +102,14 @@ class CodeEditor(QPlainTextEdit):
         cursor.movePosition(QTextCursor.StartOfLine)
         while lineLength > 0:
             cursor.movePosition(QTextCursor.NextCharacter,
-                QTextCursor.KeepAnchor, len(self.indent))
+                                QTextCursor.KeepAnchor, len(self.indent))
             if cursor.selectedText() == self.indent:
                 indent += 1
-            else: break
+            else:
+                break
             # Now move the anchor back to the position()
-            #cursor.movePosition(QTextCursor.NoMove) # shouldn't NoMove work here?
+            # shouldn't NoMove work here?
+            # cursor.movePosition(QTextCursor.NoMove)
             cursor.setPosition(cursor.position())
             lineLength -= 1
         cursor.movePosition(QTextCursor.EndOfLine)
@@ -110,7 +121,8 @@ class CodeEditor(QPlainTextEdit):
             cursor = self.textCursor()
             indentLvl = self.findLineIndentLevel(cursor)
             if self.openBlockDelimiter is not None:
-                cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.PreviousCharacter,
+                                    QTextCursor.KeepAnchor)
                 if cursor.selectedText() == self.openBlockDelimiter:
                     indentLvl += 1
             super(CodeEditor, self).keyPressEvent(event)
@@ -122,8 +134,9 @@ class CodeEditor(QPlainTextEdit):
             cursor.insertText(self.indent)
         elif key == Qt.Key_Backspace:
             cursor = self.textCursor()
-            cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor,
-                  len(self.indent))
+            cursor.movePosition(QTextCursor.PreviousCharacter,
+                                QTextCursor.KeepAnchor,
+                                len(self.indent))
             if cursor.selectedText() == self.indent:
                 cursor.removeSelectedText()
             else:
@@ -136,13 +149,16 @@ class CodeEditor(QPlainTextEdit):
             font = self.font()
             newPointSize = font.pointSize() + event.angleDelta().y() / 120.0
             event.accept()
-            if newPointSize < 6: return
+            if newPointSize < 6:
+                return
             font.setPointSize(newPointSize)
             self.setFont(font)
         else:
             super(CodeEditor, self).wheelEvent(event)
 
+
 class CodeHighlighter(QSyntaxHighlighter):
+
     def __init__(self, parent=None):
         super(CodeHighlighter, self).__init__(parent)
         self.highlightingRules = []
