@@ -9,43 +9,58 @@ from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defconQt.util import platformSpecific
 from defcon import Color, Component
 from defconQt.spaceCenter import MainSpaceWindow
-# TODO: remove globs when things start to stabilize
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import (
+    pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
+from PyQt5.QtGui import (
+    QColor, QCursor, QIcon, QIntValidator, QKeySequence, QPixmap,
+    QRegularExpressionValidator, QTextCursor)
+from PyQt5.QtWidgets import (
+    QAction, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
+    QErrorMessage, QFileDialog, QGridLayout, QGroupBox, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
+    QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
+    QTextEdit, QToolTip, QVBoxLayout, QWidget)
 from collections import OrderedDict
-import os, pickle, traceback
+import os
+import pickle
+import traceback
 
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
 ]
 sortItems = ["alphabetical", "category", "unicode", "script", "suffix",
-    "decompositionBase", "weightedSuffix", "ligature"]
+             "decompositionBase", "weightedSuffix", "ligature"]
 latinDefault = GlyphSet(
-["space","exclam","quotesingle","quotedbl","numbersign","dollar",
-"percent","ampersand","parenleft","parenright","asterisk","plus","comma",
-"hyphen","period","slash","zero","one","two","three","four","five",
-"six","seven","eight","nine","colon","semicolon","less","equal",
-"greater","question","at","A","B","C","D","E","F","G","H","I","J",
-"K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-"bracketleft","backslash","bracketright","asciicircum","underscore","grave",
-"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t",
-"u","v","w","x","y","z","braceleft","bar","braceright","asciitilde","exclamdown",
-"cent","sterling","currency","yen","brokenbar","section","copyright",
-"ordfeminine","guillemotleft","logicalnot","registered","macron","degree",
-"plusminus","twosuperior","threesuperior","mu","paragraph","periodcentered",
-"onesuperior","ordmasculine","guillemotright","onequarter","onehalf",
-"threequarters","questiondown","Agrave","Aacute","Acircumflex","Atilde",
-"Adieresis","Aring","AE","Ccedilla","Egrave","Eacute","Ecircumflex","Edieresis",
-"Igrave","Iacute","Icircumflex","Idieresis","Eth","Ntilde","Ograve","Oacute",
-"Ocircumflex","Otilde","Odieresis","multiply","Oslash","Ugrave","Uacute",
-"Ucircumflex","Udieresis","Yacute","Thorn","germandbls","agrave","aacute",
-"acircumflex","atilde","adieresis","aring","ae","ccedilla","egrave","eacute",
-"ecircumflex","edieresis","igrave","iacute","icircumflex","idieresis","eth",
-"ntilde","ograve","oacute","ocircumflex","otilde","odieresis","divide","oslash",
-"ugrave","uacute","ucircumflex","udieresis","yacute","thorn","ydieresis",
-"dotlessi","gravecomb","acutecomb","uni0302","uni0308","uni030A","tildecomb",
-"uni0327","quoteleft","quoteright","minus"],"Latin-default")
+    ["space", "exclam", "quotesingle", "quotedbl", "numbersign", "dollar",
+     "percent", "ampersand", "parenleft", "parenright", "asterisk", "plus",
+     "comma", "hyphen", "period", "slash", "zero", "one", "two", "three",
+     "four", "five", "six", "seven", "eight", "nine", "colon", "semicolon",
+     "less", "equal", "greater", "question", "at", "A", "B", "C", "D", "E",
+     "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S",
+     "T", "U", "V", "W", "X", "Y", "Z", "bracketleft", "backslash",
+     "bracketright", "asciicircum", "underscore", "grave", "a", "b", "c", "d",
+     "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
+     "t", "u", "v", "w", "x", "y", "z", "braceleft", "bar", "braceright",
+     "asciitilde", "exclamdown", "cent", "sterling", "currency", "yen",
+     "brokenbar", "section", "copyright", "ordfeminine", "guillemotleft",
+     "logicalnot", "registered", "macron", "degree", "plusminus",
+     "twosuperior", "threesuperior", "mu", "paragraph", "periodcentered",
+     "onesuperior", "ordmasculine", "guillemotright", "onequarter", "onehalf",
+     "threequarters", "questiondown", "Agrave", "Aacute", "Acircumflex",
+     "Atilde", "Adieresis", "Aring", "AE", "Ccedilla", "Egrave", "Eacute",
+     "Ecircumflex", "Edieresis", "Igrave", "Iacute", "Icircumflex",
+     "Idieresis", "Eth", "Ntilde", "Ograve", "Oacute", "Ocircumflex",
+     "Otilde", "Odieresis", "multiply", "Oslash", "Ugrave", "Uacute",
+     "Ucircumflex", "Udieresis", "Yacute", "Thorn", "germandbls", "agrave",
+     "aacute", "acircumflex", "atilde", "adieresis", "aring", "ae", "ccedilla",
+     "egrave", "eacute", "ecircumflex", "edieresis", "igrave", "iacute",
+     "icircumflex", "idieresis", "eth", "ntilde", "ograve", "oacute",
+     "ocircumflex", "otilde", "odieresis", "divide", "oslash", "ugrave",
+     "uacute", "ucircumflex", "udieresis", "yacute", "thorn", "ydieresis",
+     "dotlessi", "gravecomb", "acutecomb", "uni0302", "uni0308", "uni030A",
+     "tildecomb", "uni0327", "quoteleft", "quoteright", "minus"],
+    "Latin-default")
+
 
 class Application(QApplication):
     currentFontChanged = pyqtSignal()
@@ -98,7 +113,9 @@ class Application(QApplication):
 
 MAX_RECENT_FILES = 6
 
+
 class InspectorWindow(QWidget):
+
     def __init__(self):
         super(InspectorWindow, self).__init__(flags=Qt.Tool)
         self.setWindowTitle("Inspector")
@@ -108,7 +125,7 @@ class InspectorWindow(QWidget):
         glyphGroup = QGroupBox("Glyph", self)
         glyphGroup.setFlat(True)
         glyphLayout = QGridLayout(self)
-        columnOneWidth = self.fontMetrics().width('0')*7
+        columnOneWidth = self.fontMetrics().width('0') * 7
 
         nameLabel = QLabel("Name:", self)
         self.nameEdit = QLineEdit(self)
@@ -116,7 +133,8 @@ class InspectorWindow(QWidget):
         unicodesLabel = QLabel("Unicode:", self)
         self.unicodesEdit = QLineEdit(self)
         self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
-        unicodesRegExp = QRegularExpression("(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
+        unicodesRegExp = QRegularExpression(
+            "(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
         unicodesValidator = QRegularExpressionValidator(unicodesRegExp, self)
         self.unicodesEdit.setValidator(unicodesValidator)
         widthLabel = QLabel("Width:", self)
@@ -126,12 +144,14 @@ class InspectorWindow(QWidget):
         self.widthEdit.setValidator(QIntValidator(self))
         leftSideBearingLabel = QLabel("Left:", self)
         self.leftSideBearingEdit = QLineEdit(self)
-        self.leftSideBearingEdit.editingFinished.connect(self.writeLeftSideBearing)
+        self.leftSideBearingEdit.editingFinished.connect(
+            self.writeLeftSideBearing)
         self.leftSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.leftSideBearingEdit.setValidator(QIntValidator(self))
         rightSideBearingLabel = QLabel("Right:", self)
         self.rightSideBearingEdit = QLineEdit(self)
-        self.rightSideBearingEdit.editingFinished.connect(self.writeRightSideBearing)
+        self.rightSideBearingEdit.editingFinished.connect(
+            self.writeRightSideBearing)
         self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.rightSideBearingEdit.setValidator(QIntValidator(self))
         markColorLabel = QLabel("Mark:", self)
@@ -239,14 +259,14 @@ class InspectorWindow(QWidget):
         xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
         for contour in self._glyph:
             for point in contour:
-                point.x =  xMin + xMax - point.x
+                point.x = xMin + xMax - point.x
         self._glyph.dirty = True
 
     def vSymmetry(self):
         xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
         for contour in self._glyph:
             for point in contour:
-                point.y =  yMin + yMax - point.y
+                point.y = yMin + yMax - point.y
         self._glyph.dirty = True
 
     def lockMove(self, checked):
@@ -271,7 +291,8 @@ class InspectorWindow(QWidget):
         else:
             sY = self.scaleYEdit.text()
         sX, sY = int(sX) if sX != "" else 1, int(sY) if sY != "" else 1
-        sX /= 100; sY /= 100
+        sX /= 100
+        sY /= 100
         xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
         for contour in self._glyph:
             for point in contour:
@@ -285,26 +306,33 @@ class InspectorWindow(QWidget):
             self._glyph.removeObserver(self, "Glyph.Changed")
         self._glyph = app.currentGlyph()
         if self._glyph is not None:
-            self._glyph.addObserver(self, "updateGlyphAttributes", "Glyph.Changed")
+            self._glyph.addObserver(
+                self, "updateGlyphAttributes", "Glyph.Changed")
         self.updateGlyphAttributes()
 
     def updateGlyphAttributes(self, notification=None):
-        if self._blocked: return
+        if self._blocked:
+            return
+        name = None
+        unicodes = None
+        width = None
+        leftSideBearing = None
+        rightSideBearing = None
         colorStr = "white"
         if self._glyph is not None:
             name = self._glyph.name
-            unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" % u for u in self._glyph.unicodes)
-            width = str(int(self._glyph.width)) if self._glyph.width else None
-            leftSideBearing = str(int(self._glyph.leftMargin)) if self._glyph.leftMargin is not None else None
-            rightSideBearing = str(int(self._glyph.rightMargin)) if self._glyph.rightMargin is not None else None
+            unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" %
+                                u for u in self._glyph.unicodes)
+            if self._glyph.width:
+                width = str(int(self._glyph.width))
+            if self._glyph.leftMargin is not None:
+                leftSideBearing = str(int(self._glyph.leftMargin))
+            if self._glyph.rightMargin is not None:
+                rightSideBearing = str(int(self._glyph.rightMargin))
             if self._glyph.markColor is not None:
-                colorStr = QColor.fromRgbF(*tuple(self._glyph.markColor)).name()
-        else:
-            name = None
-            unicodes = None
-            width = None
-            leftSideBearing = None
-            rightSideBearing = None
+                colorStr = QColor.fromRgbF(
+                    *tuple(self._glyph.markColor)).name()
+
         self.nameEdit.setText(name)
         self.unicodesEdit.setText(unicodes)
         self.widthEdit.setText(width)
@@ -314,13 +342,15 @@ class InspectorWindow(QWidget):
             border: 1px solid black;".format(colorStr))
 
     def writeGlyphName(self):
-        if self._glyph is None: return
+        if self._glyph is None:
+            return
         self._blocked = True
         self._glyph.name = self.nameEdit.text()
         self._blocked = False
 
     def writeUnicodes(self):
-        if self._glyph is None: return
+        if self._glyph is None:
+            return
         self._blocked = True
         unicodes = self.unicodesEdit.text().split(" ")
         if len(unicodes) == 1 and unicodes[0] == "":
@@ -330,25 +360,30 @@ class InspectorWindow(QWidget):
         self._blocked = False
 
     def writeWidth(self):
-        if self._glyph is None: return
+        if self._glyph is None:
+            return
         self._blocked = True
         self._glyph.width = int(self.widthEdit.text())
         self._blocked = False
 
     def writeLeftSideBearing(self):
-        if self._glyph is None: return
+        if self._glyph is None:
+            return
         self._blocked = True
         self._glyph.leftMargin = int(self.leftSideBearingEdit.text())
         self._blocked = False
 
     def writeRightSideBearing(self):
-        if self._glyph is None: return
+        if self._glyph is None:
+            return
         self._blocked = True
         self._glyph.rightMargin = int(self.nameEdit.text())
         self._blocked = False
 
-# TODO: implement Frederik's Glyph Construction Builder
+
 class AddGlyphDialog(QDialog):
+
+    # TODO: implement Frederik's Glyph Construction Builder
     def __init__(self, currentGlyphs=None, parent=None):
         super(AddGlyphDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -372,7 +407,8 @@ class AddGlyphDialog(QDialog):
         self.addAsTemplateBox.setChecked(True)
         self.sortFontBox = QCheckBox("Sort font", self)
         self.overrideBox = QCheckBox("Override", self)
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -392,25 +428,21 @@ class AddGlyphDialog(QDialog):
     def getNewGlyphNames(cls, parent, currentGlyphs=None):
         dialog = cls(currentGlyphs, parent)
         result = dialog.exec_()
-        sortFont = False
         params = dict(
-            addUnicode = dialog.addUnicodeBox.isChecked(),
-            asTemplate = dialog.addAsTemplateBox.isChecked(),
-            override = dialog.overrideBox.isChecked(),
-            sortFont = dialog.sortFontBox.isChecked(),
+            addUnicode=dialog.addUnicodeBox.isChecked(),
+            asTemplate=dialog.addAsTemplateBox.isChecked(),
+            override=dialog.overrideBox.isChecked(),
+            sortFont=dialog.sortFontBox.isChecked(),
         )
         newGlyphNames = []
         for name in dialog.addGlyphEdit.toPlainText().split():
             if name not in dialog.currentGlyphNames:
                 newGlyphNames.append(name)
-        if dialog.sortFontBox.isChecked():
-            # XXX: if we get here with previous sort being by glyph set,
-            # should it just stick?
-            sortFont = True
         return (newGlyphNames, params, result)
 
     def importGlyphs(self, index):
-        if index == 0: return
+        if index == 0:
+            return
         glyphNames = self.importCharDrop.currentData()
         editorNames = self.addGlyphEdit.toPlainText().split()
         currentNames = set(self.currentGlyphNames) ^ set(editorNames)
@@ -427,7 +459,9 @@ class AddGlyphDialog(QDialog):
         self.importCharDrop.setCurrentIndex(0)
         self.addGlyphEdit.setFocus(True)
 
+
 class SortDialog(QDialog):
+
     def __init__(self, desc=None, parent=None):
         super(SortDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -468,7 +502,8 @@ class SortDialog(QDialog):
             line.append(QCheckBox("Ascending", self))
             line.append(QCheckBox("Allow pseudo-unicode", self))
             if self.customSortBox.isChecked():
-                line[0].setCurrentIndex(self.indexFromItemName(desc[i]["type"]))
+                line[0].setCurrentIndex(
+                    self.indexFromItemName(desc[i]["type"]))
                 line[1].setChecked(desc[i]["ascending"])
                 line[2].setChecked(desc[i]["allowPseudoUnicode"])
             else:
@@ -492,7 +527,8 @@ class SortDialog(QDialog):
                 btn.pressed.connect(self._deleteRow)
         self.customSortGroup.setLayout(self.customSortLayout)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -523,15 +559,16 @@ class SortDialog(QDialog):
         self.customSortLayout.addWidget(line[1], i, 1)
         self.customSortLayout.addWidget(line[2], i, 2)
         self.customSortLayout.addWidget(line[3], i, 3)
-        if i == 7: self.sender().setEnabled(False)
+        if i == 7:
+            self.sender().setEnabled(False)
 
     def _deleteRow(self):
         rel = self.sender().property("index")
         desc = self.customDescriptors
-        for i in range(rel+1, len(desc)-1):
-            desc[i][0].setCurrentIndex(desc[i+1][0].currentIndex())
-            desc[i][1].setChecked(desc[i+1][1].isChecked())
-            desc[i][2].setChecked(desc[i+1][2].isChecked())
+        for i in range(rel + 1, len(desc) - 1):
+            desc[i][0].setCurrentIndex(desc[i + 1][0].currentIndex())
+            desc[i][1].setChecked(desc[i + 1][1].isChecked())
+            desc[i][2].setChecked(desc[i + 1][2].isChecked())
         for elem in desc[-1]:
             elem.setParent(None)
         del self.customDescriptors[-1]
@@ -540,7 +577,8 @@ class SortDialog(QDialog):
 
     def indexFromItemName(self, name):
         for index, item in enumerate(sortItems):
-            if name == item: return index
+            if name == item:
+                return index
         print("Unknown descriptor name: %s", name)
         return 0
 
@@ -555,8 +593,10 @@ class SortDialog(QDialog):
         elif dialog.customSortBox.isChecked():
             descriptors = []
             for line in dialog.customDescriptors:
-                descriptors.append(dict(type=line[0].currentText(), ascending=line[1].isChecked(),
-                    allowPseudoUnicode=line[2].isChecked()))
+                descriptors.append(dict(type=line[0].currentText(),
+                                        ascending=line[1].isChecked(),
+                                        allowPseudoUnicode=line[2].isChecked()
+                                        ))
             ret = descriptors
         else:
             ret = cannedDesign
@@ -570,7 +610,9 @@ class SortDialog(QDialog):
         checkBox = self.sender()
         self.customSortGroup.setEnabled(checkBox.isChecked())
 
+
 class MainWindow(QMainWindow):
+
     def __init__(self, font):
         super(MainWindow, self).__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -590,7 +632,6 @@ class MainWindow(QMainWindow):
         self.collectionWidget.setFocus()
 
         menuBar = self.menuBar()
-        settings = QSettings()
         # TODO: make shortcuts platform-independent
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("&New…", self.newFile, QKeySequence.New)
@@ -631,15 +672,16 @@ class MainWindow(QMainWindow):
         green.setData(QColor(Qt.green))
         editMenu.addMenu(markColorMenu)
         editMenu.addAction("Copy", self.copy, QKeySequence.Copy)
-        editMenu.addAction("Copy as component", self.copyAsComponent, "Ctrl+Alt+C")
+        editMenu.addAction("Copy as component",
+                           self.copyAsComponent, "Ctrl+Alt+C")
         editMenu.addAction("Paste", self.paste, QKeySequence.Paste)
         editMenu.addSeparator()
         editMenu.addAction("Settings…", self.settings)
         menuBar.addMenu(editMenu)
 
         fontMenu = QMenu("&Font", self)
-        # TODO: work out sensible shortcuts and make sure they're cross-platform
-        # ready - consider extracting them into separate file?
+        # TODO: work out sensible shortcuts and make sure they're
+        # cross-platform ready - consider extracting them into separate file?
         fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+Alt+G")
         fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+Alt+I")
         fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+Alt+F")
@@ -667,7 +709,7 @@ class MainWindow(QMainWindow):
         self.sqSizeSlider = QSlider(Qt.Horizontal, self)
         self.sqSizeSlider.setMinimum(36)
         self.sqSizeSlider.setMaximum(96)
-        self.sqSizeSlider.setFixedWidth(.9*self.sqSizeSlider.width())
+        self.sqSizeSlider.setFixedWidth(.9 * self.sqSizeSlider.width())
         self.sqSizeSlider.setValue(squareSize)
         self.sqSizeSlider.valueChanged.connect(self._squareSizeChanged)
         self.selectionLabel = QLabel(self)
@@ -689,7 +731,7 @@ class MainWindow(QMainWindow):
         font.info.capHeight = 750
         font.info.xHeight = 500
         defaultGlyphSet = QSettings().value("settings/defaultGlyphSet",
-            latinDefault.name, type=str)
+                                            latinDefault.name, type=str)
         if defaultGlyphSet:
             glyphNames = None
             if defaultGlyphSet == latinDefault.name:
@@ -710,14 +752,18 @@ class MainWindow(QMainWindow):
 
     def openFile(self, path=None):
         if not path:
-            path, ok = QFileDialog.getOpenFileName(self, "Open File", '',
-                    platformSpecific.fileFormats)
-            if not ok: return
+            path, ok = QFileDialog.getOpenFileName(
+                self, "Open File", '',
+                platformSpecific.fileFormats
+            )
+            if not ok:
+                return
         if path:
             if ".plist" in path:
                 path = os.path.dirname(path)
             for window in QApplication.topLevelWidgets():
-                if isinstance(window, MainWindow) and window._font.path == path:
+                if (isinstance(window, MainWindow)
+                        and window._font.path == path):
                     window.raise_()
                     return
             try:
@@ -756,9 +802,10 @@ class MainWindow(QMainWindow):
             ("UFO Font version 3 (*.ufo)", 3),
             ("UFO Fonts version 2 (*.ufo)", 2),
         ])
-        # TODO: see if OSX works nicely with UFO as files, then switch to directory
-        # on platforms that need it
-        dialog = QFileDialog(self, "Save File", None, ";;".join(fileFormats.keys()))
+        # TODO: see if OSX works nicely with UFO as files, then switch
+        # to directory on platforms that need it
+        dialog = QFileDialog(self, "Save File", None,
+                             ";;".join(fileFormats.keys()))
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         ok = dialog.exec_()
         if ok:
@@ -766,7 +813,7 @@ class MainWindow(QMainWindow):
             path = dialog.selectedFiles()[0]
             self.saveFile(path, fileFormats[nameFilter])
             self.setWindowTitle()
-        #return ok
+        # return ok
 
     def export(self):
         try:
@@ -781,18 +828,19 @@ class MainWindow(QMainWindow):
             return
 
         path, ok = QFileDialog.getSaveFileName(self, "Save File", None,
-            "PS OpenType font (*.otf)")
+                                               "PS OpenType font (*.otf)")
         if ok:
             compiler = OTFCompiler()
             # XXX: allow choosing parameters
             reports = compiler.compile(self.font, path, checkOutlines=False,
-                autohint=True, releaseMode=True)
+                                       autohint=True, releaseMode=True)
 
             print(reports["autohint"])
             print(reports["makeotf"])
 
     def setCurrentFile(self, path):
-        if path is None: return
+        if path is None:
+            return
         settings = QSettings()
         recentFiles = settings.value("core/recentFiles", [], type=str)
         if path in recentFiles:
@@ -837,10 +885,14 @@ class MainWindow(QMainWindow):
                 currentFont = os.path.basename(self.font.path.rstrip(os.sep))
             else:
                 currentFont = "Untitled.ufo"
-            body = "Do you want to save the changes you made to “%s”?" % currentFont
-            closeDialog = QMessageBox(QMessageBox.Question, None, body,
-                  QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
-            closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
+            body = "Do you want to save the changes you made to “%s”?" \
+                % currentFont
+            closeDialog = QMessageBox(
+                QMessageBox.Question, None, body,
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                self)
+            closeDialog.setInformativeText(
+                "Your changes will be lost if you don’t save them.")
             closeDialog.setModal(True)
             ret = closeDialog.exec_()
             if ret == QMessageBox.Save:
@@ -901,31 +953,30 @@ class MainWindow(QMainWindow):
                         glyphs.append(glyph)
         else:
             glyphs = [self._font[k] for k in self._font.unicodeData
-                .sortGlyphNames(self._font.keys(), desc)]
+                      .sortGlyphNames(self._font.keys(), desc)]
         self.collectionWidget.glyphs = glyphs
         self._sortDescriptor = desc
 
     sortDescriptor = property(_get_sortDescriptor, _set_sortDescriptor,
-        doc="The sortDescriptor. Takes glyphs from the font and sorts them \
-        when set.")
+                              doc="The sortDescriptor. Takes glyphs from the "
+                              "font and sorts them when set.")
 
     def getGlyphs(self):
         return self.collectionWidget.glyphs
 
     def copy(self):
         glyphs = self.collectionWidget.glyphs
-        selection = self.collectionWidget.selection
         pickled = []
         for index in sorted(self.collectionWidget.selection):
             pickled.append(glyphs[index].serialize())
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
-        mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps(pickled))
+        mimeData.setData("application/x-defconQt-glyph-data",
+                         pickle.dumps(pickled))
         clipboard.setMimeData(mimeData)
 
     def copyAsComponent(self):
         glyphs = self.collectionWidget.glyphs
-        selection = self.collectionWidget.selection
         pickled = []
         for index in sorted(self.collectionWidget.selection):
             glyph = glyphs[index]
@@ -937,14 +988,16 @@ class MainWindow(QMainWindow):
             pickled.append(componentGlyph.serialize())
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
-        mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps(pickled))
+        mimeData.setData("application/x-defconQt-glyph-data",
+                         pickle.dumps(pickled))
         clipboard.setMimeData(mimeData)
 
     def paste(self):
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
         if mimeData.hasFormat("application/x-defconQt-glyph-data"):
-            data = pickle.loads(mimeData.data("application/x-defconQt-glyph-data"))
+            data = pickle.loads(mimeData.data(
+                "application/x-defconQt-glyph-data"))
             glyphs = self.collectionWidget.getSelectedGlyphs()
             if len(data) == len(glyphs):
                 for pickled, glyph in zip(data, glyphs):
@@ -968,7 +1021,8 @@ class MainWindow(QMainWindow):
         glyphs = self.collectionWidget.glyphs
         for key in self.collectionWidget.selection:
             glyph = glyphs[key]
-            glyph.markColor = Color(color.getRgbF() if color is not None else None)
+            glyph.markColor = Color(
+                color.getRgbF() if color is not None else None)
 
     def _fontChanged(self, notification):
         self.collectionWidget.update()
@@ -988,7 +1042,8 @@ class MainWindow(QMainWindow):
                 text = ""
             if not count == 0:
                 text = "%s(%d selected)" % (text, count)
-        else: text = ""
+        else:
+            text = ""
         self.selectionLabel.setText(text)
 
     def _squareSizeChanged(self):
@@ -1006,7 +1061,8 @@ class MainWindow(QMainWindow):
         return super(MainWindow, self).event(event)
 
     def resizeEvent(self, event):
-        if self.isVisible(): self.collectionWidget._sizeEvent(event.size().width())
+        if self.isVisible():
+            self.collectionWidget._sizeEvent(event.size().width())
         super(MainWindow, self).resizeEvent(event)
 
     def setWindowTitle(self, title=None):
@@ -1019,10 +1075,12 @@ class MainWindow(QMainWindow):
 
     def fontInfo(self):
         # If a window is already opened, bring it to the front, else spawn one.
-        # TODO: see about using widget.setAttribute(Qt.WA_DeleteOnClose) otherwise
-        # it seems we're just leaking memory after each close... (both raise_ and
-        # show allocate memory instead of using the hidden widget it seems)
-        if not (hasattr(self, 'fontInfoWindow') and self.fontInfoWindow.isVisible()):
+        # TODO: see about using widget.setAttribute(Qt.WA_DeleteOnClose)
+        # otherwise it seems we're just leaking memory after each close...
+        # (both raise_ and show allocate memory instead of using the hidden
+        # widget it seems)
+        if not (hasattr(self, 'fontInfoWindow')
+                and self.fontInfoWindow.isVisible()):
             self.fontInfoWindow = TabDialog(self.font, self)
             self.fontInfoWindow.show()
         else:
@@ -1032,7 +1090,8 @@ class MainWindow(QMainWindow):
 
     def fontFeatures(self):
         # TODO: see up here
-        if not (hasattr(self, 'fontFeaturesWindow') and self.fontFeaturesWindow.isVisible()):
+        if not (hasattr(self, 'fontFeaturesWindow')
+                and self.fontFeaturesWindow.isVisible()):
             self.fontFeaturesWindow = MainEditWindow(self.font, self)
             self.fontFeaturesWindow.show()
         else:
@@ -1040,8 +1099,10 @@ class MainWindow(QMainWindow):
 
     def spaceCenter(self):
         # TODO: see up here
-        # TODO: show selection in a space center, rewind selection if we raise window (rf)
-        if not (hasattr(self, 'spaceCenterWindow') and self.spaceCenterWindow.isVisible()):
+        # TODO: show selection in a space center, rewind selection if we raise
+        # window (rf)
+        if not (hasattr(self, 'spaceCenterWindow')
+                and self.spaceCenterWindow.isVisible()):
             self.spaceCenterWindow = MainSpaceWindow(self.font, parent=self)
             self.spaceCenterWindow.show()
         else:
@@ -1056,7 +1117,8 @@ class MainWindow(QMainWindow):
 
     def fontGroups(self):
         # TODO: see up here
-        if not (hasattr(self, 'fontGroupsWindow') and self.fontGroupsWindow.isVisible()):
+        if not (hasattr(self, 'fontGroupsWindow')
+                and self.fontGroupsWindow.isVisible()):
             self.fontGroupsWindow = GroupsWindow(self.font, self)
             self.fontGroupsWindow.show()
         else:
@@ -1086,13 +1148,15 @@ class MainWindow(QMainWindow):
             app.inspectorWindow.show()
 
     def sortGlyphs(self):
-        sortDescriptor, ok = SortDialog.getDescriptor(self, self.sortDescriptor)
+        sortDescriptor, ok = SortDialog.getDescriptor(self,
+                                                      self.sortDescriptor)
         if ok:
             self.sortDescriptor = sortDescriptor
 
     def addGlyph(self):
         glyphs = self.collectionWidget.glyphs
-        newGlyphNames, params, ok = AddGlyphDialog.getNewGlyphNames(self, glyphs)
+        newGlyphNames, params, ok = AddGlyphDialog.getNewGlyphNames(
+            self, glyphs)
         if ok:
             sortFont = params.pop("sortFont")
             for name in newGlyphNames:
@@ -1109,22 +1173,26 @@ class MainWindow(QMainWindow):
 
     def about(self):
         name = QApplication.applicationName()
-        QMessageBox.about(self, "About {}".format(name),
-                "<h3>About {}</h3>" \
-                "<p>I am a new UFO-centric font editor and I aim to bring the <b>robofab</b> " \
-                "ecosystem to all main operating systems, in a fast and dependency-free " \
-                "package.</p>".format(name))
+        QMessageBox.about(
+            self, "About {}".format(name),
+            "<h3>About {}</h3>"
+            "<p>I am a new UFO-centric font editor and I aim to bring "
+            "the <b>robofab</b> ecosystem to all main operating systems, "
+            "in a fast and dependency-free package.</p>".format(name))
+
 
 class SettingsDialog(QDialog):
+
     def __init__(self, parent=None):
         super(SettingsDialog, self).__init__(parent)
-        #self.setWindowModality(Qt.WindowModal)
+        # self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Settings")
 
         self.tabWidget = QTabWidget(self)
         self.tabWidget.addTab(GlyphSetTab(self), "Glyph sets")
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -1138,10 +1206,12 @@ class SettingsDialog(QDialog):
             self.tabWidget.widget(i).writeValues()
         super(SettingsDialog, self).accept()
 
+
 def getDefaultGlyphSet(settings=None):
     if settings is None:
         settings = QSettings()
     settings.value("settings/defaultGlyphSet", latinDefault.name, type=str)
+
 
 def readGlyphSets(settings=None):
     if settings is None:
@@ -1159,14 +1229,17 @@ def readGlyphSets(settings=None):
     settings.endArray()
     return glyphSets
 
+
 class GlyphSetTab(QWidget):
+
     def __init__(self, parent=None):
         super(GlyphSetTab, self).__init__(parent)
 
         settings = QSettings()
         self.defaultGlyphSetBox = QCheckBox("Default glyph set:", self)
         self.defaultGlyphSetDrop = QComboBox(self)
-        defaultGlyphSet = settings.value("settings/defaultGlyphSet", latinDefault.name, type=str)
+        defaultGlyphSet = settings.value(
+            "settings/defaultGlyphSet", latinDefault.name, type=str)
         self.defaultGlyphSetBox.toggled.connect(self.toggleGlyphSetDrop)
         self.defaultGlyphSetBox.setChecked(len(defaultGlyphSet))
         self.glyphSets = readGlyphSets()
@@ -1177,10 +1250,12 @@ class GlyphSetTab(QWidget):
         self.glyphSetList.setSortingEnabled(True)
         self.glyphSetContents = QTextEdit(self)
         self.glyphSetContents.setAcceptRichText(False)
-        self.glyphSetList.currentItemChanged.connect(self.updateGlyphSetContents)
+        self.glyphSetList.currentItemChanged.connect(
+            self.updateGlyphSetContents)
         self.glyphSetList.itemChanged.connect(self.renameGlyphSet)
         self._cachedName = None
-        # Normally we should enforce this rather decently in the interface already
+        # Normally we should enforce this rather decently in the interface
+        # already
         if glyphSetNames:
             for glyphSetName in glyphSetNames:
                 item = QListWidgetItem(glyphSetName, self.glyphSetList)
@@ -1196,7 +1271,8 @@ class GlyphSetTab(QWidget):
         self.removeGlyphSetButton.pressed.connect(self.removeGlyphSet)
         self.importButton = QPushButton("Import", self)
         importMenu = QMenu(self)
-        importMenu.addAction("Import from current font", self.importFromCurrentFont)
+        importMenu.addAction("Import from current font",
+                             self.importFromCurrentFont)
         self.importButton.setMenu(importMenu)
 
         mainLayout = QGridLayout()
@@ -1233,7 +1309,8 @@ class GlyphSetTab(QWidget):
 
     def renameGlyphSet(self):
         newKey = self.glyphSetList.currentItem()
-        if newKey is None: return
+        if newKey is None:
+            return
         newKey = newKey.text()
         self.glyphSets[newKey] = self.glyphSets[self._cachedName]
         del self.glyphSets[self._cachedName]
@@ -1263,7 +1340,8 @@ class GlyphSetTab(QWidget):
 
     def writeGlyphSets(self, settings):
         # technically we're already enforcing that this doesn't happen
-        if not len(self.glyphSets): return
+        if not len(self.glyphSets):
+            return
         settings.beginWriteArray("glyphSets", len(self.glyphSets))
         index = 0
         for name, cset in self.glyphSets.items():

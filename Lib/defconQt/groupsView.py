@@ -1,13 +1,17 @@
 from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.util import platformSpecific
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QColor, QPainter
+from PyQt5.QtWidgets import (
+    QAbstractItemView, QGridLayout, QListWidget, QListWidgetItem, QPushButton,
+    QRadioButton, QWidget)
+
 
 class GroupListWidget(QListWidget):
+
     def __init__(self, groupNames, parent=None):
         super(GroupListWidget, self).__init__(parent)
-        #self.setAlternatingRowColors(True)
+        # self.setAlternatingRowColors(True)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSortingEnabled(True)
 
@@ -17,7 +21,7 @@ class GroupListWidget(QListWidget):
         for groupName in groupNames:
             item = QListWidgetItem(groupName, self)
             item.setFlags(item.flags() | Qt.ItemIsEditable)
-        #if len(groupNames): self.setCurrentRow(0)
+        # if len(groupNames): self.setCurrentRow(0)
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -31,15 +35,20 @@ class GroupListWidget(QListWidget):
         else:
             super(GroupListWidget, self).keyPressEvent(event)
 
+
 class GroupStackWidget(QWidget):
+
     def __init__(self, font, glyphs=[], parent=None):
         super(GroupStackWidget, self).__init__(parent)
         self.ascender = font.info.ascender
-        if self.ascender is None: self.ascender = 750
+        if self.ascender is None:
+            self.ascender = 750
         self.glyphs = glyphs
-        self.maxWidth = max(glyph.width for glyph in self.glyphs) if len(self.glyphs) else 300
+        self.maxWidth = max(glyph.width for glyph in self.glyphs) if len(
+            self.glyphs) else 300
         self.upm = font.info.unitsPerEm
-        if self.upm is None: self.upm = 1000
+        if self.upm is None:
+            self.upm = 1000
         self.padding = 10
         self.alignRight = False
 
@@ -49,36 +58,44 @@ class GroupStackWidget(QWidget):
 
     def setGlyphs(self, glyphs):
         self.glyphs = glyphs
-        self.maxWidth = max(glyph.width for glyph in self.glyphs) if len(self.glyphs) else 300
+        self.maxWidth = max(glyph.width for glyph in self.glyphs) if len(
+            self.glyphs) else 300
         self.update()
 
     def sizeHint(self):
-        return QSize(self.maxWidth+2*self.padding, 400)
+        return QSize(self.maxWidth + 2 * self.padding, 400)
 
     def paintEvent(self, event):
-        # TODO: maybe use self.upm*(1+2*BufferHeight) for the denominator as in fontView
-        scale = self.height() / (self.upm*1.2)
-        x_offset = (self.width()-self.maxWidth*scale-self.padding*2)/2
+        # TODO: maybe use self.upm*(1+2*BufferHeight) for the denominator as in
+        # fontView
+        scale = self.height() / (self.upm * 1.2)
+        x_offset = \
+            (self.width() - self.maxWidth * scale - self.padding * 2) / 2
         if x_offset < 0:
-            scale *= 1+2*x_offset/(self.maxWidth*scale)
+            scale *= 1 + 2 * x_offset / (self.maxWidth * scale)
             x_offset = 0
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.translate(self.padding, self.padding+(self.ascender*1.2)*scale)
+        painter.translate(self.padding, self.padding +
+                          (self.ascender * 1.2) * scale)
         painter.scale(scale, -scale)
 
         col = QColor(Qt.black)
         col.setAlphaF(.2)
         for glyph in self.glyphs:
-            if self.alignRight: dist = self.maxWidth - glyph.width
-            else: dist = 0
+            if self.alignRight:
+                dist = self.maxWidth - glyph.width
+            else:
+                dist = 0
             glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
             painter.save()
-            painter.translate(x_offset+dist, 0)
+            painter.translate(x_offset + dist, 0)
             painter.fillPath(glyphPath, col)
             painter.restore()
 
+
 class GroupCollectionWidget(GlyphCollectionWidget):
+
     def __init__(self, parent=None):
         super(GroupCollectionWidget, self).__init__(parent)
         self._columns = 9
@@ -88,8 +105,9 @@ class GroupCollectionWidget(GlyphCollectionWidget):
         self.characterDropCallback = None
         self.resize(self.width(), 200)
 
-    # TODO: The standard QListWidget has scrollbar and does not need three times parent call.
-    # Find out how to handle that properly.
+    # TODO: The standard QListWidget has scrollbar and does not need three
+    #       times parent call.
+    #       Find out how to handle that properly.
     def keyPressEvent(self, event):
         if event.key() == platformSpecific.deleteKey:
             if self.characterDeletionCallback is not None:
@@ -99,8 +117,9 @@ class GroupCollectionWidget(GlyphCollectionWidget):
             super(GroupCollectionWidget, self).keyPressEvent(event)
 
     def pipeDragEnterEvent(self, event):
-        # TODO: the problem with text/plain is that any sort of text can get here.
-        # (It allows direct compatibility with featureTextEditor though.)
+        # TODO: the problem with text/plain is that any sort of text can get
+        #       here.
+        #       (It allows direct compatibility with featureTextEditor though.)
         if (event.mimeData().hasText()):
             event.acceptProposedAction()
         else:
@@ -112,6 +131,7 @@ class GroupCollectionWidget(GlyphCollectionWidget):
             super(GroupCollectionWidget, self).pipeDropEvent(event)
         elif self.characterDropCallback is not None:
             self.characterDropCallback(event)
+
 
 class GroupsWindow(QWidget):
     leftGroups = ["@MMK_L", "public.kern1"]
@@ -134,7 +154,8 @@ class GroupsWindow(QWidget):
         self.addGroupButton.clicked.connect(self._groupAdd)
         self.removeGroupButton = QPushButton("−", self)
         self.removeGroupButton.clicked.connect(self._groupDelete)
-        if not groups: self.removeGroupButton.setEnabled(False)
+        if not groups:
+            self.removeGroupButton.setEnabled(False)
 
         self.alignLeftBox = QRadioButton("Align left", self)
         self.alignRightBox = QRadioButton("Align right", self)
@@ -143,7 +164,8 @@ class GroupsWindow(QWidget):
         self._autoDirection = True
 
         self.collectionWidget = GroupCollectionWidget(parent=self)
-        self.collectionWidget.characterDeletionCallback = self.characterDeleteEvent
+        self.collectionWidget.characterDeletionCallback = \
+            self.characterDeleteEvent
         self.collectionWidget.characterDropCallback = self.characterDropEvent
         self._cachedName = None
 
@@ -159,7 +181,8 @@ class GroupsWindow(QWidget):
         layout.setColumnStretch(4, 1)
         self.setLayout(layout)
 
-        self.setWindowTitle("Groups window – %s %s" % (self.font.info.familyName, self.font.info.styleName))
+        self.setWindowTitle("Groups window – %s %s" % (
+            self.font.info.familyName, self.font.info.styleName))
 
     def _alignmentChanged(self):
         alignRight = self.alignRightBox.isChecked()
@@ -181,7 +204,8 @@ class GroupsWindow(QWidget):
 
     def _groupChanged(self):
         currentItem = self.groupsList.currentItem()
-        if currentItem is None: return
+        if currentItem is None:
+            return
         self._cachedName = currentItem.text()
         if self._autoDirection:
             for name in self.leftGroups:
@@ -201,9 +225,11 @@ class GroupsWindow(QWidget):
 
     def _groupRenamed(self):
         currentItem = self.groupsList.currentItem()
-        if currentItem is None: return
+        if currentItem is None:
+            return
         newKey = currentItem.text()
-        if newKey == self._cachedName: return
+        if newKey == self._cachedName:
+            return
         self.font.groups[newKey] = self.font.groups[self._cachedName]
         del self.font.groups[self._cachedName]
         self._cachedName = newKey
@@ -212,7 +238,8 @@ class GroupsWindow(QWidget):
         newKey = self.groupsList.currentItem().text()
         del self.font.groups[newKey]
         self.groupsList.takeItem(self.groupsList.currentRow())
-        if not self.font.groups.keys(): self.removeGroupButton.setEnabled(False)
+        if not self.font.groups.keys():
+            self.removeGroupButton.setEnabled(False)
         self._groupChanged()
 
     # XXX: it seems the notification doesn't trigger...
@@ -223,7 +250,7 @@ class GroupsWindow(QWidget):
         self.groupsList.fillGroupNames(self)
         # TODO: consider transferring currentGroup as well
         self.groupsList.blockSignals(False)
-        #self.groupsList.setCurrentRow(0)
+        # self.groupsList.setCurrentRow(0)
 
     def characterDeleteEvent(self, selection):
         currentGroup = self.groupsList.currentItem().text()
@@ -237,7 +264,8 @@ class GroupsWindow(QWidget):
 
     def characterDropEvent(self, event):
         currentGroup = self.groupsList.currentItem()
-        if currentGroup is None: return
+        if currentGroup is None:
+            return
         currentGroup = currentGroup.text()
         glyphNames = event.mimeData().text().split(" ")
         for gName in glyphNames:

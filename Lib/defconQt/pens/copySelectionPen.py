@@ -1,7 +1,9 @@
 from defconQt.objects.defcon import TGlyph
 from robofab.pens.pointPen import AbstractPointPen
 
+
 class CopySelectionPen(AbstractPointPen):
+
     def __init__(self, glyph=None):
         if glyph is None:
             glyph = TGlyph()
@@ -11,7 +13,8 @@ class CopySelectionPen(AbstractPointPen):
         self._originalContourIsOpen = False
 
     def beginPath(self):
-        self._contour = self._glyph.contourClass(pointClass=self._glyph.pointClass)
+        self._contour = self._glyph.contourClass(
+            pointClass=self._glyph.pointClass)
 
     def endPath(self, keepOpened=False):
         if self._havePoint:
@@ -24,7 +27,8 @@ class CopySelectionPen(AbstractPointPen):
         self._havePoint = False
         self._originalContourIsOpen = False
 
-    def addPoint(self, pt, segmentType=None, smooth=False, name=None, selected=False, **kwargs):
+    def addPoint(self, pt, segmentType=None, smooth=False, name=None,
+                 selected=False, **kwargs):
         if segmentType == "move":
             self._originalContourIsOpen = True
         if segmentType is None or selected:
@@ -40,7 +44,7 @@ class CopySelectionPen(AbstractPointPen):
                 self.beginPath()
 
     def addComponent(self, baseGlyphName, transformation):
-        pass # XXX
+        pass  # XXX
 
     def elideOrphanOffCurves(self, arrivedAtBoundary):
         # onCurves that aren't selected and preceding offCurves if any are
@@ -48,9 +52,9 @@ class CopySelectionPen(AbstractPointPen):
         for _ in range(2):
             if len(self._contour):
                 if len(self._contour) > 1 and arrivedAtBoundary and \
-                      self._contour[0].segmentType == "curve":
-                    # We're at the end of drawing and the offCurves lead to begin
-                    # onCurve. Let them in.
+                        self._contour[0].segmentType == "curve":
+                    # We're at the end of drawing and the offCurves lead to
+                    # begin onCurve. Let them in.
                     pass
                 elif self._contour[-1].segmentType is None:
                     self._contour.removePoint(self._contour[-1])

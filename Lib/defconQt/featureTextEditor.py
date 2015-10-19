@@ -1,12 +1,13 @@
 from defconQt.baseCodeEditor import CodeEditor, CodeHighlighter
-from PyQt5.QtCore import QFile, Qt
-from PyQt5.QtGui import (QColor, QFont, QKeySequence, QPainter, QTextCharFormat,
-    QTextCursor)
-from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
-    QMessageBox, QPlainTextEdit, QWidget)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import (QColor, QFont, QKeySequence, QTextCharFormat,
+                         QTextCursor)
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QMessageBox
+
 
 # TODO: implement search and replace
 class MainEditWindow(QMainWindow):
+
     def __init__(self, font=None, parent=None):
         super(MainEditWindow, self).__init__(parent)
 
@@ -27,16 +28,26 @@ class MainEditWindow(QMainWindow):
         self.editor.undoAvailable.connect(self.setWindowModified)
 
     def setWindowTitle(self, title, font):
-        if font is not None: puts = "[*]%s – %s %s" % (title, self.font.info.familyName, self.font.info.styleName)
-        else: puts = "[*]%s" % title
+        if font is not None:
+            puts = "[*]%s – %s %s" % (
+                title, self.font.info.familyName, self.font.info.styleName)
+        else:
+            puts = "[*]%s" % title
         super(MainEditWindow, self).setWindowTitle(puts)
 
     def closeEvent(self, event):
         if self.editor.document().isModified():
             name = QApplication.applicationName()
-            closeDialog = QMessageBox(QMessageBox.Question, name, "Save your changes?",
-                  QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, self)
-            closeDialog.setInformativeText("Your changes will be lost if you don’t save them.")
+            closeDialog = QMessageBox(
+                QMessageBox.Question,
+                name,
+                "Save your changes?",
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                self
+            )
+            closeDialog.setInformativeText(
+                "Your changes will be lost if you don’t save them."
+            )
             closeDialog.setModal(True)
             ret = closeDialog.exec_()
             if ret == QMessageBox.Save:
@@ -54,7 +65,9 @@ class MainEditWindow(QMainWindow):
     def save(self):
         self.editor.write(self.font.features)
 
+
 class FeatureTextEditor(CodeEditor):
+
     def __init__(self, text=None, parent=None):
         super(FeatureTextEditor, self).__init__(text, parent)
         self.openBlockDelimiter = '{'
@@ -70,19 +83,23 @@ class FeatureTextEditor(CodeEditor):
             indentLvl = self.findLineIndentLevel(cursor)
             newBlock = False
 
-            cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.PreviousCharacter,
+                                QTextCursor.KeepAnchor)
             if cursor.selectedText() == self.openBlockDelimiter:
-                # We don't add a closing tag if there is text right below with the same
-                # indentation level because in that case the user might just be looking
-                # to add a new line
+                # We don't add a closing tag if there is text right
+                # below with the same indentation level because in
+                # that case the user might just be looking to add a
+                # new line
                 ok = cursor.movePosition(QTextCursor.Down)
                 if ok:
                     downIndentLvl = self.findLineIndentLevel(cursor)
                     cursor.select(QTextCursor.LineUnderCursor)
-                    if cursor.selectedText().strip() == '' or downIndentLvl <= indentLvl:
+                    if (cursor.selectedText().strip() == ''
+                            or downIndentLvl <= indentLvl):
                         newBlock = True
                     cursor.movePosition(QTextCursor.Up)
-                else: newBlock = True
+                else:
+                    newBlock = True
                 indentLvl += 1
 
             cursor.select(QTextCursor.LineUnderCursor)
@@ -102,7 +119,8 @@ class FeatureTextEditor(CodeEditor):
             cursor.insertText(newLineSpace)
             if newBlock:
                 cursor.insertText("\n")
-                newLineSpace = "".join((newLineSpace[:-len(self.indent)], "} ", feature, ";"))
+                newLineSpace = "".join((newLineSpace[:-len(self.indent)], "} ",
+                                        feature, ";"))
                 cursor.insertText(newLineSpace)
                 cursor.movePosition(QTextCursor.Up)
                 cursor.movePosition(QTextCursor.EndOfLine)
@@ -110,30 +128,38 @@ class FeatureTextEditor(CodeEditor):
         else:
             super(FeatureTextEditor, self).keyPressEvent(event)
 
-keywordPatterns = ["Ascender", "Attach", "CapHeight", "CaretOffset", "CodePageRange",
+keywordPatterns = [
+    "Ascender", "Attach", "CapHeight", "CaretOffset", "CodePageRange",
     "Descender", "FontRevision", "GlyphClassDef", "HorizAxis.BaseScriptList",
-    "HorizAxis.BaseTagList", "HorizAxis.MinMax", "IgnoreBaseGlyphs", "IgnoreLigatures",
-    "IgnoreMarks", "LigatureCaretByDev", "LigatureCaretByIndex", "LigatureCaretByPos",
-    "LineGap", "MarkAttachClass", "MarkAttachmentType", "NULL", "Panose", "RightToLeft",
-    "TypoAscender", "TypoDescender", "TypoLineGap", "UnicodeRange", "UseMarkFilteringSet",
-    "Vendor", "VertAdvanceY", "VertAxis.BaseScriptList", "VertAxis.BaseTagList",
-    "VertAxis.MinMax", "VertOriginY", "VertTypoAscender", "VertTypoDescender",
-    "VertTypoLineGap", "XHeight", "anchorDef", "anchor", "anonymous", "anon",
-    "by", "contour", "cursive", "device", "enumerate", "enum", "exclude_dflt",
-    "featureNames", "feature", "from", "ignore", "include_dflt", "include",
-    "languagesystem", "language", "lookupflag", "lookup", "markClass", "mark",
-    "nameid", "name", "parameters", "position", "pos", "required", "reversesub",
-    "rsub", "script", "sizemenuname", "substitute", "subtable", "sub", "table",
-    "useExtension", "valueRecordDef", "winAscent", "winDescent"]
+    "HorizAxis.BaseTagList", "HorizAxis.MinMax", "IgnoreBaseGlyphs",
+    "IgnoreLigatures", "IgnoreMarks", "LigatureCaretByDev",
+    "LigatureCaretByIndex", "LigatureCaretByPos", "LineGap", "MarkAttachClass",
+    "MarkAttachmentType", "NULL", "Panose", "RightToLeft", "TypoAscender",
+    "TypoDescender", "TypoLineGap", "UnicodeRange", "UseMarkFilteringSet",
+    "Vendor", "VertAdvanceY", "VertAxis.BaseScriptList",
+    "VertAxis.BaseTagList", "VertAxis.MinMax", "VertOriginY",
+    "VertTypoAscender", "VertTypoDescender", "VertTypoLineGap", "XHeight",
+    "anchorDef", "anchor", "anonymous", "anon", "by", "contour", "cursive",
+    "device", "enumerate", "enum", "exclude_dflt", "featureNames", "feature",
+    "from", "ignore", "include_dflt", "include", "languagesystem", "language",
+    "lookupflag", "lookup", "markClass", "mark", "nameid", "name",
+    "parameters", "position", "pos", "required", "reversesub", "rsub",
+    "script", "sizemenuname", "substitute", "subtable", "sub", "table",
+    "useExtension", "valueRecordDef", "winAscent", "winDescent"
+]
+
 
 class FeatureTextHighlighter(CodeHighlighter):
+
     def __init__(self, parent=None):
         super(FeatureTextHighlighter, self).__init__(parent)
 
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground(QColor(34, 34, 34))
         keywordFormat.setFontWeight(QFont.Bold)
-        self.highlightingRules.append(("\\b(%s)\\b" % ("|".join(keywordPatterns)), keywordFormat))
+        self.highlightingRules.append(("\\b(%s)\\b"
+                                       % ("|".join(keywordPatterns)),
+                                       keywordFormat))
 
         singleLineCommentFormat = QTextCharFormat()
         singleLineCommentFormat.setForeground(Qt.darkGray)

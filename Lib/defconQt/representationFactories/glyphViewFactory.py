@@ -19,7 +19,9 @@ def NoComponentsQPainterPathFactory(glyph):
     pen.path.setFillRule(Qt.WindingFill)
     return pen.path
 
+
 class NoComponentsQtPen(QtPen):
+
     def addComponent(self, glyphName, transformation):
         pass
 
@@ -33,6 +35,7 @@ def OnlyComponentsQPainterPathFactory(glyph):
     glyph.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return pen.path
+
 
 class OnlyComponentsQtPen(BasePen):
 
@@ -63,12 +66,15 @@ class OnlyComponentsQtPen(BasePen):
 # start points
 # ------------
 
+
 def StartPointsInformationFactory(glyph):
     pen = StartPointsInformationPen()
     glyph.drawPoints(pen)
     return pen.getData()
 
+
 class StartPointsInformationPen(AbstractPointPen):
+
     def __init__(self):
         self._rawPointData = []
 
@@ -87,8 +93,9 @@ class StartPointsInformationPen(AbstractPointPen):
                     if not haveFirst:
                         haveFirst = True
                         nextOn = None
-                        for nextPoint in contour[pointIndex:] + contour[:pointIndex]:
-                            #if nextPoint["segmentType"] is None:
+                        for nextPoint in contour[pointIndex:] + \
+                                contour[:pointIndex]:
+                            # if nextPoint["segmentType"] is None:
                             #    continue
                             if nextPoint["point"] == point["point"]:
                                 continue
@@ -100,7 +107,8 @@ class StartPointsInformationPen(AbstractPointPen):
                             x2, y2 = nextOn["point"]
                             xDiff = x2 - x1
                             yDiff = y2 - y1
-                            angle = round(math.atan2(yDiff, xDiff) * 180 / math.pi, 3)
+                            angle = round(math.atan2(yDiff, xDiff)
+                                          * 180 / math.pi, 3)
                         data.append((point["point"], angle))
         return data
 
@@ -110,7 +118,8 @@ class StartPointsInformationPen(AbstractPointPen):
     def endPath(self):
         pass
 
-    def addPoint(self, pt, segmentType=None, smooth=False, name=None, **kwargs):
+    def addPoint(self, pt, segmentType=None, smooth=False, name=None,
+                 **kwargs):
         d = dict(point=pt, segmentType=segmentType, smooth=smooth, name=name)
         self._rawPointData[-1].append(d)
 
@@ -121,6 +130,7 @@ class StartPointsInformationPen(AbstractPointPen):
 # point data
 # ----------
 
+
 class OutlineInformationPen(AbstractPointPen):
 
     def __init__(self):
@@ -130,7 +140,9 @@ class OutlineInformationPen(AbstractPointPen):
 
     def getData(self):
         data = []
-        CPoint = namedtuple('Point', ['x', 'y', 'contourIndex', 'pointIndex', 'isSmooth', 'isFirst', 'prevCP', 'nextCP'])
+        CPoint = namedtuple('Point', [
+            'x', 'y', 'contourIndex', 'pointIndex', 'isSmooth', 'isFirst',
+            'prevCP', 'nextCP'])
 
         for contour in self._rawPointData:
             # anchor
@@ -145,14 +157,17 @@ class OutlineInformationPen(AbstractPointPen):
                     if point["segmentType"] is not None:
                         prevCP, nextCP = None, None
                         if back["segmentType"] is None:
-                            # if we have an open contour with a trailing offCurve, don't signal it to the
-                            # first point
-                            if not (not haveFirst and contour[pointIndex-2]["segmentType"] is not None):
+                            # if we have an open contour with a trailing
+                            # offCurve, don't signal it to the first point
+                            if not (not haveFirst and
+                                    contour[pointIndex - 2]["segmentType"] is
+                                    not None):
                                 prevCP = back["point"]
                         if forward["segmentType"] is None:
                             nextCP = forward["point"]
                         x, y = point["point"]
-                        pt = CPoint(x, y, self.cIndex, self.index, point["smooth"], not haveFirst, prevCP, nextCP)
+                        pt = CPoint(x, y, self.cIndex, self.index, point[
+                                    "smooth"], not haveFirst, prevCP, nextCP)
                         data.append(pt)
                         # catch first point
                         if not haveFirst:
@@ -170,7 +185,8 @@ class OutlineInformationPen(AbstractPointPen):
     def endPath(self):
         pass
 
-    def addPoint(self, pt, segmentType=None, smooth=False, name=None, **kwargs):
+    def addPoint(self, pt, segmentType=None, smooth=False, name=None,
+                 **kwargs):
         d = dict(point=pt, segmentType=segmentType, smooth=smooth, name=name)
         self._rawPointData[-1].append(d)
 

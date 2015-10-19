@@ -2,17 +2,20 @@ from defcon import Font, Contour, Glyph, Point
 from defcon.objects.base import BaseObject
 from fontTools.agl import AGL2UV
 
+
 class TFont(Font):
+
     def __init__(self, *args, **kwargs):
-        if not "glyphClass" in kwargs:
+        if "glyphClass" not in kwargs:
             kwargs["glyphClass"] = TGlyph
-        if not "glyphContourClass" in kwargs:
+        if "glyphContourClass" not in kwargs:
             kwargs["glyphContourClass"] = TContour
-        if not "glyphPointClass" in kwargs:
+        if "glyphPointClass" not in kwargs:
             kwargs["glyphPointClass"] = TPoint
         super(TFont, self).__init__(*args, **kwargs)
 
-    def newStandardGlyph(self, name, override=False, addUnicode=True, asTemplate=False, width=500):
+    def newStandardGlyph(self, name, override=False, addUnicode=True,
+                         asTemplate=False, width=500):
         if not override:
             if name in self:
                 return None
@@ -33,7 +36,9 @@ class TFont(Font):
                 glyph.dirty = False
         super(TFont, self).save(path, formatVersion)
 
+
 class TGlyph(Glyph):
+
     def __init__(self, *args, **kwargs):
         super(TGlyph, self).__init__(*args, **kwargs)
         self._template = False
@@ -44,7 +49,9 @@ class TGlyph(Glyph):
     def _set_template(self, value):
         self._template = value
 
-    template = property(_get_template, _set_template, doc="A boolean indicating whether the glyph is a template glyph.")
+    template = property(
+        _get_template, _set_template,
+        doc="A boolean indicating whether the glyph is a template glyph.")
 
     def _set_dirty(self, value):
         BaseObject._set_dirty(self, value)
@@ -68,7 +75,9 @@ class TGlyph(Glyph):
             return
         self.unicodes = [uni]
 
+
 class TContour(Contour):
+
     def __init__(self, pointClass=None, **kwargs):
         if pointClass is None:
             pointClass = TPoint
@@ -80,8 +89,12 @@ class TContour(Contour):
         """
         pointPen.beginPath()
         for point in self._points:
-            pointPen.addPoint((point.x, point.y), segmentType=point.segmentType, smooth=point.smooth, name=point.name, selected=point.selected)
+            pointPen.addPoint((point.x, point.y),
+                              segmentType=point.segmentType,
+                              smooth=point.smooth, name=point.name,
+                              selected=point.selected)
         pointPen.endPath()
+
 
 class TPoint(Point):
     __slots__ = ["_selected"]
@@ -96,7 +109,10 @@ class TPoint(Point):
     def _set_selected(self, value):
         self._selected = value
 
-    selected = property(_get_selected, _set_selected, doc="A boolean indicating the selected state of the point.")
+    selected = property(
+        _get_selected, _set_selected,
+        doc="A boolean indicating the selected state of the point.")
+
 
 class GlyphSet(object):
     __slots__ = ["_name", "_glyphNames"]
@@ -119,4 +135,5 @@ class GlyphSet(object):
     def _set_glyphNames(self, glyphNames):
         self._glyphNames = glyphNames
 
-    glyphNames = property(_get_glyphNames, _set_glyphNames, doc="List of glyph names.")
+    glyphNames = property(_get_glyphNames, _set_glyphNames,
+                          doc="List of glyph names.")

@@ -3,16 +3,23 @@ from math import copysign
 from functools import partial
 import pickle
 from defcon import Anchor, Component
-from defconQt import icons_db
+from defconQt import icons_db  # noqa
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from defconQt.util import platformSpecific
 from fontTools.misc import bezierTools
-from PyQt5.QtCore import *#QFile, QLineF, QObject, QPointF, QRectF, QSize, Qt
-from PyQt5.QtGui import *#QBrush, QColor, QImage, QKeySequence, QPainter, QPainterPath, QPixmap, QPen, QColorDialog
-from PyQt5.QtWidgets import *#(QAction, QActionGroup, QApplication, QFileDialog,
-        #QGraphicsItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView,
-        #QMainWindow, QMenu, QMessageBox, QStyle, QStyleOptionGraphicsItem, QWidget)
+from PyQt5.QtCore import QEvent, QLineF, QMimeData, QPointF, Qt
+from PyQt5.QtGui import (
+    QBrush, QColor, QFont, QIcon, QKeySequence, QPainter, QPainterPath, QPen,
+    QPixmap, QTransform)
+from PyQt5.QtWidgets import (
+    QAction, QActionGroup, QApplication, QColorDialog, QComboBox, QDialog,
+    QDialogButtonBox, QGraphicsEllipseItem, QGraphicsItem, QGraphicsLineItem,
+    QGraphicsPathItem, QGraphicsPixmapItem, QGraphicsRectItem, QGraphicsScene,
+    QGraphicsSimpleTextItem, QGraphicsView, QGridLayout, QLabel, QLineEdit,
+    QListWidget, QMainWindow, QMenu, QRadioButton, QSizePolicy, QStyle,
+    QStyleOptionGraphicsItem, QToolBar, QWidget)
+
 
 class GotoDialog(QDialog):
     alphabetical = [
@@ -24,7 +31,8 @@ class GotoDialog(QDialog):
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Go to…")
         self.font = currentGlyph.getParent()
-        self._sortedGlyphs = self.font.unicodeData.sortGlyphNames(self.font.keys(), self.alphabetical)
+        self._sortedGlyphs = self.font.unicodeData.sortGlyphNames(
+            self.font.keys(), self.alphabetical)
 
         layout = QGridLayout(self)
         self.glyphLabel = QLabel("Glyph:", self)
@@ -41,7 +49,8 @@ class GotoDialog(QDialog):
         self.glyphList = QListWidget(self)
         self.glyphList.itemDoubleClicked.connect(self.accept)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -81,11 +90,13 @@ class GotoDialog(QDialog):
             self.glyphList.addItems(self._sortedGlyphs)
         text = self.glyphEdit.text()
         if select:
-            glyphs = [glyph for glyph in self._sortedGlyphs if glyph.startswith(text)]
+            glyphs = [glyph for glyph in self._sortedGlyphs
+                      if glyph.startswith(text)]
         else:
             glyphs = [glyph for glyph in self._sortedGlyphs if text in glyph]
         self.glyphList.addItems(glyphs)
-        if select: self.glyphList.setCurrentRow(0)
+        if select:
+            self.glyphList.setCurrentRow(0)
 
     @classmethod
     def getNewGlyph(cls, parent, currentGlyph):
@@ -99,7 +110,9 @@ class GotoDialog(QDialog):
                 newGlyph = dialog.font[newGlyphName]
         return (newGlyph, result)
 
+
 class AddAnchorDialog(QDialog):
+
     def __init__(self, pos=None, parent=None):
         super(AddAnchorDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -111,10 +124,12 @@ class AddAnchorDialog(QDialog):
         self.anchorNameEdit = QLineEdit(self)
         self.anchorNameEdit.setFocus(True)
         if pos is not None:
-            anchorPositionLabel = QLabel("The anchor will be added at ({}, {})."
-              .format(pos.x(), pos.y()), self)
+            anchorPositionLabel = QLabel(
+                "The anchor will be added at ({}, {})."
+                .format(pos.x(), pos.y()), self)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -134,14 +149,18 @@ class AddAnchorDialog(QDialog):
         name = dialog.anchorNameEdit.text()
         return (name, result)
 
+
 class AddComponentDialog(GotoDialog):
+
     def __init__(self, *args, **kwargs):
         super(AddComponentDialog, self).__init__(*args, **kwargs)
         self.setWindowTitle("Add component…")
         self._sortedGlyphs.remove(args[0].name)
         self.updateGlyphList(False)
 
+
 class AddLayerDialog(QDialog):
+
     def __init__(self, parent=None):
         super(AddLayerDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -153,7 +172,8 @@ class AddLayerDialog(QDialog):
         self.layerNameEdit = QLineEdit(self)
         self.layerNameEdit.setFocus(True)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -173,8 +193,9 @@ class AddLayerDialog(QDialog):
 
 
 class GenericSettings(object):
+
     def __init__(self, title, parent, callback):
-        #super().__init__()
+        # super().__init__()
         self._menuWidget = QMenu(title, parent)
         self._actions = {}
         self._callback = callback
@@ -194,7 +215,8 @@ class GenericSettings(object):
         return self._menuWidget
 
     def _addAction(self, key, label, checked):
-        action = self._menuWidget.addAction(label, partial(self._callback, key))
+        action = self._menuWidget.addAction(label,
+                                            partial(self._callback, key))
         action.setCheckable(True)
         action.setChecked(checked)
         self._actions[key] = action
@@ -225,38 +247,31 @@ class GenericSettings(object):
         return self._actions[name].isChecked()
 
 
-
 class DisplayStyleSettings(GenericSettings):
     _presets = (
         ('TruFont Default', dict(
-            activeLayerOnTop = True
-          , activeLayerFilled = True
-          , otherLayersFilled = False
-          , activeLayerUseLayerColor = False
-          , otherLayerUseLayerColor = True
-          , drawOtherLayers = True
-        ))
-      , ('Layer Fonts', dict(
-            activeLayerOnTop = False
-          , activeLayerFilled = True
-          , otherLayersFilled = True
-          , activeLayerUseLayerColor = True
-          , otherLayerUseLayerColor = True
-          , drawOtherLayers = True
+            activeLayerOnTop=True, activeLayerFilled=True,
+            otherLayersFilled=False, activeLayerUseLayerColor=False,
+            otherLayerUseLayerColor=True, drawOtherLayers=True
+        )), ('Layer Fonts', dict(
+            activeLayerOnTop=False, activeLayerFilled=True,
+            otherLayersFilled=True, activeLayerUseLayerColor=True,
+            otherLayerUseLayerColor=True, drawOtherLayers=True
         ))
     )
 
     _items = (
-        ('activeLayerOnTop', ('Active Layer on Top', True))
-      , ('activeLayerFilled', ('Active Layer Filled', True))
-      , ('activeLayerUseLayerColor', ('Active Layer use Custom Color', False))
-      , ('otherLayersFilled', ('Other Layers Filled', False))
-      , ('otherLayerUseLayerColor', ('Other Layers use Custom Color', True))
-      , ('drawOtherLayers', ('Show Other Layers', True))
+        ('activeLayerOnTop', ('Active Layer on Top', True)),
+        ('activeLayerFilled', ('Active Layer Filled', True)),
+        ('activeLayerUseLayerColor', ('Active Layer use Custom Color', False)),
+        ('otherLayersFilled', ('Other Layers Filled', False)),
+        ('otherLayerUseLayerColor', ('Other Layers use Custom Color', True)),
+        ('drawOtherLayers', ('Show Other Layers', True))
     )
 
 
 class MainGfxWindow(QMainWindow):
+
     def __init__(self, glyph, parent=None):
         super(MainGfxWindow, self).__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -268,18 +283,17 @@ class MainGfxWindow(QMainWindow):
 
         self._layerSetNotifications = []
 
-        layerSet.addObserver(self, '_layerSetLayerAdded', 'LayerSet.LayerAdded')
-        layerSet.addObserver(self, '_layerSetLayerDeleted', 'LayerSet.LayerDeleted')
+        layerSet.addObserver(self, '_layerSetLayerAdded',
+                             'LayerSet.LayerAdded')
+        layerSet.addObserver(self, '_layerSetLayerDeleted',
+                             'LayerSet.LayerDeleted')
         self._layerSetNotifications.append('LayerSet.LayerAdded')
         self._layerSetNotifications.append('LayerSet.LayerDeleted')
 
-
-        for event in ('LayerSet.LayerChanged', 'LayerSet.DefaultLayerChanged'
-                                            , 'LayerSet.LayerOrderChanged'):
+        for event in ('LayerSet.LayerChanged', 'LayerSet.DefaultLayerChanged',
+                      'LayerSet.LayerOrderChanged'):
             self._layerSetNotifications.append(event)
-            layerSet.addObserver(self, '_layerSetEvents',  event)
-
-
+            layerSet.addObserver(self, '_layerSetEvents', event)
 
         menuBar = self.menuBar()
 
@@ -291,24 +305,28 @@ class MainGfxWindow(QMainWindow):
         glyphMenu.addAction("&Jump", self.changeGlyph, "J")
         menuBar.addMenu(glyphMenu)
 
-
-        self._displaySettings = DisplayStyleSettings("&Display", self, self._displayChanged)
+        self._displaySettings = DisplayStyleSettings(
+            "&Display", self, self._displayChanged)
         menuBar.addMenu(self._displaySettings.menuWidget)
 
         self._toolBar = toolBar = QToolBar(self)
         toolBar.setMovable(False)
         toolBar.setContentsMargins(2, 0, 2, 0)
-        selectionToolButton = toolBar.addAction("Selection", self._redirect('view', 'setSceneSelection'))
+        selectionToolButton = toolBar.addAction(
+            "Selection", self._redirect('view', 'setSceneSelection'))
         selectionToolButton.setCheckable(True)
         selectionToolButton.setChecked(True)
         selectionToolButton.setIcon(QIcon(":/resources/cursor.svg"))
-        penToolButton = toolBar.addAction("Pen", self._redirect('view', 'setSceneDrawing'))
+        penToolButton = toolBar.addAction(
+            "Pen", self._redirect('view', 'setSceneDrawing'))
         penToolButton.setCheckable(True)
         penToolButton.setIcon(QIcon(":/resources/curve.svg"))
-        rulerToolButton = toolBar.addAction("Ruler", self._redirect('view', 'setSceneRuler'))
+        rulerToolButton = toolBar.addAction(
+            "Ruler", self._redirect('view', 'setSceneRuler'))
         rulerToolButton.setCheckable(True)
         rulerToolButton.setIcon(QIcon(":/resources/ruler.svg"))
-        knifeToolButton = toolBar.addAction("Knife", self._redirect('view', 'setSceneKnife'))
+        knifeToolButton = toolBar.addAction(
+            "Knife", self._redirect('view', 'setSceneKnife'))
         knifeToolButton.setCheckable(True)
         knifeToolButton.setIcon(QIcon(":/resources/cut.svg"))
 
@@ -317,12 +335,13 @@ class MainGfxWindow(QMainWindow):
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         toolBar.addWidget(spacer)
         self._currentLayerBox = QComboBox(self)
-        self._currentLayerBox.currentIndexChanged.connect(self._changeLayerHandler)
+        self._currentLayerBox.currentIndexChanged.connect(
+            self._changeLayerHandler)
         toolBar.addWidget(self._currentLayerBox)
 
         self._layerColorButton = toolBar.addAction(
-                    "Layer Color (shift + click to remove the color)",
-                    self._chooseLayerColor)
+            "Layer Color (shift + click to remove the color)",
+            self._chooseLayerColor)
 
         toolsGroup = QActionGroup(self)
         toolsGroup.addAction(selectionToolButton)
@@ -333,10 +352,12 @@ class MainGfxWindow(QMainWindow):
 
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
         createAnchorAction = QAction("Add Anchor…", self)
-        createAnchorAction.triggered.connect(self._redirect('view', 'createAnchor'))
+        createAnchorAction.triggered.connect(
+            self._redirect('view', 'createAnchor'))
         self.addAction(createAnchorAction)
         createComponentAction = QAction("Add Component…", self)
-        createComponentAction.triggered.connect(self._redirect('view', 'createComponent'))
+        createComponentAction.triggered.connect(
+            self._redirect('view', 'createComponent'))
         self.addAction(createComponentAction)
 
         for layer in self._layerSet:
@@ -350,13 +371,14 @@ class MainGfxWindow(QMainWindow):
 
     def _changeGlyph(self, glyph):
         oldView = self.view
+        # Preserve the selected layer (by setting the glyph from that layer)
+        # Todo: If that layer is already in the glyph, it would be a little bit
+        # harder to create it here and may be better or worse. Worse becaue
+        # we'd alter the data without being explicitly asked to do so.
+        # Ask someone who does UX.
         if oldView:
-            # Preserve the selected layer (by setting the glyph from that layer)
-            # Todo: If that layer is already in the glyph, it would be a little bit
-            # harder to create it here and may be better or worse. Worse becaue
-            # we'd alter the data without being explicitly asked to do so.
-            # Ask someone who does UX.
-            if oldView.layer is not glyph.layer and glyph.name in oldView.layer:
+            if (oldView.layer is not glyph.layer and
+                    glyph.name in oldView.layer):
                 glyph = oldView.layer[glyph.name]
             oldView.hide()
             oldView.deleteLater()
@@ -380,8 +402,10 @@ class MainGfxWindow(QMainWindow):
 
     def _executeRemoteCommand(self, targetName, commandName, *args, **kwds):
         """
-        Execute a method named `commandName` on the attribute named `targetName`.
-        This strongly suggest that there is always a known interface at self.{targetName}
+        Execute a method named `commandName` on the attribute named
+        `targetName`.
+        This strongly suggest that there is always a known interface at
+        self.{targetName}
         See MainGfxWindow._redirect
         """
         target = getattr(self, targetName)
@@ -399,7 +423,6 @@ class MainGfxWindow(QMainWindow):
         layerSet = notification.object
         assert layerSet is self._layerSet
         self._updateComboBox()
-
 
     def _layerSetLayerDeleted(self, notification):
         self._layerSetEvents(notification)
@@ -424,7 +447,8 @@ class MainGfxWindow(QMainWindow):
             color = None
         else:
             startColor = self.view.getLayerColor() or QColor('limegreen')
-            qColor = QColorDialog.getColor(startColor, self, options=QColorDialog.ShowAlphaChannel)
+            qColor = QColorDialog.getColor(
+                startColor, self, options=QColorDialog.ShowAlphaChannel)
             if not qColor.isValid():
                 # cancelled
                 return
@@ -523,23 +547,29 @@ class MainGfxWindow(QMainWindow):
         event.accept()
 
     def setWindowTitle(self, title, font=None):
-        if font is not None: title = "%s – %s %s" % (title, font.info.familyName, font.info.styleName)
+        if font is not None:
+            title = "%s – %s %s" % (
+                title, font.info.familyName, font.info.styleName)
         super(MainGfxWindow, self).setWindowTitle(title)
 
+
 def roundPosition(value):
-    value = value * 10#self._scale
+    value = value * 10  # self._scale
     value = round(value) - .5
-    value = value * .1#self._inverseScale
+    value = value * .1  # self._inverseScale
     return value
 
-offCurvePointSize = 8#5
-onCurvePointSize = 9#6
-onCurveSmoothPointSize = 10#7
-offWidth = offHeight = roundPosition(offCurvePointSize)# * self._inverseScale)
+offCurvePointSize = 8  # 5
+onCurvePointSize = 9  # 6
+onCurveSmoothPointSize = 10  # 7
+offWidth = offHeight = roundPosition(offCurvePointSize)
+# * self._inverseScale)
 offHalf = offWidth / 2.0
-onWidth = onHeight = roundPosition(onCurvePointSize)# * self._inverseScale)
+onWidth = onHeight = roundPosition(onCurvePointSize)
+# * self._inverseScale)
 onHalf = onWidth / 2.0
-smoothWidth = smoothHeight = roundPosition(onCurveSmoothPointSize)# * self._inverseScale)
+smoothWidth = smoothHeight = roundPosition(onCurveSmoothPointSize)
+# * self._inverseScale)
 smoothHalf = smoothWidth / 2.0
 onCurvePenWidth = 1.5
 offCurvePenWidth = 1.0
@@ -559,10 +589,12 @@ onCurvePointStrokeColor = offCurvePointColor
 anchorColor = QColor(120, 120, 255)
 anchorSelectionColor = Qt.blue
 bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
-fillColor = QColor(200, 200, 200, 120)#QColor.fromRgbF(0, 0, 0, .4)
-componentFillColor = QColor.fromRgbF(0, 0, 0, .4)#QColor.fromRgbF(.2, .2, .3, .4)
+fillColor = QColor(200, 200, 200, 120)  # QColor.fromRgbF(0, 0, 0, .4)
+componentFillColor = QColor.fromRgbF(
+    0, 0, 0, .4)  # QColor.fromRgbF(.2, .2, .3, .4)
 metricsColor = QColor(70, 70, 70)
 pointSelectionColor = Qt.red
+
 
 class SceneTools(Enum):
     SelectionTool = 0
@@ -570,18 +602,23 @@ class SceneTools(Enum):
     RulerTool = 2
     KnifeTool = 3
 
+
 class HandleLineItem(QGraphicsLineItem):
+
     def __init__(self, x1, y1, x2, y2, parent):
         super(HandleLineItem, self).__init__(x1, y1, x2, y2, parent)
         self.setPen(QPen(bezierHandleColor, 1.0))
         self.setFlag(QGraphicsItem.ItemStacksBehindParent)
 
+
 class OffCurvePointItem(QGraphicsEllipseItem):
+
     def __init__(self, x, y, parent=None):
         super(OffCurvePointItem, self).__init__(parent)
         # since we have a parent, setPos must be relative to it
         self.setPointPath()
-        self.setPos(x, y) # TODO: abstract and use pointX-self.parent().pos().x()
+        # TODO: abstract and use pointX-self.parent().pos().x()
+        self.setPos(x, y)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -599,7 +636,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
                 value.setX(round(value.x()))
                 value.setY(round(value.y()))
             if QApplication.keyboardModifiers() & Qt.ShiftModifier \
-                  and len(self.scene().selectedItems()) == 1:
+                    and len(self.scene().selectedItems()) == 1:
                 ax = abs(value.x())
                 ay = abs(value.y())
                 if ay >= ax * 2:
@@ -613,7 +650,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         elif change == QGraphicsItem.ItemPositionHasChanged:
             self.parentItem()._CPMoved(value)
         # TODO: consider what to do w offCurves
-        #elif change == QGraphicsItem.ItemSelectedHasChanged:
+        # elif change == QGraphicsItem.ItemSelectedHasChanged:
         #    pass#self.parentItem()._CPSelChanged(value)
         return value
 
@@ -630,7 +667,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
 
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
-        #if self.x() == 0 and self.y() == 0: return
+        # if self.x() == 0 and self.y() == 0: return
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
         pen = self.pen()
@@ -648,13 +685,18 @@ class OffCurvePointItem(QGraphicsEllipseItem):
                 scale = scene.getViewScale()
             else:
                 scale = 1
-        if scale > 4: scale = 4
-        elif scale < .4: scale = .4
+        if scale > 4:
+            scale = 4
+        elif scale < .4:
+            scale = .4
         self.prepareGeometryChange()
-        self.setRect(-offHalf/scale, -offHalf/scale, offWidth/scale, offHeight/scale)
-        self.setPen(QPen(offCurvePointStrokeColor, offCurvePenWidth/scale))
+        self.setRect(-offHalf / scale, -offHalf / scale,
+                     offWidth / scale, offHeight / scale)
+        self.setPen(QPen(offCurvePointStrokeColor, offCurvePenWidth / scale))
+
 
 class OnCurvePointItem(QGraphicsPathItem):
+
     def __init__(self, x, y, isSmooth, contour, point, scale=1, parent=None):
         super(OnCurvePointItem, self).__init__(parent)
         self._contour = contour
@@ -674,7 +716,7 @@ class OnCurvePointItem(QGraphicsPathItem):
             for _ in self._contour:
                 if self._contour[index].segmentType is not None:
                     break
-                index = (index+1) % len(self._contour)
+                index = (index + 1) % len(self._contour)
             return index
 
         scene = self.scene()
@@ -689,9 +731,12 @@ class OnCurvePointItem(QGraphicsPathItem):
                 self._contour[0].segmentType = "move"
                 self._contour.dirty = True
             else:
-                # Using preserveShape at the edge of an open contour will traceback
-                if ptIndex == len(self._contour): preserveShape = False
-                self._contour.removeSegment(self.getSegmentIndex(), preserveShape)
+                # Using preserveShape at the edge of an open contour will
+                # traceback
+                if ptIndex == len(self._contour):
+                    preserveShape = False
+                self._contour.removeSegment(
+                    self.getSegmentIndex(), preserveShape)
                 nextOnCurveIndex = findNextOnCurve(self)
                 self._contour.setStartPoint(nextOnCurveIndex)
         # This object will be removed from scene by notification mechanism
@@ -704,25 +749,32 @@ class OnCurvePointItem(QGraphicsPathItem):
                 scale = scene.getViewScale()
             else:
                 scale = 1
-        if scale > 4: scale = 4
-        elif scale < .4: scale = .4
+        if scale > 4:
+            scale = 4
+        elif scale < .4:
+            scale = .4
         if self._isSmooth:
-            path.addEllipse(-smoothHalf/scale, -smoothHalf/scale, smoothWidth/scale, smoothHeight/scale)
+            path.addEllipse(-smoothHalf / scale, -smoothHalf /
+                            scale, smoothWidth / scale, smoothHeight / scale)
         else:
-            path.addRect(-onHalf/scale, -onHalf/scale, onWidth/scale, onHeight/scale)
+            path.addRect(-onHalf / scale, -onHalf / scale,
+                         onWidth / scale, onHeight / scale)
         self.prepareGeometryChange()
         self.setPath(path)
-        self.setPen(QPen(onCurvePointStrokeColor, onCurvePenWidth/scale))
+        self.setPen(QPen(onCurvePointStrokeColor, onCurvePenWidth / scale))
 
     def getPointIndex(self):
         return self._contour.index(self._point)
 
     def getSegmentIndex(self):
-        # closed contour cycles and so the "previous" segment goes to current point
+        # closed contour cycles and so the "previous" segment goes to current
+        # point
         index = 0 if self._contour.open else -1
         for pt in self._contour:
-            if pt == self._point: break
-            if pt.segmentType is not None: index += 1
+            if pt == self._point:
+                break
+            if pt.segmentType is not None:
+                index += 1
         return index % len(self._contour.segments)
 
     def _CPDeleted(self):
@@ -732,9 +784,10 @@ class OnCurvePointItem(QGraphicsPathItem):
         if not (children[1].isVisible() and children[1].isSelected()):
             selected = 3
 
-        firstSibling = self._contour[pointIndex+selected-2]
-        secondSibling = self._contour[pointIndex+(selected-2)*2]
-        if firstSibling.segmentType is None and secondSibling.segmentType is None:
+        firstSibling = self._contour[pointIndex + selected - 2]
+        secondSibling = self._contour[pointIndex + (selected - 2) * 2]
+        if (firstSibling.segmentType is None and
+                secondSibling.segmentType is None):
             # we have two offCurves, wipe them
             self._contour.removePoint(firstSibling)
             self._contour.removePoint(secondSibling)
@@ -749,35 +802,38 @@ class OnCurvePointItem(QGraphicsPathItem):
         else:
             selected = 3
             propagate = 1
-        curValue = children[selected].pos()
-        line = children[selected-1].line()
-        children[selected-1].setLine(line.x1(), line.y1(), newValue.x(), newValue.y())
+        line = children[selected - 1].line()
+        children[selected - 1].setLine(line.x1(),
+                                       line.y1(), newValue.x(), newValue.y())
 
         if not len(children) > 4:
-            elemIndex = pointIndex-2+selected
-            self._contour[elemIndex].x = self.pos().x()+newValue.x()
-            self._contour[elemIndex].y = self.pos().y()+newValue.y()
+            elemIndex = pointIndex - 2 + selected
+            self._contour[elemIndex].x = self.pos().x() + newValue.x()
+            self._contour[elemIndex].y = self.pos().y() + newValue.y()
         if not (self._isSmooth and children[propagate].isVisible()):
             self.setShallowDirty()
             return
         if children[selected]._needsUngrab:
-            targetLen = children[selected-1].line().length()*2
+            targetLen = children[selected - 1].line().length() * 2
         else:
-            targetLen = children[selected-1].line().length()+children[propagate-1].line().length()
+            targetLen = children[selected - 1].line().length() + \
+                children[propagate - 1].line().length()
         if not newValue.isNull():
             tmpLine = QLineF(newValue, QPointF())
             tmpLine.setLength(targetLen)
         else:
-            # if newValue is null, we’d construct a zero-length line and collapse
-            # both offCurves
+            # if newValue is null, we’d construct a zero-length line and
+            # collapse both offCurves
             tmpLine = QLineF(QPointF(), children[propagate].pos())
-        children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges, False)
+        children[propagate].setFlag(
+            QGraphicsItem.ItemSendsGeometryChanges, False)
         children[propagate].setPos(tmpLine.x2(), tmpLine.y2())
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        children[propagate-1].setLine(line.x1(), line.y1(), tmpLine.x2(), tmpLine.y2())
-        propagateInContour = pointIndex-2+propagate
-        self._contour[propagateInContour].x = self.pos().x()+tmpLine.x2()
-        self._contour[propagateInContour].y = self.pos().y()+tmpLine.y2()
+        children[propagate - 1].setLine(line.x1(),
+                                        line.y1(), tmpLine.x2(), tmpLine.y2())
+        propagateInContour = pointIndex - 2 + propagate
+        self._contour[propagateInContour].x = self.pos().x() + tmpLine.x2()
+        self._contour[propagateInContour].y = self.pos().y() + tmpLine.y2()
         self.setShallowDirty()
 
     def itemChange(self, change, value):
@@ -794,12 +850,12 @@ class OnCurvePointItem(QGraphicsPathItem):
             children = self.childItems()
             if children[1].isVisible():
                 prevPos = children[1].pos()
-                self._contour[pointIndex-1].x = self.pos().x()+prevPos.x()
-                self._contour[pointIndex-1].y = self.pos().y()+prevPos.y()
+                self._contour[pointIndex - 1].x = self.pos().x() + prevPos.x()
+                self._contour[pointIndex - 1].y = self.pos().y() + prevPos.y()
             if children[3].isVisible():
                 nextPos = children[3].pos()
-                self._contour[pointIndex+1].x = self.pos().x()+nextPos.x()
-                self._contour[pointIndex+1].y = self.pos().y()+nextPos.y()
+                self._contour[pointIndex + 1].x = self.pos().x() + nextPos.x()
+                self._contour[pointIndex + 1].y = self.pos().y() + nextPos.y()
             self.setShallowDirty()
         elif change == QGraphicsItem.ItemSelectedHasChanged:
             self._point.selected = value
@@ -815,31 +871,38 @@ class OnCurvePointItem(QGraphicsPathItem):
         modifiers = event.modifiers()
         children = self.childItems()
         # Ctrl: get and move prevCP, Alt: nextCP
-        if modifiers & Qt.ControlModifier and children[1].x() == 0 and children[1].y() == 0:
+        if (modifiers & Qt.ControlModifier and children[1].x() == 0 and
+                children[1].y() == 0):
             i, o = 1, 3
-        elif modifiers & Qt.AltModifier and children[3].x() == 0 and children[3].y() == 0:
+        elif (modifiers & Qt.AltModifier and children[3].x() == 0 and
+                children[3].y() == 0):
             i, o = 3, 1
-        elif not (modifiers & Qt.ControlModifier or modifiers & Qt.AltModifier):
+        elif not (modifiers & Qt.ControlModifier or
+                  modifiers & Qt.AltModifier):
             super(OnCurvePointItem, self).mouseMoveEvent(event)
             return
-        else: # eat the event if we are not going to yield an offCP
+        else:  # eat the event if we are not going to yield an offCP
             event.accept()
             return
         ptIndex = self.getPointIndex()
         scene = self.scene()
         scene._blocked = True
         # if we have line segment, insert offCurve points
-        insertIndex = (ptIndex+(i-1)//2) % len(self._contour)
+        insertIndex = (ptIndex + (i - 1) // 2) % len(self._contour)
         if self._contour[insertIndex].segmentType == "line":
-            nextToCP = self._contour[(ptIndex-2+i) % len(self._contour)]
+            nextToCP = self._contour[(ptIndex - 2 + i) % len(self._contour)]
             assert(nextToCP.segmentType is not None)
             self._contour[insertIndex].segmentType = "curve"
             if i == 1:
-                first, second = (self._point.x, self._point.y), (nextToCP.x, nextToCP.y)
+                first, second = (
+                    self._point.x, self._point.y), (nextToCP.x, nextToCP.y)
             else:
-                first, second = (nextToCP.x, nextToCP.y), (self._point.x, self._point.y)
-            self._contour.insertPoint(insertIndex, self._contour._pointClass(first))
-            self._contour.insertPoint(insertIndex, self._contour._pointClass(second))
+                first, second = (
+                    nextToCP.x, nextToCP.y), (self._point.x, self._point.y)
+            self._contour.insertPoint(
+                insertIndex, self._contour._pointClass(first))
+            self._contour.insertPoint(
+                insertIndex, self._contour._pointClass(second))
             children[i].setVisible(True)
             # TODO: need a list of items to make this efficient
             scene.getItemForPoint(nextToCP).childItems()[o].setVisible(True)
@@ -856,8 +919,10 @@ class OnCurvePointItem(QGraphicsPathItem):
         event.accept()
 
     def mouseDoubleClickEvent(self, event):
-        view = self.scene().views()[0] # XXX: meh, maybe refactor doubleClick event into the scene?
-        if view._currentTool == SceneTools.RulerTool or view._currentTool == SceneTools.KnifeTool:
+        # XXX: meh, maybe refactor doubleClick event into the scene?
+        view = self.scene().views()[0]
+        if (view._currentTool == SceneTools.RulerTool or
+                view._currentTool == SceneTools.KnifeTool):
             return
         self.setIsSmooth(not self._isSmooth)
 
@@ -879,7 +944,9 @@ class OnCurvePointItem(QGraphicsPathItem):
         self.setPen(pen)
         super(OnCurvePointItem, self).paint(painter, newOption, widget)
 
+
 class StartPointItem(QGraphicsPathItem):
+
     def __init__(self, x, y, angle, scale=1, parent=None):
         super(StartPointItem, self).__init__(parent)
         self._angle = 360 - angle
@@ -895,21 +962,23 @@ class StartPointItem(QGraphicsPathItem):
                 scale = scene.getViewScale()
             else:
                 scale = 1
-        if scale > 1.30: scale = 1.30
-        elif scale < .6: scale = .6
+        if scale > 1.30:
+            scale = 1.30
+        elif scale < .6:
+            scale = .6
         self.prepareGeometryChange()
         dist = startItemDist / scale
         path = QPainterPath()
-        line = QLineF(0, 0, 0+dist, 0)
+        line = QLineF(0, 0, 0 + dist, 0)
         line2 = QLineF(line)
-        line.setAngle(self._angle-90)
+        line.setAngle(self._angle - 90)
         path.lineTo(line.x2(), line.y2())
         line2.setAngle(self._angle)
-        line2.translate(line.p2()-line.p1())
+        line2.translate(line.p2() - line.p1())
         path.lineTo(line2.x2(), line2.y2())
         line.setP1(line2.p2())
         line.setAngle(line.angle() - 27.5)
-        line.setLength(2*dist/5)
+        line.setLength(2 * dist / 5)
         line2.setLength(line2.length() + .5)
         path.moveTo(line.x2(), line.y2())
         path.lineTo(line2.x2(), line2.y2())
@@ -917,7 +986,9 @@ class StartPointItem(QGraphicsPathItem):
         path.lineTo(line.x2(), line.y2())
         self.setPath(path)
 
+
 class AnchorItem(QGraphicsPathItem):
+
     def __init__(self, anchor, scale=1, parent=None):
         super(AnchorItem, self).__init__(parent)
         self._anchor = anchor
@@ -962,32 +1033,36 @@ class AnchorItem(QGraphicsPathItem):
                 scale = scene.getViewScale()
             else:
                 scale = 1
-        if scale > 4: scale = 4
-        elif scale < .4: scale = .4
+        if scale > 4:
+            scale = 4
+        elif scale < .4:
+            scale = .4
 
-        path.moveTo(-anchorHalf/scale, 0)
-        path.lineTo(0, anchorHalf/scale)
-        path.lineTo(anchorHalf/scale, 0)
-        path.lineTo(0, -anchorHalf/scale)
+        path.moveTo(-anchorHalf / scale, 0)
+        path.lineTo(0, anchorHalf / scale)
+        path.lineTo(anchorHalf / scale, 0)
+        path.lineTo(0, -anchorHalf / scale)
         path.closeSubpath()
 
         self.prepareGeometryChange()
         self.setPath(path)
         textItem = self.childItems()[0]
-        textItem.setPos(anchorHalf/scale, textItem.boundingRect().height()/2)
+        textItem.setPos(anchorHalf / scale,
+                        textItem.boundingRect().height() / 2)
 
     # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
     def paint(self, painter, option, widget):
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = QStyle.State_None
-        pen = self.pen()
         if option.state & QStyle.State_Selected:
             self.setBrush(anchorSelectionColor)
         else:
             self.setBrush(anchorColor)
         super(AnchorItem, self).paint(painter, newOption, widget)
 
+
 class ComponentItem(QGraphicsPathItem):
+
     def __init__(self, path, component, parent=None):
         super(ComponentItem, self).__init__(path, parent)
         self._component = component
@@ -1015,14 +1090,18 @@ class ComponentItem(QGraphicsPathItem):
             scene._blocked = False
         return value
 
+
 class VGuidelinesTextItem(QGraphicsSimpleTextItem):
+
     def __init__(self, text, font, parent=None):
         super(VGuidelinesTextItem, self).__init__(text, parent)
         self.setBrush(metricsColor)
         self.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         self.setFont(font)
 
+
 class ResizeHandleItem(QGraphicsRectItem):
+
     def __init__(self, parent=None):
         super(QGraphicsRectItem, self).__init__(parent)
         self.setPointPath()
@@ -1030,7 +1109,7 @@ class ResizeHandleItem(QGraphicsRectItem):
         self.setPen(QPen(Qt.NoPen))
         self.setFlag(QGraphicsItem.ItemIgnoresParentOpacity)
         self.setFlag(QGraphicsItem.ItemIsMovable)
-        #self.setFlag(QGraphicsItem.ItemIsSelectable)
+        # self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setCursor(Qt.SizeFDiagCursor)
 
         rect = self.parentItem().boundingRect()
@@ -1038,7 +1117,8 @@ class ResizeHandleItem(QGraphicsRectItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedChange:
-            if not value: self.setVisible(value)
+            if not value:
+                self.setVisible(value)
         return value
 
     def mouseMoveEvent(self, event):
@@ -1051,11 +1131,15 @@ class ResizeHandleItem(QGraphicsRectItem):
                 scale = scene.getViewScale()
             else:
                 scale = 1
-        if scale > 4: scale = 4
+        if scale > 4:
+            scale = 4
         self.prepareGeometryChange()
-        self.setRect(-onHalf/scale, -onHalf/scale, onWidth/scale, onHeight/scale)
+        self.setRect(-onHalf / scale, -onHalf / scale,
+                     onWidth / scale, onHeight / scale)
+
 
 class PixmapItem(QGraphicsPixmapItem):
+
     def __init__(self, x, y, pixmap, parent=None):
         super(QGraphicsPixmapItem, self).__init__(pixmap, parent)
         self.setPos(x, y)
@@ -1076,7 +1160,8 @@ class PixmapItem(QGraphicsPixmapItem):
         pos = event.scenePos()
         if modifiers & Qt.ControlModifier:
             # rotate
-            refLine = QLineF(self.x(), self.y(), self.x()+self._rWidth, self.y()-self._rHeight)
+            refLine = QLineF(self.x(), self.y(), self.x() +
+                             self._rWidth, self.y() - self._rHeight)
             curLine = QLineF(self.x(), self.y(), pos.x(), pos.y())
             self.setRotation(refLine.angleTo(curLine))
         else:
@@ -1097,7 +1182,9 @@ class PixmapItem(QGraphicsPixmapItem):
                 children[0].setVisible(value)
         return value
 
+
 class GlyphScene(QGraphicsScene):
+
     def __init__(self, parent, sceneAddedItems=None):
         super(GlyphScene, self).__init__(parent)
         self._editing = False
@@ -1125,7 +1212,8 @@ class GlyphScene(QGraphicsScene):
         view = self.views()[0]
         return view._glyph
 
-    _glyphObject = property(_get_glyphObject, doc="Get the current glyph in the view.")
+    _glyphObject = property(
+        _get_glyphObject, doc="Get the current glyph in the view.")
 
     def _addRegisterItem(self, item):
         """The parent object will take care of removing these again"""
@@ -1174,26 +1262,28 @@ class GlyphScene(QGraphicsScene):
         key = event.key()
         count = event.count()
         modifiers = event.modifiers()
-        # XXX: clean this up, prioritize key dispatching before processing things
+        # XXX: clean this up, prioritize key dispatching before processing
+        #      things
         # TODO: this is not DRY w space center, put this in a function
         if modifiers & Qt.ShiftModifier:
             count *= 10
             if modifiers & Qt.ControlModifier:
                 count *= 10
         if key == Qt.Key_Left:
-            x,y = -count,0
+            x, y = -count, 0
         elif key == Qt.Key_Up:
-            x,y = 0,count
+            x, y = 0, count
         elif key == Qt.Key_Right:
-            x,y = count,0
+            x, y = count, 0
         elif key == Qt.Key_Down:
-            x,y = 0,-count
+            x, y = 0, -count
         elif key == platformSpecific.deleteKey:
             self._blocked = True
             for item in self.selectedItems():
                 if isinstance(item, OnCurvePointItem):
                     item.delete(not event.modifiers() & Qt.ShiftModifier)
-                elif isinstance(item, (AnchorItem, ComponentItem, OffCurvePointItem)):
+                elif isinstance(item, (AnchorItem, ComponentItem,
+                                       OffCurvePointItem)):
                     item.delete()
                 elif isinstance(item, PixmapItem):
                     self.removeItem(item)
@@ -1238,7 +1328,8 @@ class GlyphScene(QGraphicsScene):
             # TODO: somehow try to do this in the pen
             # pass the glyph to a controller object that holds a self._pen
             copyGlyph.width = self._glyphObject.width
-            mimeData.setData("application/x-defconQt-glyph-data", pickle.dumps([copyGlyph.serialize()]))
+            mimeData.setData("application/x-defconQt-glyph-data",
+                             pickle.dumps([copyGlyph.serialize()]))
             clipboard.setMimeData(mimeData)
             event.accept()
             return
@@ -1246,7 +1337,8 @@ class GlyphScene(QGraphicsScene):
             clipboard = QApplication.clipboard()
             mimeData = clipboard.mimeData()
             if mimeData.hasFormat("application/x-defconQt-glyph-data"):
-                data = pickle.loads(mimeData.data("application/x-defconQt-glyph-data"))
+                data = pickle.loads(mimeData.data(
+                    "application/x-defconQt-glyph-data"))
                 if len(data) == 1:
                     undo = self._glyphObject.serialize()
                     self._dataForUndo.append(undo)
@@ -1258,9 +1350,10 @@ class GlyphScene(QGraphicsScene):
             return
         else:
             sel = self.selectedItems()
-            if len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and \
-              sel[0].parentItem().getPointIndex() == len(sel[0].parentItem()._contour)-2 and \
-              key == Qt.Key_Alt and self._editing is not False:
+            if (len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and
+                    (sel[0].parentItem().getPointIndex() ==
+                        len(sel[0].parentItem()._contour) - 2) and
+                    key == Qt.Key_Alt and self._editing is not False):
                 sel[0].parentItem().setIsSmooth(False)
             super(GlyphScene, self).keyPressEvent(event)
             return
@@ -1268,17 +1361,23 @@ class GlyphScene(QGraphicsScene):
             super(GlyphScene, self).keyPressEvent(event)
             return
         for item in self.selectedItems():
-            # TODO: if isinstance turns out to be slow, we might want to make a selectedMoveBy
-            # function in items that calls moveBy for onCurve, noops for offCurve
-            if isinstance(item, OffCurvePointItem) and item.parentItem().isSelected(): continue
-            item.moveBy(x,y)
+            # TODO: if isinstance turns out to be slow, we might want to make
+            # a selectedMoveBy function in items that calls moveBy for onCurve,
+            # noops for offCurve
+            if (isinstance(item, OffCurvePointItem) and
+                    item.parentItem().isSelected()):
+                continue
+            item.moveBy(x, y)
         event.accept()
 
     def keyReleaseEvent(self, event):
         sel = self.selectedItems()
-        if len(sel) == 1 and isinstance(sel[0], OffCurvePointItem) and \
-          sel[0].parentItem().getPointIndex() == len(sel[0].parentItem()._contour)-2 and \
-          event.key() == Qt.Key_Alt and self._editing is not False:
+        if (len(sel) == 1 and
+                isinstance(sel[0], OffCurvePointItem) and
+                sel[0].parentItem().getPointIndex() ==
+                len(sel[0].parentItem()._contour) - 2 and
+                event.key() == Qt.Key_Alt and
+                self._editing is not False):
             sel[0].parentItem().setIsSmooth(True)
         super(GlyphScene, self).keyReleaseEvent(event)
 
@@ -1308,21 +1407,27 @@ class GlyphScene(QGraphicsScene):
             x, y = round(x), round(y)
         # XXX: not sure why isinstance does not work here
         if len(sel) == 1:
-            isLastOnCurve = type(sel[0]) is OnCurvePointItem and sel[0]._contour.open and \
-                sel[0].getPointIndex() == len(sel[0]._contour)-1
+            isLastOnCurve = type(sel[0]) is OnCurvePointItem and \
+                sel[0]._contour.open and \
+                sel[0].getPointIndex() == len(sel[0]._contour) - 1
             # TODO: reimplement convenience methods in OffCurvePointItem
-            isLastOffCurve = type(sel[0]) is OffCurvePointItem and sel[0].parentItem()._contour.open and \
-                sel[0].parentItem().getPointIndex()+1 == len(sel[0].parentItem()._contour)-1
+            isLastOffCurve = type(sel[0]) is OffCurvePointItem and \
+                sel[0].parentItem()._contour.open and \
+                sel[0].parentItem().getPointIndex() + 1 == \
+                len(sel[0].parentItem()._contour) - 1
         if len(sel) == 1 and (isLastOffCurve or isLastOnCurve):
             if isLastOnCurve:
                 lastContour = sel[0]._contour
             else:
                 lastContour = sel[0].parentItem()._contour
-            if (touched and isinstance(touched, OnCurvePointItem)) and touched.getPointIndex() == 0 \
-                  and lastContour == touched._contour and len(lastContour) > 1:
-                # Changing the first point from move to line/curve will cycle and so close the contour
+            if ((touched and isinstance(touched, OnCurvePointItem)) and
+                    touched.getPointIndex() == 0 and
+                    lastContour == touched._contour and
+                    len(lastContour) > 1):
+                # Changing the first point from move to line/curve will cycle
+                # and so close the contour
                 if isLastOffCurve:
-                    lastContour.addPoint((x,y))
+                    lastContour.addPoint((x, y))
                     lastContour[0].segmentType = "curve"
                     touched.childItems()[1].setVisible(True)
                 else:
@@ -1339,17 +1444,21 @@ class GlyphScene(QGraphicsScene):
                     else:
                         refx = sel[0].parentItem().x()
                         refy = sel[0].parentItem().y()
-                    if abs(x-refx) > abs(y-refy): y = copysign(refy, y)
-                    else: x = copysign(refx, x)
+                    if abs(x - refx) > abs(y - refy):
+                        y = copysign(refy, y)
+                    else:
+                        x = copysign(refx, x)
                 if isLastOffCurve:
-                    lastContour.addPoint((x,y))
-                    lastContour.addPoint((x,y), "curve")
+                    lastContour.addPoint((x, y))
+                    lastContour.addPoint((x, y), "curve")
                 else:
-                    lastContour.addPoint((x,y), "line")
-                item = OnCurvePointItem(x, y, False, lastContour, lastContour[-1], self.getViewScale())
+                    lastContour.addPoint((x, y), "line")
+                item = OnCurvePointItem(
+                    x, y, False, lastContour, lastContour[-1],
+                    self.getViewScale())
                 self._addRegisterItem(item)
                 for _ in range(2):
-                    lineObj = HandleLineItem(0, 0, 0, 0, item)
+                    HandleLineItem(0, 0, 0, 0, item)
                     CPObject = OffCurvePointItem(0, 0, item)
                     CPObject.setVisible(False)
                 if isLastOffCurve:
@@ -1359,94 +1468,107 @@ class GlyphScene(QGraphicsScene):
         elif not (touched and isinstance(touched, OnCurvePointItem)):
             nextC = TContour()
             self._glyphObject.appendContour(nextC)
-            nextC.addPoint((x,y), "move")
+            nextC.addPoint((x, y), "move")
 
-            item = OnCurvePointItem(x, y, False, self._glyphObject[-1], self._glyphObject[-1][-1], self.getViewScale())
+            item = OnCurvePointItem(
+                x, y, False,
+                self._glyphObject[-1], self._glyphObject[-1][-1],
+                self.getViewScale())
             self._addRegisterItem(item)
             for _ in range(2):
-                lineObj = HandleLineItem(0, 0, 0, 0, item)
+                HandleLineItem(0, 0, 0, 0, item)
                 CPObject = OffCurvePointItem(0, 0, item)
                 CPObject.setVisible(False)
             self._editing = True
         self._blocked = False
         super(GlyphScene, self).mousePressEvent(event)
         # Since shift clamps, we might be missing the point in mousePressEvent
-        if forceSelect: item.setSelected(True)
+        if forceSelect:
+            item.setSelected(True)
 
     def mouseMoveEvent(self, event):
         if self._editing is True:
             sel = self.selectedItems()
-            if len(sel) == 1:
-                if isinstance(sel[0], OnCurvePointItem) and (event.scenePos() - sel[0].pos()).manhattanLength() >= 2:
-                    mouseGrabberItem = self.mouseGrabberItem()
-                    # If we drawn an onCurve w Shift and we're not touching the item, we wont have
-                    # a mouse grabber (anyways), return early here.
-                    if mouseGrabberItem is None:
-                        event.accept()
-                        return
-                    self._blocked = True
-                    if len(sel[0]._contour) < 2:
-                        # release current onCurve
-                        self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
-                        mouseGrabberItem.ungrabMouse()
-                        sel[0].setSelected(False)
-                        # append an offCurve point and start moving it
-                        sel[0]._contour.addPoint((event.scenePos().x(), event.scenePos().y()))
-                        nextCP = sel[0].childItems()[3]
-                        nextCP.setVisible(True)
-                        nextCP._needsUngrab = True
-                        #nextCP.setSelected(True)
-                        self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
-                        nextCP.grabMouse()
-                    else:
-                        # release current onCurve, delete from contour
-                        self.sendEvent(sel[0], QEvent(QEvent.MouseButtonRelease))
-                        mouseGrabberItem.ungrabMouse()
-                        sel[0].setSelected(False)
-
-                        # construct a curve segment to the current point if there is not one
-                        onCurve = sel[0]._point
-                        if not onCurve.segmentType == "curve":
-                            # remove the last onCurve
-                            sel[0]._contour.removePoint(onCurve)
-                            prev = sel[0]._contour[-1]
-                            self.getItemForPoint(prev).childItems()[3].setVisible(True)
-                            # add a zero-length offCurve to the previous point
-                            sel[0]._contour.addPoint((prev.x, prev.y))
-                            # add prevOffCurve and activate
-                            sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
-                            sel[0].childItems()[1].setVisible(True)
-                            # add back current onCurve as a curve point
-                            sel[0]._contour.addPoint((onCurve.x, onCurve.y), "curve")
-                            sel[0]._point = sel[0]._contour[-1]
-                        if not QApplication.keyboardModifiers() & Qt.AltModifier:
-                            sel[0]._point.smooth = True
-                            sel[0]._isSmooth = True
-                            sel[0].setPointPath()
-                        if sel[0].getPointIndex() == 0:
-                            # we're probably dealing with the first point that we looped.
-                            # preserve nextCP whatsoever.
-                            lineObj = HandleLineItem(0, 0, 0, 0, sel[0])
-                            nextCP = OffCurvePointItem(0, 0, sel[0])
-                            # now we have l1, p1, l2, p2, l3, p3
-                            l2 = sel[0].childItems()[2]
-                            lineObj.stackBefore(l2)
-                            nextCP.stackBefore(l2)
-                        else:
-                            # add last offCurve
-                            sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
-                            nextCP = sel[0].childItems()[3]
-                        nextCP._needsUngrab = True
-                        nextCP.setVisible(True)
-                        #nextCP.setSelected(True)
-                        self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
-                        nextCP.grabMouse()
-                    self._blocked = False
-                    self._editing = None
-                    super(GlyphScene, self).mouseMoveEvent(event)
-                else:
-                    # eat the event
+            if (len(sel) == 1 and isinstance(sel[0], OnCurvePointItem) and
+                    (event.scenePos() - sel[0].pos()).manhattanLength() >= 2):
+                mouseGrabberItem = self.mouseGrabberItem()
+                # If we drawn an onCurve w Shift and we're not touching
+                # the item, we wont have a mouse grabber (anyways), return
+                # early here.
+                if mouseGrabberItem is None:
                     event.accept()
+                    return
+                self._blocked = True
+                if len(sel[0]._contour) < 2:
+                    # release current onCurve
+                    self.sendEvent(sel[0], QEvent(
+                        QEvent.MouseButtonRelease))
+                    mouseGrabberItem.ungrabMouse()
+                    sel[0].setSelected(False)
+                    # append an offCurve point and start moving it
+                    sel[0]._contour.addPoint(
+                        (event.scenePos().x(), event.scenePos().y()))
+                    nextCP = sel[0].childItems()[3]
+                    nextCP.setVisible(True)
+                    nextCP._needsUngrab = True
+                    # nextCP.setSelected(True)
+                    self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
+                    nextCP.grabMouse()
+                else:
+                    # release current onCurve, delete from contour
+                    self.sendEvent(sel[0], QEvent(
+                        QEvent.MouseButtonRelease))
+                    mouseGrabberItem.ungrabMouse()
+                    sel[0].setSelected(False)
+
+                    # construct a curve segment to the current point if
+                    # there is not one
+                    onCurve = sel[0]._point
+                    if not onCurve.segmentType == "curve":
+                        # remove the last onCurve
+                        sel[0]._contour.removePoint(onCurve)
+                        prev = sel[0]._contour[-1]
+                        self.getItemForPoint(prev).childItems()[
+                            3].setVisible(True)
+                        # add a zero-length offCurve to the previous point
+                        sel[0]._contour.addPoint((prev.x, prev.y))
+                        # add prevOffCurve and activate
+                        sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
+                        sel[0].childItems()[1].setVisible(True)
+                        # add back current onCurve as a curve point
+                        sel[0]._contour.addPoint(
+                            (onCurve.x, onCurve.y), "curve")
+                        sel[0]._point = sel[0]._contour[-1]
+                    if (not QApplication.keyboardModifiers() &
+                            Qt.AltModifier):
+                        sel[0]._point.smooth = True
+                        sel[0]._isSmooth = True
+                        sel[0].setPointPath()
+                    if sel[0].getPointIndex() == 0:
+                        # we're probably dealing with the first point that
+                        # we looped.
+                        # preserve nextCP whatsoever.
+                        lineObj = HandleLineItem(0, 0, 0, 0, sel[0])
+                        nextCP = OffCurvePointItem(0, 0, sel[0])
+                        # now we have l1, p1, l2, p2, l3, p3
+                        l2 = sel[0].childItems()[2]
+                        lineObj.stackBefore(l2)
+                        nextCP.stackBefore(l2)
+                    else:
+                        # add last offCurve
+                        sel[0]._contour.addPoint((sel[0].x(), sel[0].y()))
+                        nextCP = sel[0].childItems()[3]
+                    nextCP._needsUngrab = True
+                    nextCP.setVisible(True)
+                    # nextCP.setSelected(True)
+                    self.sendEvent(nextCP, QEvent(QEvent.MouseButtonPress))
+                    nextCP.grabMouse()
+                self._blocked = False
+                self._editing = None
+                super(GlyphScene, self).mouseMoveEvent(event)
+            elif len(sel) == 1:
+                # eat the event
+                event.accept()
         else:
             currentTool = self.views()[0]._currentTool
             if currentTool == SceneTools.RulerTool:
@@ -1458,8 +1580,9 @@ class GlyphScene(QGraphicsScene):
             items = self.items(event.scenePos())
             # XXX: we must cater w mouse tracking
             # we dont need isSelected() once its rid
-            if len(items) > 1 and isinstance(items[0], OnCurvePointItem) and \
-                  isinstance(items[1], OffCurvePointItem) and items[1].isSelected():
+            if (len(items) > 1 and isinstance(items[0], OnCurvePointItem) and
+                    isinstance(items[1], OffCurvePointItem) and
+                    items[1].isSelected()):
                 items[1].setPos(0, 0)
             else:
                 super(GlyphScene, self).mouseMoveEvent(event)
@@ -1469,7 +1592,8 @@ class GlyphScene(QGraphicsScene):
         currentTool = self.views()[0]._currentTool
         if currentTool == SceneTools.DrawingTool:
             # cleanup extra point elements if we dealt w curved first point
-            touched = self.itemAt(event.scenePos(), self.views()[0].transform())
+            touched = self.itemAt(event.scenePos(),
+                                  self.views()[0].transform())
             if touched and isinstance(touched, OffCurvePointItem):
                 onCurve = touched.parentItem()
                 children = onCurve.childItems()
@@ -1492,7 +1616,7 @@ class GlyphScene(QGraphicsScene):
     def rulerMousePress(self, event):
         touched = self.itemAt(event.scenePos(), self.views()[0].transform())
         if touched is not None and isinstance(touched, OnCurvePointItem) or \
-            isinstance(touched, OffCurvePointItem):
+                isinstance(touched, OffCurvePointItem):
             x, y = touched.scenePos().x(), touched.scenePos().y()
         else:
             x, y = event.scenePos().x(), event.scenePos().y()
@@ -1503,8 +1627,8 @@ class GlyphScene(QGraphicsScene):
             self._cachedRuler = None
         path = QPainterPath()
         path.moveTo(x, y)
-        path.lineTo(x+1, y)
-        path.lineTo(x+1, y+1)
+        path.lineTo(x + 1, y)
+        path.lineTo(x + 1, y + 1)
         path.closeSubpath()
         self._rulerObject = self.addPath(path)
         textItem = QGraphicsSimpleTextItem("0", self._rulerObject)
@@ -1516,11 +1640,13 @@ class GlyphScene(QGraphicsScene):
         event.accept()
 
     def rulerMouseMove(self, event):
-        # XXX: shouldnt have to do this, it seems mouseTracking is wrongly activated
-        if self._rulerObject is None: return
+        # XXX: shouldnt have to do this, it seems mouseTracking is wrongly
+        # activated
+        if self._rulerObject is None:
+            return
         touched = self.itemAt(event.scenePos(), self.views()[0].transform())
         if touched is not None and isinstance(touched, OnCurvePointItem) or \
-            isinstance(touched, OffCurvePointItem):
+                isinstance(touched, OffCurvePointItem):
             x, y = touched.scenePos().x(), touched.scenePos().y()
         else:
             # TODO: 45deg clamp w ShiftModifier
@@ -1547,11 +1673,15 @@ class GlyphScene(QGraphicsScene):
         text = "%d\n↔ %d\n↕ %d\nα %dº" % (l, h, v, a)
         textItem.setText(text)
         dx = x - baseElem.x
-        if dx >= 0: px = x
-        else: px = x - textItem.boundingRect().width()
+        if dx >= 0:
+            px = x
+        else:
+            px = x - textItem.boundingRect().width()
         dy = y - baseElem.y
-        if dy > 0: py = baseElem.y
-        else: py = baseElem.y + textItem.boundingRect().height()
+        if dy > 0:
+            py = baseElem.y
+        else:
+            py = baseElem.y + textItem.boundingRect().height()
         textItem.setPos(px, py)
         event.accept()
 
@@ -1579,26 +1709,27 @@ class GlyphScene(QGraphicsScene):
     Takes four defcon points describing curve and four scalars describing line
     parameters.
     """
+
     def computeIntersections(self, p1, p2, p3, p4, x1, y1, x2, y2):
         bx, by = x1 - x2, y2 - y1
-        m = x1*(y1-y2) + y1*(x2-x1)
-        a, b, c, d = bezierTools.calcCubicParameters((p1.x, p1.y), (p2.x, p2.y),
-            (p3.x, p3.y), (p4.x, p4.y))
+        m = x1 * (y1 - y2) + y1 * (x2 - x1)
+        a, b, c, d = bezierTools.calcCubicParameters(
+            (p1.x, p1.y), (p2.x, p2.y), (p3.x, p3.y), (p4.x, p4.y))
 
-        pc0 = by*a[0] + bx*a[1]
-        pc1 = by*b[0] + bx*b[1]
-        pc2 = by*c[0] + bx*c[1]
-        pc3 = by*d[0] + bx*d[1] + m
+        pc0 = by * a[0] + bx * a[1]
+        pc1 = by * b[0] + bx * b[1]
+        pc2 = by * c[0] + bx * c[1]
+        pc3 = by * d[0] + bx * d[1] + m
         r = bezierTools.solveCubic(pc0, pc1, pc2, pc3)
 
         sol = []
         for t in r:
-            s0 = a[0]*t**3 + b[0]*t**2 + c[0]*t + d[0]
-            s1 = a[1]*t**3 + b[1]*t**2 + c[1]*t + d[1]
-            if (x2-x1) != 0:
-                s = (s0-x1) / (x2-x1)
+            s0 = a[0] * t ** 3 + b[0] * t ** 2 + c[0] * t + d[0]
+            s1 = a[1] * t ** 3 + b[1] * t ** 2 + c[1] * t + d[1]
+            if (x2 - x1) != 0:
+                s = (s0 - x1) / (x2 - x1)
             else:
-                s = (s1-y1) / (y2-y1)
+                s = (s1 - y1) / (y2 - y1)
             if not (t < 0 or t > 1 or s < 0 or s > 1):
                 sol.append((s0, s1, t))
         return sol
@@ -1606,22 +1737,26 @@ class GlyphScene(QGraphicsScene):
     """
     G. Bach, http://stackoverflow.com/a/1968345
     """
+
     def lineIntersection(self, x1, y1, x2, y2, x3, y3, x4, y4):
         Bx_Ax = x2 - x1
         By_Ay = y2 - y1
         Dx_Cx = x4 - x3
         Dy_Cy = y4 - y3
         determinant = (-Dx_Cx * By_Ay + Bx_Ax * Dy_Cy)
-        if abs(determinant) < 1e-20: return []
+        if abs(determinant) < 1e-20:
+            return []
         s = (-By_Ay * (x1 - x3) + Bx_Ax * (y1 - y3)) / determinant
-        t = ( Dx_Cx * (y1 - y3) - Dy_Cy * (x1 - x3)) / determinant
+        t = (Dx_Cx * (y1 - y3) - Dy_Cy * (x1 - x3)) / determinant
         if s >= 0 and s <= 1 and t >= 0 and t <= 1:
             return [(x1 + (t * Bx_Ax), y1 + (t * By_Ay), t)]
         return []
 
     def knifeMouseMove(self, event):
-        # XXX: shouldnt have to do this, it seems mouseTracking is wrongly activated
-        if self._knifeLine is None: return
+        # XXX: shouldnt have to do this, it seems mouseTracking is wrongly
+        # activated
+        if self._knifeLine is None:
+            return
         for dot in self._knifeDots:
             self.removeItem(dot)
         self._knifeDots = []
@@ -1635,14 +1770,19 @@ class GlyphScene(QGraphicsScene):
         for contour in glyph:
             segments = contour.segments
             for index, seg in enumerate(segments):
-                prev = segments[index-1][-1]
+                prev = segments[index - 1][-1]
                 if len(seg) == 3:
-                    i = self.computeIntersections(prev, seg[0], seg[1], seg[2], line.x1(), line.y1(), x, y)
+                    i = self.computeIntersections(
+                        prev, seg[0], seg[1], seg[2],
+                        line.x1(), line.y1(), x, y)
                 else:
-                    i = self.lineIntersection(prev.x, prev.y, seg[0].x, seg[0].y, line.x1(), line.y1(), x, y)
+                    i = self.lineIntersection(
+                        prev.x, prev.y, seg[0].x, seg[0].y,
+                        line.x1(), line.y1(), x, y)
                 for pt in i:
                     scale = self.getViewScale()
-                    item = self.addEllipse(-offHalf/scale, -offHalf/scale, offWidth/scale, offHeight/scale)
+                    item = self.addEllipse(-offHalf / scale, -offHalf / scale,
+                                           offWidth / scale, offHeight / scale)
                     item.setPos(pt[0], pt[1])
                     self._cachedIntersections.append((contour, index, pt[2]))
                     self._knifeDots.append(item)
@@ -1667,6 +1807,7 @@ class GlyphScene(QGraphicsScene):
 
 
 class GlyphView(QGraphicsView):
+
     def __init__(self, glyph, settings, parent=None):
         super(GlyphView, self).__init__(parent)
 
@@ -1688,7 +1829,8 @@ class GlyphView(QGraphicsView):
         self._showMetricsTitles = True
 
         self.setBackgroundBrush(QBrush(Qt.lightGray))
-        self.setScene(GlyphScene(self, self._getSceneItems('scene-added-items')))
+        self.setScene(GlyphScene(
+            self, self._getSceneItems('scene-added-items')))
         font = self.font()
         font.setFamily("Roboto Mono")
         font.setFixedPitch(True)
@@ -1696,7 +1838,7 @@ class GlyphView(QGraphicsView):
 
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        #self.setViewportUpdateMode(QGraphicsView.BoundingRectViewportUpdate)
+        # self.setViewportUpdateMode(QGraphicsView.BoundingRectViewportUpdate)
         self.horizontalScrollBar().valueChanged.connect(self.scaleElements)
 
         self.setSceneSelection()
@@ -1715,7 +1857,6 @@ class GlyphView(QGraphicsView):
         self._listenToLayerSet()
 
         self.changeCurrentLayer(self._layer)
-
 
     @property
     def _glyph(self):
@@ -1736,11 +1877,13 @@ class GlyphView(QGraphicsView):
     def defaultWidth(self):
         defaultLayer = self._layerSet[None]
         return defaultLayer[self._name].width \
-                                    if self._name in defaultLayer else 0
+            if self._name in defaultLayer else 0
 
     def _listenToLayerSet(self):
-        self._layerSet.addObserver(self, '_layerDeleted', 'LayerSet.LayerWillBeDeleted')
-        self._layerSet.addObserver(self, '_layerGenericVisualChange', 'LayerSet.LayerOrderChanged')
+        self._layerSet.addObserver(
+            self, '_layerDeleted', 'LayerSet.LayerWillBeDeleted')
+        self._layerSet.addObserver(
+            self, '_layerGenericVisualChange', 'LayerSet.LayerOrderChanged')
 
     def _listenToLayer(self, layer, remove=False):
         if remove:
@@ -1753,7 +1896,8 @@ class GlyphView(QGraphicsView):
 
     def _listenToGlyph(self, layer):
         layer[self._name].addObserver(self, "_glyphChanged", "Glyph.Changed")
-        layer.addObserver(self, '_layerGenericVisualChange', 'Layer.ColorChanged')
+        layer.addObserver(self, '_layerGenericVisualChange',
+                          'Layer.ColorChanged')
 
     def layerAdded(self, layer):
         self._listenToLayer(layer)
@@ -1822,16 +1966,21 @@ class GlyphView(QGraphicsView):
         scene = self.scene()
         font = self._glyph.getParent()
         width = self._glyph.width
-        if width is None: width = 0
-        item = scene.addRect(-1000, -1000, 3000, 3000, QPen(Qt.black), QBrush(Qt.gray))
+        if width is None:
+            width = 0
+        item = scene.addRect(-1000, -1000, 3000, 3000,
+                             QPen(Qt.black), QBrush(Qt.gray))
         item.setZValue(-1000)
-        scene._widthItem = scene.addRect(0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
+        scene._widthItem = scene.addRect(
+            0, -1000, width, 3000, QPen(Qt.NoPen), QBrush(backgroundColor))
         scene._widthItem.setZValue(-999)
         descender = font.info.descender
-        if descender is None: descender = -250
+        if descender is None:
+            descender = -250
         unitsPerEm = font.info.unitsPerEm
-        if unitsPerEm is None: unitsPerEm = 1000
-        self.centerOn(width/2, descender+unitsPerEm/2)
+        if unitsPerEm is None:
+            unitsPerEm = 1000
+        self.centerOn(width / 2, descender + unitsPerEm / 2)
 
     def addBlues(self):
         scene = self.scene()
@@ -1847,16 +1996,18 @@ class GlyphView(QGraphicsView):
             yMaxs = [i for index, i in enumerate(values) if index % 2]
             for yMin, yMax in zip(yMins, yMaxs):
                 if yMin == yMax:
-                    item = scene.addLine(-1000, yMin, 3000, yMax, QPen(bluesColor))
+                    item = scene.addLine(-1000, yMin, 3000,
+                                         yMax, QPen(bluesColor))
                     item.setZValue(-998)
                 else:
-                    item = scene.addRect(-1000, yMin, 3000, yMax - yMin, QPen(Qt.NoPen), QBrush(bluesColor))
+                    item = scene.addRect(-1000, yMin, 3000, yMax - yMin,
+                                         QPen(Qt.NoPen), QBrush(bluesColor))
                     item.setZValue(-998)
 
     def addHorizontalMetrics(self):
         scene = self.scene()
         font = self._glyph.getParent()
-        width = self._glyph.width# * self._inverseScale
+        width = self._glyph.width  # * self._inverseScale
         toDraw = [
             ("Descender", font.info.descender),
             ("Baseline", 0),
@@ -1877,11 +2028,10 @@ class GlyphView(QGraphicsView):
             item = scene.addLine(-1000, y, 2000, y, QPen(metricsColor))
             item.setZValue(-997)
 
-
         labels = self._getSceneItems('hMetricLabels', clear=True)
         # text
-        if self._showMetricsTitles:# and self._impliedPointSize > 150:
-            fontSize = 9# * self._inverseScale
+        if self._showMetricsTitles:  # and self._impliedPointSize > 150:
+            fontSize = 9  # * self._inverseScale
             font = self.font()
             font.setPointSize(fontSize)
             for position, names in sorted(positions.items()):
@@ -1903,21 +2053,23 @@ class GlyphView(QGraphicsView):
             return QColor.fromRgbF(*layer.color)
         return None
 
-
     def _getDrawingStyleForLayer(self, layer, kind=None):
         isActive = layer is self._layer
         isFilled = self._settings.activeLayerFilled \
-                    if isActive else self._settings.otherLayersFilled
+            if isActive else self._settings.otherLayersFilled
         isOutlined = not isFilled
         useLayerColor = self._settings.activeLayerUseLayerColor \
-                    if isActive else self._settings.otherLayerUseLayerColor
+            if isActive else self._settings.otherLayerUseLayerColor
 
         if useLayerColor:
             brushcolor = self.getLayerColor(layer) or Qt.black
             pencolor = brushcolor
         else:
             # default app colors
-            brushcolor = fillColor if kind != 'component' else componentFillColor
+            if kind != 'component':
+                brushcolor = fillColor
+            else:
+                brushcolor = componentFillColor
             pencolor = Qt.black
 
         if isOutlined:
@@ -1930,11 +2082,11 @@ class GlyphView(QGraphicsView):
         if isActive and not useLayerColor:
             # The originally released app did fall back to QT's default
             #  behavior i.e. no pen defined, so I preserve this here
-            if isOutlined: brush = None # like Qt.NoBrush
-            else: pen = None # like Qt.black
+            if isOutlined:
+                brush = None  # like Qt.NoBrush
+            else:
+                pen = None  # like Qt.black
         return (pen, brush)
-
-
 
     @property
     def _activeLayerZValue(self):
@@ -1943,7 +2095,8 @@ class GlyphView(QGraphicsView):
     def drawAllLayers(self):
         activeLayer = self._layer
         # all layers before the active layer are -996
-        # the active layer is -995 or -993 if self._settings.activeLayerOnTop == True
+        # the active layer is -995 or -993 if
+        # self._settings.activeLayerOnTop == True
         # all layers after the active layer are -996
         zValue = -996
         for layer in reversed(list(self._layerSet)):
@@ -1983,8 +2136,10 @@ class GlyphView(QGraphicsView):
         item.setPath(path)
 
         pen, brush = self._getDrawingStyleForLayer(layer)
-        if pen: item.setPen(pen)
-        if brush: item.setBrush(brush)
+        if pen:
+            item.setPen(pen)
+        if brush:
+            item.setBrush(brush)
 
         item.setZValue(zValue)
 
@@ -1998,11 +2153,13 @@ class GlyphView(QGraphicsView):
         return item
 
     def updateActiveLayerPath(self):
-        self.updateLayerPath(self._layer, representationKey="defconQt.NoComponentsQPainterPath")
+        self.updateLayerPath(
+            self._layer, representationKey="defconQt.NoComponentsQPainterPath")
 
-    def updateLayerPath(self, layer, representationKey="defconQt.QPainterPath"):
+    def updateLayerPath(self, layer,
+                        representationKey="defconQt.QPainterPath"):
         glyph = layer[self._name]
-        scene = self.scene()
+        # scene = self.scene()  # unused
         path = glyph.getRepresentation(representationKey)
         self._sceneItems[layer].setPath(path)
         self.addStartPoints()
@@ -2032,8 +2189,10 @@ class GlyphView(QGraphicsView):
             componentGlyph = layer[component.baseGlyph]
             path = componentGlyph.getRepresentation("defconQt.QPainterPath")
             item = ComponentItem(path, component)
-            if pen: item.setPen(pen)
-            if brush: item.setBrush(brush)
+            if pen:
+                item.setPen(pen)
+            if brush:
+                item.setBrush(brush)
             item.setZValue(self._activeLayerZValue)
             components.append(item)
             scene.addItem(item)
@@ -2051,8 +2210,9 @@ class GlyphView(QGraphicsView):
     def addStartPoints(self):
         scene = self.scene()
         startPointItems = self._getSceneItems('startPoints', clear=True)
-        startPointsData = self._glyph.getRepresentation("defconQt.StartPointsInformation")
-        path = QPainterPath()
+        startPointsData = self._glyph.getRepresentation(
+            "defconQt.StartPointsInformation")
+        # path = QPainterPath()  # unused
         for point, angle in startPointsData:
             x, y = point
             if angle is not None:
@@ -2064,13 +2224,17 @@ class GlyphView(QGraphicsView):
         scene = self.scene()
         pointItems = self._getSceneItems('points', clear=True)
         # use the data from the outline representation
-        outlineData = self._glyph.getRepresentation("defconQt.OutlineInformation")
+        outlineData = self._glyph.getRepresentation(
+            "defconQt.OutlineInformation")
         scale = self.transform().m11()
         for onCurve in outlineData:
             # on curve
             x, y = onCurve.x, onCurve.y
-            item = OnCurvePointItem(x, y, onCurve.isSmooth, self._glyph[onCurve.contourIndex],
-                self._glyph[onCurve.contourIndex][onCurve.pointIndex], scale)
+            item = OnCurvePointItem(
+                x, y, onCurve.isSmooth,
+                self._glyph[onCurve.contourIndex],
+                self._glyph[onCurve.contourIndex][onCurve.pointIndex],
+                scale)
             pointItems.append(item)
             scene.addItem(item)
             # off curve
@@ -2078,12 +2242,11 @@ class GlyphView(QGraphicsView):
                 if CP:
                     cx, cy = CP
                     # line
-                    lineObj = HandleLineItem(0, 0, cx-x, cy-y, item)
+                    HandleLineItem(0, 0, cx - x, cy - y, item)
                     # point
-                    CPObject = OffCurvePointItem(cx-x, cy-y, item)
+                    CPObject = OffCurvePointItem(cx - x, cy - y, item)
                 else:
-                    lineObj = HandleLineItem(0, 0, 0, 0, item)
-                    #lineObj.setVisible(False)
+                    HandleLineItem(0, 0, 0, 0, item)
                     CPObject = OffCurvePointItem(0, 0, item)
                     CPObject.setVisible(False)
         '''
@@ -2164,10 +2327,13 @@ class GlyphView(QGraphicsView):
         # TODO: we should have an app-wide mechanism to handle default metrics
         # values (that are applied to new fonts as well)
         descender = font.info.descender
-        if descender is None: descender = -250
+        if descender is None:
+            descender = -250
         unitsPerEm = font.info.unitsPerEm
-        if unitsPerEm is None: unitsPerEm = 1000
-        self.fitInView(0, descender, self._glyph.width, unitsPerEm, Qt.KeepAspectRatio)
+        if unitsPerEm is None:
+            unitsPerEm = 1000
+        self.fitInView(0, descender, self._glyph.width,
+                       unitsPerEm, Qt.KeepAspectRatio)
 
     def mousePressEvent(self, event):
         if (event.button() == Qt.MidButton):
@@ -2209,10 +2375,12 @@ class GlyphView(QGraphicsView):
         self.scale(factor, factor)
 
     def scaleElements(self):
-        # TODO: stop displaying SimpleTextItems at certains sizes, maybe anchor them differently as well
+        # TODO: stop displaying SimpleTextItems at certains sizes, maybe anchor
+        # them differently as well
         scale = self.transform().m11()
         if scale < 4:
             for item in self.scene().items():
-                if isinstance(item, (OnCurvePointItem, OffCurvePointItem, \
-                  ResizeHandleItem, AnchorItem, StartPointItem)):
+                if isinstance(item, (OnCurvePointItem, OffCurvePointItem,
+                                     ResizeHandleItem, AnchorItem,
+                                     StartPointItem)):
                     item.setPointPath(scale)
