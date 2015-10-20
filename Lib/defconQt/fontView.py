@@ -8,18 +8,18 @@ from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defconQt.util import platformSpecific
 from defcon import Color, Component
-from defconQt.spaceCenter import MainSpaceWindow
+from defconQt.spaceCenter import MainSpaceWindow, comboBoxItems
 from PyQt5.QtCore import (
     pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
 from PyQt5.QtGui import (
     QColor, QCursor, QIcon, QIntValidator, QKeySequence, QPixmap,
     QRegularExpressionValidator, QTextCursor)
 from PyQt5.QtWidgets import (
-    QAction, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
-    QErrorMessage, QFileDialog, QGridLayout, QGroupBox, QLabel, QLineEdit,
-    QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
-    QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
-    QTextEdit, QToolTip, QVBoxLayout, QWidget)
+    QAbstractItemView, QAction, QApplication, QCheckBox, QComboBox, QDialog,
+    QDialogButtonBox, QErrorMessage, QFileDialog, QGridLayout, QGroupBox,
+    QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu,
+    QMessageBox, QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter,
+    QTabWidget, QTextEdit, QToolTip, QVBoxLayout, QWidget)
 from collections import OrderedDict
 import os
 import pickle
@@ -1190,6 +1190,7 @@ class SettingsDialog(QDialog):
 
         self.tabWidget = QTabWidget(self)
         self.tabWidget.addTab(GlyphSetTab(self), "Glyph sets")
+        self.tabWidget.addTab(SpaceCenterTab(self), "Space center")
 
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -1210,7 +1211,7 @@ class SettingsDialog(QDialog):
 def getDefaultGlyphSet(settings=None):
     if settings is None:
         settings = QSettings()
-    settings.value("settings/defaultGlyphSet", latinDefault.name, type=str)
+    settings.value("settings/defaultGlyphSet", latinDefault.name, str)
 
 
 def readGlyphSets(settings=None):
@@ -1239,7 +1240,7 @@ class GlyphSetTab(QWidget):
         self.defaultGlyphSetBox = QCheckBox("Default glyph set:", self)
         self.defaultGlyphSetDrop = QComboBox(self)
         defaultGlyphSet = settings.value(
-            "settings/defaultGlyphSet", latinDefault.name, type=str)
+            "settings/defaultGlyphSet", latinDefault.name, str)
         self.defaultGlyphSetBox.toggled.connect(self.toggleGlyphSetDrop)
         self.defaultGlyphSetBox.setChecked(len(defaultGlyphSet))
         self.glyphSets = readGlyphSets()
@@ -1266,7 +1267,7 @@ class GlyphSetTab(QWidget):
         splitter.addWidget(self.glyphSetContents)
         self.addGlyphSetButton = QPushButton("+", self)
         self.addGlyphSetButton.pressed.connect(self.addGlyphSet)
-        self.removeGlyphSetButton = QPushButton("-", self)
+        self.removeGlyphSetButton = QPushButton("−", self)
         self.removeGlyphSetButton.setEnabled(len(self.glyphSets) > 1)
         self.removeGlyphSetButton.pressed.connect(self.removeGlyphSet)
         self.importButton = QPushButton("Import", self)
@@ -1365,3 +1366,54 @@ class GlyphSetTab(QWidget):
             defaultGlyphSet = self.defaultGlyphSetDrop.currentText()
             if defaultGlyphSet != latinDefault.name:
                 settings.setValue("settings/defaultGlyphSet", defaultGlyphSet)
+
+
+class SpaceCenterTab(QTabWidget):
+
+    def __init__(self, parent=None):
+        super(SpaceCenterTab, self).__init__(parent)
+
+        settings = QSettings()
+        self.inputTextLabel = QLabel("Default text:", self)
+        self.inputTextList = QListWidget(self)
+        self.inputTextList.setDragDropMode(QAbstractItemView.InternalMove)
+        entries = settings.value("spaceCenter/comboBoxItems", comboBoxItems,
+                                 str)
+        for entry in entries:
+            item = QListWidgetItem(entry, self.inputTextList)
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
+        self.addItemButton = QPushButton("+", self)
+        self.removeItemButton = QPushButton("−", self)
+        if not len(entries):
+            self.removeItemButton.setEnabled(False)
+
+        layout = QGridLayout(self)
+        l = 0
+        layout.addWidget(self.inputTextLabel, l, 0, 1, 3)
+        l += 1
+        layout.addWidget(self.inputTextList, l, 0, 1, 3)
+        l += 1
+        layout.addWidget(self.addItemButton, l, 0)
+        layout.addWidget(self.removeItemButton, l, 1)
+        self.setLayout(layout)
+
+    def addItem(self):
+        item = QListWidgetItem(self.inputTextList)
+        item.setFlags(item.flags() | Qt.ItemIsEditable)
+        self.inputTextList.setCurrentItem(item)
+        self.inputTextList.editItem(item)
+        self.removeItemButton.setEnabled(True)
+
+    def removeItem(self):
+        i = self.inputTextList.currentRow()
+        self.inputTextList.takeItem(i)
+        if not self.inputTextList.count():
+            self.removeItemButton.setEnabled(False)
+
+    def writeValues(self):
+        entries = []
+        for i in range(self.inputTextList.count()):
+            item = self.inputTextList.item(i)
+            entries.append(item.text())
+        settings = QSettings()
+        settings.setValue("spaceCenter/comboBoxItems", entries)

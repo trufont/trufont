@@ -350,16 +350,6 @@ class MainGfxWindow(QMainWindow):
         toolsGroup.addAction(knifeToolButton)
         self.addToolBar(toolBar)
 
-        self.setContextMenuPolicy(Qt.ActionsContextMenu)
-        createAnchorAction = QAction("Add Anchor…", self)
-        createAnchorAction.triggered.connect(
-            self._redirect('view', 'createAnchor'))
-        self.addAction(createAnchorAction)
-        createComponentAction = QAction("Add Component…", self)
-        createComponentAction.triggered.connect(
-            self._redirect('view', 'createComponent'))
-        self.addAction(createComponentAction)
-
         for layer in self._layerSet:
             self._listenToLayer(layer)
 
@@ -1848,6 +1838,14 @@ class GlyphView(QGraphicsView):
         self.addBackground()
         self.addBlues()
         self.addHorizontalMetrics()
+
+        self.setContextMenuPolicy(Qt.ActionsContextMenu)
+        createAnchorAction = QAction("Add Anchor…", self)
+        createAnchorAction.triggered.connect(self.createAnchor)
+        self.addAction(createAnchorAction)
+        createComponentAction = QAction("Add Component…", self)
+        createComponentAction.triggered.connect(self.createComponent)
+        self.addAction(createComponentAction)
 
         for layer in layerSet:
             if self._name not in layer:

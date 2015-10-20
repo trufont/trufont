@@ -50,8 +50,7 @@ class GlyphCollectionWidget(QWidget):
         super(GlyphCollectionWidget, self).__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self._glyphs = []
-        # TODO: hide behind a façade
-        self.squareSize = 56
+        self._squareSize = 56
         self._columns = 10
         self._selection = set()
         self._oldSelection = None
@@ -123,6 +122,16 @@ class GlyphCollectionWidget(QWidget):
     def lastSelectedGlyph(self):
         index = self._lastSelectedCell
         return self._glyphs[index] if index is not None else None
+
+    def _get_squareSize(self):
+        return self._squareSize
+
+    def _set_squareSize(self, squareSize):
+        self._squareSize = squareSize
+        voidFont.setPointSize(.425 * self.squareSize)
+
+    squareSize = property(_get_squareSize, _set_squareSize, doc="The size of"
+                          "a glyph cell.")
 
     def scrollArea(self):
         return self._scrollArea
@@ -239,6 +248,9 @@ class GlyphCollectionWidget(QWidget):
             self.lastSelectedCell = newSel
 
     def keyPressEvent(self, event):
+        def isUnicodeChar(char):
+            return len(char) and unicodedata.category(char) != "Cc"
+
         key = event.key()
         modifiers = event.modifiers()
         if key in arrowKeys:
@@ -270,8 +282,8 @@ class GlyphCollectionWidget(QWidget):
                         # XXX: have template setter clear glyph content
                         glyph.template = True
                 self.selection = set()
-        elif (modifiers in (Qt.NoModifier, Qt.ShiftModifier) and
-                unicodedata.category(event.text()) != "Cc"):
+        elif modifiers in (Qt.NoModifier, Qt.ShiftModifier) and \
+                isUnicodeChar(event.text()):
             # adapted from defconAppkit
             # get the current time
             rightNow = time.time()
