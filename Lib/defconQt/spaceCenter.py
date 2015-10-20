@@ -10,6 +10,14 @@ from PyQt5.QtWidgets import (
     QPushButton, QScrollArea, QStyledItemDelegate, QTableWidget,
     QTableWidgetItem, QVBoxLayout, QSizePolicy, QToolBar, QWidget)
 
+comboBoxItems = [
+    "abcdefghijklmnopqrstuvwxyz",
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "0123456789",
+    "nn/? nono/? oo",
+    "HH/? HOHO/? OO",
+]
+
 defaultPointSize = 150
 glyphSelectionColor = QColor(cellSelectionColor)
 glyphSelectionColor.setAlphaF(.09)
@@ -29,19 +37,17 @@ class MainSpaceWindow(QWidget):
             string = "Hello %s" % string
         self.font = font
         self.glyphs = []
-        self.toolbar = FontToolBar(string, pointSize, self)
+        self.toolbar = FontToolBar(pointSize, self)
         self.canvas = GlyphsCanvas(self.font, self.glyphs, pointSize, self)
         self.table = SpaceTable(self.glyphs, self)
         self.toolbar.comboBox.currentIndexChanged[
             str].connect(self.canvas.setPointSize)
-        self.toolbar.textField.textEdited.connect(self._textChanged)
+        self.toolbar.textField.editTextChanged.connect(self._textChanged)
         self.canvas.doubleClickCallback = self._glyphOpened
         self.canvas.pointSizeCallback = self.toolbar.setPointSize
         self.canvas.selectionChangedCallback = self.table.setCurrentGlyph
         self.table.selectionChangedCallback = self.canvas.setSelected
-        # TODO: not exactly DRY
-        self.toolbar.textField.setText(string)
-        self.toolbar.textField.textEdited.emit(string)
+        self.toolbar.textField.setEditText(string)
         app = QApplication.instance()
         app.currentGlyphChanged.connect(self._textChanged)
 
@@ -88,7 +94,7 @@ class MainSpaceWindow(QWidget):
         self._unsubscribeFromGlyphs()
         # subscribe to the new glyphs
         left = self.textToGlyphNames(self.toolbar.leftTextField.text())
-        newText = self.textToGlyphNames(self.toolbar.textField.text())
+        newText = self.textToGlyphNames(self.toolbar.textField.currentText())
         right = self.textToGlyphNames(self.toolbar.rightTextField.text())
         leftGlyphs = []
         for name in left:
@@ -186,7 +192,7 @@ class MainSpaceWindow(QWidget):
                 glyphNames.append(chr(glyph.unicode))
             else:
                 glyphNames.append("".join(("/", glyph.name, " ")))
-        self.toolbar.textField.setText("".join(glyphNames))
+        self.toolbar.textField.setEditText("".join(glyphNames))
         # set the records into the view
         self.canvas.setGlyphs(self.glyphs)
         self.table.setGlyphs(self.glyphs)
@@ -201,22 +207,30 @@ pointSizes = [50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500]
 
 class FontToolBar(QToolBar):
 
-    def __init__(self, string, pointSize, parent=None):
+    def __init__(self, pointSize, parent=None):
         super(FontToolBar, self).__init__(parent)
         auxiliaryWidth = self.fontMetrics().width('0') * 8
         self.leftTextField = QLineEdit(self)
         self.leftTextField.setMaximumWidth(auxiliaryWidth)
-        self.textField = QLineEdit(string, self)
+        self.textField = QComboBox(self)
+        self.textField.setEditable(True)
+        completer = self.textField.completer()
+        completer.setCaseSensitivity(Qt.CaseSensitive)
+        self.textField.setCompleter(completer)
+        # XXX: had to use Maximum because Preferred did entend the widget(?)
+        self.textField.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        items = QSettings().value("spaceCenter/comboBoxItems", comboBoxItems, str)
+        self.textField.addItems(items)
         self.rightTextField = QLineEdit(self)
         self.rightTextField.setMaximumWidth(auxiliaryWidth)
-        self.leftTextField.textEdited.connect(self.textField.textEdited)
-        self.rightTextField.textEdited.connect(self.textField.textEdited)
+        self.leftTextField.textEdited.connect(self.textField.editTextChanged)
+        self.rightTextField.textEdited.connect(self.textField.editTextChanged)
         self.comboBox = QComboBox(self)
         self.comboBox.setEditable(True)
         self.comboBox.setValidator(QIntValidator(self))
         for p in pointSizes:
             self.comboBox.addItem(str(p))
-        self.comboBox.lineEdit().setText(str(pointSize))
+        self.comboBox.setEditText(str(pointSize))
 
         self.configBar = QPushButton(self)
         self.configBar.setFlat(True)
