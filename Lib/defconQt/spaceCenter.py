@@ -2,7 +2,7 @@ from defconQt import icons_db  # noqa
 from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGfxWindow
 from getpass import getuser
-from PyQt5.QtCore import QEvent, QSize, Qt
+from PyQt5.QtCore import QEvent, QSettings, QSize, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QIcon, QIntValidator, QKeySequence, QPainter, QPen)
 from PyQt5.QtWidgets import (
@@ -218,8 +218,10 @@ class FontToolBar(QToolBar):
         completer.setCaseSensitivity(Qt.CaseSensitive)
         self.textField.setCompleter(completer)
         # XXX: had to use Maximum because Preferred did entend the widget(?)
-        self.textField.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
-        items = QSettings().value("spaceCenter/comboBoxItems", comboBoxItems, str)
+        self.textField.setSizePolicy(QSizePolicy.Expanding,
+                                     QSizePolicy.Maximum)
+        items = QSettings().value("spaceCenter/comboBoxItems", comboBoxItems,
+                                  str)
         self.textField.addItems(items)
         self.rightTextField = QLineEdit(self)
         self.rightTextField.setMaximumWidth(auxiliaryWidth)

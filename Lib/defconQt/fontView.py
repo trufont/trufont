@@ -15,11 +15,11 @@ from PyQt5.QtGui import (
     QColor, QCursor, QIcon, QIntValidator, QKeySequence, QPixmap,
     QRegularExpressionValidator, QTextCursor)
 from PyQt5.QtWidgets import (
-    QAction, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
-    QErrorMessage, QFileDialog, QGridLayout, QGroupBox, QLabel, QLineEdit,
-    QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
-    QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
-    QTextEdit, QToolTip, QVBoxLayout, QWidget)
+    QAbstractItemView, QAction, QApplication, QCheckBox, QComboBox, QDialog,
+    QDialogButtonBox, QErrorMessage, QFileDialog, QGridLayout, QGroupBox,
+    QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu,
+    QMessageBox, QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter,
+    QTabWidget, QTextEdit, QToolTip, QVBoxLayout, QWidget)
 from collections import OrderedDict
 import os
 import pickle
@@ -1367,7 +1367,9 @@ class GlyphSetTab(QWidget):
             if defaultGlyphSet != latinDefault.name:
                 settings.setValue("settings/defaultGlyphSet", defaultGlyphSet)
 
+
 class SpaceCenterTab(QTabWidget):
+
     def __init__(self, parent=None):
         super(SpaceCenterTab, self).__init__(parent)
 
@@ -1375,7 +1377,8 @@ class SpaceCenterTab(QTabWidget):
         self.inputTextLabel = QLabel("Default text:", self)
         self.inputTextList = QListWidget(self)
         self.inputTextList.setDragDropMode(QAbstractItemView.InternalMove)
-        entries = settings.value("spaceCenter/comboBoxItems", comboBoxItems, str)
+        entries = settings.value("spaceCenter/comboBoxItems", comboBoxItems,
+                                 str)
         for entry in entries:
             item = QListWidgetItem(entry, self.inputTextList)
             item.setFlags(item.flags() | Qt.ItemIsEditable)
