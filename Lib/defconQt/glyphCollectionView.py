@@ -248,6 +248,9 @@ class GlyphCollectionWidget(QWidget):
             self.lastSelectedCell = newSel
 
     def keyPressEvent(self, event):
+        def isUnicodeChar(char):
+            return len(char) and unicodedata.category(char) != "Cc"
+
         key = event.key()
         modifiers = event.modifiers()
         if key in arrowKeys:
@@ -279,8 +282,8 @@ class GlyphCollectionWidget(QWidget):
                         # XXX: have template setter clear glyph content
                         glyph.template = True
                 self.selection = set()
-        elif (modifiers in (Qt.NoModifier, Qt.ShiftModifier) and
-                unicodedata.category(event.text()) != "Cc"):
+        elif modifiers in (Qt.NoModifier, Qt.ShiftModifier) and \
+                isUnicodeChar(event.text()):
             # adapted from defconAppkit
             # get the current time
             rightNow = time.time()
