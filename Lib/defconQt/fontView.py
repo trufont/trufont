@@ -467,7 +467,7 @@ class SortDialog(QDialog):
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Sort…")
 
-        self.smartSortBox = QRadioButton("Smart sort", self)
+        #self.smartSortBox = QRadioButton("Smart sort", self) #See issue at: https://github.com/trufont/trufont/issues/28
         self.glyphSetBox = QRadioButton("Glyph set", self)
         self.glyphSetBox.toggled.connect(self.glyphSetToggle)
         self.glyphSetDrop = QComboBox(self)
@@ -488,8 +488,8 @@ class SortDialog(QDialog):
             self.glyphSetBox.setChecked(True)
             self.glyphSetDrop.setEnabled(True)
             self.glyphSetDrop.setCurrentText(desc.name)
-        elif desc[0]["type"] == "cannedDesign":
-            self.smartSortBox.setChecked(True)
+        #elif desc[0]["type"] == "cannedDesign": #See issue at: https://github.com/trufont/trufont/issues/28
+        #    self.smartSortBox.setChecked(True)
         else:
             self.customSortBox.setChecked(True)
             self.customSortGroup.setEnabled(True)
@@ -533,7 +533,7 @@ class SortDialog(QDialog):
         buttonBox.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.smartSortBox)
+        #layout.addWidget(self.smartSortBox) #See issue at: https://github.com/trufont/trufont/issues/28
         layout.addWidget(self.glyphSetBox)
         layout.addWidget(self.glyphSetDrop)
         layout.addWidget(self.customSortBox)
