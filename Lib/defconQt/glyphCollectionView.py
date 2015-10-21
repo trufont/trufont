@@ -147,13 +147,12 @@ class GlyphCollectionWidget(QWidget):
             event.acceptProposedAction()
 
     def pipeDragMoveEvent(self, event):
-        if event.source() == self:
-            # Get the position in scrollArea canvas coordinates (from the
-            # beginning of the widget we are scrolling over)
-            pos = self.mapFromParent(event.pos())
-            self.currentDropIndex = int(
-                self._columns * (pos.y() // self.squareSize) +
-                (pos.x() + .5 * self.squareSize) // self.squareSize)
+        # Get the position in scrollArea canvas coordinates (from the
+        # beginning of the widget we are scrolling over)
+        pos = self.mapFromParent(event.pos())
+        self.currentDropIndex = int(
+            self._columns * (pos.y() // self.squareSize) +
+            (pos.x() + .5 * self.squareSize) // self.squareSize)
 
     def pipeDragLeaveEvent(self, event):
         self.currentDropIndex = None
