@@ -1,9 +1,10 @@
 from PyQt5.QtCore import QDate, QDateTime, QTime, Qt
-from PyQt5.QtGui import QDoubleValidator, QIntValidator
+from PyQt5.QtGui import (
+    QDoubleValidator, QIntValidator, QStandardItem, QStandardItemModel)
 from PyQt5.QtWidgets import (
     QCheckBox, QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox,
-    QGridLayout, QGroupBox, QLabel, QLineEdit, QPlainTextEdit, QTabWidget,
-    QVBoxLayout, QWidget)
+    QGridLayout, QGroupBox, QLabel, QLineEdit, QListView, QPlainTextEdit,
+    QTabWidget, QVBoxLayout, QWidget)
 
 
 class InfoTabWidget(QTabWidget):
@@ -22,6 +23,7 @@ class TabDialog(QDialog):
         self.tabWidget.addNamedTab(GeneralTab(self.font))
         self.tabWidget.addNamedTab(MetricsTab(self.font))
         self.tabWidget.addNamedTab(OpenTypeTab(self.font))
+        self.tabWidget.addNamedTab(OS2Tab(self.font))
         self.tabWidget.addNamedTab(PostScriptTab(self.font))
 
         buttonBox = QDialogButtonBox(
@@ -704,6 +706,406 @@ class OpenTypeTab(QWidget):
             font.info.openTypeVheaCaretOffset = int(vheaCaretOffset)
         else:
             font.info.openTypeVheaCaretOffset = None
+
+
+class OS2Tab(QWidget):
+    name = "OS/2"
+
+    def __init__(self, font, parent=None):
+        super(OS2Tab, self).__init__(parent)
+
+        # OS2Group = QGroupBox("OS/2 table", self)
+        # OS2Group.setFlat(True)
+        OS2Layout = QGridLayout(self)
+
+        usWidthClassLabel = QLabel("usWidthClass:", self)
+        self.usWidthClassDrop = QComboBox(self)
+        items = [
+            "None", "Ultra-condensed", "Extra-condensed", "Condensed",
+            "Semi-Condensed", "Medium (normal)", "Semi-expanded", "Expanded",
+            "Extra-expanded", "Ultra-expanded"]
+        self.usWidthClassDrop.insertItems(0, items)
+        if font.info.openTypeOS2WidthClass is not None:
+            self.usWidthClassDrop.setCurrentIndex(
+                font.info.openTypeOS2WidthClass)
+
+        usWeightClassLabel = QLabel("usWeightClass:", self)
+        if font.info.openTypeOS2WeightClass is not None:
+            usWeightClass = str(font.info.openTypeOS2WeightClass)
+        else:
+            usWeightClass = ''
+        self.usWeightClassEdit = QLineEdit(usWeightClass, self)
+        positiveValidator = QIntValidator(self)
+        positiveValidator.setBottom(0)
+        self.usWeightClassEdit.setValidator(positiveValidator)
+
+        fsSelectionLabel = QLabel("fsSelection:", self)
+        fsSelection = font.info.openTypeOS2Selection
+        self.fsSelectionList = QListView(self)
+        items = [
+            "1 UNDERSCORE", "2 NEGATIVE", "3 OUTLINED", "4 STRIKEOUT",
+            "7 USE_TYPO_METRICS", "8 WWS", "9 OBLIQUE"]
+        # http://stackoverflow.com/a/26613163
+        model = QStandardItemModel(7, 1)
+        for index, elem in enumerate(items):
+            item = QStandardItem()
+            item.setText(elem)
+            item.setCheckable(True)
+            bit = index + 1
+            if fsSelection is not None and bit in fsSelection:
+                # maybe default setting? if so, unneeded
+                item.setCheckState(Qt.Checked)
+            else:
+                item.setCheckState(Qt.Unchecked)
+            model.setItem(index, item)
+        self.fsSelectionList.setModel(model)
+
+        achVendorIDLabel = QLabel("achVendorID:", self)
+        self.achVendorIDEdit = QLineEdit(font.info.openTypeOS2VendorID, self)
+        self.achVendorIDEdit.setMaxLength(4)
+
+        fsTypeLabel = QLabel("fsType:", self)
+        fsType = font.info.openTypeOS2Type
+        self.fsTypeDrop = QComboBox(self)
+        items = [
+            "No embedding restrictions", "Restricted embedding",
+            "Preview and print embedding allowed",
+            "Editable embedding allowed"]
+        self.allowSubsettingBox = QCheckBox("Allow subsetting", self)
+        self.allowBitmapEmbeddingBox = QCheckBox(
+            "Allow only bitmap embedding", self)
+        self.fsTypeDrop.currentIndexChanged[int].connect(
+            self._updateFsTypeVisibility)
+        self.fsTypeDrop.insertItems(0, items)
+        if fsType is not None:
+            for i in range(1, 4):
+                if i in fsType:
+                    self.fsTypeDrop.setCurrentIndex(i)
+                    break
+            self.allowSubsettingBox.setChecked(8 not in fsType)
+            self.allowBitmapEmbeddingBox.setChecked(9 in fsType)
+
+        # XXX: ulUnicodeRange
+
+        # XXX: ulCodePageRange
+
+        sTypoAscenderLabel = QLabel("sTypoAscender:", self)
+        if font.info.openTypeOS2TypoAscender is not None:
+            sTypoAscender = str(font.info.openTypeOS2TypoAscender)
+        else:
+            sTypoAscender = ''
+        self.sTypoAscenderEdit = QLineEdit(sTypoAscender, self)
+        self.sTypoAscenderEdit.setValidator(QIntValidator(self))
+
+        sTypoDescenderLabel = QLabel("sTypoDescender:", self)
+        if font.info.openTypeOS2TypoDescender is not None:
+            sTypoDescender = str(font.info.openTypeOS2TypoDescender)
+        else:
+            sTypoDescender = ''
+        self.sTypoDescenderEdit = QLineEdit(sTypoDescender, self)
+        negativeValidator = QIntValidator(self)
+        negativeValidator.setTop(0)
+        self.sTypoDescenderEdit.setValidator(negativeValidator)
+
+        sTypoLineGapLabel = QLabel("sTypoLineGap:", self)
+        if font.info.openTypeOS2TypoLineGap is not None:
+            sTypoLineGap = str(font.info.openTypeOS2TypoLineGap)
+        else:
+            sTypoLineGap = ''
+        self.sTypoLineGapEdit = QLineEdit(sTypoLineGap, self)
+        self.sTypoLineGapEdit.setValidator(QIntValidator(self))
+
+        usWinAscentLabel = QLabel("usWinAscent:", self)
+        if font.info.openTypeOS2WinAscent is not None:
+            usWinAscent = str(font.info.openTypeOS2WinAscent)
+        else:
+            usWinAscent = ''
+        self.usWinAscentEdit = QLineEdit(usWinAscent, self)
+        self.usWinAscentEdit.setValidator(QIntValidator(self))
+
+        usWinDescentLabel = QLabel("usWinDescent:", self)
+        if font.info.openTypeOS2WinDescent is not None:
+            usWinDescent = str(font.info.openTypeOS2WinDescent)
+        else:
+            usWinDescent = ''
+        self.usWinDescentEdit = QLineEdit(usWinDescent, self)
+        positiveValidator = QIntValidator(self)
+        positiveValidator.setBottom(0)
+        self.usWinDescentEdit.setValidator(positiveValidator)
+
+        ySubscriptXSizeLabel = QLabel("ySubscriptXSize:", self)
+        if font.info.openTypeOS2SubscriptXSize is not None:
+            ySubscriptXSize = str(font.info.openTypeOS2SubscriptXSize)
+        else:
+            ySubscriptXSize = ''
+        self.ySubscriptXSizeEdit = QLineEdit(ySubscriptXSize, self)
+        self.ySubscriptXSizeEdit.setValidator(QIntValidator(self))
+
+        ySubscriptYSizeLabel = QLabel("ySubscriptYSize:", self)
+        if font.info.openTypeOS2SubscriptYSize is not None:
+            ySubscriptYSize = str(font.info.openTypeOS2SubscriptYSize)
+        else:
+            ySubscriptYSize = ''
+        self.ySubscriptYSizeEdit = QLineEdit(ySubscriptYSize, self)
+        self.ySubscriptYSizeEdit.setValidator(QIntValidator(self))
+
+        ySubscriptXOffsetLabel = QLabel("ySubscriptXOffset:", self)
+        if font.info.openTypeOS2SubscriptXOffset is not None:
+            ySubscriptXOffset = str(font.info.openTypeOS2SubscriptXOffset)
+        else:
+            ySubscriptXOffset = ''
+        self.ySubscriptXOffsetEdit = QLineEdit(ySubscriptXOffset, self)
+        self.ySubscriptXOffsetEdit.setValidator(QIntValidator(self))
+
+        ySubscriptYOffsetLabel = QLabel("ySubscriptYOffset:", self)
+        if font.info.openTypeOS2SubscriptYOffset is not None:
+            ySubscriptYOffset = str(font.info.openTypeOS2SubscriptYOffset)
+        else:
+            ySubscriptYOffset = ''
+        self.ySubscriptYOffsetEdit = QLineEdit(ySubscriptYOffset, self)
+        self.ySubscriptYOffsetEdit.setValidator(QIntValidator(self))
+
+        ySuperscriptXSizeLabel = QLabel("ySuperscriptXSize:", self)
+        if font.info.openTypeOS2SuperscriptXSize is not None:
+            ySuperscriptXSize = str(font.info.openTypeOS2SuperscriptXSize)
+        else:
+            ySuperscriptXSize = ''
+        self.ySuperscriptXSizeEdit = QLineEdit(ySuperscriptXSize, self)
+        self.ySuperscriptXSizeEdit.setValidator(QIntValidator(self))
+
+        ySuperscriptYSizeLabel = QLabel("ySuperscriptYSize:", self)
+        if font.info.openTypeOS2SuperscriptYSize is not None:
+            ySuperscriptYSize = str(font.info.openTypeOS2SuperscriptYSize)
+        else:
+            ySuperscriptYSize = ''
+        self.ySuperscriptYSizeEdit = QLineEdit(ySuperscriptYSize, self)
+        self.ySuperscriptYSizeEdit.setValidator(QIntValidator(self))
+
+        ySuperscriptXOffsetLabel = QLabel("ySuperscriptXOffset:", self)
+        if font.info.openTypeOS2SuperscriptXOffset is not None:
+            ySuperscriptXOffset = str(font.info.openTypeOS2SuperscriptXOffset)
+        else:
+            ySuperscriptXOffset = ''
+        self.ySuperscriptXOffsetEdit = QLineEdit(ySuperscriptXOffset, self)
+        self.ySuperscriptXOffsetEdit.setValidator(QIntValidator(self))
+
+        ySuperscriptYOffsetLabel = QLabel("ySuperscriptYOffset:", self)
+        if font.info.openTypeOS2SuperscriptYOffset is not None:
+            ySuperscriptYOffset = str(font.info.openTypeOS2SuperscriptYOffset)
+        else:
+            ySuperscriptYOffset = ''
+        self.ySuperscriptYOffsetEdit = QLineEdit(ySuperscriptYOffset, self)
+        self.ySuperscriptYOffsetEdit.setValidator(QIntValidator(self))
+
+        yStrikeoutSizeLabel = QLabel("yStrikeoutSize:", self)
+        if font.info.openTypeOS2StrikeoutSize is not None:
+            yStrikeoutSize = str(font.info.openTypeOS2StrikeoutSize)
+        else:
+            yStrikeoutSize = ''
+        self.yStrikeoutSizeEdit = QLineEdit(yStrikeoutSize, self)
+        self.yStrikeoutSizeEdit.setValidator(QIntValidator(self))
+
+        yStrikeoutPositionLabel = QLabel("yStrikeoutPosition:", self)
+        if font.info.openTypeOS2StrikeoutPosition is not None:
+            yStrikeoutPosition = str(font.info.openTypeOS2StrikeoutPosition)
+        else:
+            yStrikeoutPosition = ''
+        self.yStrikeoutPositionEdit = QLineEdit(yStrikeoutPosition, self)
+        self.yStrikeoutPositionEdit.setValidator(QIntValidator(self))
+
+        # XXX: panose
+
+        l = 0
+        OS2Layout.addWidget(usWidthClassLabel, l, 0)
+        OS2Layout.addWidget(self.usWidthClassDrop, l, 1, 1, 2)
+        OS2Layout.addWidget(achVendorIDLabel, l, 3)
+        OS2Layout.addWidget(self.achVendorIDEdit, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(usWeightClassLabel, l, 0)
+        OS2Layout.addWidget(self.usWeightClassEdit, l, 1, 1, 2)
+        l += 1
+        OS2Layout.addWidget(fsSelectionLabel, l, 0, 3, 1)
+        OS2Layout.addWidget(self.fsSelectionList, l, 1, 3, 2)
+        OS2Layout.addWidget(fsTypeLabel, l, 3, 3, 1)
+        OS2Layout.addWidget(self.fsTypeDrop, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(self.allowSubsettingBox, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(self.allowBitmapEmbeddingBox, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(sTypoAscenderLabel, l, 0)
+        OS2Layout.addWidget(self.sTypoAscenderEdit, l, 1, 1, 2)
+        OS2Layout.addWidget(usWinAscentLabel, l, 3)
+        OS2Layout.addWidget(self.usWinAscentEdit, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(sTypoDescenderLabel, l, 0)
+        OS2Layout.addWidget(self.sTypoDescenderEdit, l, 1, 1, 2)
+        OS2Layout.addWidget(usWinDescentLabel, l, 3)
+        OS2Layout.addWidget(self.usWinDescentEdit, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(sTypoLineGapLabel, l, 0)
+        OS2Layout.addWidget(self.sTypoLineGapEdit, l, 1, 1, 2)
+        l += 1
+        OS2Layout.addWidget(ySubscriptXSizeLabel, l, 0)
+        OS2Layout.addWidget(self.ySubscriptXSizeEdit, l, 1, 1, 2)
+        OS2Layout.addWidget(ySubscriptXOffsetLabel, l, 3)
+        OS2Layout.addWidget(self.ySubscriptXOffsetEdit, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(ySubscriptYSizeLabel, l, 0)
+        OS2Layout.addWidget(self.ySubscriptYSizeEdit, l, 1, 1, 2)
+        OS2Layout.addWidget(ySubscriptYOffsetLabel, l, 3)
+        OS2Layout.addWidget(self.ySubscriptYOffsetEdit, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(ySuperscriptXSizeLabel, l, 0)
+        OS2Layout.addWidget(self.ySuperscriptXSizeEdit, l, 1, 1, 2)
+        OS2Layout.addWidget(ySuperscriptXOffsetLabel, l, 3)
+        OS2Layout.addWidget(self.ySuperscriptXOffsetEdit, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(ySuperscriptYSizeLabel, l, 0)
+        OS2Layout.addWidget(self.ySuperscriptYSizeEdit, l, 1, 1, 2)
+        OS2Layout.addWidget(ySuperscriptYOffsetLabel, l, 3)
+        OS2Layout.addWidget(self.ySuperscriptYOffsetEdit, l, 4, 1, 2)
+        l += 1
+        OS2Layout.addWidget(yStrikeoutSizeLabel, l, 0)
+        OS2Layout.addWidget(self.yStrikeoutSizeEdit, l, 1, 1, 2)
+        OS2Layout.addWidget(yStrikeoutPositionLabel, l, 3)
+        OS2Layout.addWidget(self.yStrikeoutPositionEdit, l, 4, 1, 2)
+        # OS2Group.setLayout(OS2Layout)
+        self.setLayout(OS2Layout)
+
+    def _updateFsTypeVisibility(self, index):
+        if index == 0:
+            # TODO: maybe uncheck as well?
+            self.allowSubsettingBox.setEnabled(False)
+            self.allowBitmapEmbeddingBox.setEnabled(False)
+        else:
+            self.allowSubsettingBox.setEnabled(True)
+            self.allowBitmapEmbeddingBox.setEnabled(True)
+
+    def writeValues(self, font):
+        usWidthClass = self.usWidthClassDrop.currentIndex()
+        if usWidthClass != 0:
+            font.info.openTypeOS2WidthClass = usWidthClass
+        else:
+            font.info.openTypeOS2WidthClass = None
+        usWeightClass = self.usWeightClassEdit.text()
+        if usWeightClass != '':
+            font.info.openTypeOS2WeightClass = int(usWeightClass)
+        else:
+            font.info.openTypeOS2WeightClass = None
+
+        fsSelectionModel = self.fsSelectionList.model()
+        fsSelection = []
+        for i in range(7):
+            item = fsSelectionModel.item(i)
+            if item.checkState() == Qt.Checked:
+                fsSelection.append(i)
+        if len(fsSelection):
+            font.info.openTypeOS2Selection = fsSelection
+        else:
+            # XXX: None or empty array? should distinct those cases
+            font.info.openTypeOS2Selection = None
+
+        fsTypeIndex = self.fsTypeDrop.currentIndex()
+        fsType = []
+        if fsTypeIndex > 0:
+            fsType.append(fsTypeIndex)
+            if not self.allowSubsettingBox.isChecked():
+                fsType.append(8)
+            if self.allowBitmapEmbeddingBox.isChecked():
+                fsType.append(9)
+        # TODO: provide a way to represent None w this?
+        font.info.openTypeOS2Type = fsType
+
+        # TODO: see if data needs to be padded to 4 chars.
+        # I think that this is to be deferred to ufo2fdk(?)
+        font.info.openTypeOS2VendorID = self.achVendorIDEdit.text()
+
+        # XXX: ulUnicodeRange
+
+        # XXX: ulCodePageRange
+
+        sTypoAscender = self.sTypoAscenderEdit.text()
+        if sTypoAscender != '':
+            font.info.openTypeOS2TypoAscender = int(sTypoAscender)
+        else:
+            font.info.openTypeOS2TypoAscender = None
+        sTypoDescender = self.sTypoDescenderEdit.text()
+        if sTypoDescender != '':
+            font.info.openTypeOS2TypoDescender = int(sTypoDescender)
+        else:
+            font.info.openTypeOS2TypoDescender = None
+        sTypoLineGap = self.sTypoLineGapEdit.text()
+        if sTypoLineGap != '':
+            font.info.openTypeOS2TypoLineGap = int(sTypoLineGap)
+        else:
+            font.info.openTypeOS2TypoLineGap = None
+
+        usWinAscent = self.usWinAscentEdit.text()
+        if usWinAscent != '':
+            font.info.openTypeOS2WinAscent = int(usWinAscent)
+        else:
+            font.info.openTypeOS2WinAscent = None
+        usWinDescent = self.usWinDescentEdit.text()
+        if usWinDescent != '':
+            font.info.openTypeOS2WinDescent = int(usWinDescent)
+        else:
+            font.info.openTypeOS2WinDescent = None
+
+        ySubscriptXSize = self.ySubscriptXSizeEdit.text()
+        if ySubscriptXSize != '':
+            font.info.openTypeOS2SubscriptXSize = int(ySubscriptXSize)
+        else:
+            font.info.openTypeOS2SubscriptXSize = None
+        ySubscriptYSize = self.ySubscriptYSizeEdit.text()
+        if ySubscriptYSize != '':
+            font.info.openTypeOS2SubscriptYSize = int(ySubscriptYSize)
+        else:
+            font.info.openTypeOS2SubscriptYSize = None
+        ySubscriptXOffset = self.ySubscriptXOffsetEdit.text()
+        if ySubscriptXOffset != '':
+            font.info.openTypeOS2SubscriptXOffset = int(ySubscriptXOffset)
+        else:
+            font.info.openTypeOS2SubscriptXOffset = None
+        ySubscriptYOffset = self.ySubscriptYOffsetEdit.text()
+        if ySubscriptYOffset != '':
+            font.info.openTypeOS2SubscriptYOffset = int(ySubscriptYOffset)
+        else:
+            font.info.openTypeOS2SubscriptYOffset = None
+
+        ySuperscriptXSize = self.ySuperscriptXSizeEdit.text()
+        if ySuperscriptXSize != '':
+            font.info.openTypeOS2SuperscriptXSize = int(ySuperscriptXSize)
+        else:
+            font.info.openTypeOS2SuperscriptXSize = None
+        ySuperscriptYSize = self.ySuperscriptYSizeEdit.text()
+        if ySuperscriptYSize != '':
+            font.info.openTypeOS2SuperscriptYSize = int(ySuperscriptYSize)
+        else:
+            font.info.openTypeOS2SuperscriptYSize = None
+        ySuperscriptXOffset = self.ySuperscriptXOffsetEdit.text()
+        if ySuperscriptXOffset != '':
+            font.info.openTypeOS2SuperscriptXOffset = int(ySuperscriptXOffset)
+        else:
+            font.info.openTypeOS2SuperscriptXOffset = None
+        ySuperscriptYOffset = self.ySuperscriptYOffsetEdit.text()
+        if ySuperscriptYOffset != '':
+            font.info.openTypeOS2SuperscriptYOffset = int(ySuperscriptYOffset)
+        else:
+            font.info.openTypeOS2SuperscriptYOffset = None
+
+        yStrikeoutSize = self.yStrikeoutSizeEdit.text()
+        if yStrikeoutSize != '':
+            font.info.openTypeOS2StrikeoutSize = int(yStrikeoutSize)
+        else:
+            font.info.openTypeOS2StrikeoutSize = None
+        yStrikeoutPosition = self.yStrikeoutPositionEdit.text()
+        if yStrikeoutPosition != '':
+            font.info.openTypeOS2StrikeoutPosition = int(yStrikeoutPosition)
+        else:
+            font.info.openTypeOS2StrikeoutPosition = None
+
+        # XXX: panose
 
 
 class PostScriptTab(QWidget):
