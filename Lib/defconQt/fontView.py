@@ -1024,7 +1024,8 @@ class MainWindow(QMainWindow):
         glyphs = self.collectionWidget.glyphs
         for key in self.collectionWidget.selection:
             glyph = glyphs[key]
-            glyph.markColor = Color(color.getRgbF()) if color is not None else None
+            glyph.markColor = Color(
+                color.getRgbF()) if color is not None else None
 
     def _fontChanged(self, notification):
         self.collectionWidget.update()
