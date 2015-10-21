@@ -50,7 +50,7 @@ class GlyphCollectionWidget(QWidget):
         super(GlyphCollectionWidget, self).__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self._glyphs = []
-        self._squareSize = 56
+        self.squareSize = 56
         self._columns = 10
         self._selection = set()
         self._oldSelection = None
@@ -123,16 +123,6 @@ class GlyphCollectionWidget(QWidget):
         index = self._lastSelectedCell
         return self._glyphs[index] if index is not None else None
 
-    def _get_squareSize(self):
-        return self._squareSize
-
-    def _set_squareSize(self, squareSize):
-        self._squareSize = squareSize
-        voidFont.setPointSize(.425 * self.squareSize)
-
-    squareSize = property(_get_squareSize, _set_squareSize, doc="The size of"
-                          "a glyph cell.")
-
     def scrollArea(self):
         return self._scrollArea
 
@@ -158,7 +148,9 @@ class GlyphCollectionWidget(QWidget):
 
     def pipeDragMoveEvent(self, event):
         if event.source() == self:
-            pos = event.posF()
+            # Get the position in scrollArea canvas coordinates (from the
+            # beginning of the widget we are scrolling over)
+            pos = self.mapFromParent(event.pos())
             self.currentDropIndex = int(
                 self._columns * (pos.y() // self.squareSize) +
                 (pos.x() + .5 * self.squareSize) // self.squareSize)
@@ -497,6 +489,7 @@ class GlyphCollectionWidget(QWidget):
         dirtyGradient.setColorAt(1.0, cellHeaderLineColor.darker(125))
         markGradient = QLinearGradient(
             0, 0, 0, self.squareSize - GlyphCellHeaderHeight)
+        voidFont.setPointSize(.425 * self.squareSize)
 
         for row in range(beginRow, endRow + 1):
             for column in range(beginColumn, endColumn + 1):
