@@ -5,14 +5,20 @@ from distutils.core import setup
 try:
     import fontTools  # noqa
 except:
-    print("*** Warning: defcon requires FontTools, see:")
-    print("    fonttools.sf.net")
+    print("*** Warning: trufont requires FontTools, see:")
+    print("    https://github.com/behdad/fonttools/")
 
 try:
     import robofab  # noqa
 except:
-    print("*** Warning: defcon requires RoboFab, see:")
-    print("    robofab.com")
+    print("*** Warning: trufont requires RoboFab, see:")
+    print("    https://github.com/trufont/robofab")
+
+try:
+    import defcon #noqa
+except:
+    print("*** Warning: trufont requires defcon, see:")
+    print("    https://github.com/trufont/defcon")
 
 # if "sdist" in sys.argv:
 #    import os
@@ -33,10 +39,10 @@ except:
 setup(
     name="defconQt",
     version="0.1.0",
-    description="A set of Qt interface objects for working with font data.",
+    description="Trufont, a cross-platform font editor (a set of Qt interface objects for working with font data).",
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
-    # url="",
+    url="http://trufont.github.io",
     license="GNU LGPL 2.1/GNU GPL v3",
     packages=[
         "defconQt",
@@ -45,5 +51,13 @@ setup(
         "defconQt.representationFactories",
         "defconQt.util",
     ],
-    package_dir={"": "Lib"}
+    scripts=["trufont"],
+    package_dir={"": "Lib"},
+    platforms=["Linux","Win32","Mac OS X"],
+    classifiers=[
+    "Environment :: GUI",
+    "Programming Language :: Python :: 3.4",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Fonts",
+    ],
 )
