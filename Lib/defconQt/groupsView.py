@@ -131,6 +131,7 @@ class GroupCollectionWidget(GlyphCollectionWidget):
             super(GroupCollectionWidget, self).pipeDropEvent(event)
         elif self.characterDropCallback is not None:
             self.characterDropCallback(event)
+            self.currentDropIndex = None
 
 
 class GroupsWindow(QWidget):
@@ -275,7 +276,9 @@ class GroupsWindow(QWidget):
             # Due to defcon limitations, we must fetch and update for the
             # notification to pass through
             currentGroupList = self.font.groups[currentGroup]
-            currentGroupList.append(gName)
+            # TODO: decouple better
+            index = self.collectionWidget.currentDropIndex
+            currentGroupList.insert(index, gName)
             self.font.groups[currentGroup] = currentGroupList
         event.acceptProposedAction()
         self._groupChanged()

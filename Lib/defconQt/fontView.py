@@ -468,6 +468,9 @@ class SortDialog(QDialog):
         self.setWindowTitle("Sort…")
 
         self.smartSortBox = QRadioButton("Smart sort", self)
+        self.smartSortBox.setToolTip("A combination of simple, complex and "
+                                     "custom sorts that give optimized "
+                                     "ordering results.")
         self.glyphSetBox = QRadioButton("Glyph set", self)
         self.glyphSetBox.toggled.connect(self.glyphSetToggle)
         self.glyphSetDrop = QComboBox(self)
@@ -1022,7 +1025,7 @@ class MainWindow(QMainWindow):
         for key in self.collectionWidget.selection:
             glyph = glyphs[key]
             glyph.markColor = Color(
-                color.getRgbF() if color is not None else None)
+                color.getRgbF()) if color is not None else None
 
     def _fontChanged(self, notification):
         self.collectionWidget.update()
