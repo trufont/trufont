@@ -276,10 +276,10 @@ class TabTestCase(unittest.TestCase):
 class GeneralTabTest(TabTestCase):
 
     def __init__(self, methodName):
-        super(GeneralTabTest, self).__init__(methodName)
+        super().__init__(methodName)
 
     def setUp(self):
-        super(GeneralTabTest, self).setUp()
+        super().setUp()
         self.tab = self.generalTab
 
     def test_GeneralTab_name(self):
@@ -325,10 +325,10 @@ class GeneralTabTest(TabTestCase):
 class MetricsTabTest(TabTestCase):
 
     def __init__(self, methodName):
-        super(MetricsTabTest, self).__init__(methodName)
+        super().__init__(methodName)
 
     def setUp(self):
-        super(MetricsTabTest, self).setUp()
+        super().setUp()
         self.tab = self.metricsTab
 
     def test_MetricsTab_name(self):
@@ -361,10 +361,10 @@ class MetricsTabTest(TabTestCase):
 class OpenTypeTabTest(TabTestCase):
 
     def __init__(self, methodName):
-        super(OpenTypeTabTest, self).__init__(methodName)
+        super().__init__(methodName)
 
     def setUp(self):
-        super(OpenTypeTabTest, self).setUp()
+        super().setUp()
         self.tab = self.openTypeTab
 
     def test_OpenTypeTab_name(self):
@@ -440,10 +440,10 @@ class OpenTypeTabTest(TabTestCase):
 class OS2TabTest(TabTestCase):
 
     def __init__(self, methodName):
-        super(OS2TabTest, self).__init__(methodName)
+        super().__init__(methodName)
 
     def setUp(self):
-        super(OS2TabTest, self).setUp()
+        super().setUp()
         self.tab = self.OS2Tab
 
     def test_OS2Tab_name(self):
@@ -515,10 +515,10 @@ class OS2TabTest(TabTestCase):
 class PostScriptTabTest(TabTestCase):
 
     def __init__(self, methodName):
-        super(PostScriptTabTest, self).__init__(methodName)
+        super().__init__(methodName)
 
     def setUp(self):
-        super(PostScriptTabTest, self).setUp()
+        super().setUp()
         self.tab = self.postScriptTab
 
     def test_PostScriptTab_name(self):
