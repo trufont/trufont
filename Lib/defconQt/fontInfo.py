@@ -16,7 +16,7 @@ class InfoTabWidget(QTabWidget):
 class TabDialog(QDialog):
 
     def __init__(self, font, parent=None):
-        super(TabDialog, self).__init__(parent)
+        super().__init__(parent)
         self.font = font
 
         self.tabWidget = InfoTabWidget(self)
@@ -43,7 +43,7 @@ class TabDialog(QDialog):
     def accept(self):
         for i in range(self.tabWidget.count()):
             self.tabWidget.widget(i).writeValues(self.font)
-        super(TabDialog, self).accept()
+        super().accept()
 
 
 class TabWidget(QWidget):
@@ -51,7 +51,7 @@ class TabWidget(QWidget):
     def __init__(self, font, parent=None, name=None):
         self.name = name
         self.font = font
-        super(TabWidget, self).__init__(parent)
+        super().__init__(parent)
 
     def loadString(self, font, src, dst):
         value = getattr(font.info, src)
@@ -161,7 +161,7 @@ class TabWidget(QWidget):
 class GeneralTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super(GeneralTab, self).__init__(parent, name="General")
+        super().__init__(parent, name="General")
         mainLayout = QGridLayout(self)
 
         familyNameLabel = QLabel("Family name:", self)
@@ -266,7 +266,7 @@ class GeneralTab(TabWidget):
 class MetricsTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super(MetricsTab, self).__init__(parent, name="Metrics")
+        super().__init__(parent, name="Metrics")
         mainLayout = QGridLayout()
 
         styleMapFamilyLabel = QLabel("Style map family name:", self)
@@ -364,7 +364,7 @@ class MetricsTab(TabWidget):
 class OpenTypeTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super(OpenTypeTab, self).__init__(parent, name="OpenType")
+        super().__init__(parent, name="OpenType")
 
         nameGroup = QGroupBox("name table", self)
         # nameGroup.setFlat(True)
@@ -535,7 +535,7 @@ class OpenTypeTab(TabWidget):
 class OS2Tab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super(OS2Tab, self).__init__(parent, name="OS/2")
+        super().__init__(parent, name="OS/2")
 
         # OS2Group = QGroupBox("OS/2 table", self)
         # OS2Group.setFlat(True)
@@ -777,7 +777,7 @@ class OS2Tab(TabWidget):
 class PostScriptTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super(PostScriptTab, self).__init__(parent, name="PostScript")
+        super().__init__(parent, name="PostScript")
 
         namingGroup = QGroupBox("Naming", self)
         # namingGroup.setFlat(True)
