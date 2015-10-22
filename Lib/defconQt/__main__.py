@@ -6,6 +6,10 @@ import sys
 import os
 from PyQt5.QtGui import QIcon
 
+def main():
+    if __name__ == "__main__":
+        main()
+
 if len(sys.argv) > 1:
     font = TFont(os.path.abspath(sys.argv[1]))
 else:

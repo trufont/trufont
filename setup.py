@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # import sys
-from distutils.core import setup
+
+from setuptools import setup
 
 try:
     import fontTools  # noqa
@@ -11,13 +13,13 @@ except:
 try:
     import robofab  # noqa
 except:
-    print("*** Warning: trufont requires RoboFab, see:")
+    print("*** Warning: trufont requires RoboFab (the python3-ufo3 branch), see:")
     print("    https://github.com/trufont/robofab")
 
 try:
-    import defcon #noqa
+    import defcon # noqa
 except:
-    print("*** Warning: trufont requires defcon, see:")
+    print("*** Warning: trufont requires defcon (the python3-ufo3 branch), see:")
     print("    https://github.com/trufont/defcon")
 
 # if "sdist" in sys.argv:
@@ -51,7 +53,11 @@ setup(
         "defconQt.representationFactories",
         "defconQt.util",
     ],
-    scripts=["trufont"],
+    entry_points={
+       'gui_scripts': [
+            "trufont =  defconQt.__main__:main"
+            ]
+        },
     package_dir={"": "Lib"},
     platforms=["Linux","Win32","Mac OS X"],
     classifiers=[
