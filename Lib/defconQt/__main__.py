@@ -6,6 +6,7 @@ import sys
 import os
 from PyQt5.QtGui import QIcon
 
+
 def main():
     if __name__ == "__main__":
         main()
