@@ -1,5 +1,0 @@
-#!/bin/bash
-# simple script to launch the module 
-
-python3.4 -m defconQt
-
