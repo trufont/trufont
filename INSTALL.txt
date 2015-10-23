@@ -1,50 +1,144 @@
+# Mac OS X
 
-Installation steps for Ubuntu/Debian
-=====================================
+## Dependencies
 
-(Note that we are using version 3.4 of python).
+### Python 3
 
+Learn more: https://docs.python.org/3
 
-sudo apt-get install -qq -y python3-pyqt5 python3-flake8
+Install with [homebrew](http://brew.sh),
 
-git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab
-git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon
-git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk
-git clone --depth=1 https://github.com/behdad/fonttools.git
+    sudo xcodebuild -license ;
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ;
+    brew install python3 ;
 
-cd defcon
-sudo python3.4 setup.py install --record installed-files.txt
+### PyQt5
 
-cd ../robofab
-sudo python3.4 setup.py install --record installed-files.txt
+Learn more: https://www.riverbankcomputing.com/software/pyqt
 
-cd ../ufo2fdk
-sudo python3.4 setup.py install --record installed-files.txt
+Install with homebrew,
 
-cd ../fonttools
-sudo python3.4 setup.py install --record installed-files.txt
+    brew install pyqt5 ;
 
-cd ../trufont
-sudo python3.4 setup.py install --record installed-files.txt
+### fontTools
 
-To run trufont:
-python3.4 -m defconQt
+Learn more: https://github.com/behdad/fonttools
 
+    git clone --depth=1 https://github.com/behdad/fonttools ;
+    cd fonttools/ ;
+    sudo python3 setup.py install --record installed-files.txt ;
 
-To uninstall cleanly the various modules and trufont
-====================================================
+### RoboFab
 
-The various python modules are installed in 
-/usr/local/lib/python3.4/dist-packages/
+Learn more: http://www.robofab.com
 
-You can delete the subfolders manually or depending on the package, you can also rely on pip or the listing of files you have recorded.
+In particular, https://github.com/trufont/robofab/tree/python3-ufo3
 
-sudo apt-get install python3-pip 
-sudo pip3 uninstall robofab defcon ufo2fdk ufoLib defconQt 
+    cd .. ;
+    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab ;
+    cd robofab ;
+    sudo python3 setup.py install --record installed-files.txt ;
 
-to get rid of all the remaining files installed : (careful with rm)
-cat installed-files.txt | xargs sudo rm --verbose -vr
+### defcon
 
+Homepage: https://readthedocs.org/projects/ts-defcon
 
+In particular, https://github.com/trufont/defcon/tree/python3-ufo3
 
+    cd .. ;
+    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon ;
+    cd robofab ;
+    sudo python3 setup.py install --record installed-files.txt ;
 
+### PyInstaller
+
+Homepage: http://www.pyinstaller.org
+
+    pip install PyInstaller ;
+
+## Trufont
+
+Homepage: https://trufont.github.io
+
+To install and run,
+
+    cd .. ;
+    git clone --depth=1 https://github.com/trufont/trufont ;
+    cd trufront ;
+    sudo python3 setup.py install --record installed-files.txt ;
+    python3 -m defconQt ;
+
+Or to then run from source,
+
+    cd Lib/ ; 
+    python3 -m defconQt ;
+
+To build installation packages,
+
+    cd Lib/ ;
+	sh build.sh ;
+
+(To build an installation package for Mac OS X 10.9, you must build the package on that version of the OS.)
+
+## Uninstall
+
+Files are installed into `/usr/local/lib/python3.5/site-packages/` 
+
+    sudo easy_install pip ;
+    sudo pip uninstall robofab defcon defconQt ;
+
+To get rid of all remaining files (be careful with rm!) for each package installed above,
+
+    cat installed-files.txt | xargs sudo rm --verbose -vr
+
+# Debian, Ubuntu
+
+(Note that we are using Python 3.4)
+
+## Dependencies
+
+    sudo apt-get install -qq -y python3-pyqt5 python3-flake8 ;
+    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon ;
+    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab ;
+    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk ;
+    git clone --depth=1 https://github.com/behdad/fonttools.git ;
+
+    cd defcon ;
+    sudo python3.4 setup.py install --record installed-files.txt ;
+
+    cd ../robofab ;
+    sudo python3.4 setup.py install --record installed-files.txt ;
+
+    cd ../ufo2fdk ;
+    sudo python3.4 setup.py install --record installed-files.txt ;
+
+    cd ../fonttools ;
+    sudo python3.4 setup.py install --record installed-files.txt ;
+
+## Trufont
+
+To install and run,
+
+    cd .. ;
+    git clone --depth=1 https://github.com/trufont/trufont ;
+    cd trufront ;
+    sudo python3 setup.py install --record installed-files.txt ;
+    python3 -m defconQt ;
+
+Or to then run from source,
+
+    cd Lib/ ; 
+    python3 -m defconQt ;
+
+## Uninstall
+
+Files are installed into `/usr/local/lib/python3.4/dist-packages/`
+
+These can be partially removed with pip,
+
+    sudo apt-get install python3-pip ;
+    sudo pip3 uninstall robofab defcon ufo2fdk ufoLib defconQt ;
+
+To get rid of all remaining files (be careful with rm!) for each package installed above,
+
+    cat installed-files.txt | xargs sudo rm --verbose -vr
