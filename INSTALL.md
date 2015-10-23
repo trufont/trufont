@@ -47,14 +47,14 @@ In particular, https://github.com/trufont/defcon/tree/python3-ufo3
 
     cd .. ;
     git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon ;
-    cd defcon ;
+    cd robofab ;
     sudo python3 setup.py install --record installed-files.txt ;
 
 ### PyInstaller
 
 Homepage: http://www.pyinstaller.org
 
-    pip install PyInstaller ;
+    sudo pip install PyInstaller ;
 
 ## Trufont
 
@@ -64,7 +64,7 @@ To install and run,
 
     cd .. ;
     git clone --depth=1 https://github.com/trufont/trufont ;
-    cd trufront ;
+    cd trufont ;
     sudo python3 setup.py install --record installed-files.txt ;
     python3 -m defconQt ;
 
@@ -76,9 +76,10 @@ Or to then run from source,
 To build installation packages,
 
     cd Lib/ ;
-	sh build.sh ;
+    sh build.sh ;
 
-(To build an installation package for Mac OS X 10.9, you must build the package on that version of the OS.)
+Distribution packages will be placed in in `Lib/dist/`.
+To build an installation package for Mac OS X 10.9, you must build the package on that version of the OS.
 
 ## Uninstall
 
@@ -97,7 +98,7 @@ To get rid of all remaining files (be careful with rm!) for each package install
 
 ## Dependencies
 
-    sudo apt-get install -qq -y python3-pyqt5 python3-flake8 ;
+    sudo apt-get install -qq -y python3-pyqt5 python3-pyqt5.qtsvg python3-flake8 ;
     git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon ;
     git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab ;
     git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk ;
