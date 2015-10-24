@@ -2367,10 +2367,12 @@ class GlyphView(QGraphicsView):
     '''
 
     def wheelEvent(self, event):
-        factor = pow(1.2, event.angleDelta().y() / 120.0)
-        event.accept()
-
-        self.scale(factor, factor)
+        if event.modifiers() & Qt.ControlModifier:
+            factor = pow(1.2, event.angleDelta().y() / 120.0)
+            self.scale(factor, factor)
+            event.accept()
+        else:
+            super().wheelEvent(event)
 
     def scaleElements(self):
         # TODO: stop displaying SimpleTextItems at certains sizes, maybe anchor
