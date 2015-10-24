@@ -181,6 +181,7 @@ class GroupsWindow(QWidget):
         # TODO: calib this more
         layout.setColumnStretch(4, 1)
         self.setLayout(layout)
+        self.adjustSize()
 
         self.setWindowTitle("Groups window – %s %s" % (
             self.font.info.familyName, self.font.info.styleName))
@@ -286,11 +287,3 @@ class GroupsWindow(QWidget):
     def closeEvent(self, event):
         self.font.removeObserver(self, "Groups.Changed")
         event.accept()
-
-    def resizeEvent(self, event):
-        if self.isVisible():
-            margins = self.layout().contentsMargins()
-            width = event.size().width() - (margins.left() + margins.right())
-            self.collectionWidget._sizeEvent(width)
-            self.stackWidget.update()
-        super(GroupsWindow, self).resizeEvent(event)

@@ -197,11 +197,6 @@ class MainSpaceWindow(QWidget):
         self.canvas.setGlyphs(self.glyphs)
         self.table.setGlyphs(self.glyphs)
 
-    def resizeEvent(self, event):
-        if self.isVisible():
-            self.canvas._sizeEvent(event)
-        super(MainSpaceWindow, self).resizeEvent(event)
-
 pointSizes = [50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500]
 
 
@@ -337,6 +332,7 @@ class GlyphsCanvas(QWidget):
 
         self._wrapLines = True
         self._scrollArea = QScrollArea(self.parent())
+        self._scrollArea.resizeEvent = self.resizeEvent
         self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self._scrollArea.setWidget(self)
@@ -372,18 +368,12 @@ class GlyphsCanvas(QWidget):
             return
         self._wrapLines = wrapLines
         if self._wrapLines:
-            sw = self._scrollArea.verticalScrollBar().width(
-            ) + self._scrollArea.contentsMargins().right()
-            self.resize(self.parent().parent().parent().width() -
-                        sw, self.height())
+            self.resize(self._scrollArea.viewport().width(), self.height())
             self._scrollArea.setHorizontalScrollBarPolicy(
                 Qt.ScrollBarAlwaysOff)
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
-            sh = self._scrollArea.horizontalScrollBar().height(
-            ) + self._scrollArea.contentsMargins().bottom()
-            self.resize(self.width(), self.parent(
-            ).parent().parent().height() - sh)
+            self.resize(self.width(), self._scrollArea.viewport().height())
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.update()
@@ -428,15 +418,11 @@ class GlyphsCanvas(QWidget):
                     .5 * self.ptSize * self._lineHeight + 20)
         self.update()
 
-    def _sizeEvent(self, event):
+    def resizeEvent(self, event):
         if self._wrapLines:
-            sw = self._scrollArea.verticalScrollBar().width(
-            ) + self._scrollArea.contentsMargins().right()
-            self.resize(event.size().width() - sw, self.height())
+            self.resize(self._scrollArea.viewport().width(), self.height())
         else:
-            sh = self._scrollArea.horizontalScrollBar().height(
-            ) + self._scrollArea.contentsMargins().bottom()
-            self.resize(self.width(), event.size().height() - sh)
+            self.resize(self.width(), self._scrollArea.viewport().height())
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
@@ -617,12 +603,9 @@ class GlyphsCanvas(QWidget):
             painter.restore()
             painter.translate(gWidth, 0)
 
-        scrollMargins = self._scrollArea.contentsMargins()
-        innerHeight = self._scrollArea.height() - scrollMargins.top() - \
-            scrollMargins.bottom()
+        innerHeight = self._scrollArea.viewport().height()
         if not self._wrapLines:
-            innerWidth = self._scrollArea.width() - scrollMargins.left() - \
-                scrollMargins.right()
+            innerWidth = self._scrollArea.viewport().width()
             width = max(innerWidth, cur_width + self.padding * 2)
         else:
             width = self.width()
