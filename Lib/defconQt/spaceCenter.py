@@ -4,7 +4,8 @@ from defconQt.glyphView import MainGfxWindow
 from getpass import getuser
 from PyQt5.QtCore import QEvent, QSettings, QSize, Qt
 from PyQt5.QtGui import (
-    QBrush, QColor, QIcon, QIntValidator, QKeySequence, QPainter, QPen)
+    QBrush, QColor, QIcon, QIntValidator, QKeySequence, QPainter, QPalette,
+    QPen)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QActionGroup, QApplication, QComboBox, QLineEdit, QMenu,
     QPushButton, QScrollArea, QStyledItemDelegate, QTableWidget,
@@ -35,18 +36,20 @@ class MainSpaceWindow(QWidget):
             except:
                 string = "World"
             string = "Hello %s" % string
+        # TODO: drop self.font and self.glyphs, store in the widgets only
         self.font = font
         self.glyphs = []
         self.toolbar = FontToolBar(pointSize, self)
-        self.canvas = GlyphsCanvas(self.font, self.glyphs, pointSize, self)
-        self.table = SpaceTable(self.glyphs, self)
+        self.canvas = GlyphsCanvas(font, pointSize, self)
+        self.table = SpaceTable(self)
         self.toolbar.comboBox.currentIndexChanged[
             str].connect(self.canvas.setPointSize)
-        self.toolbar.textField.editTextChanged.connect(self._textChanged)
         self.canvas.doubleClickCallback = self._glyphOpened
-        self.canvas.pointSizeCallback = self.toolbar.setPointSize
+        self.canvas.pointSizeChangedCallback = self.toolbar.setPointSize
         self.canvas.selectionChangedCallback = self.table.setCurrentGlyph
         self.table.selectionChangedCallback = self.canvas.setSelected
+
+        self.toolbar.textField.editTextChanged.connect(self._textChanged)
         self.toolbar.textField.setEditText(string)
         app = QApplication.instance()
         app.currentGlyphChanged.connect(self._textChanged)
@@ -67,10 +70,9 @@ class MainSpaceWindow(QWidget):
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
-        self.menuBar().addMenu(fileMenu)
-
         fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        self.menuBar().addMenu(fileMenu)
 
     def close(self):
         self.font.info.removeObserver(self, "Info.Changed")
@@ -310,13 +312,13 @@ class FontToolBar(QToolBar):
 
 class GlyphsCanvas(QWidget):
 
-    def __init__(self, font, glyphs, pointSize=defaultPointSize, parent=None):
+    def __init__(self, font, pointSize=defaultPointSize, parent=None):
         super(GlyphsCanvas, self).__init__(parent)
         # XXX: make canvas font-agnostic as in defconAppkit and use
         # glyph.getParent() instead
         self.font = font
         self.fetchFontMetrics()
-        self.glyphs = glyphs
+        self.glyphs = []
         self.ptSize = pointSize
         self.calculateScale()
         self.padding = 10
@@ -518,6 +520,7 @@ class GlyphsCanvas(QWidget):
                         count += len(self._positions[i])
                     self._selected = count + index
                     found = True
+                    break
             if not found:
                 self._selected = None
             if self.selectionChangedCallback is not None:
@@ -666,21 +669,19 @@ class GlyphCellItemDelegate(QStyledItemDelegate):
 
 class SpaceTable(QTableWidget):
 
-    def __init__(self, glyphs, parent=None):
-        self.glyphs = glyphs
-        super(SpaceTable, self).__init__(4, len(glyphs) + 1, parent)
+    def __init__(self, parent=None):
+        super(SpaceTable, self).__init__(4, 1, parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self.setItemDelegate(GlyphCellItemDelegate(self))
-        # XXX: dunno why but without updating col count
-        # scrollbar reports incorrect height...
-        # fillGlyphs() will change this value back
-        self.setColumnCount(len(self.glyphs) + 2)
         data = [None, "Width", "Left", "Right"]
-        self._fgOverride = SpaceTableWidgetItem().foreground()
+        # Don't grey-out disabled cells
+        palette = self.palette()
+        fgColor = palette.color(QPalette.Text)
+        palette.setColor(QPalette.Disabled, QPalette.Text, fgColor)
+        self.setPalette(palette)
         for index, title in enumerate(data):
             item = SpaceTableWidgetItem(title)
             item.setFlags(Qt.NoItemFlags)
-            item.setForeground(self._fgOverride)
             self.setItem(index, 0, item)
         # let's use this one column to compute the width of others
         self._cellWidth = .5 * self.columnWidth(0)
@@ -692,6 +693,7 @@ class SpaceTable(QTableWidget):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setSizePolicy(QSizePolicy(
             QSizePolicy.Preferred, QSizePolicy.Fixed))
+        self._glyphs = []
         self.fillGlyphs()
         self.resizeRowsToContents()
         self.currentItemChanged.connect(self._itemChanged)
@@ -773,7 +775,7 @@ class SpaceTable(QTableWidget):
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879
         height = sum(self.rowHeight(k) for k in range(self.rowCount()))
-        height += self.horizontalScrollBar().height()
+        height += self.horizontalScrollBar().sizeHint().height()
         margins = self.contentsMargins()
         height += margins.top() + margins.bottom()
         return QSize(self.width(), height)
@@ -799,7 +801,6 @@ class SpaceTable(QTableWidget):
             item = SpaceTableWidgetItem(content)
             if disableCell:
                 item.setFlags(Qt.NoItemFlags)
-                item.setForeground(self._fgOverride)
             elif content is None:
                 item.setFlags(Qt.ItemIsEnabled)
             # TODO: should fields be centered? I find left-aligned more
@@ -817,6 +818,9 @@ class SpaceTable(QTableWidget):
             self.setColumnWidth(index + 1, self._cellWidth)
 
     def wheelEvent(self, event):
+        # A mouse can only scroll along the y-axis. Use x-axis if we have one
+        # (e.g. from touchpad), otherwise use y-axis.
+        angleDelta = event.angleDelta().x() or event.angleDelta().y()
         cur = self.horizontalScrollBar().value()
-        self.horizontalScrollBar().setValue(cur - event.angleDelta().y() / 120)
+        self.horizontalScrollBar().setValue(cur - angleDelta / 120)
         event.accept()

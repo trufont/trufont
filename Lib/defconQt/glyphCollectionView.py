@@ -58,7 +58,7 @@ class GlyphCollectionWidget(QWidget):
         self._inputString = ""
         self._lastKeyInputTime = None
 
-        self.characterSelectedCallback = None
+        self.glyphSelectedCallback = None
         self.doubleClickCallback = None
         self.updateCurrentGlyph = False
         self._maybeDragPosition = None
@@ -94,7 +94,7 @@ class GlyphCollectionWidget(QWidget):
 
     def _set_selection(self, selection):
         self._selection = selection
-        self.computeCharacterSelected()
+        self._computeGlyphSelection()
         self.update()
 
     selection = property(
@@ -209,15 +209,15 @@ class GlyphCollectionWidget(QWidget):
             max(math.ceil(len(self._glyphs) / self._columns) * self.squareSize,
                 self._scrollArea.height()))
 
-    def computeCharacterSelected(self):
-        if self.characterSelectedCallback is None:
+    def _computeGlyphSelection(self):
+        if self.glyphSelectedCallback is None:
             return
         cnt = len(self.selection)
         if cnt == 1:
             elem = next(iter(self.selection))
-            self.characterSelectedCallback(self._glyphs[elem].name)
+            self.glyphSelectedCallback(self._glyphs[elem].name)
         else:
-            self.characterSelectedCallback(cnt)
+            self.glyphSelectedCallback(cnt)
 
     def _arrowKeyPressEvent(self, event):
         count = event.count()
