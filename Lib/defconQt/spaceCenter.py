@@ -693,7 +693,7 @@ class SpaceTable(QTableWidget):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setSizePolicy(QSizePolicy(
             QSizePolicy.Preferred, QSizePolicy.Fixed))
-        self._glyphs = []
+        self.glyphs = []
         self.fillGlyphs()
         self.resizeRowsToContents()
         self.currentItemChanged.connect(self._itemChanged)
