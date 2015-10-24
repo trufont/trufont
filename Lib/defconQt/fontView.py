@@ -76,7 +76,7 @@ class Application(QApplication):
         for window in QApplication.topLevelWidgets():
             if isinstance(window, MainWindow):
                 fonts.append(window._font)
-                return fonts
+        return fonts
 
     def currentFont(self):
         return self._currentMainWindow._font
@@ -1050,9 +1050,9 @@ class MainWindow(QMainWindow):
         self.selectionLabel.setText(text)
 
     def _squareSizeChanged(self):
-        val = self.sqSizeSlider.value()
-        self.collectionWidget._sizeEvent(self.width(), val)
-        QToolTip.showText(QCursor.pos(), str(val), self)
+        squareSize = self.sqSizeSlider.value()
+        self.collectionWidget.squareSize = squareSize
+        QToolTip.showText(QCursor.pos(), str(squareSize), self)
 
     def event(self, event):
         if event.type() == QEvent.WindowActivate:
@@ -1062,11 +1062,6 @@ class MainWindow(QMainWindow):
             if lastSelectedGlyph is not None:
                 app.setCurrentGlyph(lastSelectedGlyph)
         return super(MainWindow, self).event(event)
-
-    def resizeEvent(self, event):
-        if self.isVisible():
-            self.collectionWidget._sizeEvent(event.size().width())
-        super(MainWindow, self).resizeEvent(event)
 
     def setWindowTitle(self, title=None):
         if title is None:

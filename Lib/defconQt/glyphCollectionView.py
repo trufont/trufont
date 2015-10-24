@@ -50,7 +50,7 @@ class GlyphCollectionWidget(QWidget):
         super(GlyphCollectionWidget, self).__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self._glyphs = []
-        self.squareSize = 56
+        self._squareSize = 56
         self._columns = 10
         self._selection = set()
         self._oldSelection = None
@@ -70,6 +70,7 @@ class GlyphCollectionWidget(QWidget):
         self._scrollArea.dragMoveEvent = self.pipeDragMoveEvent
         self._scrollArea.dragLeaveEvent = self.pipeDragLeaveEvent
         self._scrollArea.dropEvent = self.pipeDropEvent
+        self._scrollArea.resizeEvent = self.resizeEvent
         self._scrollArea.setAcceptDrops(True)
         self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -141,6 +142,15 @@ class GlyphCollectionWidget(QWidget):
 
     currentDropIndex = property(_get_currentDropIndex, _set_currentDropIndex)
 
+    def _get_squareSize(self):
+        return self._squareSize
+
+    def _set_squareSize(self, squareSize):
+        self._squareSize = squareSize
+        self._rewindColumns()
+
+    squareSize = property(_get_squareSize, _set_squareSize)
+
     def pipeDragEnterEvent(self, event):
         # glyph reordering
         if event.source() == self:
@@ -180,14 +190,11 @@ class GlyphCollectionWidget(QWidget):
             self.glyphs = [glyph
                            for glyph in self._glyphs if glyph is not None]
 
-    # TODO: break this down into set width/set square
-    # TODO: see whether scrollArea gets resizeEvents
-    def _sizeEvent(self, width, squareSize=None):
-        sw = self._scrollArea.verticalScrollBar().width(
-        ) + self._scrollArea.contentsMargins().right()
-        if squareSize is not None:
-            self.squareSize = squareSize
-        columns = (width - sw) // self.squareSize
+    def resizeEvent(self, event):
+        self._rewindColumns()
+
+    def _rewindColumns(self):
+        columns = self._scrollArea.viewport().width() // self.squareSize
         if not columns > 0:
             return
         self._columns = columns
