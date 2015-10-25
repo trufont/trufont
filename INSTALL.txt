@@ -47,7 +47,7 @@ In particular, https://github.com/trufont/defcon/tree/python3-ufo3
 
     cd .. ;
     git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon ;
-    cd robofab ;
+    cd defcon ;
     sudo python3 setup.py install --record installed-files.txt ;
 
 ### PyInstaller
