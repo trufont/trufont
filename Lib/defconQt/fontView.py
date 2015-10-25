@@ -685,7 +685,7 @@ class MainWindow(QMainWindow):
         fontMenu = QMenu("&Font", self)
         # TODO: work out sensible shortcuts and make sure they're
         # cross-platform ready - consider extracting them into separate file?
-        fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+Alt+G")
+        fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+G")
         fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+Alt+I")
         fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+Alt+F")
         fontMenu.addSeparator()
