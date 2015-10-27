@@ -36,3 +36,7 @@ Install notes:
 [defcon, python3-ufo3 branch]: https://github.com/trufont/defcon
 [ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
 [Homebrew]: http://brew.sh/
+
+## Licensing
+
+For licensing details, please refer to the **LICENSE.txt** file in this repository.

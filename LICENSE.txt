@@ -1,5 +1,6 @@
-Dual-licensed under the GNU LGPL v2.1 [1] and the GNU GPL v3 [2], at your
-option.
+The source code of this program is dual-licensed under
+the GNU LGPL v2.1 [1] and the GNU GPL v3 [2], at your option.
+
 Note that defconQt uses PyQt5 as a library, which free version is provided under
 the GNU GPL license. Copyleft clause may apply, in which case the end-user is
 left with choosing the GNU GPL v3 as the end-user license.
@@ -8,3 +9,18 @@ For more information, please consult: http://www.gnu.org/copyleft/
 
 [1]: available at: http://www.gnu.org/copyleft/lgpl.html
 [2]: available at: http://www.gnu.org/licenses/gpl.html
+
+--------------------------------------------------------------------------------
+
+All graphical assets used in this program are licensed under
+Creative Commons Attribution-ShareAlike 4.0 International
+
+--------------------------------------------------------------------------------
+
+TruFont logo artwork is:
+
+(c)2015 Jean-Baptiste Morizot
+(c)2015 Jérémy Landes-Nones
+
+licensed under
+Creative Commons Attribution-ShareAlike 4.0 International
