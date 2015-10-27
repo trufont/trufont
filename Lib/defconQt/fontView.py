@@ -154,7 +154,7 @@ class InspectorWindow(QWidget):
             self.writeRightSideBearing)
         self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.rightSideBearingEdit.setValidator(QIntValidator(self))
-        markColorLabel = QLabel("Mark:", self)
+        markColorLabel = QLabel("Flag:", self)
         self.markColorButton = QPushButton(self)
         self.markColorButton.setMaximumWidth(columnOneWidth)
         app = QApplication.instance()
@@ -657,7 +657,7 @@ class MainWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         editMenu = QMenu("&Edit", self)
-        markColorMenu = QMenu("Mark color", self)
+        markColorMenu = QMenu("Flag color", self)
         pixmap = QPixmap(24, 24)
         none = markColorMenu.addAction("None", self.markColor)
         none.setData(None)
