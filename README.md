@@ -1,38 +1,32 @@
 # TruFont
 
-TruFont is a font-editing application written with Python3, ufoLib, defcon and PyQt.
+TruFont is a font-editing application written with Python3, ufoLib, defcon and PyQt5.
 
 Dependencies:
 
-- Python 3
-- PyQt5
+- [Python 3]
+- [PyQt5]
 - [fontTools]
 - [robofab, python3-ufo3 branch]
 - [defcon, python3-ufo3 branch]
-
-Optional:
-
-- [ufo2fdk, python3-ufo3 branch]
+- [ufo2fdk, python3-ufo3 branch] (optional)
 
 Run:
 
-`cd Lib && python -m defconQt`
+`cd Lib && python3 -m defconQt`
 
-Install notes:
+Useful:
 
-- On OSX, it is highly recommended to install all dependencies with [Homebrew]
-  in order to have a correct Qt namespace (`brew` handles it all by itself).  
-  Finish with `brew linkapps python3` to be able to call `python3` from the
-  Terminal.
-- You can have multiple versions of Python on your system, then you just need to
-  use a version prefix, e.g.:
-  * `python3`
-  * `python3.4`
-  * `python3.5`
-  * …
+* [INSTALL.md] 
+* [CONTRIBUTING.md]
+* [LICENSING.md] 
 
+[Python 3]: https://www.python.org
+[PyQt5]: riverbankcomputing.com/software/pyqt
 [fontTools]: https://github.com/behdad/fonttools
 [robofab, python3-ufo3 branch]: https://github.com/trufont/robofab
 [defcon, python3-ufo3 branch]: https://github.com/trufont/defcon
 [ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
-[Homebrew]: http://brew.sh/
+[INSTALL.md]: https://github.com/trufont/trufont/blob/master/INSTALL.md
+[CONTRIBUTING.md]: https://github.com/trufont/trufont/blob/master/CONTRIBUTING.md
+[LICENSING.md]: https://github.com/trufont/trufont/blob/master/LICENSING.md

@@ -11,6 +11,9 @@ Install with [homebrew](http://brew.sh),
     sudo xcodebuild -license ;
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" ;
     brew install python3 ;
+	brew linkapps python3 ;
+
+Note: You can have multiple versions of Python on your system, and you just need to use a version prefix (e.g. `python3` or `python3.4` or `python3.5`) to ensure you are using Python 3. 
 
 ### PyQt5
 
@@ -116,7 +119,7 @@ To get rid of all remaining files (be careful with rm!) for each package install
     cd ../fonttools ;
     sudo python3.4 setup.py install --record installed-files.txt ;
 
-## Trufont
+## TruFont
 
 To install and run,
 

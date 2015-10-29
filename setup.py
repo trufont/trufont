@@ -38,11 +38,11 @@ except:
 #    shutil.rmtree(doctrees)
 
 setup(
-    name="defconQt",
-    version="0.1.0",
-    description="Trufont, a cross-platform font editor (a set of Qt interface "
+    name="TruFont",
+    version="0.2.0",
+    description="TruFont, a cross-platform font editor (a set of PyQt5 interface "
                 "objects for working with font data).",
-    author="Adrien Tétar",
+    author="TruFont Authors",
     author_email="adri-from-59@hotmail.fr",
     url="http://trufont.github.io",
     license="GNU LGPL 2.1/GNU GPL v3",

@@ -1,0 +1,18 @@
+# This file lists TruFont authors for copyright purposes.
+# This file is distinct from the CONTRIBUTORS.txt file.
+# See the latter for an explanation.
+#
+# Names should be added to this file as:
+#
+#     Name or Organization <email address>
+#
+# This information can be verified by running:
+# git log --format='%aN <%aE>' | sort | uniq
+
+Adrien Tétar <adri-from-59@hotmail.fr>
+Dave Crossland <dave@lab6.com>
+Denis Jacquerye <moyogo@gmail.com>
+Felipe Corrêa da Silva Sanches <fsanches@metamaquina.com.br>
+Lasse Fister <commander@graphicore.de>
+Nicolas Spalinger <nicolas.spalinger@sil.org>
+Pathum Egodawatta <pathumego@gmail.com>
