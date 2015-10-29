@@ -181,7 +181,7 @@ class AddLayerDialog(QDialog):
         layout.addWidget(layerNameLabel, l, 0)
         layout.addWidget(self.layerNameEdit, l, 1)
         l += 1
-        layout.addWidget(buttonBox, l, 2)
+        layout.addWidget(buttonBox, l, 0, 1, 2)
         self.setLayout(layout)
 
     @classmethod
@@ -302,7 +302,7 @@ class MainGfxWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         glyphMenu = QMenu("&Glyph", self)
-        glyphMenu.addAction("&Jump", self.changeGlyph, "J")
+        glyphMenu.addAction("&Go to…", self.changeGlyph, "G")
         menuBar.addMenu(glyphMenu)
 
         self._displaySettings = DisplayStyleSettings(
