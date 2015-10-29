@@ -251,8 +251,7 @@ class InfoPanel(QWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
-        # TODO: does not put window on secondary screen if applicable
-        screenRect = QApplication.desktop().screenGeometry()
+        screenRect = QApplication.desktop().availableGeometry(self)
         widgetRect = self.frameGeometry()
         x = screenRect.width() - (widgetRect.width() + 20)
         y = screenRect.center().y() - widgetRect.height() / 2
