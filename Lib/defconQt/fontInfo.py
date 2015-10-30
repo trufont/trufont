@@ -1,6 +1,7 @@
-from PyQt5.QtCore import QDate, QDateTime, QTime, Qt
+from PyQt5.QtCore import QDate, QDateTime, QRegularExpression, QTime, Qt
 from PyQt5.QtGui import (
-    QDoubleValidator, QIntValidator, QStandardItem, QStandardItemModel)
+    QDoubleValidator, QIntValidator, QRegularExpressionValidator,
+    QStandardItem, QStandardItemModel)
 from PyQt5.QtWidgets import (
     QCheckBox, QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox,
     QGridLayout, QGroupBox, QLabel, QLineEdit, QListView, QPlainTextEdit,
@@ -90,7 +91,6 @@ class TabWidget(QWidget):
         else:
             value = ""
         setattr(self, dst + "Edit", QLineEdit(value, self))
-        getattr(self, dst + "Edit").setValidator(QIntValidator(self))
         validator = QIntValidator(self)
         validator.setBottom(0)
         getattr(self, dst + "Edit").setValidator(validator)
@@ -131,9 +131,13 @@ class TabWidget(QWidget):
     def loadIntegerFloatList(self, font, src, dst):
         values = " ".join(str(val) for val in getattr(font.info, src))
         setattr(self, dst + "Edit", QLineEdit(values, self))
+        validator = QRegularExpressionValidator(self)
+        validator.setRegularExpression(
+            QRegularExpression("(-?\d+(.\d+)?\s*)*"))
+        getattr(self, dst + "Edit").setValidator(validator)
 
     def writeIntegerFloatList(self, font, src, dst):
-        values = getattr(self, src + "Edit").text()
+        values = getattr(self, src + "Edit").text().split()
         dstValues = []
         for val in values:
             if "." in val:

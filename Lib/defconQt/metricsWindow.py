@@ -93,8 +93,7 @@ class MainMetricsWindow(QWidget):
         self.canvas.update()
 
     def _glyphChanged(self, notification):
-        if not self.canvas._editing:
-            self.canvas.update()
+        self.canvas.update()
         if not self.table._editing:
             self.table.updateCells(self.canvas._editing)
 
