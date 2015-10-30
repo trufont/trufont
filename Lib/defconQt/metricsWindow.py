@@ -1,5 +1,5 @@
 from defconQt import icons_db  # noqa
-from defconQt.glyphCollectionView import arrowKeys, cellSelectionColor
+from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGfxWindow
 from defconQt.objects.defcon import TGlyph
 from getpass import getuser
@@ -532,7 +532,7 @@ class GlyphsCanvas(QWidget):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if key in arrowKeys:
+        if key in (Qt.Key_Left, Qt.Key_Right):
             self._arrowKeyPressEvent(event)
         else:
             super().keyPressEvent(event)
@@ -576,7 +576,6 @@ class GlyphsCanvas(QWidget):
             self.update()
             # restore focus to ourselves, the table widget did take it when we
             # sent notification
-            # TODO: maybe not set focus on notifiee instead
             self.setFocus(Qt.MouseFocusReason)
         else:
             super(GlyphsCanvas, self).mousePressEvent(event)

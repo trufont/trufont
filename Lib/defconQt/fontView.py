@@ -469,7 +469,7 @@ class SortDialog(QDialog):
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Sort…")
 
-        self.smartSortBox = QRadioButton("Optimized sort", self)
+        self.smartSortBox = QRadioButton("Canned sort", self)
         self.smartSortBox.setToolTip("A combination of simple, complex and "
                                      "custom sorts that give optimized "
                                      "ordering results.")
@@ -1114,7 +1114,8 @@ class MainWindow(QMainWindow):
             self.metricsWindow.show()
         else:
             self.metricsWindow.raise_()
-        # TODO: decouple
+        # TODO: default string kicks-in on the window before this. Figure out
+        # how to make a clean interface
         selection = self.collectionWidget.selection
         if selection:
             glyphs = []
