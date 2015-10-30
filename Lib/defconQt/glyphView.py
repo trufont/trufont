@@ -249,7 +249,7 @@ class GenericSettings(object):
 
 class DisplayStyleSettings(GenericSettings):
     _presets = (
-        ('TruFont Default', dict(
+        ('Default', dict(
             activeLayerOnTop=True, activeLayerFilled=True,
             otherLayersFilled=False, activeLayerUseLayerColor=False,
             otherLayerUseLayerColor=True, drawOtherLayers=True
@@ -584,6 +584,8 @@ componentFillColor = QColor.fromRgbF(
     0, 0, 0, .4)  # QColor.fromRgbF(.2, .2, .3, .4)
 metricsColor = QColor(70, 70, 70)
 pointSelectionColor = Qt.red
+
+bluesAttrs = ["postscriptBlueValues", "postscriptOtherBlues"]
 
 
 class SceneTools(Enum):
@@ -1847,6 +1849,8 @@ class GlyphView(QGraphicsView):
         createComponentAction.triggered.connect(self.createComponent)
         self.addAction(createComponentAction)
 
+        font = glyph.getParent()
+        font.info.addObserver(self, "_fontInfoChanged", "Info.ValueChanged")
         for layer in layerSet:
             if self._name not in layer:
                 self._listenToLayer(layer)
@@ -1914,6 +1918,10 @@ class GlyphView(QGraphicsView):
         layerName = notification.data['name']
         layer = self._layerSet[layerName]
         self._removeLayerPath(layer)
+
+    def _fontInfoChanged(self, notification):
+        if notification.data["attribute"] in bluesAttrs:
+            self.addBlues()
 
     def _glyphChanged(self, notification):
         # TODO: maybe detect sidebearing changes (space center) and then only
@@ -1983,10 +1991,10 @@ class GlyphView(QGraphicsView):
     def addBlues(self):
         scene = self.scene()
         font = self._glyph.getParent()
+        blues = self._getSceneItems('blues', clear=True)
         if font is None:
             return
-        attrs = ["postscriptBlueValues", "postscriptOtherBlues"]
-        for attr in attrs:
+        for attr in bluesAttrs:
             values = getattr(font.info, attr)
             if not values:
                 continue
@@ -2001,6 +2009,7 @@ class GlyphView(QGraphicsView):
                     item = scene.addRect(-1000, yMin, 3000, yMax - yMin,
                                          QPen(Qt.NoPen), QBrush(bluesColor))
                     item.setZValue(-998)
+                blues.append(item)
 
     def addHorizontalMetrics(self):
         scene = self.scene()
