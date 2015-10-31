@@ -91,6 +91,8 @@ class Application(QApplication):
             return
         self._currentGlyph = glyph
         self.currentGlyphChanged.emit()
+        if self._currentGlyph is None:
+            return
         # update currentMainWindow if we need to.
         # XXX: find a way to update currentMainWindow when we switch to any
         # child of a MainWindow instead of the MainWindow itself.
@@ -1054,7 +1056,7 @@ class MainWindow(QMainWindow):
                     if glyph not in glyphs:
                         glyphs.append(glyph)
         else:
-            glyphs = self._font[:]
+            glyphs = list(self._font)
         self.collectionWidget.glyphs = glyphs
 
     def _glyphOpened(self, glyph):
