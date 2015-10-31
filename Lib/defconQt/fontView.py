@@ -938,14 +938,17 @@ class MainWindow(QMainWindow):
     def _set_font(self, font):
         if self._font is not None:
             self._font.removeObserver(self, "Font.Changed")
+            self._font.removeObserver(self, "Font.GlyphOrderChanged")
         self._font = font
         self._font.addObserver(self, "_fontChanged", "Font.Changed")
-        if "public.glyphOrder" in self._font.lib:
-            self.sortDescriptor = GlyphSet(
-                self._font.lib["public.glyphOrder"])
-        else:
+        self._font.addObserver(
+            self, "_glyphOrderChanged", "Font.GlyphOrderChanged")
+        if self._font.glyphOrder is None:
             # TODO: cannedDesign or carry sortDescriptor from previous font?
             self.sortDescriptor = cannedDesign
+        else:
+            # use the glyphOrder from the font
+            self.sortDescriptor = None
 
     font = property(_get_font, _set_font, doc="The fontView font. Subscribes \
         to the new font, updates the sorting order and cells widget when set.")
@@ -954,21 +957,13 @@ class MainWindow(QMainWindow):
         return self._sortDescriptor
 
     def _set_sortDescriptor(self, desc):
-        if isinstance(desc, GlyphSet):
-            glyphs = []
-            for glyphName in desc.glyphNames:
-                if glyphName in self._font:
-                    glyphs.append(self._font[glyphName])
-            if len(glyphs) < len(self._font):
-                # if some glyphs in the font are not present in the glyph
-                # order, loop again to add them at the end
-                for glyph in self._font:
-                    if glyph not in glyphs:
-                        glyphs.append(glyph)
+        if desc is None:
+            self.updateGlyphsFromFont()
+        elif isinstance(desc, GlyphSet):
+            self._font.glyphOrder = desc.glyphNames
         else:
-            glyphs = [self._font[k] for k in self._font.unicodeData
-                      .sortGlyphNames(self._font.keys(), desc)]
-        self.collectionWidget.glyphs = glyphs
+            self._font.glyphOrder = self._font.unicodeData.sortGlyphNames(
+                self._font.keys(), desc)
         self._sortDescriptor = desc
 
     sortDescriptor = property(_get_sortDescriptor, _set_sortDescriptor,
@@ -1040,7 +1035,27 @@ class MainWindow(QMainWindow):
 
     def _fontChanged(self, notification):
         self.collectionWidget.update()
-        self.setWindowModified(True)
+        self.setWindowModified(self._font.dirty)
+
+    def _glyphOrderChanged(self, notification):
+        self.updateGlyphsFromFont()
+
+    def updateGlyphsFromFont(self):
+        glyphOrder = self._font.glyphOrder
+        if len(glyphOrder):
+            glyphs = []
+            for glyphName in glyphOrder:
+                if glyphName in self._font:
+                    glyphs.append(self._font[glyphName])
+            if len(glyphs) < len(self._font):
+                # if some glyphs in the font are not present in the glyph
+                # order, loop again to add them at the end
+                for glyph in self._font:
+                    if glyph not in glyphs:
+                        glyphs.append(glyph)
+        else:
+            glyphs = self._font[:]
+        self.collectionWidget.glyphs = glyphs
 
     def _glyphOpened(self, glyph):
         glyphViewWindow = MainGfxWindow(glyph, self)

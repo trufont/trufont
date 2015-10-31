@@ -116,7 +116,10 @@ class AddAnchorDialog(QDialog):
     def __init__(self, pos=None, parent=None):
         super(AddAnchorDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Add anchor…")
+        if pos is not None:
+            self.setWindowTitle("Add anchor…")
+        else:
+            self.setWindowTitle("Rename anchor…")
 
         layout = QGridLayout(self)
 
@@ -136,8 +139,9 @@ class AddAnchorDialog(QDialog):
         l = 0
         layout.addWidget(anchorNameLabel, l, 0)
         layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
-        l += 1
-        layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
+        if pos is not None:
+            l += 1
+            layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
         l += 1
         layout.addWidget(buttonBox, l, 3)
         self.setLayout(layout)
@@ -363,7 +367,7 @@ class MainGfxWindow(QMainWindow):
         oldView = self.view
         # Preserve the selected layer (by setting the glyph from that layer)
         # Todo: If that layer is already in the glyph, it would be a little bit
-        # harder to create it here and may be better or worse. Worse becaue
+        # harder to create it here and may be better or worse. Worse because
         # we'd alter the data without being explicitly asked to do so.
         # Ask someone who does UX.
         if oldView:
@@ -379,6 +383,7 @@ class MainGfxWindow(QMainWindow):
         # GlyphView? If yes, we should make an interface for a
         # predecessor -> successor transformation
         if oldView:
+            self.view._currentTool = oldView._currentTool
             self.view.setTransform(oldView.transform())
 
         self._setlayerColorButtonColor()
@@ -1016,6 +1021,12 @@ class AnchorItem(QGraphicsPathItem):
             self._anchor.y = y
             scene._blocked = False
         return value
+
+    def mouseDoubleClickEvent(self, event):
+        view = self.scene().views()[0]
+        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(view)
+        if ok:
+            self._anchor.name = newAnchorName
 
     def setPointPath(self, scale=None):
         path = QPainterPath()
@@ -2300,8 +2311,7 @@ class GlyphView(QGraphicsView):
 
     def _makeLayerGlyph(self, layer):
         name = self._name
-        layer.newGlyph(name)
-        glyph = layer[name]
+        glyph = layer.newGlyph(name)
         # TODO: generalize this out, can’t use newStandardGlyph unfortunately
         glyph.width = self.defaultWidth
 

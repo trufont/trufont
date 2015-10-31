@@ -19,9 +19,7 @@ class TFont(Font):
         if not override:
             if name in self:
                 return None
-        # XXX(defcon): newGlyph should return the glyph
-        self.newGlyph(name)
-        glyph = self[name]
+        glyph = self.newGlyph(name)
         glyph.width = width
         # TODO: list ought to be changeable from AGL2UV
         if addUnicode:
@@ -117,8 +115,8 @@ class TPoint(Point):
 class GlyphSet(object):
     __slots__ = ["_name", "_glyphNames"]
 
-    def __init__(self, glyphNames, name=None):
-        self._name = name
+    def __init__(self, glyphNames, name):
+        self._name = str(name)
         self._glyphNames = glyphNames
 
     def _get_name(self):
