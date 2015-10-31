@@ -942,7 +942,7 @@ class MainWindow(QMainWindow):
         self._font = font
         self._font.addObserver(self, "_fontChanged", "Font.Changed")
         self._font.addObserver(
-            self, "_glyphOrderChanged","Font.GlyphOrderChanged")
+            self, "_glyphOrderChanged", "Font.GlyphOrderChanged")
         if self._font.glyphOrder is None:
             # TODO: cannedDesign or carry sortDescriptor from previous font?
             self.sortDescriptor = cannedDesign
@@ -963,7 +963,7 @@ class MainWindow(QMainWindow):
             self._font.glyphOrder = desc.glyphNames
         else:
             self._font.glyphOrder = self._font.unicodeData.sortGlyphNames(
-                                        self._font.keys(), desc)
+                self._font.keys(), desc)
         self._sortDescriptor = desc
 
     sortDescriptor = property(_get_sortDescriptor, _set_sortDescriptor,
