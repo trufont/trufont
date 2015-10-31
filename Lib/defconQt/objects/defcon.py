@@ -117,8 +117,8 @@ class TPoint(Point):
 class GlyphSet(object):
     __slots__ = ["_name", "_glyphNames"]
 
-    def __init__(self, glyphNames, name=None):
-        self._name = name
+    def __init__(self, glyphNames, name):
+        self._name = str(name)
         self._glyphNames = glyphNames
 
     def _get_name(self):
