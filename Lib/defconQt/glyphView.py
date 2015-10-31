@@ -116,7 +116,10 @@ class AddAnchorDialog(QDialog):
     def __init__(self, pos=None, parent=None):
         super(AddAnchorDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Add anchor…")
+        if pos is not None:
+            self.setWindowTitle("Add anchor…")
+        else:
+            self.setWindowTitle("Rename anchor…")
 
         layout = QGridLayout(self)
 
@@ -136,8 +139,9 @@ class AddAnchorDialog(QDialog):
         l = 0
         layout.addWidget(anchorNameLabel, l, 0)
         layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
-        l += 1
-        layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
+        if pos is not None:
+            l += 1
+            layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
         l += 1
         layout.addWidget(buttonBox, l, 3)
         self.setLayout(layout)
@@ -1016,6 +1020,12 @@ class AnchorItem(QGraphicsPathItem):
             self._anchor.y = y
             scene._blocked = False
         return value
+
+    def mouseDoubleClickEvent(self, event):
+        view = self.scene().views()[0]
+        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(view)
+        if ok:
+            self._anchor.name = newAnchorName
 
     def setPointPath(self, scale=None):
         path = QPainterPath()
