@@ -19,9 +19,7 @@ class TFont(Font):
         if not override:
             if name in self:
                 return None
-        # XXX(defcon): newGlyph should return the glyph
-        self.newGlyph(name)
-        glyph = self[name]
+        glyph = self.newGlyph(name)
         glyph.width = width
         # TODO: list ought to be changeable from AGL2UV
         if addUnicode:

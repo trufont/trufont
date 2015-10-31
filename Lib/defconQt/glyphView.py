@@ -367,7 +367,7 @@ class MainGfxWindow(QMainWindow):
         oldView = self.view
         # Preserve the selected layer (by setting the glyph from that layer)
         # Todo: If that layer is already in the glyph, it would be a little bit
-        # harder to create it here and may be better or worse. Worse becaue
+        # harder to create it here and may be better or worse. Worse because
         # we'd alter the data without being explicitly asked to do so.
         # Ask someone who does UX.
         if oldView:
@@ -383,6 +383,7 @@ class MainGfxWindow(QMainWindow):
         # GlyphView? If yes, we should make an interface for a
         # predecessor -> successor transformation
         if oldView:
+            self.view._currentTool = oldView._currentTool
             self.view.setTransform(oldView.transform())
 
         self._setlayerColorButtonColor()
@@ -2310,8 +2311,7 @@ class GlyphView(QGraphicsView):
 
     def _makeLayerGlyph(self, layer):
         name = self._name
-        layer.newGlyph(name)
-        glyph = layer[name]
+        glyph = layer.newGlyph(name)
         # TODO: generalize this out, can’t use newStandardGlyph unfortunately
         glyph.width = self.defaultWidth
 
