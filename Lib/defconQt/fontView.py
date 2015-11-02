@@ -654,15 +654,16 @@ class MainWindow(QMainWindow):
         for i in range(MAX_RECENT_FILES):
             action = QAction(self.recentFilesMenu)
             action.setVisible(False)
-            action.triggered.connect(self.openRecentFont)
+            action.triggered.connect(self.openRecentFile)
             self.recentFilesMenu.addAction(action)
         self.updateRecentFiles()
         fileMenu.addMenu(self.recentFilesMenu)
+        fileMenu.addAction("Import…", self.importFile)
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
         fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
-        fileMenu.addAction("Export…", self.export)
-        fileMenu.addAction("Reload From Disk", self.reload)
+        fileMenu.addAction("Export…", self.exportFile)
+        fileMenu.addAction("Reload From Disk", self.reloadFile)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
 
@@ -790,7 +791,7 @@ class MainWindow(QMainWindow):
             else:
                 self.font = font
 
-    def openRecentFont(self):
+    def openRecentFile(self):
         fontPath = self.sender().toolTip()
         self.openFile(fontPath)
 
@@ -831,7 +832,36 @@ class MainWindow(QMainWindow):
             self.setWindowTitle()
         # return ok
 
-    def export(self):
+    def importFile(self):
+        try:
+            import extractor
+        except Exception as e:
+            title = e.__class__.__name__
+            QMessageBox.critical(self, title, str(e))
+            return
+
+        # TODO: systematize this into extractor
+        fileFormats = (
+            "OpenType Font file (*.otf *.ttf)",
+            "Type1 Font file (*.pfa)",
+            "ttx Font file (*.ttx)",
+            "WOFF Font file (*.woff)",
+        )
+
+        path, ok = QFileDialog.getOpenFileName(self, "Import File", None,
+                                               ";;".join(fileFormats))
+        if ok:
+            font = TFont()
+            try:
+                extractor.extractUFO(path, font)
+            except Exception as e:
+                title = e.__class__.__name__
+                QMessageBox.critical(self, title, str(e))
+                return
+            window = MainWindow(font)
+            window.show()
+
+    def exportFile(self):
         try:
             from ufo2fdk import haveFDK, OTFCompiler
         except Exception as e:
@@ -843,7 +873,7 @@ class MainWindow(QMainWindow):
                                  "could not be found.")
             return
 
-        path, ok = QFileDialog.getSaveFileName(self, "Save File", None,
+        path, ok = QFileDialog.getSaveFileName(self, "Export File", None,
                                                "PS OpenType font (*.otf)")
         if ok:
             compiler = OTFCompiler()
@@ -919,7 +949,7 @@ class MainWindow(QMainWindow):
             return False
         return True
 
-    def reload(self):
+    def reloadFile(self):
         font = self._font
         if font.path is None:
             return
