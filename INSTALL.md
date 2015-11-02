@@ -50,6 +50,17 @@ In particular, https://github.com/trufont/defcon/tree/python3-ufo3
     cd robofab ;
     sudo python3 setup.py install --record installed-files.txt ;
 
+### ufo2fdk
+
+Learn more: https://github.com/typesupply/ufo2fdk
+
+In particular, https://github.com/trufont/ufo2fdk/tree/python3-ufo3
+
+    cd .. ;
+    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk ;
+    cd ufo2fdk ;
+    sudo python3 setup.py install --record installed-files.txt ;
+
 ### PyInstaller
 
 Homepage: http://www.pyinstaller.org
