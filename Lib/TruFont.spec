@@ -24,12 +24,12 @@ exe = EXE(pyz,
           debug=False,
           strip=None,
           upx=True,
-          console=False, 
-		  icon='defconQt/resources/app.ico')
+          console=False,
+          icon='defconQt/resources/app.ico')
 app = BUNDLE(exe,
              name='TruFont.app',
              icon='defconQt/resources/app.icns',
-             bundle_identifier=None,
+             bundle_identifier='io.github.trufont',
              info_plist={
                'NSHighResolutionCapable': 'True',
                'LSBackgroundOnly': '0'

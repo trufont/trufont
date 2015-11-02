@@ -1,3 +1,4 @@
+from defconQt import __version__
 from defconQt.featureTextEditor import MainEditWindow
 from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
@@ -8,7 +9,7 @@ from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defconQt.util import platformSpecific
 from defcon import Color, Component
-from defconQt.spaceCenter import MainSpaceWindow, comboBoxItems
+from defconQt.metricsWindow import MainMetricsWindow, comboBoxItems
 from PyQt5.QtCore import (
     pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
 from PyQt5.QtGui import (
@@ -16,13 +17,14 @@ from PyQt5.QtGui import (
     QRegularExpressionValidator, QTextCursor)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QAction, QApplication, QCheckBox, QComboBox, QDialog,
-    QDialogButtonBox, QErrorMessage, QFileDialog, QGridLayout, QGroupBox,
-    QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu,
-    QMessageBox, QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter,
-    QTabWidget, QTextEdit, QToolTip, QVBoxLayout, QWidget)
+    QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
+    QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
+    QTextEdit, QToolTip, QVBoxLayout, QWidget)
 from collections import OrderedDict
 import os
 import pickle
+import platform
 import traceback
 
 cannedDesign = [
@@ -89,6 +91,8 @@ class Application(QApplication):
             return
         self._currentGlyph = glyph
         self.currentGlyphChanged.emit()
+        if self._currentGlyph is None:
+            return
         # update currentMainWindow if we need to.
         # XXX: find a way to update currentMainWindow when we switch to any
         # child of a MainWindow instead of the MainWindow itself.
@@ -114,11 +118,11 @@ class Application(QApplication):
 MAX_RECENT_FILES = 6
 
 
-class InspectorWindow(QWidget):
+class InfoPanel(QWidget):
 
     def __init__(self):
-        super(InspectorWindow, self).__init__(flags=Qt.Tool)
-        self.setWindowTitle("Inspector")
+        super().__init__(flags=Qt.Tool)
+        self.setWindowTitle("Info Panel")
         self._blocked = False
         self._glyph = None
 
@@ -154,7 +158,7 @@ class InspectorWindow(QWidget):
             self.writeRightSideBearing)
         self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.rightSideBearingEdit.setValidator(QIntValidator(self))
-        markColorLabel = QLabel("Mark:", self)
+        markColorLabel = QLabel("Flag:", self)
         self.markColorButton = QPushButton(self)
         self.markColorButton.setMaximumWidth(columnOneWidth)
         app = QApplication.instance()
@@ -248,8 +252,8 @@ class InspectorWindow(QWidget):
         self.setLayout(mainLayout)
 
     def showEvent(self, event):
-        super(InspectorWindow, self).showEvent(event)
-        screenRect = QApplication.desktop().screenGeometry()
+        super().showEvent(event)
+        screenRect = QApplication.desktop().availableGeometry(self)
         widgetRect = self.frameGeometry()
         x = screenRect.width() - (widgetRect.width() + 20)
         y = screenRect.center().y() - widgetRect.height() / 2
@@ -381,11 +385,11 @@ class InspectorWindow(QWidget):
         self._blocked = False
 
 
-class AddGlyphDialog(QDialog):
+class AddGlyphsDialog(QDialog):
 
     # TODO: implement Frederik's Glyph Construction Builder
     def __init__(self, currentGlyphs=None, parent=None):
-        super(AddGlyphDialog, self).__init__(parent)
+        super(AddGlyphsDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Add glyphs…")
         self.currentGlyphs = currentGlyphs
@@ -398,8 +402,8 @@ class AddGlyphDialog(QDialog):
         for name, glyphNames in glyphSets.items():
             self.importCharDrop.addItem(name, glyphNames)
         self.importCharDrop.currentIndexChanged[int].connect(self.importGlyphs)
-        self.addGlyphEdit = QPlainTextEdit(self)
-        self.addGlyphEdit.setFocus(True)
+        self.addGlyphsEdit = QPlainTextEdit(self)
+        self.addGlyphsEdit.setFocus(True)
 
         self.addUnicodeBox = QCheckBox("Add Unicode", self)
         self.addUnicodeBox.setChecked(True)
@@ -415,7 +419,7 @@ class AddGlyphDialog(QDialog):
         l = 0
         layout.addWidget(self.importCharDrop, l, 3, 1, 2)
         l += 1
-        layout.addWidget(self.addGlyphEdit, l, 0, 1, 5)
+        layout.addWidget(self.addGlyphsEdit, l, 0, 1, 5)
         l += 1
         layout.addWidget(self.addUnicodeBox, l, 0)
         layout.addWidget(self.addAsTemplateBox, l, 1)
@@ -435,7 +439,7 @@ class AddGlyphDialog(QDialog):
             sortFont=dialog.sortFontBox.isChecked(),
         )
         newGlyphNames = []
-        for name in dialog.addGlyphEdit.toPlainText().split():
+        for name in dialog.addGlyphsEdit.toPlainText().split():
             if name not in dialog.currentGlyphNames:
                 newGlyphNames.append(name)
         return (newGlyphNames, params, result)
@@ -444,7 +448,7 @@ class AddGlyphDialog(QDialog):
         if index == 0:
             return
         glyphNames = self.importCharDrop.currentData()
-        editorNames = self.addGlyphEdit.toPlainText().split()
+        editorNames = self.addGlyphsEdit.toPlainText().split()
         currentNames = set(self.currentGlyphNames) ^ set(editorNames)
         changed = False
         for name in glyphNames:
@@ -452,12 +456,12 @@ class AddGlyphDialog(QDialog):
                 changed = True
                 editorNames.append(name)
         if changed:
-            self.addGlyphEdit.setPlainText(" ".join(editorNames))
-            cursor = self.addGlyphEdit.textCursor()
+            self.addGlyphsEdit.setPlainText(" ".join(editorNames))
+            cursor = self.addGlyphsEdit.textCursor()
             cursor.movePosition(QTextCursor.End, QTextCursor.MoveAnchor)
-            self.addGlyphEdit.setTextCursor(cursor)
+            self.addGlyphsEdit.setTextCursor(cursor)
         self.importCharDrop.setCurrentIndex(0)
-        self.addGlyphEdit.setFocus(True)
+        self.addGlyphsEdit.setFocus(True)
 
 
 class SortDialog(QDialog):
@@ -467,7 +471,7 @@ class SortDialog(QDialog):
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle("Sort…")
 
-        self.smartSortBox = QRadioButton("Smart sort", self)
+        self.smartSortBox = QRadioButton("Canned sort", self)
         self.smartSortBox.setToolTip("A combination of simple, complex and "
                                      "custom sorts that give optimized "
                                      "ordering results.")
@@ -624,10 +628,16 @@ class MainWindow(QMainWindow):
         self.collectionWidget = GlyphCollectionWidget(self)
         self._font = None
         self._sortDescriptor = None
-        if font is None:
-            self.newFile(True)
-        else:
+        settings = QSettings()
+        loadRecentFile = settings.value("core/loadRecentFile", False, bool)
+        if font is None and loadRecentFile:
+            recentFiles = settings.value("core/recentFiles", [], type=str)
+            if len(recentFiles):
+                self.openFile(recentFiles[0], True)
+        elif font is not None:
             self.font = font
+        if self._font is None:
+            self.newFile(True)
         self.collectionWidget.glyphSelectedCallback = self._selectionChanged
         self.collectionWidget.doubleClickCallback = self._glyphOpened
         # TODO: should default be True or False?
@@ -640,7 +650,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction("&New…", self.newFile, QKeySequence.New)
         fileMenu.addAction("&Open…", self.openFile, QKeySequence.Open)
         # recent files
-        self.recentFilesMenu = QMenu("Open &recent…", self)
+        self.recentFilesMenu = QMenu("Open &Recent…", self)
         for i in range(MAX_RECENT_FILES):
             action = QAction(self.recentFilesMenu)
             action.setVisible(False)
@@ -650,14 +660,14 @@ class MainWindow(QMainWindow):
         fileMenu.addMenu(self.recentFilesMenu)
         fileMenu.addSeparator()
         fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
-        fileMenu.addAction("Save &as…", self.saveFileAs, QKeySequence.SaveAs)
+        fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
         fileMenu.addAction("Export…", self.export)
-        fileMenu.addAction("Reload from disk", self.reload)
+        fileMenu.addAction("Reload From Disk", self.reload)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
 
         editMenu = QMenu("&Edit", self)
-        markColorMenu = QMenu("Mark color", self)
+        markColorMenu = QMenu("Flag Color", self)
         pixmap = QPixmap(24, 24)
         none = markColorMenu.addAction("None", self.markColor)
         none.setData(None)
@@ -675,7 +685,7 @@ class MainWindow(QMainWindow):
         green.setData(QColor(Qt.green))
         editMenu.addMenu(markColorMenu)
         editMenu.addAction("Copy", self.copy, QKeySequence.Copy)
-        editMenu.addAction("Copy as component",
+        editMenu.addAction("Copy As Component",
                            self.copyAsComponent, "Ctrl+Alt+C")
         editMenu.addAction("Paste", self.paste, QKeySequence.Paste)
         editMenu.addSeparator()
@@ -685,23 +695,23 @@ class MainWindow(QMainWindow):
         fontMenu = QMenu("&Font", self)
         # TODO: work out sensible shortcuts and make sure they're
         # cross-platform ready - consider extracting them into separate file?
-        fontMenu.addAction("&Add glyph", self.addGlyph, "Ctrl+G")
-        fontMenu.addAction("Font &info", self.fontInfo, "Ctrl+Alt+I")
-        fontMenu.addAction("Font &features", self.fontFeatures, "Ctrl+Alt+F")
+        fontMenu.addAction("&Add Glyphs…", self.addGlyphs, "Ctrl+G")
+        fontMenu.addAction("Font &Info", self.fontInfo, "Ctrl+Alt+I")
+        fontMenu.addAction("Font &Features", self.fontFeatures, "Ctrl+Alt+F")
         fontMenu.addSeparator()
-        fontMenu.addAction("Sort…", self.sortGlyphs)
+        fontMenu.addAction("&Sort…", self.sortGlyphs)
         menuBar.addMenu(fontMenu)
 
         pythonMenu = QMenu("&Python", self)
-        pythonMenu.addAction("Scripting &window", self.scripting, "Ctrl+Alt+R")
+        pythonMenu.addAction("Scripting &Window", self.scripting, "Ctrl+Alt+R")
         menuBar.addMenu(pythonMenu)
 
         windowMenu = QMenu("&Windows", self)
-        action = windowMenu.addAction("&Inspector", self.inspector, "Ctrl+I")
+        action = windowMenu.addAction("&Info Panel", self.infoPanel, "Ctrl+I")
         # XXX: we're getting duplicate shortcut when we spawn a new window...
         action.setShortcutContext(Qt.ApplicationShortcut)
-        windowMenu.addAction("&Space center", self.spaceCenter, "Ctrl+Alt+S")
-        windowMenu.addAction("&Groups window", self.fontGroups, "Ctrl+Alt+G")
+        windowMenu.addAction("&Metrics Window", self.metrics, "Ctrl+Alt+S")
+        windowMenu.addAction("&Groups Window", self.groups, "Ctrl+Alt+G")
         menuBar.addMenu(windowMenu)
 
         helpMenu = QMenu("&Help", self)
@@ -753,7 +763,7 @@ class MainWindow(QMainWindow):
         else:
             self.font = font
 
-    def openFile(self, path=None):
+    def openFile(self, path=None, stickToSelf=False):
         if not path:
             path, ok = QFileDialog.getOpenFileName(
                 self, "Open File", '',
@@ -765,7 +775,7 @@ class MainWindow(QMainWindow):
             if ".plist" in path:
                 path = os.path.dirname(path)
             for window in QApplication.topLevelWidgets():
-                if (isinstance(window, MainWindow)
+                if (isinstance(window, MainWindow) and window._font is not None
                         and window._font.path == path):
                     window.raise_()
                     return
@@ -774,8 +784,11 @@ class MainWindow(QMainWindow):
             except:
                 print(traceback.format_exc())
                 return
-            window = MainWindow(font)
-            window.show()
+            if not stickToSelf:
+                window = MainWindow(font)
+                window.show()
+            else:
+                self.font = font
 
     def openRecentFont(self):
         fontPath = self.sender().toolTip()
@@ -822,12 +835,12 @@ class MainWindow(QMainWindow):
         try:
             from ufo2fdk import haveFDK, OTFCompiler
         except Exception as e:
-            errorMessage = QErrorMessage(self)
-            errorMessage.showMessage(e)
+            title = e.__class__.__name__
+            QMessageBox.critical(self, title, str(e))
             return
         if not haveFDK():
-            errorMessage = QErrorMessage(self)
-            errorMessage.showMessage("The Adobe FDK could not be found.")
+            QMessageBox.critical(self, "Missing dependency", "The Adobe FDK "
+                                 "could not be found.")
             return
 
         path, ok = QFileDialog.getSaveFileName(self, "Save File", None,
@@ -927,14 +940,17 @@ class MainWindow(QMainWindow):
     def _set_font(self, font):
         if self._font is not None:
             self._font.removeObserver(self, "Font.Changed")
+            self._font.removeObserver(self, "Font.GlyphOrderChanged")
         self._font = font
         self._font.addObserver(self, "_fontChanged", "Font.Changed")
-        if "public.glyphOrder" in self._font.lib:
-            self.sortDescriptor = GlyphSet(
-                self._font.lib["public.glyphOrder"])
-        else:
+        self._font.addObserver(
+            self, "_glyphOrderChanged", "Font.GlyphOrderChanged")
+        if self._font.glyphOrder is None:
             # TODO: cannedDesign or carry sortDescriptor from previous font?
             self.sortDescriptor = cannedDesign
+        else:
+            # use the glyphOrder from the font
+            self.sortDescriptor = None
 
     font = property(_get_font, _set_font, doc="The fontView font. Subscribes \
         to the new font, updates the sorting order and cells widget when set.")
@@ -943,21 +959,13 @@ class MainWindow(QMainWindow):
         return self._sortDescriptor
 
     def _set_sortDescriptor(self, desc):
-        if isinstance(desc, GlyphSet):
-            glyphs = []
-            for glyphName in desc.glyphNames:
-                if glyphName in self._font:
-                    glyphs.append(self._font[glyphName])
-            if len(glyphs) < len(self._font):
-                # if some glyphs in the font are not present in the glyph
-                # order, loop again to add them at the end
-                for glyph in self._font:
-                    if glyph not in glyphs:
-                        glyphs.append(glyph)
+        if desc is None:
+            self.updateGlyphsFromFont()
+        elif isinstance(desc, GlyphSet):
+            self._font.glyphOrder = desc.glyphNames
         else:
-            glyphs = [self._font[k] for k in self._font.unicodeData
-                      .sortGlyphNames(self._font.keys(), desc)]
-        self.collectionWidget.glyphs = glyphs
+            self._font.glyphOrder = self._font.unicodeData.sortGlyphNames(
+                self._font.keys(), desc)
         self._sortDescriptor = desc
 
     sortDescriptor = property(_get_sortDescriptor, _set_sortDescriptor,
@@ -1029,7 +1037,27 @@ class MainWindow(QMainWindow):
 
     def _fontChanged(self, notification):
         self.collectionWidget.update()
-        self.setWindowModified(True)
+        self.setWindowModified(self._font.dirty)
+
+    def _glyphOrderChanged(self, notification):
+        self.updateGlyphsFromFont()
+
+    def updateGlyphsFromFont(self):
+        glyphOrder = self._font.glyphOrder
+        if len(glyphOrder):
+            glyphs = []
+            for glyphName in glyphOrder:
+                if glyphName in self._font:
+                    glyphs.append(self._font[glyphName])
+            if len(glyphs) < len(self._font):
+                # if some glyphs in the font are not present in the glyph
+                # order, loop again to add them at the end
+                for glyph in self._font:
+                    if glyph not in glyphs:
+                        glyphs.append(glyph)
+        else:
+            glyphs = list(self._font)
+        self.collectionWidget.glyphs = glyphs
 
     def _glyphOpened(self, glyph):
         glyphViewWindow = MainGfxWindow(glyph, self)
@@ -1095,32 +1123,32 @@ class MainWindow(QMainWindow):
         else:
             self.fontFeaturesWindow.raise_()
 
-    def spaceCenter(self):
+    def metrics(self):
         # TODO: see up here
-        # TODO: show selection in a space center, rewind selection if we raise
-        # window (rf)
-        if not (hasattr(self, 'spaceCenterWindow')
-                and self.spaceCenterWindow.isVisible()):
-            self.spaceCenterWindow = MainSpaceWindow(self.font, parent=self)
-            self.spaceCenterWindow.show()
+        if not (hasattr(self, 'metricsWindow')
+                and self.metricsWindow.isVisible()):
+            self.metricsWindow = MainMetricsWindow(self.font, parent=self)
+            self.metricsWindow.show()
         else:
-            self.spaceCenterWindow.raise_()
+            self.metricsWindow.raise_()
+        # TODO: default string kicks-in on the window before this. Figure out
+        # how to make a clean interface
         selection = self.collectionWidget.selection
         if selection:
             glyphs = []
             for item in sorted(selection):
                 glyph = self.collectionWidget.glyphs[item]
                 glyphs.append(glyph)
-            self.spaceCenterWindow.setGlyphs(glyphs)
+            self.metricsWindow.setGlyphs(glyphs)
 
-    def fontGroups(self):
+    def groups(self):
         # TODO: see up here
-        if not (hasattr(self, 'fontGroupsWindow')
-                and self.fontGroupsWindow.isVisible()):
-            self.fontGroupsWindow = GroupsWindow(self.font, self)
-            self.fontGroupsWindow.show()
+        if not (hasattr(self, 'groupsWindow')
+                and self.groupsWindow.isVisible()):
+            self.groupsWindow = GroupsWindow(self.font, self)
+            self.groupsWindow.show()
         else:
-            self.fontGroupsWindow.raise_()
+            self.groupsWindow.raise_()
 
     def scripting(self):
         app = QApplication.instance()
@@ -1132,18 +1160,18 @@ class MainWindow(QMainWindow):
         else:
             app.scriptingWindow.show()
 
-    def inspector(self):
+    def infoPanel(self):
         app = QApplication.instance()
-        if not hasattr(app, 'inspectorWindow'):
-            app.inspectorWindow = InspectorWindow()
-            app.inspectorWindow.show()
-        elif app.inspectorWindow.isVisible():
+        if not hasattr(app, 'infoPanelWindow'):
+            app.infoPanelWindow = InfoPanel()
+            app.infoPanelWindow.show()
+        elif app.infoPanelWindow.isVisible():
             # TODO: do this only if the widget is user-visible, otherwise the
             # key press feels as if it did nothing
             # toggle
-            app.inspectorWindow.close()
+            app.infoPanelWindow.close()
         else:
-            app.inspectorWindow.show()
+            app.infoPanelWindow.show()
 
     def sortGlyphs(self):
         sortDescriptor, ok = SortDialog.getDescriptor(self,
@@ -1151,9 +1179,9 @@ class MainWindow(QMainWindow):
         if ok:
             self.sortDescriptor = sortDescriptor
 
-    def addGlyph(self):
+    def addGlyphs(self):
         glyphs = self.collectionWidget.glyphs
-        newGlyphNames, params, ok = AddGlyphDialog.getNewGlyphNames(
+        newGlyphNames, params, ok = AddGlyphsDialog.getNewGlyphNames(
             self, glyphs)
         if ok:
             sortFont = params.pop("sortFont")
@@ -1171,12 +1199,19 @@ class MainWindow(QMainWindow):
 
     def about(self):
         name = QApplication.applicationName()
-        QMessageBox.about(
-            self, "About {}".format(name),
-            "<h3>About {}</h3>"
-            "<p>I am a new UFO-centric font editor and I aim to bring "
-            "the <b>robofab</b> ecosystem to all main operating systems, "
-            "in a fast and dependency-free package.</p>".format(name))
+        domain = QApplication.organizationDomain()
+        text = "<h3>About {}</h3>" \
+               "<p>I am a new UFO-centric font editor and I aim to bring " \
+               "the <b>robofab</b> ecosystem to all main operating systems, " \
+               "in a fast and dependency-free package.</p>" \
+               "<p>Version {} – Python {}.".format(
+                   name, __version__, platform.python_version())
+        if domain:
+            text += "<br>See <a href='http://{d}'>{d}</a> for more " \
+                    "information.</p>".format(d=domain)
+        else:
+            text += "</p>"
+        QMessageBox.about(self, "About {}".format(name), text)
 
 
 class SettingsDialog(QDialog):
@@ -1188,7 +1223,8 @@ class SettingsDialog(QDialog):
 
         self.tabWidget = QTabWidget(self)
         self.tabWidget.addTab(GlyphSetTab(self), "Glyph sets")
-        self.tabWidget.addTab(SpaceCenterTab(self), "Space center")
+        self.tabWidget.addTab(MetricsWindowTab(self), "Metrics Window")
+        self.tabWidget.addTab(MiscTab(self), "Misc")
 
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -1232,7 +1268,7 @@ def readGlyphSets(settings=None):
 class GlyphSetTab(QWidget):
 
     def __init__(self, parent=None):
-        super(GlyphSetTab, self).__init__(parent)
+        super().__init__(parent)
 
         settings = QSettings()
         self.defaultGlyphSetBox = QCheckBox("Default glyph set:", self)
@@ -1366,16 +1402,16 @@ class GlyphSetTab(QWidget):
                 settings.setValue("settings/defaultGlyphSet", defaultGlyphSet)
 
 
-class SpaceCenterTab(QTabWidget):
+class MetricsWindowTab(QTabWidget):
 
     def __init__(self, parent=None):
-        super(SpaceCenterTab, self).__init__(parent)
+        super().__init__(parent)
 
         settings = QSettings()
         self.inputTextLabel = QLabel("Default text:", self)
         self.inputTextList = QListWidget(self)
         self.inputTextList.setDragDropMode(QAbstractItemView.InternalMove)
-        entries = settings.value("spaceCenter/comboBoxItems", comboBoxItems,
+        entries = settings.value("metricsWindow/comboBoxItems", comboBoxItems,
                                  str)
         for entry in entries:
             item = QListWidgetItem(entry, self.inputTextList)
@@ -1414,4 +1450,26 @@ class SpaceCenterTab(QTabWidget):
             item = self.inputTextList.item(i)
             entries.append(item.text())
         settings = QSettings()
-        settings.setValue("spaceCenter/comboBoxItems", entries)
+        settings.setValue("metricsWindow/comboBoxItems", entries)
+
+
+class MiscTab(QTabWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        settings = QSettings()
+        loadRecentFile = settings.value("core/loadRecentFile", False, bool)
+        self.loadRecentFileBox = QCheckBox("Load most recent file on start",
+                                           self)
+        self.loadRecentFileBox.setChecked(loadRecentFile)
+
+        layout = QVBoxLayout(self)
+        l = 0
+        layout.addWidget(self.loadRecentFileBox, l)
+        self.setLayout(layout)
+
+    def writeValues(self):
+        settings = QSettings()
+        loadRecentFile = self.loadRecentFileBox.isChecked()
+        settings.setValue("core/loadRecentFile", loadRecentFile)

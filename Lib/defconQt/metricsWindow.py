@@ -1,6 +1,7 @@
 from defconQt import icons_db  # noqa
 from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGfxWindow
+from defconQt.objects.defcon import TGlyph
 from getpass import getuser
 from PyQt5.QtCore import QEvent, QSettings, QSize, Qt
 from PyQt5.QtGui import (
@@ -10,6 +11,7 @@ from PyQt5.QtWidgets import (
     QAbstractItemView, QActionGroup, QApplication, QComboBox, QLineEdit, QMenu,
     QPushButton, QScrollArea, QStyledItemDelegate, QTableWidget,
     QTableWidgetItem, QVBoxLayout, QSizePolicy, QToolBar, QWidget)
+import re
 
 comboBoxItems = [
     "abcdefghijklmnopqrstuvwxyz",
@@ -23,12 +25,19 @@ defaultPointSize = 150
 glyphSelectionColor = QColor(cellSelectionColor)
 glyphSelectionColor.setAlphaF(.09)
 
+escapeRep = {
+    "//": "/slash ",
+    "\\n": "\u2029",
+}
+escapeRep = dict((re.escape(k), v) for k, v in escapeRep.items())
+escapeRe = re.compile("|".join(escapeRep.keys()))
 
-class MainSpaceWindow(QWidget):
+
+class MainMetricsWindow(QWidget):
 
     def __init__(self, font, string=None, pointSize=defaultPointSize,
                  parent=None):
-        super(MainSpaceWindow, self).__init__(parent, Qt.Window)
+        super().__init__(parent, Qt.Window)
 
         if string is None:
             try:
@@ -65,7 +74,7 @@ class MainSpaceWindow(QWidget):
 
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
-        self.setWindowTitle("Space center – %s %s" % (
+        self.setWindowTitle("Metrics Window – %s %s" % (
             self.font.info.familyName, self.font.info.styleName))
 
     def setupFileMenu(self):
@@ -77,7 +86,7 @@ class MainSpaceWindow(QWidget):
     def close(self):
         self.font.info.removeObserver(self, "Info.Changed")
         self._unsubscribeFromGlyphs()
-        super(MainSpaceWindow, self).close()
+        super().close()
 
     def _fontInfoChanged(self, notification):
         self.canvas.fetchFontMetrics()
@@ -85,33 +94,36 @@ class MainSpaceWindow(QWidget):
 
     def _glyphChanged(self, notification):
         self.canvas.update()
-        self.table.updateCells()
+        if not self.table._editing:
+            self.table.updateCells(self.canvas._editing)
 
     def _glyphOpened(self, glyph):
         glyphViewWindow = MainGfxWindow(glyph, self.parent())
         glyphViewWindow.show()
 
     def _textChanged(self):
+        def fetchGlyphs(glyphNames, leftGlyphs=[], rightGlyphs=[]):
+            ret = []
+            for name in glyphNames:
+                if name == "\u2029":
+                    glyph = TGlyph()
+                    glyph.unicode = 2029
+                    ret.append(glyph)
+                elif name in self.font:
+                    ret.extend(leftGlyphs)
+                    ret.append(self.font[name])
+                    ret.extend(rightGlyphs)
+            return ret
+
         # unsubscribe from the old glyphs
         self._unsubscribeFromGlyphs()
         # subscribe to the new glyphs
         left = self.textToGlyphNames(self.toolbar.leftTextField.text())
         newText = self.textToGlyphNames(self.toolbar.textField.currentText())
         right = self.textToGlyphNames(self.toolbar.rightTextField.text())
-        leftGlyphs = []
-        for name in left:
-            if name in self.font:
-                leftGlyphs.append(self.font[name])
-        rightGlyphs = []
-        for name in right:
-            if name in self.font:
-                rightGlyphs.append(self.font[name])
-        finalGlyphs = []
-        for name in newText:
-            if name in self.font:
-                finalGlyphs.extend(leftGlyphs)
-                finalGlyphs.append(self.font[name])
-                finalGlyphs.extend(rightGlyphs)
+        leftGlyphs = fetchGlyphs(left)
+        rightGlyphs = fetchGlyphs(right)
+        finalGlyphs = fetchGlyphs(newText, leftGlyphs, rightGlyphs)
         self._subscribeToGlyphs(finalGlyphs)
         # set the records into the view
         self.canvas.setGlyphs(self.glyphs)
@@ -128,8 +140,8 @@ class MainSpaceWindow(QWidget):
                 glyphNames.append("".join(compileStack))
 
         app = QApplication.instance()
-        # escape //
-        text = text.replace("//", "/slash ")
+        # escape //, \n
+        text = escapeRe.sub(lambda m: escapeRep[re.escape(m.group(0))], text)
         #
         glyphNames = []
         compileStack = None
@@ -157,7 +169,11 @@ class MainSpaceWindow(QWidget):
                     compileStack.append(c)
             # adding a character that needs to be converted to a glyph name.
             else:
-                glyphName = self.font.unicodeData.glyphNameForUnicode(ord(c))
+                uni = ord(c)
+                if uni == 0x2029:
+                    glyphName = c
+                else:
+                    glyphName = self.font.unicodeData.glyphNameForUnicode(uni)
                 glyphNames.append(glyphName)
         # catch remaining compile.
         if compileStack is not None and compileStack:
@@ -217,7 +233,7 @@ class FontToolBar(QToolBar):
         # XXX: had to use Maximum because Preferred did entend the widget(?)
         self.textField.setSizePolicy(QSizePolicy.Expanding,
                                      QSizePolicy.Maximum)
-        items = QSettings().value("spaceCenter/comboBoxItems", comboBoxItems,
+        items = QSettings().value("metricsWindow/comboBoxItems", comboBoxItems,
                                   str)
         self.textField.addItems(items)
         self.rightTextField = QLineEdit(self)
@@ -314,6 +330,9 @@ class GlyphsCanvas(QWidget):
 
     def __init__(self, font, pointSize=defaultPointSize, parent=None):
         super(GlyphsCanvas, self).__init__(parent)
+        self.setAttribute(Qt.WA_KeyCompression)
+        # TODO: should we take focus by tabbing
+        self.setFocusPolicy(Qt.ClickFocus)
         # XXX: make canvas font-agnostic as in defconAppkit and use
         # glyph.getParent() instead
         self.font = font
@@ -322,6 +341,7 @@ class GlyphsCanvas(QWidget):
         self.ptSize = pointSize
         self.calculateScale()
         self.padding = 10
+        self._editing = False
         self._showKerning = False
         self._showMetrics = False
         self._verticalFlip = False
@@ -487,10 +507,36 @@ class GlyphsCanvas(QWidget):
                 return kerning[pair]
         return 0
 
+    def _arrowKeyPressEvent(self, event):
+        key = event.key()
+        modifiers = event.modifiers()
+        self._editing = True
+        if self._selected is not None:
+            glyph = self.glyphs[self._selected]
+            # TODO: not really DRY w other widgets
+            delta = event.count()
+            if modifiers & Qt.ShiftModifier:
+                delta *= 10
+                if modifiers & Qt.ControlModifier:
+                    delta *= 10
+            if key == Qt.Key_Left:
+                delta = -delta
+            if modifiers & Qt.AltModifier:
+                if glyph.leftMargin is not None:
+                    glyph.leftMargin += delta
+            else:
+                glyph.width += delta
+        self._editing = False
+        event.accept()
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key in (Qt.Key_Left, Qt.Key_Right):
+            self._arrowKeyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
+
     def mousePressEvent(self, event):
-        # Take focus to quit eventual cell editing
-        # XXX: shouldnt set focus if we are in input field...
-        self.setFocus(Qt.MouseFocusReason)
         if event.button() == Qt.LeftButton:
             # XXX: investigate, baselineShift is unused
             # if self._verticalFlip:
@@ -527,6 +573,9 @@ class GlyphsCanvas(QWidget):
                 self.selectionChangedCallback(self._selected)
             event.accept()
             self.update()
+            # restore focus to ourselves, the table widget did take it when we
+            # sent notification
+            self.setFocus(Qt.MouseFocusReason)
         else:
             super(GlyphsCanvas, self).mousePressEvent(event)
 
@@ -578,9 +627,8 @@ class GlyphsCanvas(QWidget):
                     self.glyphs[index - 1].name, glyph.name) * self.scale
             else:
                 kern = 0
-            if (self._wrapLines and
-                    cur_width + gWidth + kern + 2 * self.padding >
-                    self.width()):
+            if (self._wrapLines and cur_width + gWidth + kern +
+                    2 * self.padding > self.width()) or glyph.unicode == 2029:
                 painter.translate(-cur_width, self.ptSize * self._lineHeight)
                 if self._showMetrics:
                     paintLineMarks(painter)
@@ -688,6 +736,7 @@ class SpaceTable(QTableWidget):
         self.setColumnWidth(0, self._cellWidth)
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
+        self._coloredColumn = None
 
         # always show a scrollbar to fix layout
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -703,20 +752,21 @@ class SpaceTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
         self._editing = False
         self.selectionChangedCallback = None
-        self._coloredColumn = None
 
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
         # TODO: we don't need to reallocate cells, split alloc and fill
         self.updateCells()
 
-    def updateCells(self):
+    def updateCells(self, keepColor=False):
         self.blockSignals(True)
-        if self._editing:
-            coloredColumn = self._coloredColumn
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        coloredColumn = self._coloredColumn
         self.fillGlyphs()
-        if self._editing:
-            self._coloredColumn = coloredColumn
+        if keepColor and coloredColumn is not None and \
+                coloredColumn < self.columnCount():
+            self.colorColumn(coloredColumn)
+        self.setEditTriggers(QAbstractItemView.CurrentChanged)
         self.blockSignals(False)
 
     def _cellEdited(self, row, col):
@@ -808,6 +858,7 @@ class SpaceTable(QTableWidget):
             # item.setTextAlignment(Qt.AlignCenter)
             return item
 
+        self._coloredColumn = None
         self.setColumnCount(len(self.glyphs) + 1)
         for index, glyph in enumerate(self.glyphs):
             # TODO: see about allowing glyph name edit here

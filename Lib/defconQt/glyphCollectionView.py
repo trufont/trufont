@@ -94,6 +94,8 @@ class GlyphCollectionWidget(QWidget):
 
     def _set_selection(self, selection):
         self._selection = selection
+        if not len(self._selection):
+            self.lastSelectedCell = None
         self._computeGlyphSelection()
         self.update()
 
@@ -105,6 +107,9 @@ class GlyphCollectionWidget(QWidget):
         return [self._glyphs[key] for key in sorted(self._selection)]
 
     def _get_lastSelectedCell(self):
+        if self._lastSelectedCell is not None and \
+                self._lastSelectedCell >= len(self._glyphs):
+            return None
         return self._lastSelectedCell
 
     def _set_lastSelectedCell(self, index):
@@ -121,7 +126,7 @@ class GlyphCollectionWidget(QWidget):
         doc="The current lastSelectedCell in selection.")
 
     def lastSelectedGlyph(self):
-        index = self._lastSelectedCell
+        index = self.lastSelectedCell
         return self._glyphs[index] if index is not None else None
 
     def scrollArea(self):
@@ -225,7 +230,7 @@ class GlyphCollectionWidget(QWidget):
         modifiers = event.modifiers()
         # TODO: it might be the case that self._lastSelectedCell cannot be None
         # when we arrive here whatsoever
-        if self._lastSelectedCell is not None:
+        if self.lastSelectedCell is not None:
             if key == Qt.Key_Up:
                 delta = -self._columns
             elif key == Qt.Key_Down:
@@ -254,7 +259,7 @@ class GlyphCollectionWidget(QWidget):
         if key in arrowKeys:
             self._arrowKeyPressEvent(event)
         elif key == Qt.Key_Return:
-            index = self._lastSelectedCell
+            index = self.lastSelectedCell
             if index is not None and self.doubleClickCallback is not None:
                 # TODO: does it still make sense to call this
                 #       doubleClickCallback?
@@ -351,24 +356,22 @@ class GlyphCollectionWidget(QWidget):
         event.accept()
 
     def _findEventIndex(self, event):
-        index = (event.y() // self.squareSize) * \
-            self._columns + event.x() // self.squareSize
-        if index >= len(self._glyphs):
-            return None
+        x = max(0, min(event.x(), self.sizeHint().width() - 1))
+        y = max(0, min(event.y(), self.sizeHint().height() - 1))
+        index = (y // self.squareSize) * \
+            self._columns + x // self.squareSize
         return index
 
     def _linearSelection(self, index):
-        if index in self._selection:
-            newSelection = None
         if not self._selection:
             newSelection = {index}
         else:
-            if index < self._lastSelectedCell:
+            if index < self.lastSelectedCell:
                 newSelection = self._selection | set(
-                    range(index, self._lastSelectedCell + 1))
+                    range(index, self.lastSelectedCell + 1))
             else:
                 newSelection = self._selection | set(
-                    range(self._lastSelectedCell, index + 1))
+                    range(self.lastSelectedCell, index + 1))
         return newSelection
 
     # TODO: in mousePressEvent and mouseMoveEvent below, self._lastSelectedCell
@@ -379,11 +382,11 @@ class GlyphCollectionWidget(QWidget):
             index = self._findEventIndex(event)
             modifiers = event.modifiers()
             event.accept()
-            if index is None:
+            if index >= len(self._glyphs):
                 if not (modifiers & Qt.ControlModifier or
                         modifiers & Qt.ShiftModifier):
                     self.selection = set()
-                self._lastSelectedCell = index
+                self.lastSelectedCell = index
                 return
 
             if modifiers & Qt.ControlModifier:
@@ -410,6 +413,7 @@ class GlyphCollectionWidget(QWidget):
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
             index = self._findEventIndex(event)
+            event.accept()
             if self._maybeDragPosition is not None:
                 if ((event.pos() - self._maybeDragPosition).manhattanLength()
                         < QApplication.startDragDistance()):
@@ -424,18 +428,13 @@ class GlyphCollectionWidget(QWidget):
 
                 drag.exec_()
                 self._maybeDragPosition = None
-                event.accept()
                 return
             if index == self._lastSelectedCell:
                 return
 
             modifiers = event.modifiers()
-            event.accept()
-            if index is None:
-                if not (modifiers & Qt.ControlModifier or
-                        modifiers & Qt.ShiftModifier):
-                    self.selection = set()
-                self._lastSelectedCell = index
+            if index >= len(self._glyphs):
+                self.scrollToCell(index)
                 return
             if modifiers & Qt.ControlModifier:
                 if index in self._selection and index in self._oldSelection:
@@ -469,7 +468,8 @@ class GlyphCollectionWidget(QWidget):
         if event.button() == Qt.LeftButton:
             event.accept()
             index = self._findEventIndex(event)
-            if index is not None and self.doubleClickCallback is not None:
+            if index < len(self._glyphs) and \
+                    self.doubleClickCallback is not None:
                 self.doubleClickCallback(self._glyphs[index])
         else:
             super(GlyphCollectionWidget, self).mousePressEvent(event)

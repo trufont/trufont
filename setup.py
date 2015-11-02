@@ -39,7 +39,7 @@ except:
 
 setup(
     name="defconQt",
-    version="0.1.0",
+    version="0.2.0",
     description="Trufont, a cross-platform font editor (a set of Qt interface "
                 "objects for working with font data).",
     author="Adrien Tétar",
