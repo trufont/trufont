@@ -766,11 +766,11 @@ class MainWindow(QMainWindow):
 
     def openFile(self, path=None, stickToSelf=False):
         if not path:
-            path, ok = QFileDialog.getOpenFileName(
+            path, _ = QFileDialog.getOpenFileName(
                 self, "Open File", '',
                 platformSpecific.fileFormats
             )
-            if not ok:
+            if not path:
                 return
         if path:
             if ".plist" in path:
@@ -843,14 +843,17 @@ class MainWindow(QMainWindow):
         # TODO: systematize this into extractor
         fileFormats = (
             "OpenType Font file (*.otf *.ttf)",
-            "Type1 Font file (*.pfa)",
+            "Type1 Font file (*.pfa *.pfb)",
             "ttx Font file (*.ttx)",
             "WOFF Font file (*.woff)",
+            "All supported files (*.otf *.pfa *.pfb *.ttf *.ttx *.woff)",
+            "All files (*.*)",
         )
 
-        path, ok = QFileDialog.getOpenFileName(self, "Import File", None,
-                                               ";;".join(fileFormats))
-        if ok:
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Import File", None, ";;".join(fileFormats), fileFormats[4])
+
+        if path:
             font = TFont()
             try:
                 extractor.extractUFO(path, font)
@@ -873,9 +876,9 @@ class MainWindow(QMainWindow):
                                  "could not be found.")
             return
 
-        path, ok = QFileDialog.getSaveFileName(self, "Export File", None,
-                                               "PS OpenType font (*.otf)")
-        if ok:
+        path, _ = QFileDialog.getSaveFileName(self, "Export File", None,
+                                              "OpenType PS font (*.otf)")
+        if path:
             compiler = OTFCompiler()
             # XXX: allow choosing parameters
             reports = compiler.compile(self.font, path, checkOutlines=False,
