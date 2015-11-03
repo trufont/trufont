@@ -1806,14 +1806,10 @@ class GlyphScene(QGraphicsScene):
         # reverse so as to not invalidate our cached segment indexes
         for loc, ts in reversed(list(self._cachedIntersections.items())):
             contour, index = loc
-            prev = None
+            prev = 1
             # reverse so as to cut from higher to lower value and compensate
             for t in sorted(ts, reverse=True):
-                if prev is not None:
-                    cut = t / prev
-                else:
-                    cut = t
-                contour.splitAndInsertPointAtSegmentAndT(index, cut)
+                contour.splitAndInsertPointAtSegmentAndT(index, t / prev)
                 prev = t
         self._cachedIntersections = None
         event.accept()
