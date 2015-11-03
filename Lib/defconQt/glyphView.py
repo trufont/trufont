@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from enum import Enum
 from math import copysign
 from functools import partial
@@ -1194,7 +1195,7 @@ class GlyphScene(QGraphicsScene):
         self._integerPlane = True
         self._cachedRuler = None
         self._rulerObject = None
-        self._cachedIntersections = []
+        self._cachedIntersections = None
         self._knifeDots = []
         self._knifeLine = None
         self._dataForUndo = []
@@ -1769,7 +1770,7 @@ class GlyphScene(QGraphicsScene):
         line.setP2(QPointF(x, y))
         # XXX: not nice
         glyph = self.views()[0]._glyph
-        self._cachedIntersections = []
+        self._cachedIntersections = OrderedDict()
         for contour in glyph:
             segments = contour.segments
             for index, seg in enumerate(segments):
@@ -1787,7 +1788,11 @@ class GlyphScene(QGraphicsScene):
                     item = self.addEllipse(-offHalf / scale, -offHalf / scale,
                                            offWidth / scale, offHeight / scale)
                     item.setPos(pt[0], pt[1])
-                    self._cachedIntersections.append((contour, index, pt[2]))
+                    if (contour, index) in self._cachedIntersections:
+                        self._cachedIntersections[(contour, index)].append(
+                            pt[2])
+                    else:
+                        self._cachedIntersections[(contour, index)] = [pt[2]]
                     self._knifeDots.append(item)
         self._knifeLine.setLine(line)
         event.accept()
@@ -1799,13 +1804,18 @@ class GlyphScene(QGraphicsScene):
             self.removeItem(dot)
         self._knifeDots = []
         # reverse so as to not invalidate our cached segment indexes
-        # XXX: multiple cuts on one segment don't work reliably
-        self._cachedIntersections.reverse()
-        if len(self._cachedIntersections):
-            for intersect in self._cachedIntersections:
-                contour, index, t = intersect
-                contour.splitAndInsertPointAtSegmentAndT(index, t)
-        self._cachedIntersections = []
+        for loc, ts in reversed(list(self._cachedIntersections.items())):
+            contour, index = loc
+            prev = None
+            # reverse so as to cut from higher to lower value and compensate
+            for t in sorted(ts, reverse=True):
+                if prev is not None:
+                    cut = t / prev
+                else:
+                    cut = t
+                contour.splitAndInsertPointAtSegmentAndT(index, cut)
+                prev = t
+        self._cachedIntersections = None
         event.accept()
 
 
