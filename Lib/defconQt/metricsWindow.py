@@ -397,8 +397,8 @@ class GlyphsCanvas(QWidget):
                 Qt.ScrollBarAlwaysOff)
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
-            self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.update()
 
     def fetchFontMetrics(self):
@@ -445,6 +445,7 @@ class GlyphsCanvas(QWidget):
 
     def _calcPaintWidthHeight(self):
         cur_width = 0
+        max_width = 0
         lines = 1
         self._positions = [[]]
         for index, glyph in enumerate(self.glyphs):
@@ -464,8 +465,9 @@ class GlyphsCanvas(QWidget):
             else:
                 self._positions[-1].append((cur_width, gWidth))
                 cur_width += gWidth + kern
+            max_width = max(cur_width, max_width)
 
-        return (cur_width + self.padding * 2,
+        return (max_width + self.padding * 2,
                 lines * self.ptSize * self._lineHeight + 2 * self.padding)
 
     def sizeHint(self):
@@ -480,7 +482,7 @@ class GlyphsCanvas(QWidget):
         if self._wrapLines:
             self.resize(self._scrollArea.viewport().width(), self.height())
         else:
-            self.resize(self.width(), self._scrollArea.viewport().height())
+            self.resize(self.width(), self.height())
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
