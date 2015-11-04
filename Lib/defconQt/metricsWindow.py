@@ -371,6 +371,7 @@ class GlyphsCanvas(QWidget):
 
     def setShowKerning(self, showKerning):
         self._showKerning = showKerning
+        self.adjustSize()
         self.update()
 
     def setShowMetrics(self, showMetrics):
@@ -383,19 +384,19 @@ class GlyphsCanvas(QWidget):
 
     def setLineHeight(self, lineHeight):
         self._lineHeight = lineHeight
+        self.adjustSize()
         self.update()
 
     def setWrapLines(self, wrapLines):
         if self._wrapLines == wrapLines:
             return
         self._wrapLines = wrapLines
+        self.adjustSize()
         if self._wrapLines:
-            self.resize(self._scrollArea.viewport().width(), self.height())
             self._scrollArea.setHorizontalScrollBarPolicy(
                 Qt.ScrollBarAlwaysOff)
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
-            self.resize(self.width(), self._scrollArea.viewport().height())
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.update()
@@ -414,11 +415,13 @@ class GlyphsCanvas(QWidget):
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
         self._selected = None
+        self.adjustSize()
         self.update()
 
     def setPointSize(self, pointSize):
         self.ptSize = int(pointSize)
         self.calculateScale()
+        self.adjustSize()
         self.update()
 
     def setSelected(self, selected):
@@ -439,6 +442,39 @@ class GlyphsCanvas(QWidget):
                     x, y, width / 2 + 20,
                     .5 * self.ptSize * self._lineHeight + 20)
         self.update()
+
+    def _calcPaintWidthHeight(self):
+        cur_width = 0
+        lines = 1
+        self._positions = [[]]
+        for index, glyph in enumerate(self.glyphs):
+            # line wrapping
+            gWidth = glyph.width * self.scale
+            doKern = index > 0 and self._showKerning and cur_width > 0
+            if doKern:
+                kern = self.lookupKerningValue(
+                    self.glyphs[index - 1].name, glyph.name) * self.scale
+            else:
+                kern = 0
+            if (self._wrapLines and cur_width + gWidth + kern +
+                    2 * self.padding > self.width()) or glyph.unicode == 2029:
+                self._positions.append([(0, gWidth)])
+                cur_width = gWidth
+                lines += 1
+            else:
+                self._positions[-1].append((cur_width, gWidth))
+                cur_width += gWidth + kern
+
+        return (cur_width + self.padding * 2,
+                lines * self.ptSize * self._lineHeight + 2 * self.padding)
+
+    def sizeHint(self):
+        innerWidth = self._scrollArea.viewport().width()
+        innerHeight = self._scrollArea.viewport().height()
+        paintWidth, paintHeight = self._calcPaintWidthHeight()
+        return QSize(
+            max(innerWidth, paintWidth),
+            max(innerHeight, paintHeight))
 
     def resizeEvent(self, event):
         if self._wrapLines:
@@ -614,8 +650,6 @@ class GlyphsCanvas(QWidget):
         # TODO: scale painter here to avoid g*scale everywhere below
 
         cur_width = 0
-        lines = 1
-        self._positions = [[]]
         if self._showMetrics:
             paintLineMarks(painter)
         for index, glyph in enumerate(self.glyphs):
@@ -632,13 +666,10 @@ class GlyphsCanvas(QWidget):
                 painter.translate(-cur_width, self.ptSize * self._lineHeight)
                 if self._showMetrics:
                     paintLineMarks(painter)
-                self._positions.append([(0, gWidth)])
                 cur_width = gWidth
-                lines += 1
             else:
                 if doKern:
                     painter.translate(kern, 0)
-                self._positions[-1].append((cur_width, gWidth))
                 cur_width += gWidth + kern
             glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
             painter.save()
@@ -653,15 +684,6 @@ class GlyphsCanvas(QWidget):
             painter.fillPath(glyphPath, Qt.black)
             painter.restore()
             painter.translate(gWidth, 0)
-
-        innerHeight = self._scrollArea.viewport().height()
-        if not self._wrapLines:
-            innerWidth = self._scrollArea.viewport().width()
-            width = max(innerWidth, cur_width + self.padding * 2)
-        else:
-            width = self.width()
-        self.resize(width, max(innerHeight, lines * self.ptSize *
-                               self._lineHeight + 2 * self.padding))
 
 
 class SpaceTableWidgetItem(QTableWidgetItem):
