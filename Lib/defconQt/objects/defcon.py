@@ -93,6 +93,9 @@ class TContour(Contour):
                               selected=point.selected)
         pointPen.endPath()
 
+    def getPoint(self, index):
+        return self[index % len(self)]
+
 
 class TPoint(Point):
     __slots__ = ["_selected"]

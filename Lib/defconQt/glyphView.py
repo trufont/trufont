@@ -197,6 +197,65 @@ class AddLayerDialog(QDialog):
         return (name, result)
 
 
+class LayerActionsDialog(QDialog):
+
+    def __init__(self, currentGlyph, parent=None):
+        super().__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Layer actions…")
+        self._workableLayers = []
+        for layer in currentGlyph.layerSet:
+            if layer != currentGlyph.layer:
+                self._workableLayers.append(layer)
+
+        layout = QGridLayout(self)
+
+        copyBox = QRadioButton("Copy", self)
+        moveBox = QRadioButton("Move", self)
+        swapBox = QRadioButton("Swap", self)
+        self.otherCheckBoxes = (moveBox, swapBox)
+        copyBox.setChecked(True)
+
+        self.layersList = QListWidget(self)
+        self.layersList.addItems(
+            layer.name for layer in self._workableLayers)
+        if self.layersList.count():
+            self.layersList.setCurrentRow(0)
+        self.layersList.itemDoubleClicked.connect(self.accept)
+
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        l = 0
+        layout.addWidget(copyBox, l, 0, 1, 2)
+        layout.addWidget(moveBox, l, 2, 1, 2)
+        layout.addWidget(swapBox, l, 4, 1, 2)
+        l += 1
+        layout.addWidget(self.layersList, l, 0, 1, 6)
+        l += 1
+        layout.addWidget(buttonBox, l, 0, 1, 6)
+        self.setLayout(layout)
+
+    @classmethod
+    def getLayerAndAction(cls, parent, currentGlyph):
+        dialog = cls(currentGlyph, parent)
+        result = dialog.exec_()
+        currentItem = dialog.layersList.currentItem()
+        newLayer = None
+        if currentItem is not None:
+            newLayerName = currentItem.text()
+            for layer in dialog._workableLayers:
+                if layer.name == newLayerName:
+                    newLayer = layer
+        action = "Copy"
+        for checkBox in dialog.otherCheckBoxes:
+            if checkBox.isChecked():
+                action = checkBox.text()
+        return (newLayer, action, result)
+
+
 class GenericSettings(object):
 
     def __init__(self, title, parent, callback):
@@ -307,7 +366,8 @@ class MainGfxWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         glyphMenu = QMenu("&Glyph", self)
-        glyphMenu.addAction("&Go to…", self.changeGlyph, "G")
+        glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
+        glyphMenu.addAction("&Layer Actions…", self.layerActions, "L")
         menuBar.addMenu(glyphMenu)
 
         self._displaySettings = DisplayStyleSettings(
@@ -363,6 +423,10 @@ class MainGfxWindow(QMainWindow):
 
         self.setWindowTitle(glyph.name, glyph.getParent())
         self.adjustSize()
+
+    def layerActions(self):
+        if self.view is not None:
+            self.view.layerActions()
 
     def _changeGlyph(self, glyph):
         oldView = self.view
@@ -626,7 +690,7 @@ class OffCurvePointItem(QGraphicsEllipseItem):
         self._needsUngrab = False
 
     def delete(self):
-        self.parentItem()._CPDeleted()
+        self.parentItem()._CPDeleted(self)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -646,10 +710,9 @@ class OffCurvePointItem(QGraphicsEllipseItem):
                 else:
                     value.setY(0)
         elif change == QGraphicsItem.ItemPositionHasChanged:
-            self.parentItem()._CPMoved(value)
-        # TODO: consider what to do w offCurves
-        # elif change == QGraphicsItem.ItemSelectedHasChanged:
-        #    pass#self.parentItem()._CPSelChanged(value)
+            self.parentItem()._CPMoved(self, value)
+        elif change == QGraphicsItem.ItemSelectedHasChanged:
+            self.parentItem()._CPSelected(self, value)
         return value
 
     def mousePressEvent(self, event):
@@ -775,26 +838,33 @@ class OnCurvePointItem(QGraphicsPathItem):
                 index += 1
         return index % len(self._contour.segments)
 
-    def _CPDeleted(self):
+    def _CPDeleted(self, item):
+        # XXX: is this sufficient guard?
+        if self.isSelected():
+            return
         pointIndex = self.getPointIndex()
         children = self.childItems()
-        selected = 1
-        if not (children[1].isVisible() and children[1].isSelected()):
-            selected = 3
+        if item == children[1]:
+            delta = -1
+            segmentOn = 0
+        else:
+            delta = 1
+            segmentOn = 3
 
-        firstSibling = self._contour[pointIndex + selected - 2]
-        secondSibling = self._contour[pointIndex + (selected - 2) * 2]
+        firstSibling = self._contour.getPoint(pointIndex + delta)
+        secondSibling = self._contour.getPoint(pointIndex + delta * 2)
         if (firstSibling.segmentType is None and
                 secondSibling.segmentType is None):
             # we have two offCurves, wipe them
+            self._contour.getPoint(pointIndex + segmentOn).segmentType = "line"
             self._contour.removePoint(firstSibling)
             self._contour.removePoint(secondSibling)
 
-    def _CPMoved(self, newValue):
+    def _CPMoved(self, item, newValue):
         pointIndex = self.getPointIndex()
         children = self.childItems()
         # nodes are stored after lines (for stacking order)
-        if children[1].isSelected():
+        if item == children[1]:
             selected = 1
             propagate = 3
         else:
@@ -806,8 +876,8 @@ class OnCurvePointItem(QGraphicsPathItem):
 
         if not len(children) > 4:
             elemIndex = pointIndex - 2 + selected
-            self._contour[elemIndex].x = self.pos().x() + newValue.x()
-            self._contour[elemIndex].y = self.pos().y() + newValue.y()
+            self._contour.getPoint(elemIndex).x = self.pos().x() + newValue.x()
+            self._contour.getPoint(elemIndex).y = self.pos().y() + newValue.y()
         if not (self._isSmooth and children[propagate].isVisible()):
             self.setShallowDirty()
             return
@@ -829,10 +899,20 @@ class OnCurvePointItem(QGraphicsPathItem):
         children[propagate].setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         children[propagate - 1].setLine(line.x1(),
                                         line.y1(), tmpLine.x2(), tmpLine.y2())
-        propagateInContour = pointIndex - 2 + propagate
-        self._contour[propagateInContour].x = self.pos().x() + tmpLine.x2()
-        self._contour[propagateInContour].y = self.pos().y() + tmpLine.y2()
+        propagateIn = pointIndex - 2 + propagate
+        self._contour.getPoint(propagateIn).x = self.pos().x() + tmpLine.x2()
+        self._contour.getPoint(propagateIn).y = self.pos().y() + tmpLine.y2()
         self.setShallowDirty()
+
+    def _CPSelected(self, item, value):
+        pointIndex = self.getPointIndex()
+        children = self.childItems()
+        if item == children[1]:
+            delta = -1
+        else:
+            delta = 1
+
+        self._contour[pointIndex + delta].selected = value
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -848,12 +928,14 @@ class OnCurvePointItem(QGraphicsPathItem):
             children = self.childItems()
             if children[1].isVisible():
                 prevPos = children[1].pos()
-                self._contour[pointIndex - 1].x = self.pos().x() + prevPos.x()
-                self._contour[pointIndex - 1].y = self.pos().y() + prevPos.y()
+                point = self._contour.getPoint(pointIndex - 1)
+                point.x = self.pos().x() + prevPos.x()
+                point.y = self.pos().y() + prevPos.y()
             if children[3].isVisible():
                 nextPos = children[3].pos()
-                self._contour[pointIndex + 1].x = self.pos().x() + nextPos.x()
-                self._contour[pointIndex + 1].y = self.pos().y() + nextPos.y()
+                point = self._contour.getPoint(pointIndex + 1)
+                point.x = self.pos().x() + nextPos.x()
+                point.y = self.pos().y() + nextPos.y()
             self.setShallowDirty()
         elif change == QGraphicsItem.ItemSelectedHasChanged:
             self._point.selected = value
@@ -886,11 +968,11 @@ class OnCurvePointItem(QGraphicsPathItem):
         scene = self.scene()
         scene._blocked = True
         # if we have line segment, insert offCurve points
-        insertIndex = (ptIndex + (i - 1) // 2) % len(self._contour)
-        if self._contour[insertIndex].segmentType == "line":
-            nextToCP = self._contour[(ptIndex - 2 + i) % len(self._contour)]
+        insertIndex = ptIndex + (i - 1) // 2
+        if self._contour.getPoint(insertIndex).segmentType == "line":
+            nextToCP = self._contour.getPoint(ptIndex - 2 + i)
             assert(nextToCP.segmentType is not None)
-            self._contour[insertIndex].segmentType = "curve"
+            self._contour.getPoint(insertIndex).segmentType = "curve"
             if i == 1:
                 first, second = (
                     self._point.x, self._point.y), (nextToCP.x, nextToCP.y)
@@ -2179,14 +2261,13 @@ class GlyphView(QGraphicsView):
     def updateActiveLayerPath(self):
         self.updateLayerPath(
             self._layer, representationKey="defconQt.NoComponentsQPainterPath")
+        self.addStartPoints()
 
     def updateLayerPath(self, layer,
                         representationKey="defconQt.QPainterPath"):
         glyph = layer[self._name]
-        # scene = self.scene()  # unused
         path = glyph.getRepresentation(representationKey)
         self._sceneItems[layer].setPath(path)
-        self.addStartPoints()
 
     def _getSceneItems(self, key, clear=False):
         items = self._sceneItems.get(key, None)
@@ -2314,6 +2395,34 @@ class GlyphView(QGraphicsView):
             component = Component()
             component.baseGlyph = newGlyph.name
             self._glyph.appendComponent(component)
+
+    def layerActions(self):
+        newLayer, action, ok = LayerActionsDialog.getLayerAndAction(
+            self, self._glyph)
+        if ok and newLayer is not None:
+            # TODO: whole glyph for now, but consider selection too
+            if not self._glyph.name in newLayer:
+                newLayer.newGlyph(self._glyph.name)
+            otherGlyph = newLayer[self._glyph.name]
+            otherGlyph.disableNotifications()
+            if action == "Swap":
+                tempGlyph = TGlyph()
+                otherGlyph.drawPoints(tempGlyph.getPointPen())
+                tempGlyph.width = otherGlyph.width
+                otherGlyph.clearContours()
+            self._glyph.drawPoints(otherGlyph.getPointPen())
+            otherGlyph.width = self._glyph.width
+            if action != "Copy":
+                self._glyph.disableNotifications()
+                self._glyph.clearContours()
+                # XXX: we shouldn't have to do this manually but it seems there
+                # is a timing problem
+                self._glyph.destroyAllRepresentations()
+                if action == "Swap":
+                    tempGlyph.drawPoints(self._glyph.getPointPen())
+                    self._glyph.width = tempGlyph.width
+                self._glyph.enableNotifications()
+            otherGlyph.enableNotifications()
 
     def _makeLayerGlyph(self, layer):
         name = self._name
