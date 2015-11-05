@@ -197,6 +197,64 @@ class AddLayerDialog(QDialog):
         return (name, result)
 
 
+class LayerActionsDialog(QDialog):
+
+    def __init__(self, currentGlyph, parent=None):
+        super().__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle("Layer actions…")
+        self._workableLayers = []
+        for layer in currentGlyph.layerSet:
+            if layer != currentGlyph.layer:
+                self._workableLayers.append(layer)
+
+        layout = QGridLayout(self)
+
+        copyBox = QRadioButton("Copy", self)
+        moveBox = QRadioButton("Move", self)
+        swapBox = QRadioButton("Swap", self)
+        self.otherCheckBoxes = (moveBox, swapBox)
+        copyBox.setChecked(True)
+
+        self.layersList = QListWidget(self)
+        self.layersList.addItems(
+            layer.name for layer in self._workableLayers)
+        if self.layersList.count(): self.layersList.setCurrentRow(0)
+        self.layersList.itemDoubleClicked.connect(self.accept)
+
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        l = 0
+        layout.addWidget(copyBox, l, 0, 1, 2)
+        layout.addWidget(moveBox, l, 2, 1, 2)
+        layout.addWidget(swapBox, l, 4, 1, 2)
+        l += 1
+        layout.addWidget(self.layersList, l, 0, 1, 6)
+        l += 1
+        layout.addWidget(buttonBox, l, 0, 1, 6)
+        self.setLayout(layout)
+
+    @classmethod
+    def getLayerAndAction(cls, parent, currentGlyph):
+        dialog = cls(currentGlyph, parent)
+        result = dialog.exec_()
+        currentItem = dialog.layersList.currentItem()
+        newLayer = None
+        if currentItem is not None:
+            newLayerName = currentItem.text()
+            for layer in dialog._workableLayers:
+                if layer.name == newLayerName:
+                    newLayer = layer
+        action = "Copy"
+        for checkBox in dialog.otherCheckBoxes:
+            if checkBox.isChecked():
+                action = checkBox.text()
+        return (newLayer, action, result)
+
+
 class GenericSettings(object):
 
     def __init__(self, title, parent, callback):
@@ -307,7 +365,8 @@ class MainGfxWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         glyphMenu = QMenu("&Glyph", self)
-        glyphMenu.addAction("&Go to…", self.changeGlyph, "G")
+        glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
+        glyphMenu.addAction("&Layer Actions…", self.layerActions, "L")
         menuBar.addMenu(glyphMenu)
 
         self._displaySettings = DisplayStyleSettings(
@@ -363,6 +422,10 @@ class MainGfxWindow(QMainWindow):
 
         self.setWindowTitle(glyph.name, glyph.getParent())
         self.adjustSize()
+
+    def layerActions(self):
+        if self.view is not None:
+            self.view.layerActions()
 
     def _changeGlyph(self, glyph):
         oldView = self.view
@@ -2328,6 +2391,35 @@ class GlyphView(QGraphicsView):
             component = Component()
             component.baseGlyph = newGlyph.name
             self._glyph.appendComponent(component)
+
+    def layerActions(self):
+        newLayer, action, ok = LayerActionsDialog.getLayerAndAction(
+                                   self, self._glyph)
+        if ok and newLayer is not None:
+            # TODO: whole glyph for now, but consider selection too
+            if not self._glyph.name in newLayer:
+                newLayer.newGlyph(self._glyph.name)
+            otherGlyph = newLayer[self._glyph.name]
+            otherGlyph.disableNotifications()
+            if action == "Swap":
+                tempGlyph = TGlyph()
+                otherGlyph.drawPoints(tempGlyph.getPointPen())
+                tempGlyph.width = otherGlyph.width
+                otherGlyph.clearContours()
+            self._glyph.drawPoints(otherGlyph.getPointPen())
+            otherGlyph.width = self._glyph.width
+            if action != "Copy":
+                self._glyph.disableNotifications()
+                self._glyph.clearContours()
+                # XXX: we shouldn't have to do this manually but it seems there
+                # is a timing problem
+                self._glyph.destroyAllRepresentations()
+                if action == "Swap":
+                    tempGlyph.drawPoints(self._glyph.getPointPen())
+                    self._glyph.width = tempGlyph.width
+                self._glyph.enableNotifications()
+            otherGlyph.enableNotifications()
+
 
     def _makeLayerGlyph(self, layer):
         name = self._name
