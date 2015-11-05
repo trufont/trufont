@@ -219,7 +219,8 @@ class LayerActionsDialog(QDialog):
         self.layersList = QListWidget(self)
         self.layersList.addItems(
             layer.name for layer in self._workableLayers)
-        if self.layersList.count(): self.layersList.setCurrentRow(0)
+        if self.layersList.count():
+            self.layersList.setCurrentRow(0)
         self.layersList.itemDoubleClicked.connect(self.accept)
 
         buttonBox = QDialogButtonBox(
@@ -839,7 +840,8 @@ class OnCurvePointItem(QGraphicsPathItem):
 
     def _CPDeleted(self, item):
         # XXX: is this sufficient guard?
-        if self.isSelected(): return
+        if self.isSelected():
+            return
         pointIndex = self.getPointIndex()
         children = self.childItems()
         if item == children[1]:
@@ -926,12 +928,14 @@ class OnCurvePointItem(QGraphicsPathItem):
             children = self.childItems()
             if children[1].isVisible():
                 prevPos = children[1].pos()
-                self._contour.getPoint(pointIndex - 1).x = self.pos().x() + prevPos.x()
-                self._contour.getPoint(pointIndex - 1).y = self.pos().y() + prevPos.y()
+                point = self._contour.getPoint(pointIndex - 1)
+                point.x = self.pos().x() + prevPos.x()
+                point.y = self.pos().y() + prevPos.y()
             if children[3].isVisible():
                 nextPos = children[3].pos()
-                self._contour.getPoint(pointIndex + 1).x = self.pos().x() + nextPos.x()
-                self._contour.getPoint(pointIndex + 1).y = self.pos().y() + nextPos.y()
+                point = self._contour.getPoint(pointIndex + 1)
+                point.x = self.pos().x() + nextPos.x()
+                point.y = self.pos().y() + nextPos.y()
             self.setShallowDirty()
         elif change == QGraphicsItem.ItemSelectedHasChanged:
             self._point.selected = value
@@ -2394,7 +2398,7 @@ class GlyphView(QGraphicsView):
 
     def layerActions(self):
         newLayer, action, ok = LayerActionsDialog.getLayerAndAction(
-                                   self, self._glyph)
+            self, self._glyph)
         if ok and newLayer is not None:
             # TODO: whole glyph for now, but consider selection too
             if not self._glyph.name in newLayer:
@@ -2419,7 +2423,6 @@ class GlyphView(QGraphicsView):
                     self._glyph.width = tempGlyph.width
                 self._glyph.enableNotifications()
             otherGlyph.enableNotifications()
-
 
     def _makeLayerGlyph(self, layer):
         name = self._name
