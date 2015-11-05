@@ -1450,7 +1450,9 @@ class MetricsWindowTab(QTabWidget):
             item = QListWidgetItem(entry, self.inputTextList)
             item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.addItemButton = QPushButton("+", self)
+        self.addItemButton.pressed.connect(self.addItem)
         self.removeItemButton = QPushButton("−", self)
+        self.removeItemButton.pressed.connect(self.removeItem)
         if not len(entries):
             self.removeItemButton.setEnabled(False)
 
