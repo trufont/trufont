@@ -479,10 +479,12 @@ class GlyphsCanvas(QWidget):
             max(innerHeight, paintHeight))
 
     def resizeEvent(self, event):
+        maxHeight = max(self._scrollArea.viewport().height(), self.height())
         if self._wrapLines:
-            self.resize(self._scrollArea.viewport().width(), self.height())
+            self.resize(self._scrollArea.viewport().width(), maxHeight)
         else:
-            self.resize(self.width(), self.height())
+            maxWidth = max(self._scrollArea.viewport().width(), self.width())
+            self.resize(maxWidth, maxHeight)
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
