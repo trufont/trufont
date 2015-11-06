@@ -1384,7 +1384,7 @@ class GlyphSetTab(QWidget):
         del self.glyphSets[self._cachedName]
 
     def importFromCurrentFont(self):
-        currentMainWindow = QApplication.instance().currentMainWindow
+        currentMainWindow = QApplication.instance().currentMainWindow()
         glyphs = currentMainWindow.getGlyphs()
         info = currentMainWindow.font.info
         name = "%s %s" % (info.familyName, info.styleName)
