@@ -1415,7 +1415,9 @@ class GlyphScene(QGraphicsScene):
             # pass the glyph to a controller object that holds a self._pen
             copyGlyph.width = self._glyphObject.width
             mimeData.setData("application/x-defconQt-glyph-data",
-                             pickle.dumps([copyGlyph.serialize()]))
+                             pickle.dumps([copyGlyph.serialize(
+                                 blacklist=("name", "unicode")
+                             )]))
             clipboard.setMimeData(mimeData)
             event.accept()
             return

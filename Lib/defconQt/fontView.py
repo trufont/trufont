@@ -1012,7 +1012,9 @@ class MainWindow(QMainWindow):
         glyphs = self.collectionWidget.glyphs
         pickled = []
         for index in sorted(self.collectionWidget.selection):
-            pickled.append(glyphs[index].serialize())
+            pickled.append(glyphs[index].serialize(
+                blacklist=("name", "unicode")
+            ))
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
         mimeData.setData("application/x-defconQt-glyph-data",
@@ -1045,13 +1047,7 @@ class MainWindow(QMainWindow):
             glyphs = self.collectionWidget.getSelectedGlyphs()
             if len(data) == len(glyphs):
                 for pickled, glyph in zip(data, glyphs):
-                    name = glyph.name
-                    uni = glyph.unicode
                     glyph.deserialize(pickled)
-                    # XXX: after upgrade to ufo3, write a more flexible
-                    # serialization system
-                    glyph.name = name
-                    glyph.unicode = uni
 
     def settings(self):
         if hasattr(self, 'settingsWindow') and self.settingsWindow.isVisible():
