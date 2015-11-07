@@ -11,8 +11,8 @@ def parseGlyphList(path):
                 continue
             m = _parseGL_RE.match(line)
             if not m:
-                print("warning: syntax error in glyphlist: %s".format(
-                    repr(line[:20])))
+                raise SyntaxError("syntax error in glyphlist: %s"
+                                  .format(repr(line[:20])))
             glyphName = m.group(1)
             if glyphName in GL2UV:
                 print("warning: glyphName redefined in glyphList: {}".format(

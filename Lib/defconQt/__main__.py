@@ -26,7 +26,12 @@ def main():
     glyphListPath = settings.value("settings/glyphListPath", type=str)
     if glyphListPath and os.path.exists(glyphListPath):
         from defconQt.util import glyphList
-        app.GL2UV = glyphList.parseGlyphList(glyphListPath)
+        try:
+            glyphList = glyphList.parseGlyphList(glyphListPath)
+        except Exception as e:
+            print(e)
+        else:
+            app.GL2UV = glyphList
     window = MainWindow(font)
     window.show()
     sys.exit(app.exec_())
