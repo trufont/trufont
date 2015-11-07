@@ -1,6 +1,7 @@
 from defcon import Font, Contour, Glyph, Point
 from defcon.objects.base import BaseObject
-from fontTools.agl import AGL2UV
+from PyQt5.QtWidgets import QApplication
+import fontTools
 
 
 class TFont(Font):
@@ -59,10 +60,15 @@ class TGlyph(Glyph):
     dirty = property(BaseObject._get_dirty, _set_dirty)
 
     def autoUnicodes(self):
+        app = QApplication.instance()
+        if app.GL2UV is not None:
+            GL2UV = app.GL2UV
+        else:
+            GL2UV = fontTools.agl.AGL2UV
         hexes = "ABCDEF0123456789"
         name = self.name
-        if name in AGL2UV:
-            uni = AGL2UV[name]
+        if name in GL2UV:
+            uni = GL2UV[name]
         elif (name.startswith("uni") and len(name) == 7 and
               all(c in hexes for c in name[3:])):
             uni = int(name[3:], 16)

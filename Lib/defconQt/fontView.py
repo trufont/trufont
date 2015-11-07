@@ -17,8 +17,8 @@ from PyQt5.QtGui import (
     QRegularExpressionValidator, QTextCursor)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QAction, QApplication, QCheckBox, QComboBox, QDialog,
-    QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox, QLabel, QLineEdit,
-    QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
+    QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
+    QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
     QTextEdit, QToolTip, QVBoxLayout, QWidget)
 from collections import OrderedDict
@@ -72,6 +72,7 @@ class Application(QApplication):
         super(Application, self).__init__(*args, **kwargs)
         self._currentGlyph = None
         self._currentMainWindow = None
+        self.GL2UV = None
 
     def allFonts(self):
         fonts = []
@@ -1338,17 +1339,36 @@ class GlyphSetTab(QWidget):
         importMenu.addAction("Import from current font",
                              self.importFromCurrentFont)
         self.importButton.setMenu(importMenu)
+        glyphListPath = settings.value("settings/glyphListPath", type=str)
+        self.glyphListBox = QCheckBox("Glyph list path:", self)
+        self.glyphListBox.setChecked(bool(glyphListPath))
+        self.glyphListEdit = QLineEdit(glyphListPath, self)
+        self.glyphListEdit.setEnabled(bool(glyphListPath))
+        self.glyphListEdit.setReadOnly(True)
+        self.glyphListButton = QPushButton("Browse…", self)
+        self.glyphListButton.setEnabled(bool(glyphListPath))
+        self.glyphListButton.pressed.connect(self.getGlyphList)
+        self.glyphListButton.setFixedWidth(72)
+        self.glyphListBox.toggled.connect(self.glyphListEdit.setEnabled)
+        self.glyphListBox.toggled.connect(self.glyphListButton.setEnabled)
 
-        mainLayout = QGridLayout()
+        firstLayout = QGridLayout()
         l = 0
-        mainLayout.addWidget(self.defaultGlyphSetBox, l, 0, 1, 2)
-        mainLayout.addWidget(self.defaultGlyphSetDrop, l, 3, 1, 3)
+        firstLayout.addWidget(self.defaultGlyphSetBox, l, 0, 1, 2)
+        firstLayout.addWidget(self.defaultGlyphSetDrop, l, 3, 1, 3)
         l += 1
-        mainLayout.addWidget(splitter, l, 0, 1, 6)
+        firstLayout.addWidget(splitter, l, 0, 1, 6)
         l += 1
-        mainLayout.addWidget(self.addGlyphSetButton, l, 0)
-        mainLayout.addWidget(self.removeGlyphSetButton, l, 1)
-        mainLayout.addWidget(self.importButton, l, 2)
+        firstLayout.addWidget(self.addGlyphSetButton, l, 0)
+        firstLayout.addWidget(self.removeGlyphSetButton, l, 1)
+        firstLayout.addWidget(self.importButton, l, 2)
+        secondLayout = QHBoxLayout()
+        secondLayout.addWidget(self.glyphListBox, 0)
+        secondLayout.addWidget(self.glyphListEdit, 1)
+        secondLayout.addWidget(self.glyphListButton, 2)
+        mainLayout = QVBoxLayout()
+        mainLayout.addLayout(firstLayout)
+        mainLayout.addLayout(secondLayout)
         self.setLayout(mainLayout)
 
     def addGlyphSet(self, glyphNames=[], glyphSetName="New glyph set"):
@@ -1415,6 +1435,17 @@ class GlyphSetTab(QWidget):
             index += 1
         settings.endArray()
 
+    def getGlyphList(self):
+        fileFormats = (
+            "Text file (*.txt)",
+            "All files (*.*)",
+        )
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Open File", '', ";;".join(fileFormats)
+        )
+        if path:
+            self.glyphListEdit.setText(path)
+
     def writeValues(self):
         # store content of the textEdit in the glyphSet dict
         glyphNames = self.glyphSetContents.toPlainText().split()
@@ -1429,6 +1460,9 @@ class GlyphSetTab(QWidget):
             defaultGlyphSet = self.defaultGlyphSetDrop.currentText()
             if defaultGlyphSet != latinDefault.name:
                 settings.setValue("settings/defaultGlyphSet", defaultGlyphSet)
+        glyphListPath = self.glyphListEdit.text()
+        if glyphListPath:
+            settings.setValue("settings/glyphListPath", glyphListPath)
 
 
 class MetricsWindowTab(QTabWidget):
