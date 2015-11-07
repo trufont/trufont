@@ -6,6 +6,7 @@ import pickle
 from defcon import Anchor, Component
 from defconQt import icons_db  # noqa
 from defconQt.objects.defcon import TContour, TGlyph
+from defconQt.objects.sizeGripItem import ResizeHandleItem, SizeGripItem
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from defconQt.util import platformSpecific
 from fontTools.misc import bezierTools
@@ -16,7 +17,7 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
     QAction, QActionGroup, QApplication, QColorDialog, QComboBox, QDialog,
     QDialogButtonBox, QGraphicsEllipseItem, QGraphicsItem, QGraphicsLineItem,
-    QGraphicsPathItem, QGraphicsPixmapItem, QGraphicsRectItem, QGraphicsScene,
+    QGraphicsPathItem, QGraphicsPixmapItem, QGraphicsScene,
     QGraphicsSimpleTextItem, QGraphicsView, QGridLayout, QLabel, QLineEdit,
     QListWidget, QMainWindow, QMenu, QRadioButton, QSizePolicy, QStyle,
     QStyleOptionGraphicsItem, QToolBar, QWidget)
@@ -1186,86 +1187,32 @@ class VGuidelinesTextItem(QGraphicsSimpleTextItem):
         self.setFont(font)
 
 
-class ResizeHandleItem(QGraphicsRectItem):
-
-    def __init__(self, parent=None):
-        super(QGraphicsRectItem, self).__init__(parent)
-        self.setPointPath()
-        self.setBrush(QBrush(QColor(60, 60, 60)))
-        self.setPen(QPen(Qt.NoPen))
-        self.setFlag(QGraphicsItem.ItemIgnoresParentOpacity)
-        self.setFlag(QGraphicsItem.ItemIsMovable)
-        # self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setCursor(Qt.SizeFDiagCursor)
-
-        rect = self.parentItem().boundingRect()
-        self.setPos(rect.width(), rect.height())
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemSelectedChange:
-            if not value:
-                self.setVisible(value)
-        return value
-
-    def mouseMoveEvent(self, event):
-        self.parentItem()._pixmapGeometryChanged(event)
-
-    def setPointPath(self, scale=None):
-        if scale is None:
-            scene = self.scene()
-            if scene is not None:
-                scale = scene.getViewScale()
-            else:
-                scale = 1
-        if scale > 4:
-            scale = 4
-        self.prepareGeometryChange()
-        self.setRect(-onHalf / scale, -onHalf / scale,
-                     onWidth / scale, onHeight / scale)
-
-
 class PixmapItem(QGraphicsPixmapItem):
 
-    def __init__(self, x, y, pixmap, parent=None):
+    def __init__(self, x, y, pixmap, scale, parent=None):
         super(QGraphicsPixmapItem, self).__init__(pixmap, parent)
-        self.setPos(x, y)
-        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self._pixmap = pixmap
+        self.setOffset(x, -y)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setShapeMode(QGraphicsPixmapItem.BoundingRectShape)
         self.setTransform(QTransform().fromScale(1, -1))
-        self.setOpacity(.5)
+        self.setOpacity(.6)
         self.setZValue(-1)
+        sizeGripItem = SizeGripItem(scale, self)
+        sizeGripItem.setVisible(False)
 
-        rect = self.boundingRect()
-        self._rWidth = rect.width()
-        self._rHeight = rect.height()
-        handle = ResizeHandleItem(self)
-        handle.setVisible(False)
-
-    def _pixmapGeometryChanged(self, event):
-        modifiers = event.modifiers()
-        pos = event.scenePos()
-        if modifiers & Qt.ControlModifier:
-            # rotate
-            refLine = QLineF(self.x(), self.y(), self.x() +
-                             self._rWidth, self.y() - self._rHeight)
-            curLine = QLineF(self.x(), self.y(), pos.x(), pos.y())
-            self.setRotation(refLine.angleTo(curLine))
-        else:
-            # scale
-            dy = (pos.y() - self.y()) / self._rHeight
-            if modifiers & Qt.ShiftModifier:
-                # keep original aspect ratio
-                dx = -dy
-            else:
-                dx = (pos.x() - self.x()) / self._rWidth
-            self.setTransform(QTransform().fromScale(dx, dy))
-        event.accept()
+    def setRect(self, rect):
+        dTopLeft = rect.topLeft() - self.pos()
+        if not dTopLeft.isNull():
+            self.setOffset(dTopLeft)
+        self.setPixmap(self._pixmap.scaled(
+            rect.size().toSize()
+        ))
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedChange:
-            children = self.childItems()
-            if not children[0].isUnderMouse():
-                children[0].setVisible(value)
+            sizeGripItem = self.childItems()[0]
+            sizeGripItem.setVisible(value)
         return value
 
 
@@ -1329,8 +1276,8 @@ class GlyphScene(QGraphicsScene):
         else:
             return
         pos = event.scenePos()
-        newPix = PixmapItem(pos.x(), pos.y(), dragPix)
-        self._addRegisterItem(newPix)
+        pixmapItem = PixmapItem(pos.x(), pos.y(), dragPix, self.getViewScale())
+        self._addRegisterItem(pixmapItem)
         event.acceptProposedAction()
 
     def getItemForPoint(self, point):
@@ -1371,8 +1318,6 @@ class GlyphScene(QGraphicsScene):
                 elif isinstance(item, (AnchorItem, ComponentItem,
                                        OffCurvePointItem)):
                     item.delete()
-                elif isinstance(item, PixmapItem):
-                    self.removeItem(item)
             self._blocked = False
             self._glyphObject.dirty = True
             event.accept()
