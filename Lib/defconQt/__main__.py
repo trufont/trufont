@@ -1,9 +1,10 @@
-from defconQt.objects.defcon import TFont
 from defconQt import representationFactories
 from defconQt import icons_db  # noqa
 from defconQt.fontView import Application, MainWindow
+from defconQt.objects.defcon import TFont
 import sys
 import os
+from PyQt5.QtCore import QSettings
 from PyQt5.QtGui import QIcon
 
 
@@ -21,6 +22,11 @@ def main():
     app.setOrganizationDomain("trufont.github.io")
     app.setApplicationName("TruFont")
     app.setWindowIcon(QIcon(":/resources/app.png"))
+    settings = QSettings()
+    glyphListPath = settings.value("settings/glyphListPath", type=str)
+    if glyphListPath and os.path.exists(glyphListPath):
+        from defconQt.util import glyphList
+        app.GL2UV = glyphList.parseGlyphList(glyphListPath)
     window = MainWindow(font)
     window.show()
     sys.exit(app.exec_())
