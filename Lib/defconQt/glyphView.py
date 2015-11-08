@@ -1832,6 +1832,9 @@ class GlyphScene(QGraphicsScene):
         for dot in self._knifeDots:
             self.removeItem(dot)
         self._knifeDots = []
+        # no-move clicks
+        if self._cachedIntersections is None:
+            return
         # reverse so as to not invalidate our cached segment indexes
         for loc, ts in reversed(list(self._cachedIntersections.items())):
             contour, index = loc
