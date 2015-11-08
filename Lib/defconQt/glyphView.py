@@ -1803,6 +1803,8 @@ class GlyphScene(QGraphicsScene):
         for contour in glyph:
             segments = contour.segments
             for index, seg in enumerate(segments):
+                if seg[-1].segmentType == "move":
+                    continue
                 prev = segments[index - 1][-1]
                 if len(seg) == 3:
                     i = self.computeIntersections(
