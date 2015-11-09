@@ -18,7 +18,7 @@ def main():
     representationFactories.registerAllFactories()
     app = Application(sys.argv)
     # TODO: http://stackoverflow.com/a/21330349/2037879
-    app.setOrganizationName("A. Tétar & Co.")
+    app.setOrganizationName("TruFont")
     app.setOrganizationDomain("trufont.github.io")
     app.setApplicationName("TruFont")
     app.setWindowIcon(QIcon(":/resources/app.png"))
