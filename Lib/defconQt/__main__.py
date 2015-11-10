@@ -23,7 +23,7 @@ def main():
     app.setApplicationName("TruFont")
     app.setWindowIcon(QIcon(":/resources/app.png"))
     settings = QSettings()
-    glyphListPath = settings.value("settings/glyphListPath", type=str)
+    glyphListPath = settings.value("settings/glyphListPath", "", type=str)
     if glyphListPath and os.path.exists(glyphListPath):
         from defconQt.util import glyphList
         try:
