@@ -18,7 +18,7 @@ class MainEditWindow(QMainWindow):
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
         fileMenu.addSeparator()
-        fileMenu.addAction("Reload from UFO", self.reload)
+        fileMenu.addAction("&Reload From Disk", self.reload)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 

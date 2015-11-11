@@ -27,6 +27,7 @@ from collections import OrderedDict
 import os
 import pickle
 import platform
+import subprocess
 import traceback
 
 cannedDesign = [
@@ -196,12 +197,12 @@ class InfoPanel(QWidget):
         symmetryButton = QPushButton("Symmetry", self)
         symmetryButton.setEnabled(False)
         hSymmetryButton = QPushButton("H", self)
-        hSymmetryButton.pressed.connect(self.hSymmetry)
+        hSymmetryButton.clicked.connect(self.hSymmetry)
         vSymmetryButton = QPushButton("V", self)
-        vSymmetryButton.pressed.connect(self.vSymmetry)
+        vSymmetryButton.clicked.connect(self.vSymmetry)
 
         moveButton = QPushButton("Move", self)
-        moveButton.pressed.connect(self.moveGlyph)
+        moveButton.clicked.connect(self.moveGlyph)
         moveXLabel = QLabel("x:", self)
         self.moveXEdit = QLineEdit("0", self)
         self.moveXEdit.setValidator(QIntValidator(self))
@@ -212,7 +213,7 @@ class InfoPanel(QWidget):
         moveXYBox.clicked.connect(self.lockMove)
 
         scaleButton = QPushButton("Scale", self)
-        scaleButton.pressed.connect(self.scaleGlyph)
+        scaleButton.clicked.connect(self.scaleGlyph)
         scaleXLabel = QLabel("x:", self)
         self.scaleXEdit = QLineEdit("100", self)
         self.scaleXEdit.setValidator(QIntValidator(self))
@@ -263,14 +264,24 @@ class InfoPanel(QWidget):
         self.move(x, y)
 
     def hSymmetry(self):
-        xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
+        if not len(self._glyph):
+            return
+        controlPointBounds = self._glyph.controlPointBounds
+        if controlPointBounds is None:
+            return
+        xMin, _, xMax, _ = controlPointBounds
         for contour in self._glyph:
             for point in contour:
                 point.x = xMin + xMax - point.x
         self._glyph.dirty = True
 
     def vSymmetry(self):
-        xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
+        if not len(self._glyph):
+            return
+        controlPointBounds = self._glyph.controlPointBounds
+        if controlPointBounds is None:
+            return
+        _, yMin, _, yMax = controlPointBounds
         for contour in self._glyph:
             for point in contour:
                 point.y = yMin + yMax - point.y
@@ -292,6 +303,11 @@ class InfoPanel(QWidget):
         self.scaleYEdit.setEnabled(not checked)
 
     def scaleGlyph(self):
+        if not len(self._glyph):
+            return
+        controlPointBounds = self._glyph.controlPointBounds
+        if controlPointBounds is None:
+            return
         sX = self.scaleXEdit.text()
         if not self.scaleYEdit.isEnabled():
             sY = sX
@@ -300,7 +316,7 @@ class InfoPanel(QWidget):
         sX, sY = int(sX) if sX != "" else 1, int(sY) if sY != "" else 1
         sX /= 100
         sY /= 100
-        xMin, yMin, xMax, yMax = self._glyph.controlPointBounds
+        xMin, yMin, _, _ = controlPointBounds
         for contour in self._glyph:
             for point in contour:
                 point.x = xMin + (point.x - xMin) * sX
@@ -530,11 +546,11 @@ class SortDialog(QDialog):
             self.customSortLayout.addWidget(btn, i, 3)
             if i == 0:
                 btn.setText("+")
-                btn.pressed.connect(self._addRow)
+                btn.clicked.connect(self._addRow)
                 self.addLineButton = btn
             else:
                 btn.setText("−")
-                btn.pressed.connect(self._deleteRow)
+                btn.clicked.connect(self._deleteRow)
         self.customSortGroup.setLayout(self.customSortLayout)
 
         buttonBox = QDialogButtonBox(
@@ -562,7 +578,7 @@ class SortDialog(QDialog):
         btn = QPushButton("−", self)
         btn.setFixedWidth(32)
         btn.setProperty("index", i)
-        btn.pressed.connect(self._deleteRow)
+        btn.clicked.connect(self._deleteRow)
         line.append(btn)
         self.customDescriptors.append(line)
         self.customSortLayout.addWidget(line[0], i, 0)
@@ -1228,14 +1244,23 @@ class MainWindow(QMainWindow):
                 self.sortDescriptor = self.sortDescriptor
 
     def about(self):
+
+        def getGitShortHash():
+            try:
+                return subprocess.check_output(
+                    ['git', 'rev-parse', '--short', 'HEAD']).decode()
+            except:
+                return ""
+
         name = QApplication.applicationName()
         domain = QApplication.organizationDomain()
-        text = "<h3>About {}</h3>" \
-               "<p>I am a new UFO-centric font editor and I aim to bring " \
-               "the <b>robofab</b> ecosystem to all main operating systems, " \
-               "in a fast and dependency-free package.</p>" \
-               "<p>Version {} – Python {}.".format(
-                   name, __version__, platform.python_version())
+        text = \
+        "<h3>About {n}</h3>" \
+        "<p>{n} is a cross-platform, modular typeface design software.</p>" \
+        "<p>{n} is built on top of defcon and includes scripting support " \
+        "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>" \
+        "<p>Version {} {} – Python {}.".format(
+            __version__, getGitShortHash(), platform.python_version(), n=name)
         if domain:
             text += "<br>See <a href='http://{d}'>{d}</a> for more " \
                     "information.</p>".format(d=domain)
@@ -1334,10 +1359,10 @@ class GlyphSetTab(QWidget):
         splitter.addWidget(self.glyphSetList)
         splitter.addWidget(self.glyphSetContents)
         self.addGlyphSetButton = QPushButton("+", self)
-        self.addGlyphSetButton.pressed.connect(self.addGlyphSet)
+        self.addGlyphSetButton.clicked.connect(self.addGlyphSet)
         self.removeGlyphSetButton = QPushButton("−", self)
         self.removeGlyphSetButton.setEnabled(len(self.glyphSets) > 1)
-        self.removeGlyphSetButton.pressed.connect(self.removeGlyphSet)
+        self.removeGlyphSetButton.clicked.connect(self.removeGlyphSet)
         self.importButton = QPushButton("Import", self)
         importMenu = QMenu(self)
         importMenu.addAction("Import from current font",
@@ -1351,7 +1376,7 @@ class GlyphSetTab(QWidget):
         self.glyphListEdit.setReadOnly(True)
         self.glyphListButton = QPushButton("Browse…", self)
         self.glyphListButton.setEnabled(bool(glyphListPath))
-        self.glyphListButton.pressed.connect(self.getGlyphList)
+        self.glyphListButton.clicked.connect(self.getGlyphList)
         self.glyphListButton.setFixedWidth(72)
         self.glyphListBox.toggled.connect(self.glyphListEdit.setEnabled)
         self.glyphListBox.toggled.connect(self.glyphListButton.setEnabled)
@@ -1484,9 +1509,9 @@ class MetricsWindowTab(QTabWidget):
             item = QListWidgetItem(entry, self.inputTextList)
             item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.addItemButton = QPushButton("+", self)
-        self.addItemButton.pressed.connect(self.addItem)
+        self.addItemButton.clicked.connect(self.addItem)
         self.removeItemButton = QPushButton("−", self)
-        self.removeItemButton.pressed.connect(self.removeItem)
+        self.removeItemButton.clicked.connect(self.removeItem)
         if not len(entries):
             self.removeItemButton.setEnabled(False)
 
@@ -1578,9 +1603,9 @@ class MiscTab(QTabWidget):
             self.markColorModel.setItem(index, 1, item)
             index += 1
         self.addItemButton = QPushButton("+", self)
-        self.addItemButton.pressed.connect(self.addItem)
+        self.addItemButton.clicked.connect(self.addItem)
         self.removeItemButton = QPushButton("−", self)
-        self.removeItemButton.pressed.connect(self.removeItem)
+        self.removeItemButton.clicked.connect(self.removeItem)
         if not len(entries):
             self.removeItemButton.setEnabled(False)
 
