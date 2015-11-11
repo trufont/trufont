@@ -6,6 +6,7 @@ from defconQt.glyphView import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.layerSetList import LayerSetList
 from defconQt.scriptingWindow import MainScriptingWindow
+from defconQt.objects.colorWidgets import ColorVignette
 from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
 from defconQt.util import platformSpecific
 from defcon import Color, Component
@@ -14,13 +15,14 @@ from PyQt5.QtCore import (
     pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
 from PyQt5.QtGui import (
     QColor, QCursor, QIcon, QIntValidator, QKeySequence, QPixmap,
-    QRegularExpressionValidator, QTextCursor)
+    QRegularExpressionValidator, QStandardItem, QStandardItemModel,
+    QTextCursor)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QAction, QApplication, QCheckBox, QComboBox, QDialog,
     QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
-    QTextEdit, QToolTip, QVBoxLayout, QWidget)
+    QTextEdit, QToolTip, QTreeView, QVBoxLayout, QWidget)
 from collections import OrderedDict
 import os
 import pickle
@@ -629,7 +631,7 @@ class MainWindow(QMainWindow):
         self._font = None
         self._sortDescriptor = None
         settings = QSettings()
-        loadRecentFile = settings.value("core/loadRecentFile", False, bool)
+        loadRecentFile = settings.value("misc/loadRecentFile", False, bool)
         if font is None and loadRecentFile:
             recentFiles = settings.value("core/recentFiles", [], type=str)
             if len(recentFiles):
@@ -668,23 +670,9 @@ class MainWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         editMenu = QMenu("&Edit", self)
-        markColorMenu = QMenu("Flag Color", self)
-        pixmap = QPixmap(24, 24)
-        none = markColorMenu.addAction("None", self.markColor)
-        none.setData(None)
-        red = markColorMenu.addAction("Red", self.markColor)
-        pixmap.fill(Qt.red)
-        red.setIcon(QIcon(pixmap))
-        red.setData(QColor(Qt.red))
-        yellow = markColorMenu.addAction("Yellow", self.markColor)
-        pixmap.fill(Qt.yellow)
-        yellow.setIcon(QIcon(pixmap))
-        yellow.setData(QColor(Qt.yellow))
-        green = markColorMenu.addAction("Green", self.markColor)
-        pixmap.fill(Qt.green)
-        green.setIcon(QIcon(pixmap))
-        green.setData(QColor(Qt.green))
-        editMenu.addMenu(markColorMenu)
+        self.markColorMenu = QMenu("Flag Color", self)
+        self.updateMarkColors()
+        editMenu.addMenu(self.markColorMenu)
         editMenu.addAction("Copy", self.copy, QKeySequence.Copy)
         editMenu.addAction("Copy As Component",
                            self.copyAsComponent, "Ctrl+Alt+C")
@@ -918,6 +906,18 @@ class MainWindow(QMainWindow):
             actions[index].setVisible(False)
 
         self.recentFilesMenu.setEnabled(len(recentFiles))
+
+    def updateMarkColors(self):
+        entries = readMarkColors()
+        self.markColorMenu.clear()
+        pixmap = QPixmap(24, 24)
+        none = self.markColorMenu.addAction("None", self.markColor)
+        none.setData(None)
+        for name, color in entries.items():
+            action = self.markColorMenu.addAction(name, self.markColor)
+            pixmap.fill(color)
+            action.setIcon(QIcon(pixmap))
+            action.setData(color)
 
     def closeEvent(self, event):
         ok = self.maybeSaveBeforeExit()
@@ -1268,6 +1268,10 @@ class SettingsDialog(QDialog):
     def accept(self):
         for i in range(self.tabWidget.count()):
             self.tabWidget.widget(i).writeValues()
+        app = QApplication.instance()
+        for window in app.topLevelWidgets():
+            if isinstance(window, MainWindow):
+                window.updateMarkColors()
         super(SettingsDialog, self).accept()
 
 
@@ -1484,23 +1488,124 @@ class MetricsWindowTab(QTabWidget):
         settings.setValue("metricsWindow/comboBoxItems", entries)
 
 
+def readMarkColors(settings=None):
+
+    def toQColor(color):
+        return QColor.fromRgbF(*Color(color))
+
+    if settings is None:
+        settings = QSettings()
+    size = settings.beginReadArray("misc/markColors")
+    # TODO: maybe cache this in qApp
+    markColors = OrderedDict()
+    if not size:
+        # serialized in UFO form
+        markColors["Red"] = toQColor("1,0,0,1")
+        markColors["Yellow"] = toQColor("1,1,0,1")
+        markColors["Green"] = toQColor("0,1,0,1")
+    for i in range(size):
+        settings.setArrayIndex(i)
+        markColorName = settings.value("name", type=str)
+        markColor = settings.value("color", type=str)
+        markColors[markColorName] = toQColor(markColor)
+    settings.endArray()
+    return markColors
+
+
 class MiscTab(QTabWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
         settings = QSettings()
-        loadRecentFile = settings.value("core/loadRecentFile", False, bool)
+        loadRecentFile = settings.value("misc/loadRecentFile", False, bool)
         self.loadRecentFileBox = QCheckBox("Load most recent file on start",
                                            self)
         self.loadRecentFileBox.setChecked(loadRecentFile)
 
-        layout = QVBoxLayout(self)
+        self.markColorLabel = QLabel("Default flag colors:", self)
+        # TODO: enforce duplicate names avoidance
+        self.markColorList = QTreeView(self)
+        # TODO: fix this up
+        # self.markColorList.setDragDropMode(QAbstractItemView.InternalMove)
+        entries = readMarkColors(settings)
+        self.markColorModel = QStandardItemModel(len(entries), 2)
+        self.markColorModel.setHorizontalHeaderLabels(["Color", "Name"])
+        self.markColorList.setModel(self.markColorModel)
+        index = 0
+        for name, color in entries.items():
+            modelIndex = self.markColorModel.index(index, 0)
+            widget = ColorVignette(color, self)
+            self.markColorList.setIndexWidget(modelIndex, widget)
+            item = QStandardItem()
+            item.setText(name)
+            self.markColorModel.setItem(index, 1, item)
+            index += 1
+        self.addItemButton = QPushButton("+", self)
+        self.addItemButton.pressed.connect(self.addItem)
+        self.removeItemButton = QPushButton("−", self)
+        self.removeItemButton.pressed.connect(self.removeItem)
+        if not len(entries):
+            self.removeItemButton.setEnabled(False)
+
+        layout = QGridLayout(self)
         l = 0
-        layout.addWidget(self.loadRecentFileBox, l)
+        layout.addWidget(self.loadRecentFileBox, l, 0, 1, 3)
+        l += 1
+        layout.addWidget(self.markColorLabel, l, 0, 1, 3)
+        l += 1
+        layout.addWidget(self.markColorList, l, 0, 1, 3)
+        l += 1
+        layout.addWidget(self.addItemButton, l, 0)
+        layout.addWidget(self.removeItemButton, l, 1)
         self.setLayout(layout)
+
+    def addItem(self):
+
+        def mangleNewName():
+            name = "New"
+            index = 0
+            while self.markColorModel.findItems(name, column=1):
+                index += 1
+                name = "New ({})".format(index)
+            return name
+
+        index = self.markColorModel.rowCount()
+        item = QStandardItem()
+        item.setText(mangleNewName())
+        self.markColorModel.setItem(index, 1, item)
+
+        modelIndex = self.markColorModel.index(index, 0)
+        widget = ColorVignette(QColor(), self)
+        self.markColorList.setIndexWidget(modelIndex, widget)
+
+        itemIndex = self.markColorModel.index(index, 1)
+        self.markColorList.setCurrentIndex(itemIndex)
+        self.markColorList.edit(itemIndex)
+        self.removeItemButton.setEnabled(True)
+
+    def removeItem(self):
+        i = self.markColorList.currentIndex().row()
+        self.markColorModel.takeRow(i)
+        if not self.markColorModel.rowCount():
+            self.removeItemButton.setEnabled(False)
+
+    def writeMarkColors(self, settings=None):
+        if settings is None:
+            settings = QSettings()
+        settings.beginWriteArray("misc/markColors")
+        # serialized in UFO form
+        for i in range(self.markColorModel.rowCount()):
+            settings.setArrayIndex(i)
+            name = self.markColorModel.item(i, 1).text()
+            widgetIndex = self.markColorModel.index(i, 0)
+            color = self.markColorList.indexWidget(widgetIndex).color
+            settings.setValue("name", name)
+            settings.setValue("color", str(Color(color.getRgbF())))
+        settings.endArray()
 
     def writeValues(self):
         settings = QSettings()
         loadRecentFile = self.loadRecentFileBox.isChecked()
-        settings.setValue("core/loadRecentFile", loadRecentFile)
+        settings.setValue("misc/loadRecentFile", loadRecentFile)
+        self.writeMarkColors()
