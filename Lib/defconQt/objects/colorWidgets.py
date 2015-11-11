@@ -16,12 +16,10 @@ class ColorVignette(QWidget):
         self._color = color
         self._readOnly = False
 
-    @property
     def color(self):
         return self._color
 
-    @color.setter
-    def color(self, color):
+    def setColor(self, color):
         self._color = color
         self.update()
 
@@ -32,7 +30,7 @@ class ColorVignette(QWidget):
         dialog = QColorDialog()
         ok = dialog.exec_()
         if ok:
-            self.color = dialog.currentColor()
+            self.setColor(dialog.currentColor())
 
     def readOnly(self):
         return self._readOnly
@@ -50,7 +48,7 @@ class ColorVignette(QWidget):
         self.style().drawPrimitive(QStyle.PE_Frame, panel, painter, self)
         r = self.style().subElementRect(QStyle.SE_FrameContents, panel, self)
         painter.fillRect(r, Qt.white)
-        painter.fillRect(r.adjusted(2, 2, -2, -2), self.color)
+        painter.fillRect(r.adjusted(2, 2, -2, -2), self._color)
 
     def paintEvent(self, event):
         painter = QStylePainter(self)

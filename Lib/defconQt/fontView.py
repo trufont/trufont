@@ -1559,18 +1559,20 @@ class MiscTab(QTabWidget):
 
         self.markColorLabel = QLabel("Default flag colors:", self)
         # TODO: enforce duplicate names avoidance
-        self.markColorList = QTreeView(self)
-        # TODO: fix this up
-        # self.markColorList.setDragDropMode(QAbstractItemView.InternalMove)
+        self.markColorView = QTreeView(self)
+        self.markColorView.setRootIsDecorated(False)
+        self.markColorView.setSelectionBehavior(QAbstractItemView.SelectRows)
+        # TODO: make this work correctly, top-level items only
+        # self.markColorView.setDragDropMode(QAbstractItemView.InternalMove)
         entries = readMarkColors(settings)
         self.markColorModel = QStandardItemModel(len(entries), 2)
         self.markColorModel.setHorizontalHeaderLabels(["Color", "Name"])
-        self.markColorList.setModel(self.markColorModel)
+        self.markColorView.setModel(self.markColorModel)
         index = 0
         for name, color in entries.items():
             modelIndex = self.markColorModel.index(index, 0)
             widget = ColorVignette(color, self)
-            self.markColorList.setIndexWidget(modelIndex, widget)
+            self.markColorView.setIndexWidget(modelIndex, widget)
             item = QStandardItem()
             item.setText(name)
             self.markColorModel.setItem(index, 1, item)
@@ -1588,7 +1590,7 @@ class MiscTab(QTabWidget):
         l += 1
         layout.addWidget(self.markColorLabel, l, 0, 1, 3)
         l += 1
-        layout.addWidget(self.markColorList, l, 0, 1, 3)
+        layout.addWidget(self.markColorView, l, 0, 1, 3)
         l += 1
         layout.addWidget(self.addItemButton, l, 0)
         layout.addWidget(self.removeItemButton, l, 1)
@@ -1611,15 +1613,15 @@ class MiscTab(QTabWidget):
 
         modelIndex = self.markColorModel.index(index, 0)
         widget = ColorVignette(QColor(), self)
-        self.markColorList.setIndexWidget(modelIndex, widget)
+        self.markColorView.setIndexWidget(modelIndex, widget)
 
         itemIndex = self.markColorModel.index(index, 1)
-        self.markColorList.setCurrentIndex(itemIndex)
-        self.markColorList.edit(itemIndex)
+        self.markColorView.setCurrentIndex(itemIndex)
+        self.markColorView.edit(itemIndex)
         self.removeItemButton.setEnabled(True)
 
     def removeItem(self):
-        i = self.markColorList.currentIndex().row()
+        i = self.markColorView.currentIndex().row()
         self.markColorModel.takeRow(i)
         if not self.markColorModel.rowCount():
             self.removeItemButton.setEnabled(False)
@@ -1633,7 +1635,7 @@ class MiscTab(QTabWidget):
             settings.setArrayIndex(i)
             name = self.markColorModel.item(i, 1).text()
             widgetIndex = self.markColorModel.index(i, 0)
-            color = self.markColorList.indexWidget(widgetIndex).color
+            color = self.markColorView.indexWidget(widgetIndex).color()
             settings.setValue("name", name)
             settings.setValue("color", str(Color(color.getRgbF())))
         settings.endArray()
