@@ -66,6 +66,12 @@ latinDefault = GlyphSet(
      "tildecomb", "uni0327", "quoteleft", "quoteright", "minus"],
     "Latin-default")
 
+try:
+    gitShortHash = subprocess.check_output(
+        ['git', 'rev-parse', '--short', 'HEAD']).decode()
+except:
+    gitShortHash = ""
+
 
 class Application(QApplication):
     currentFontChanged = pyqtSignal()
@@ -1244,23 +1250,16 @@ class MainWindow(QMainWindow):
                 self.sortDescriptor = self.sortDescriptor
 
     def about(self):
-
-        def getGitShortHash():
-            try:
-                return subprocess.check_output(
-                    ['git', 'rev-parse', '--short', 'HEAD']).decode()
-            except:
-                return ""
-
         name = QApplication.applicationName()
         domain = QApplication.organizationDomain()
-        text = \
-        "<h3>About {n}</h3>" \
-        "<p>{n} is a cross-platform, modular typeface design software.</p>" \
-        "<p>{n} is built on top of defcon and includes scripting support " \
-        "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>" \
-        "<p>Version {} {} – Python {}.".format(
-            __version__, getGitShortHash(), platform.python_version(), n=name)
+        text = "<h3>About {n}</h3>" \
+            "<p>{n} is a cross-platform, modular typeface design " \
+            "application.</p><p>{n} is built on top of " \
+            "<a href='http://ts-defcon.readthedocs.org/en/ufo3/'>defcon</a> " \
+            "and includes scripting support " \
+            "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>" \
+            "<p>Version {} {} – Python {}.".format(
+                __version__, gitShortHash, platform.python_version(), n=name)
         if domain:
             text += "<br>See <a href='http://{d}'>{d}</a> for more " \
                     "information.</p>".format(d=domain)
