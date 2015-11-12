@@ -367,8 +367,13 @@ class MainGfxWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         glyphMenu = QMenu("&Glyph", self)
+        glyphMenu.addAction("&Next Glyph",
+                            lambda: self._glyphOffset(1), "Ctrl+)")
+        glyphMenu.addAction("&Previous Glyph",
+                            lambda: self._glyphOffset(-1), "Ctrl+(")
         glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
-        glyphMenu.addAction("&Layer Actions…", self.layerActions, "L")
+        glyphMenu.addAction("&Layer Actions…",
+                            self._redirect('view', 'layerActions'), "L")
         menuBar.addMenu(glyphMenu)
 
         self._displaySettings = DisplayStyleSettings(
@@ -425,10 +430,6 @@ class MainGfxWindow(QMainWindow):
         self.setWindowTitle(glyph.name, glyph.getParent())
         self.adjustSize()
 
-    def layerActions(self):
-        if self.view is not None:
-            self.view.layerActions()
-
     def _changeGlyph(self, glyph):
         oldView = self.view
         # Preserve the selected layer (by setting the glyph from that layer)
@@ -460,6 +461,19 @@ class MainGfxWindow(QMainWindow):
 
         # switch
         self.setCentralWidget(self.view)
+
+    def _glyphOffset(self, offset):
+        if not self.view:
+            return
+        currentGlyph = self.view._glyph
+        font = currentGlyph.getParent()
+        # should be enforced in fontView already
+        if not (font.glyphOrder and len(font.glyphOrder)):
+            return
+        index = font.glyphOrder.index(currentGlyph.name)
+        newIndex = (index + offset) % len(font.glyphOrder)
+        glyph = font[font.glyphOrder[newIndex]]
+        self._changeGlyph(glyph)
 
     def _executeRemoteCommand(self, targetName, commandName, *args, **kwds):
         """
