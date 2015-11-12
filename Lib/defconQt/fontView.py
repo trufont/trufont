@@ -128,11 +128,11 @@ class Application(QApplication):
 MAX_RECENT_FILES = 6
 
 
-class InfoPanel(QWidget):
+class InspectorWindow(QWidget):
 
     def __init__(self):
         super().__init__(flags=Qt.Tool)
-        self.setWindowTitle("Info Panel")
+        self.setWindowTitle("Inspector Window")
         self._blocked = False
         self._glyph = None
 
@@ -169,8 +169,10 @@ class InfoPanel(QWidget):
         self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.rightSideBearingEdit.setValidator(QIntValidator(self))
         markColorLabel = QLabel("Flag:", self)
-        self.markColorButton = QPushButton(self)
-        self.markColorButton.setMaximumWidth(columnOneWidth)
+        self.markColorWidget = ColorVignette(QColor(Qt.white), self)
+        self.markColorWidget.colorChanged.connect(
+            self.writeMarkColor)
+        self.markColorWidget.setMaximumWidth(columnOneWidth)
         app = QApplication.instance()
         self.updateGlyph()
         app.currentGlyphChanged.connect(self.updateGlyph)
@@ -191,7 +193,7 @@ class InfoPanel(QWidget):
         glyphLayout.addWidget(self.rightSideBearingEdit, l, 3)
         l += 1
         glyphLayout.addWidget(markColorLabel, l, 0)
-        glyphLayout.addWidget(self.markColorButton, l, 1)
+        glyphLayout.addWidget(self.markColorWidget, l, 1)
         glyphGroup.setLayout(glyphLayout)
 
         transformGroup = QGroupBox("Transform", self)
@@ -347,7 +349,7 @@ class InfoPanel(QWidget):
         width = None
         leftSideBearing = None
         rightSideBearing = None
-        colorStr = "white"
+        markColor = QColor(Qt.white)
         if self._glyph is not None:
             name = self._glyph.name
             unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" %
@@ -359,16 +361,15 @@ class InfoPanel(QWidget):
             if self._glyph.rightMargin is not None:
                 rightSideBearing = str(int(self._glyph.rightMargin))
             if self._glyph.markColor is not None:
-                colorStr = QColor.fromRgbF(
-                    *tuple(self._glyph.markColor)).name()
+                markColor = QColor.fromRgbF(
+                    *tuple(self._glyph.markColor))
 
         self.nameEdit.setText(name)
         self.unicodesEdit.setText(unicodes)
         self.widthEdit.setText(width)
         self.leftSideBearingEdit.setText(leftSideBearing)
         self.rightSideBearingEdit.setText(rightSideBearing)
-        self.markColorButton.setStyleSheet("background-color: {}; \
-            border: 1px solid black;".format(colorStr))
+        self.markColorWidget.setColor(markColor)
 
     def writeGlyphName(self):
         if self._glyph is None:
@@ -409,6 +410,10 @@ class InfoPanel(QWidget):
         self._glyph.rightMargin = int(self.nameEdit.text())
         self._blocked = False
 
+    def writeMarkColor(self):
+        color = self.markColorWidget.color()
+        self._glyph.markColor = Color(color.getRgbF())
+
 
 class AddGlyphsDialog(QDialog):
 
@@ -416,7 +421,7 @@ class AddGlyphsDialog(QDialog):
     def __init__(self, currentGlyphs=None, parent=None):
         super(AddGlyphsDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Add glyphs…")
+        self.setWindowTitle("Add Glyphs…")
         self.currentGlyphs = currentGlyphs
         self.currentGlyphNames = [glyph.name for glyph in currentGlyphs]
 
@@ -719,7 +724,8 @@ class MainWindow(QMainWindow):
         menuBar.addMenu(pythonMenu)
 
         windowMenu = QMenu("&Windows", self)
-        action = windowMenu.addAction("&Info Panel", self.infoPanel, "Ctrl+I")
+        action = windowMenu.addAction(
+            "&Inspector Window", self.inspector, "Ctrl+I")
         # XXX: we're getting duplicate shortcut when we spawn a new window...
         action.setShortcutContext(Qt.ApplicationShortcut)
         windowMenu.addAction("&Metrics Window", self.metrics, "Ctrl+Alt+S")
@@ -1212,18 +1218,18 @@ class MainWindow(QMainWindow):
         else:
             app.scriptingWindow.show()
 
-    def infoPanel(self):
+    def inspector(self):
         app = QApplication.instance()
-        if not hasattr(app, 'infoPanelWindow'):
-            app.infoPanelWindow = InfoPanel()
-            app.infoPanelWindow.show()
-        elif app.infoPanelWindow.isVisible():
+        if not hasattr(app, 'inspectorWindow'):
+            app.inspectorWindow = InspectorWindow()
+            app.inspectorWindow.show()
+        elif app.inspectorWindow.isVisible():
             # TODO: do this only if the widget is user-visible, otherwise the
             # key press feels as if it did nothing
             # toggle
-            app.infoPanelWindow.close()
+            app.inspectorWindow.close()
         else:
-            app.infoPanelWindow.show()
+            app.inspectorWindow.show()
 
     def sortGlyphs(self):
         sortDescriptor, ok = SortDialog.getDescriptor(self,
@@ -1596,6 +1602,7 @@ class MiscTab(QTabWidget):
         for name, color in entries.items():
             modelIndex = self.markColorModel.index(index, 0)
             widget = ColorVignette(color, self)
+            widget.setMargins(2, 2, 2, 2)
             self.markColorView.setIndexWidget(modelIndex, widget)
             item = QStandardItem()
             item.setText(name)
@@ -1636,7 +1643,9 @@ class MiscTab(QTabWidget):
         self.markColorModel.setItem(index, 1, item)
 
         modelIndex = self.markColorModel.index(index, 0)
+        # TODO: not DRY with ctor
         widget = ColorVignette(QColor(), self)
+        widget.setMargins(2, 2, 2, 2)
         self.markColorView.setIndexWidget(modelIndex, widget)
 
         itemIndex = self.markColorModel.index(index, 1)
