@@ -1,0 +1,5 @@
+fonttools==3.0
+git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
+git+https://github.com/trufont/robofab.git@python3-ufo3#egg=robofab
+git+https://github.com/trufont/ufo2fdk.git@python3-ufo3#egg=ufo2fdk
+PyInstaller==3.0
