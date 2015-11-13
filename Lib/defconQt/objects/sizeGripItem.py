@@ -130,10 +130,11 @@ class SizeGripItem(QGraphicsItem):
     def __init__(self, scale, parent):
         super(SizeGripItem, self).__init__(parent)
         self.setFlag(QGraphicsItem.ItemIgnoresParentOpacity)
+        self.rect = parent.boundingRect()
 
         for flag in possibleFlags:
             ResizeHandleItem(flag, scale, self)
-        self.updateBoundingRect()
+        self.updateHandleItemPositions()
 
     def boundingRect(self):
         return self.rect
@@ -170,10 +171,6 @@ class SizeGripItem(QGraphicsItem):
 
     def doResize(self):
         self.parentItem().setRect(self.rect)
-        self.updateHandleItemPositions()
-
-    def updateBoundingRect(self):
-        self.rect = self.parentItem().boundingRect()
         self.updateHandleItemPositions()
 
     def updateHandleItemPositions(self):
