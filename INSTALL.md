@@ -20,52 +20,9 @@ Install with homebrew,
 
     brew install pyqt5 ;
 
-### fontTools
+### Python dependencies
 
-Learn more: https://github.com/behdad/fonttools
-
-    git clone --depth=1 https://github.com/behdad/fonttools ;
-    cd fonttools/ ;
-    sudo python3 setup.py install --record installed-files.txt ;
-
-### RoboFab
-
-Learn more: http://www.robofab.com
-
-In particular, https://github.com/trufont/robofab/tree/python3-ufo3
-
-    cd .. ;
-    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab ;
-    cd robofab ;
-    sudo python3 setup.py install --record installed-files.txt ;
-
-### defcon
-
-Homepage: https://readthedocs.org/projects/ts-defcon
-
-In particular, https://github.com/trufont/defcon/tree/python3-ufo3
-
-    cd .. ;
-    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon ;
-    cd robofab ;
-    sudo python3 setup.py install --record installed-files.txt ;
-
-### ufo2fdk
-
-Learn more: https://github.com/typesupply/ufo2fdk
-
-In particular, https://github.com/trufont/ufo2fdk/tree/python3-ufo3
-
-    cd .. ;
-    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk ;
-    cd ufo2fdk ;
-    sudo python3 setup.py install --record installed-files.txt ;
-
-### PyInstaller
-
-Homepage: http://www.pyinstaller.org
-
-    sudo pip install PyInstaller ;
+    sudo pip install -r requirements.txt
 
 ## Trufont
 
@@ -97,9 +54,10 @@ To build an installation package for Mac OS X 10.9, you must build the package o
 Files are installed into `/usr/local/lib/python3.5/site-packages/` 
 
     sudo easy_install pip ;
-    sudo pip uninstall robofab defcon defconQt ;
+    sudo pip uninstall -r requirements.txt
 
-To get rid of all remaining files (be careful with rm!) for each package installed above,
+If you installed TruFont with `setup.py`, it can be uninstalled with this command
+(be careful with rm!):
 
     cat installed-files.txt | xargs sudo rm --verbose -vr
 
@@ -110,22 +68,7 @@ To get rid of all remaining files (be careful with rm!) for each package install
 ## Dependencies
 
     sudo apt-get install -qq -y python3-pyqt5 python3-pyqt5.qtsvg python3-flake8 ;
-    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon ;
-    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab ;
-    git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk ;
-    git clone --depth=1 https://github.com/behdad/fonttools.git ;
-
-    cd defcon ;
-    sudo python3.4 setup.py install --record installed-files.txt ;
-
-    cd ../robofab ;
-    sudo python3.4 setup.py install --record installed-files.txt ;
-
-    cd ../ufo2fdk ;
-    sudo python3.4 setup.py install --record installed-files.txt ;
-
-    cd ../fonttools ;
-    sudo python3.4 setup.py install --record installed-files.txt ;
+    sudo pip3 install -r requirements.txt
 
 ## Trufont
 
@@ -146,11 +89,20 @@ Or to then run from source,
 
 Files are installed into `/usr/local/lib/python3.4/dist-packages/`
 
-These can be partially removed with pip,
+These can be removed with pip:
 
     sudo apt-get install python3-pip ;
-    sudo pip3 uninstall robofab defcon ufo2fdk ufoLib defconQt ;
+    sudo pip3 uninstall -r requirements.txt
 
-To get rid of all remaining files (be careful with rm!) for each package installed above,
+If you installed TruFont with `setup.py`, it can be uninstalled with this command
+(be careful with rm!):
 
     cat installed-files.txt | xargs sudo rm --verbose -vr
+
+# Virtualenv
+
+[Virtualenv](https://virtualenv.pypa.io) is optional. If you plan to use it and you've installed
+PyQt5 with Homebrew or Apt, then add the `--system-site-packages` flag when creating the Virtualenv
+to make PyQt5 available:
+
+    virtualenv --system-site-packages virutalenv-name
