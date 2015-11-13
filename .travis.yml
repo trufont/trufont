@@ -4,16 +4,9 @@ dist: trusty
 language: python
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python3-pyqt5 python3-flake8
-  - git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/robofab
-  - git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/defcon
-  - git clone --depth=1 --branch=python3-ufo3 https://github.com/trufont/ufo2fdk
-  - git clone --depth=1 https://github.com/behdad/fonttools.git
+  - sudo apt-get install -qq -y python3-pyqt5 python3-pip python3-flake8
+  - sudo pip3 install -r requirements.txt
   - export PYTHONCMD=/usr/bin/python3
-  - cd fonttools; $PYTHONCMD setup.py install --user; cd ..
-  - cd defcon; $PYTHONCMD setup.py install --user; cd ..
-  - cd robofab; $PYTHONCMD setup.py install --user; cd ..
-  - cd ufo2fdk; $PYTHONCMD setup.py install --user; cd ..
 install:
   - $PYTHONCMD setup.py install --user
 before_script:
