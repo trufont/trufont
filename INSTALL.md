@@ -98,3 +98,11 @@ If you installed TruFont with `setup.py`, it can be uninstalled with this comman
 (be careful with rm!):
 
     cat installed-files.txt | xargs sudo rm --verbose -vr
+
+# Virtualenv
+
+[Virtualenv](https://virtualenv.pypa.io) is optional. If you plan to use it and you've installed
+PyQt5 with Homebrew or Apt, then add the `--system-site-packages` flag when creating the Virtualenv
+to make PyQt5 available:
+
+    virtualenv --system-site-packages virutalenv-name
