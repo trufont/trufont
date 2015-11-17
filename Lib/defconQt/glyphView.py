@@ -9,6 +9,7 @@ from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.objects.sizeGripItem import ResizeHandleItem, SizeGripItem
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from defconQt.util import platformSpecific
+from defconQt.util.roundPosition import roundPosition
 from fontTools.misc import bezierTools
 from PyQt5.QtCore import QEvent, QLineF, QMimeData, QPointF, Qt
 from PyQt5.QtGui import (
@@ -22,6 +23,8 @@ from PyQt5.QtWidgets import (
     QListWidget, QMainWindow, QMenu, QRadioButton, QSizePolicy, QStyle,
     QStyleOptionGraphicsItem, QToolBar, QWidget)
 
+from defconQt.anchorItem import AnchorItem
+from defconQt.addAnchorDialog import AddAnchorDialog
 from defconQt.componentItem import ComponentItem
 
 class GotoDialog(QDialog):
@@ -112,50 +115,6 @@ class GotoDialog(QDialog):
             if newGlyphName in dialog.font:
                 newGlyph = dialog.font[newGlyphName]
         return (newGlyph, result)
-
-
-class AddAnchorDialog(QDialog):
-
-    def __init__(self, pos=None, parent=None):
-        super(AddAnchorDialog, self).__init__(parent)
-        self.setWindowModality(Qt.WindowModal)
-        if pos is not None:
-            self.setWindowTitle("Add anchor…")
-        else:
-            self.setWindowTitle("Rename anchor…")
-
-        layout = QGridLayout(self)
-
-        anchorNameLabel = QLabel("Anchor name:", self)
-        self.anchorNameEdit = QLineEdit(self)
-        self.anchorNameEdit.setFocus(True)
-        if pos is not None:
-            anchorPositionLabel = QLabel(
-                "The anchor will be added at ({}, {})."
-                .format(pos.x(), pos.y()), self)
-
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-
-        l = 0
-        layout.addWidget(anchorNameLabel, l, 0)
-        layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
-        if pos is not None:
-            l += 1
-            layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
-        l += 1
-        layout.addWidget(buttonBox, l, 3)
-        self.setLayout(layout)
-
-    @classmethod
-    def getNewAnchorName(cls, parent, pos=None):
-        dialog = cls(pos, parent)
-        result = dialog.exec_()
-        name = dialog.anchorNameEdit.text()
-        return (name, result)
-
 
 class AddComponentDialog(GotoDialog):
 
@@ -628,13 +587,6 @@ class MainGfxWindow(QMainWindow):
                 title, font.info.familyName, font.info.styleName)
         super(MainGfxWindow, self).setWindowTitle(title)
 
-
-def roundPosition(value):
-    value = value * 10  # self._scale
-    value = round(value) - .5
-    value = value * .1  # self._inverseScale
-    return value
-
 offCurvePointSize = 8  # 5
 onCurvePointSize = 9  # 6
 onCurveSmoothPointSize = 10  # 7
@@ -651,10 +603,6 @@ onCurvePenWidth = 1.5
 offCurvePenWidth = 1.0
 startItemDist = 10
 
-anchorSize = 11
-anchorWidth = anchorHeight = roundPosition(anchorSize)
-anchorHalf = anchorWidth / 2.0
-
 bezierHandleColor = QColor.fromRgbF(0, 0, 0, .2)
 startPointColor = QColor.fromRgbF(0, 0, 0, .2)
 backgroundColor = Qt.white
@@ -662,8 +610,6 @@ offCurvePointColor = QColor.fromRgbF(1, 1, 1, 1)
 offCurvePointStrokeColor = QColor.fromRgbF(.6, .6, .6, 1)
 onCurvePointColor = offCurvePointStrokeColor
 onCurvePointStrokeColor = offCurvePointColor
-anchorColor = QColor(120, 120, 255)
-anchorSelectionColor = Qt.blue
 bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
 fillColor = QColor(200, 200, 200, 120)  # QColor.fromRgbF(0, 0, 0, .4)
 componentFillColor = QColor.fromRgbF(
@@ -1081,86 +1027,6 @@ class StartPointItem(QGraphicsPathItem):
         line.setAngle(line.angle() + 55)
         path.lineTo(line.x2(), line.y2())
         self.setPath(path)
-
-
-class AnchorItem(QGraphicsPathItem):
-
-    def __init__(self, anchor, scale=1, parent=None):
-        super(AnchorItem, self).__init__(parent)
-        self._anchor = anchor
-
-        textItem = QGraphicsSimpleTextItem(self._anchor.name, parent=self)
-        font = QFont()
-        font.setPointSize(9)
-        textItem.setFont(font)
-        textItem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-        self.setPointPath(scale)
-        self.setPos(self._anchor.x, self._anchor.y)
-        self.setFlag(QGraphicsItem.ItemIsMovable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.setBrush(QBrush(anchorColor))
-        self.setPen(QPen(Qt.NoPen))
-
-    def delete(self):
-        glyph = self._anchor.getParent()
-        glyph.removeAnchor(self._anchor)
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionChange:
-            if self.scene()._integerPlane:
-                value.setX(round(value.x()))
-                value.setY(round(value.y()))
-        elif change == QGraphicsItem.ItemPositionHasChanged:
-            x = self.pos().x()
-            y = self.pos().y()
-            scene = self.scene()
-            scene._blocked = True
-            self._anchor.x = x
-            self._anchor.y = y
-            scene._blocked = False
-        return value
-
-    def mouseDoubleClickEvent(self, event):
-        view = self.scene().views()[0]
-        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(view)
-        if ok:
-            self._anchor.name = newAnchorName
-
-    def setPointPath(self, scale=None):
-        path = QPainterPath()
-        if scale is None:
-            scene = self.scene()
-            if scene is not None:
-                scale = scene.getViewScale()
-            else:
-                scale = 1
-        if scale > 4:
-            scale = 4
-        elif scale < .4:
-            scale = .4
-
-        path.moveTo(-anchorHalf / scale, 0)
-        path.lineTo(0, anchorHalf / scale)
-        path.lineTo(anchorHalf / scale, 0)
-        path.lineTo(0, -anchorHalf / scale)
-        path.closeSubpath()
-
-        self.prepareGeometryChange()
-        self.setPath(path)
-        textItem = self.childItems()[0]
-        textItem.setPos(anchorHalf / scale,
-                        textItem.boundingRect().height() / 2)
-
-    # http://www.qtfr.org/viewtopic.php?pid=21045#p21045
-    def paint(self, painter, option, widget):
-        newOption = QStyleOptionGraphicsItem(option)
-        newOption.state = QStyle.State_None
-        if option.state & QStyle.State_Selected:
-            self.setBrush(anchorSelectionColor)
-        else:
-            self.setBrush(anchorColor)
-        super(AnchorItem, self).paint(painter, newOption, widget)
 
 class VGuidelinesTextItem(QGraphicsSimpleTextItem):
 
