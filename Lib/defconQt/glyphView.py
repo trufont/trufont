@@ -23,19 +23,12 @@ from PyQt5.QtWidgets import (
     QListWidget, QMainWindow, QMenu, QRadioButton, QSizePolicy, QStyle,
     QStyleOptionGraphicsItem, QToolBar, QWidget)
 
-from defconQt.anchorItem import AnchorItem
 from defconQt.addAnchorDialog import AddAnchorDialog
+from defconQt.addComponentDialog import AddComponentDialog
 from defconQt.addLayerDialog import AddLayerDialog
+from defconQt.anchorItem import AnchorItem
 from defconQt.componentItem import ComponentItem
 from defconQt.gotoDialog import GotoDialog
-
-class AddComponentDialog(GotoDialog):
-
-    def __init__(self, *args, **kwargs):
-        super(AddComponentDialog, self).__init__(*args, **kwargs)
-        self.setWindowTitle("Add component…")
-        self._sortedGlyphs.remove(args[0].name)
-        self.updateGlyphList(False)
 
 class LayerActionsDialog(QDialog):
 
