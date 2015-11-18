@@ -7,7 +7,7 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
     QAction, QGraphicsItem,
     QGraphicsLineItem, QGraphicsPathItem,
-    QGraphicsSimpleTextItem, QGraphicsView)
+    QGraphicsView)
 
 from defcon import Anchor, Component
 from defconQt import icons_db  # noqa
@@ -24,6 +24,7 @@ from defconQt.layerActionsDialog import LayerActionsDialog
 from defconQt.offCurvePointItem import OffCurvePointItem
 from defconQt.onCurvePointItem import OnCurvePointItem
 from defconQt.pixmapItem import PixmapItem
+from defconQt.vGuidelinesTextItem import VGuidelinesTextItem
 
 startItemDist = 10
 backgroundColor = Qt.white
@@ -75,14 +76,6 @@ class StartPointItem(QGraphicsPathItem):
         line.setAngle(line.angle() + 55)
         path.lineTo(line.x2(), line.y2())
         self.setPath(path)
-
-class VGuidelinesTextItem(QGraphicsSimpleTextItem):
-
-    def __init__(self, text, font, parent=None):
-        super(VGuidelinesTextItem, self).__init__(text, parent)
-        self.setBrush(metricsColor)
-        self.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-        self.setFont(font)
 
 class GlyphView(QGraphicsView):
 
