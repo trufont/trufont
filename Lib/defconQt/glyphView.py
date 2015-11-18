@@ -23,8 +23,8 @@ from defconQt.glyphScene import GlyphScene, SceneTools
 
 backgroundColor = Qt.white
 bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
-fillColor = QColor(200, 200, 200, 120)  # QColor.fromRgbF(0, 0, 0, .4)
-componentFillColor = QColor.fromRgbF(0, 0, 0, .4)  # QColor.fromRgbF(.2, .2, .3, .4)
+fillColor = QColor(200, 200, 200, 120)
+componentFillColor = QColor.fromRgbF(0, 0, 0, .4)
 metricsColor = QColor(70, 70, 70)
 bluesAttrs = ["postscriptBlueValues", "postscriptOtherBlues"]
 
