@@ -283,7 +283,7 @@ class MetricsTab(TabWidget):
         sn = font.info.styleMapStyleName
         if sn == "regular":
             self.styleMapStyleDrop.setCurrentIndex(1)
-        elif sn == "regular italic":
+        elif sn == "italic":
             self.styleMapStyleDrop.setCurrentIndex(2)
         elif sn == "bold":
             self.styleMapStyleDrop.setCurrentIndex(3)
@@ -717,7 +717,6 @@ class OS2Tab(TabWidget):
             self.allowBitmapEmbeddingBox.setEnabled(True)
 
     def writeValues(self, font):
-
         self.writePositiveInteger(
             font, "usWeightClass", "openTypeOS2WeightClass")
         self.writeInteger(font, "sTypoAscender", "openTypeOS2TypoAscender")

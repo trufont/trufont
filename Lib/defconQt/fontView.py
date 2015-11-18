@@ -132,7 +132,7 @@ class InspectorWindow(QWidget):
 
     def __init__(self):
         super().__init__(flags=Qt.Tool)
-        self.setWindowTitle("Inspector Window")
+        self.setWindowTitle("Inspector")
         self._blocked = False
         self._glyph = None
 
@@ -724,8 +724,7 @@ class MainWindow(QMainWindow):
         menuBar.addMenu(pythonMenu)
 
         windowMenu = QMenu("&Windows", self)
-        action = windowMenu.addAction(
-            "&Inspector Window", self.inspector, "Ctrl+I")
+        action = windowMenu.addAction("&Inspector", self.inspector, "Ctrl+I")
         # XXX: we're getting duplicate shortcut when we spawn a new window...
         action.setShortcutContext(Qt.ApplicationShortcut)
         windowMenu.addAction("&Metrics Window", self.metrics, "Ctrl+Alt+S")
