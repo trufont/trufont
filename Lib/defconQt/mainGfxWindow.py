@@ -4,10 +4,10 @@ from PyQt5.QtWidgets import (
     QMainWindow, QMenu, QToolBar, QWidget, QComboBox,
     QActionGroup, QApplication, QColorDialog, QSizePolicy)
 
-from defconQt.addLayerDialog import AddLayerDialog
 from defconQt.displayStyleSettings import DisplayStyleSettings
 from defconQt.glyphView import GlyphView
-from defconQt.gotoDialog import GotoDialog
+from defconQt.dialogs.addLayerDialog import AddLayerDialog
+from defconQt.dialogs.gotoDialog import GotoDialog
 from functools import partial
 
 class MainGfxWindow(QMainWindow):

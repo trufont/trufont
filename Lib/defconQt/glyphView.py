@@ -14,18 +14,18 @@ from defconQt import icons_db  # noqa
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.objects.sizeGripItem import ResizeHandleItem
 from defconQt.util.roundPosition import roundPosition
-from defconQt.addAnchorDialog import AddAnchorDialog
-from defconQt.addComponentDialog import AddComponentDialog
-from defconQt.anchorItem import AnchorItem
-from defconQt.componentItem import ComponentItem
+from defconQt.dialogs.addAnchorDialog import AddAnchorDialog
+from defconQt.dialogs.addComponentDialog import AddComponentDialog
+from defconQt.dialogs.layerActionsDialog import LayerActionsDialog
+from defconQt.items.anchorItem import AnchorItem
+from defconQt.items.componentItem import ComponentItem
+from defconQt.items.handleLineItem import HandleLineItem
+from defconQt.items.offCurvePointItem import OffCurvePointItem
+from defconQt.items.onCurvePointItem import OnCurvePointItem
+from defconQt.items.pixmapItem import PixmapItem
+from defconQt.items.startPointItem import StartPointItem
+from defconQt.items.vGuidelinesTextItem import VGuidelinesTextItem
 from defconQt.glyphScene import GlyphScene, SceneTools
-from defconQt.handleLineItem import HandleLineItem
-from defconQt.layerActionsDialog import LayerActionsDialog
-from defconQt.offCurvePointItem import OffCurvePointItem
-from defconQt.onCurvePointItem import OnCurvePointItem
-from defconQt.pixmapItem import PixmapItem
-from defconQt.startPointItem import StartPointItem
-from defconQt.vGuidelinesTextItem import VGuidelinesTextItem
 
 backgroundColor = Qt.white
 bluesColor = QColor.fromRgbF(.5, .7, 1, .3)

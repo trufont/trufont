@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import (
     QColor, QTransform, QFont, QBrush, QPen, QPainterPath)
 
-from defconQt.addAnchorDialog import AddAnchorDialog
+from defconQt.dialogs.addAnchorDialog import AddAnchorDialog
 
 anchorColor = QColor(120, 120, 255)
 anchorSelectionColor = Qt.blue

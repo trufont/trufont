@@ -49,6 +49,8 @@ setup(
     packages=[
         "defconQt",
         "defconQt.objects",
+        "defconQt.dialogs",
+        "defconQt.items",
         "defconQt.pens",
         "defconQt.representationFactories",
         "defconQt.util",

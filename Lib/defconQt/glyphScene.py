@@ -11,12 +11,12 @@ from PyQt5.QtWidgets import (
 
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from defconQt.util import platformSpecific
-from defconQt.anchorItem import AnchorItem
-from defconQt.componentItem import ComponentItem
-from defconQt.handleLineItem import HandleLineItem
-from defconQt.offCurvePointItem import OffCurvePointItem
-from defconQt.onCurvePointItem import OnCurvePointItem
-from defconQt.pixmapItem import PixmapItem
+from defconQt.items.anchorItem import AnchorItem
+from defconQt.items.componentItem import ComponentItem
+from defconQt.items.handleLineItem import HandleLineItem
+from defconQt.items.offCurvePointItem import OffCurvePointItem
+from defconQt.items.onCurvePointItem import OnCurvePointItem
+from defconQt.items.pixmapItem import PixmapItem
 from enum import Enum
 
 #TODO: DRY this:

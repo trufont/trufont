@@ -1,4 +1,4 @@
-from defconQt.gotoDialog import GotoDialog
+from defconQt.dialogs.gotoDialog import GotoDialog
 
 class AddComponentDialog(GotoDialog):
 
