@@ -1,6 +1,6 @@
 from defconQt import icons_db  # noqa
 from defconQt.glyphCollectionView import cellSelectionColor
-from defconQt.glyphView import MainGfxWindow
+from defconQt.mainGfxWindow import MainGfxWindow
 from defconQt.objects.defcon import TGlyph
 from getpass import getuser
 from PyQt5.QtCore import QEvent, QSettings, QSize, Qt

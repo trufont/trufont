@@ -4,8 +4,7 @@ from PyQt5.QtWidgets import (
     QApplication, QListWidget, QListWidgetItem, QAbstractItemView, QAction,
     QColorDialog)
 from defconQt import icons_db  # noqa
-from defconQt.glyphView import AddLayerDialog
-
+from defconQt.addLayerDialog import AddLayerDialog
 
 class LayerSetList(QListWidget):
 
