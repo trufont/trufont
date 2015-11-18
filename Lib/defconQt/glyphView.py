@@ -3,13 +3,7 @@ from enum import Enum
 from math import copysign
 from functools import partial
 import pickle
-from defcon import Anchor, Component
-from defconQt import icons_db  # noqa
-from defconQt.objects.defcon import TContour, TGlyph
-from defconQt.objects.sizeGripItem import ResizeHandleItem, SizeGripItem
-from defconQt.pens.copySelectionPen import CopySelectionPen
-from defconQt.util import platformSpecific
-from defconQt.util.roundPosition import roundPosition
+
 from fontTools.misc import bezierTools
 from PyQt5.QtCore import QEvent, QLineF, QMimeData, QPointF, Qt
 from PyQt5.QtGui import (
@@ -23,6 +17,13 @@ from PyQt5.QtWidgets import (
     QListWidget, QMainWindow, QMenu, QRadioButton, QSizePolicy, QStyle,
     QStyleOptionGraphicsItem, QToolBar, QWidget)
 
+from defcon import Anchor, Component
+from defconQt import icons_db  # noqa
+from defconQt.objects.defcon import TContour, TGlyph
+from defconQt.objects.sizeGripItem import ResizeHandleItem
+from defconQt.pens.copySelectionPen import CopySelectionPen
+from defconQt.util import platformSpecific
+from defconQt.util.roundPosition import roundPosition
 from defconQt.addAnchorDialog import AddAnchorDialog
 from defconQt.addComponentDialog import AddComponentDialog
 from defconQt.addLayerDialog import AddLayerDialog
@@ -30,6 +31,7 @@ from defconQt.anchorItem import AnchorItem
 from defconQt.componentItem import ComponentItem
 from defconQt.gotoDialog import GotoDialog
 from defconQt.layerActionsDialog import LayerActionsDialog
+from defconQt.pixmapItem import PixmapItem
 
 class GenericSettings(object):
 
@@ -849,36 +851,6 @@ class VGuidelinesTextItem(QGraphicsSimpleTextItem):
         self.setBrush(metricsColor)
         self.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         self.setFont(font)
-
-
-class PixmapItem(QGraphicsPixmapItem):
-
-    def __init__(self, x, y, pixmap, scale, parent=None):
-        super(QGraphicsPixmapItem, self).__init__(pixmap, parent)
-        self._pixmap = pixmap
-        self.setOffset(x, -y)
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setShapeMode(QGraphicsPixmapItem.BoundingRectShape)
-        self.setTransform(QTransform().fromScale(1, -1))
-        self.setOpacity(.6)
-        self.setZValue(-1)
-        sizeGripItem = SizeGripItem(scale, self)
-        sizeGripItem.setVisible(False)
-
-    def setRect(self, rect):
-        dTopLeft = rect.topLeft() - self.pos()
-        if not dTopLeft.isNull():
-            self.setOffset(dTopLeft)
-        self.setPixmap(self._pixmap.scaled(
-            rect.size().toSize()
-        ))
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemSelectedChange:
-            sizeGripItem = self.childItems()[0]
-            sizeGripItem.setVisible(value)
-        return value
-
 
 class GlyphScene(QGraphicsScene):
 
