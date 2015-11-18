@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QDialog, QGridLayout, QListWidget,
     QDialogButtonBox, QRadioButton)
 
+
 class LayerActionsDialog(QDialog):
 
     def __init__(self, currentGlyph, parent=None):

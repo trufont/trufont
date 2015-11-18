@@ -1,17 +1,12 @@
-from math import copysign
-
-from PyQt5.QtCore import QEvent, QLineF, QMimeData, QPointF, Qt
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (
-    QBrush, QColor, QPainter,
-    QPainterPath, QPen)
+    QBrush, QColor, QPainter, QPen)
 from PyQt5.QtWidgets import (
-    QAction, QGraphicsItem,
-    QGraphicsLineItem, QGraphicsPathItem,
-    QGraphicsView)
+    QAction, QGraphicsItem, QGraphicsPathItem, QGraphicsView)
 
 from defcon import Anchor, Component
 from defconQt import icons_db  # noqa
-from defconQt.objects.defcon import TContour, TGlyph
+from defconQt.objects.defcon import TGlyph
 from defconQt.objects.sizeGripItem import ResizeHandleItem
 from defconQt.util.roundPosition import roundPosition
 from defconQt.dialogs.addAnchorDialog import AddAnchorDialog
@@ -22,7 +17,6 @@ from defconQt.items.componentItem import ComponentItem
 from defconQt.items.handleLineItem import HandleLineItem
 from defconQt.items.offCurvePointItem import OffCurvePointItem
 from defconQt.items.onCurvePointItem import OnCurvePointItem
-from defconQt.items.pixmapItem import PixmapItem
 from defconQt.items.startPointItem import StartPointItem
 from defconQt.items.vGuidelinesTextItem import VGuidelinesTextItem
 from defconQt.glyphScene import GlyphScene, SceneTools
@@ -30,11 +24,10 @@ from defconQt.glyphScene import GlyphScene, SceneTools
 backgroundColor = Qt.white
 bluesColor = QColor.fromRgbF(.5, .7, 1, .3)
 fillColor = QColor(200, 200, 200, 120)  # QColor.fromRgbF(0, 0, 0, .4)
-componentFillColor = QColor.fromRgbF(
-    0, 0, 0, .4)  # QColor.fromRgbF(.2, .2, .3, .4)
+componentFillColor = QColor.fromRgbF(0, 0, 0, .4)  # QColor.fromRgbF(.2, .2, .3, .4)
 metricsColor = QColor(70, 70, 70)
-
 bluesAttrs = ["postscriptBlueValues", "postscriptOtherBlues"]
+
 
 class GlyphView(QGraphicsView):
 

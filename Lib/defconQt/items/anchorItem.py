@@ -1,11 +1,10 @@
-import defconQt
 from defconQt.util.roundPosition import roundPosition
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QGraphicsPathItem, QGraphicsSimpleTextItem,
-    QGraphicsItem, QStyleOptionGraphicsItem, QDialog, QStyle)
+    QGraphicsItem, QStyleOptionGraphicsItem, QStyle)
 from PyQt5.QtGui import (
-    QColor, QTransform, QFont, QBrush, QPen, QPainterPath)
+    QColor, QFont, QBrush, QPen, QPainterPath)
 
 from defconQt.dialogs.addAnchorDialog import AddAnchorDialog
 
@@ -14,6 +13,7 @@ anchorSelectionColor = Qt.blue
 anchorSize = 11
 anchorWidth = anchorHeight = roundPosition(anchorSize)
 anchorHalf = anchorWidth / 2.0
+
 
 class AnchorItem(QGraphicsPathItem):
 

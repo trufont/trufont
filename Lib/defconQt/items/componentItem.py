@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsItem
 from PyQt5.QtGui import QTransform
-from defconQt.objects.sizeGripItem import SizeGripItem
+
 
 class ComponentItem(QGraphicsPathItem):
 

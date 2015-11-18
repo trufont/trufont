@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QMenu
 from functools import partial
 
+
 class GenericSettings(object):
 
     def __init__(self, title, parent, callback):

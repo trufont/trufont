@@ -1,3 +1,4 @@
+from math import copysign
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsItem, QStyleOptionGraphicsItem,

@@ -1,8 +1,9 @@
-from PyQt5.QtCore import Qt, QLineF, QPointF
+from PyQt5.QtCore import Qt, QLineF, QPointF, QEvent
 from PyQt5.QtWidgets import (
     QGraphicsPathItem, QGraphicsItem, QStyleOptionGraphicsItem, QStyle)
 from PyQt5.QtGui import QPainterPath, QBrush, QPen, QColor
 from defconQt.util.roundPosition import roundPosition
+from defconQt.glyphScene import SceneTools
 
 onCurvePenWidth = 1.5
 onCurvePointColor = QColor.fromRgbF(.6, .6, .6, 1)
@@ -14,6 +15,7 @@ onHalf = onWidth / 2.0
 smoothWidth = smoothHeight = roundPosition(onCurveSmoothPointSize)
 smoothHalf = smoothWidth / 2.0
 pointSelectionColor = Qt.red
+
 
 class OnCurvePointItem(QGraphicsPathItem):
 

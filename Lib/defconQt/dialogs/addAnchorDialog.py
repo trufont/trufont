@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QDialog, QGridLayout, QLabel,
     QLineEdit, QDialogButtonBox)
 
+
 class AddAnchorDialog(QDialog):
 
     def __init__(self, pos=None, parent=None):

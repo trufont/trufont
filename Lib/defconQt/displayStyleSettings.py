@@ -1,5 +1,6 @@
 from defconQt.genericSettings import GenericSettings
 
+
 class DisplayStyleSettings(GenericSettings):
     _presets = (
         ('Default', dict(

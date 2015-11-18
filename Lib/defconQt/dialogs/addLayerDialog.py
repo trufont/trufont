@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QDialog, QGridLayout, QLabel,
     QLineEdit, QDialogButtonBox)
 
+
 class AddLayerDialog(QDialog):
 
     def __init__(self, parent=None):

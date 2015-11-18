@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
 from defconQt import icons_db  # noqa
 from defconQt.dialogs.addLayerDialog import AddLayerDialog
 
+
 class LayerSetList(QListWidget):
 
     def __init__(self, parent=None, *args, **kwargs):

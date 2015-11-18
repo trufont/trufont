@@ -1,5 +1,6 @@
 from defconQt.dialogs.gotoDialog import GotoDialog
 
+
 class AddComponentDialog(GotoDialog):
 
     def __init__(self, *args, **kwargs):

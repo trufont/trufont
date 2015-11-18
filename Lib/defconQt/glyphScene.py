@@ -1,13 +1,14 @@
 import pickle
+from math import copysign
 from fontTools.misc import bezierTools
 from collections import OrderedDict
 from defconQt.objects.defcon import TContour, TGlyph
 
 from PyQt5.QtCore import Qt, QMimeData, QLineF, QPointF, QEvent
-from PyQt5.QtGui import QPixmap, QKeySequence, QPixmap, QPainterPath
+from PyQt5.QtGui import QKeySequence, QPixmap, QPainterPath
 from PyQt5.QtWidgets import (
-    QDialog, QGridLayout, QLabel, QGraphicsItem, QGraphicsSimpleTextItem,
-    QLineEdit, QDialogButtonBox, QGraphicsScene, QApplication)
+    QGraphicsItem, QGraphicsSimpleTextItem,
+    QGraphicsScene, QApplication)
 
 from defconQt.pens.copySelectionPen import CopySelectionPen
 from defconQt.util import platformSpecific
@@ -27,11 +28,13 @@ offWidth = offHeight = roundPosition(offCurvePointSize)
 offHalf = offWidth / 2.0
 offCurvePenWidth = 1.0
 
+
 class SceneTools(Enum):
     SelectionTool = 0
     DrawingTool = 1
     RulerTool = 2
     KnifeTool = 3
+
 
 class GlyphScene(QGraphicsScene):
 

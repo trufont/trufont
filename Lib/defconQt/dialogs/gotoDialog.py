@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (
     QDialog, QGridLayout, QLabel, QRadioButton,
     QLineEdit, QDialogButtonBox, QListWidget)
 
+
 class GotoDialog(QDialog):
     alphabetical = [
         dict(type="alphabetical", allowPseudoUnicode=True)

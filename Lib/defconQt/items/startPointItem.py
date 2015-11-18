@@ -1,8 +1,9 @@
 from PyQt5.QtCore import QLineF
-from PyQt5.QtGui import QPainter, QPainterPath
+from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 startItemDist = 10
+
 
 class StartPointItem(QGraphicsPathItem):
 

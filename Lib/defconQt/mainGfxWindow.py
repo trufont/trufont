@@ -10,6 +10,7 @@ from defconQt.dialogs.addLayerDialog import AddLayerDialog
 from defconQt.dialogs.gotoDialog import GotoDialog
 from functools import partial
 
+
 class MainGfxWindow(QMainWindow):
 
     def __init__(self, glyph, parent=None):

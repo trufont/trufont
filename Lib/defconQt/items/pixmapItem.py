@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsItem
 from PyQt5.QtGui import QTransform
 from defconQt.objects.sizeGripItem import SizeGripItem
 
+
 class PixmapItem(QGraphicsPixmapItem):
 
     def __init__(self, x, y, pixmap, scale, parent=None):
