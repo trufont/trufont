@@ -2,6 +2,10 @@
 
 TruFont is a font-editing application written with Python3, ufoLib, defcon and PyQt.
 
+![Font-view window](https://raw.github.com/felipesanches/trufont/screenshots_on_README_md/screenshots/TruFont_fontView_screenshot.png)
+
+![Glyph-view dialog](https://raw.github.com/felipesanches/trufont/screenshots_on_README_md/screenshots/TruFont_glyphView_screenshot.png)
+
 Dependencies:
 
 - Python 3
