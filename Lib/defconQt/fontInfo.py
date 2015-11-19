@@ -317,6 +317,7 @@ class MetricsTab(TabWidget):
         italicAngleLabel = QLabel("Italic angle:", self)
         descenderLabel = QLabel("Descender:", self)
         xHeightLabel = QLabel("x-height:", self)
+        noteLabel = QLabel("Note:", self)
         # In the UFO specs these are integer or float, and unitsPerEm is
         # non-negative integer or float
         self.loadPositiveIntegerFloat(font, "unitsPerEm", "unitsPerEm")
@@ -325,6 +326,7 @@ class MetricsTab(TabWidget):
         self.loadIntegerFloat(font, "italicAngle", "italicAngle")
         self.loadIntegerFloat(font, "descender", "descender")
         self.loadIntegerFloat(font, "xHeight", "xHeight")
+        self.loadMultilineString(font, "note", "note")
 
         mainLayout.addWidget(unitsPerEmLabel, 1, 0)
         mainLayout.addWidget(self.unitsPerEmEdit, 1, 1)
@@ -338,10 +340,6 @@ class MetricsTab(TabWidget):
         mainLayout.addWidget(self.descenderEdit, 2, 3)
         mainLayout.addWidget(xHeightLabel, 2, 4)
         mainLayout.addWidget(self.xHeightEdit, 2, 5)
-
-        noteLabel = QLabel("Note:", self)
-        self.noteEdit = QPlainTextEdit(font.info.note, self)
-
         mainLayout.addWidget(noteLabel, 3, 0)
         mainLayout.addWidget(self.noteEdit, 3, 1, 1, 5)
 
@@ -372,11 +370,7 @@ class MetricsTab(TabWidget):
         self.writeIntegerFloat(font, "capHeight", "capHeight")
         self.writeIntegerFloat(font, "xHeight", "xHeight")
 
-        note = self.noteEdit.toPlainText()
-        if note != '':
-            font.info.note = note
-        else:
-            font.info.note = None
+        self.writeMultilineString(font, "note", "note")
 
 
 class OpenTypeTab(TabWidget):

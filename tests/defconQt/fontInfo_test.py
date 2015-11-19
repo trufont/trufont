@@ -368,7 +368,8 @@ class MetricsTabTest(TabTestCase):
     def test_xHeight(self):
         self.checkIntegerFloat("xHeight", "xHeight", 500)
 
-    # TODO test_noteEdit
+    def test_noteEdit(self):
+        self.checkMultilineString("note", "note")
 
 
 class OpenTypeTabTest(TabTestCase):
