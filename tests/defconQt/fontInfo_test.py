@@ -72,6 +72,19 @@ class TabTestCase(unittest.TestCase):
         self.fontInfo.accept()
         self.assertIsNone(getattr(self.font.info, attrName))
 
+    def checkMultilineString(self, attr, attrName):
+        attrEdit = getattr(self.tab, attr + "Edit")
+        self.assertIsNone(getattr(self.font.info, attrName))
+        self.assertEqual(attrEdit.toPlainText(), "")
+
+        attrEdit.setPlainText("Typeface " + attr)
+        self.fontInfo.accept()
+        self.assertEqual(getattr(self.font.info, attrName), "Typeface " + attr)
+
+        attrEdit.setPlainText("")
+        self.fontInfo.accept()
+        self.assertIsNone(getattr(self.font.info, attrName))
+
     def checkInteger(self, attr, attrName, value=0):
         attrEdit = getattr(self.tab, attr + "Edit")
         if value == 0:
@@ -292,7 +305,7 @@ class GeneralTabTest(TabTestCase):
         self.checkString("styleName", "styleName")
 
     def test_copyright(self):
-        self.checkString("copyright", "copyright")
+        self.checkMultilineString("copyright", "copyright")
 
     def test_trademark(self):
         self.checkString("trademark", "trademark")
@@ -310,7 +323,7 @@ class GeneralTabTest(TabTestCase):
         self.checkString("manufacturerURL", "openTypeNameManufacturerURL")
 
     def test_license(self):
-        self.checkString("license", "openTypeNameLicense")
+        self.checkMultilineString("license", "openTypeNameLicense")
 
     def test_licenseURL(self):
         self.checkString("licenseURL", "openTypeNameLicenseURL")

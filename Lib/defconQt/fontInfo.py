@@ -68,6 +68,20 @@ class TabWidget(QWidget):
         else:
             setattr(font.info, dst, None)
 
+    def loadMultilineString(self, font, src, dst):
+        value = getattr(font.info, src)
+        if value is not None:
+            setattr(self, dst + "Edit", QPlainTextEdit(value, self))
+        else:
+            setattr(self, dst + "Edit", QPlainTextEdit(None, self))
+
+    def writeMultilineString(self, font, src, dst):
+        value = getattr(self, src + "Edit").toPlainText()
+        if value != "":
+            setattr(font.info, dst, value)
+        else:
+            setattr(font.info, dst, None)
+
     def loadInteger(self, font, src, dst):
         value = getattr(font.info, src)
         if value is not None:
@@ -189,8 +203,8 @@ class GeneralTab(TabWidget):
         self.loadString(font, "openTypeNameDesignerURL", "designerURL")
         self.loadString(font, "openTypeNameManufacturer", "manufacturer")
         self.loadString(font, "openTypeNameManufacturerURL", "manufacturerURL")
-        self.loadString(font, "copyright", "copyright")
-        self.loadString(font, "openTypeNameLicense", "license")
+        self.loadMultilineString(font, "copyright", "copyright")
+        self.loadMultilineString(font, "openTypeNameLicense", "license")
         self.loadString(font, "openTypeNameLicenseURL", "licenseURL")
         self.loadString(font, "trademark", "trademark")
         self.loadInteger(font, "versionMajor", "versionMajor")
@@ -251,13 +265,13 @@ class GeneralTab(TabWidget):
         self.writeString(font, "familyName", "familyName")
         self.writeString(font, "styleName", "styleName")
         self.writeString(font, "trademark", "trademark")
-        self.writeString(font, "copyright", "copyright")
+        self.writeMultilineString(font, "copyright", "copyright")
         self.writeString(font, "designer", "openTypeNameDesigner")
         self.writeString(font, "designerURL", "openTypeNameDesignerURL")
         self.writeString(font, "manufacturer", "openTypeNameManufacturer")
         self.writeString(
             font, "manufacturerURL", "openTypeNameManufacturerURL")
-        self.writeString(font, "license", "openTypeNameLicense")
+        self.writeMultilineString(font, "license", "openTypeNameLicense")
         self.writeString(font, "licenseURL", "openTypeNameLicenseURL")
 
         self.writeInteger(font, "versionMajor", "versionMajor")
