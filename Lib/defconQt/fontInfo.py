@@ -68,6 +68,20 @@ class TabWidget(QWidget):
         else:
             setattr(font.info, dst, None)
 
+    def loadMultilineString(self, font, src, dst):
+        value = getattr(font.info, src)
+        if value is not None:
+            setattr(self, dst + "Edit", QPlainTextEdit(value, self))
+        else:
+            setattr(self, dst + "Edit", QPlainTextEdit(None, self))
+
+    def writeMultilineString(self, font, src, dst):
+        value = getattr(self, src + "Edit").toPlainText()
+        if value != "":
+            setattr(font.info, dst, value)
+        else:
+            setattr(font.info, dst, None)
+
     def loadInteger(self, font, src, dst):
         value = getattr(font.info, src)
         if value is not None:
@@ -189,8 +203,8 @@ class GeneralTab(TabWidget):
         self.loadString(font, "openTypeNameDesignerURL", "designerURL")
         self.loadString(font, "openTypeNameManufacturer", "manufacturer")
         self.loadString(font, "openTypeNameManufacturerURL", "manufacturerURL")
-        self.loadString(font, "copyright", "copyright")
-        self.loadString(font, "openTypeNameLicense", "license")
+        self.loadMultilineString(font, "copyright", "copyright")
+        self.loadMultilineString(font, "openTypeNameLicense", "license")
         self.loadString(font, "openTypeNameLicenseURL", "licenseURL")
         self.loadString(font, "trademark", "trademark")
         self.loadInteger(font, "versionMajor", "versionMajor")
@@ -251,13 +265,13 @@ class GeneralTab(TabWidget):
         self.writeString(font, "familyName", "familyName")
         self.writeString(font, "styleName", "styleName")
         self.writeString(font, "trademark", "trademark")
-        self.writeString(font, "copyright", "copyright")
+        self.writeMultilineString(font, "copyright", "copyright")
         self.writeString(font, "designer", "openTypeNameDesigner")
         self.writeString(font, "designerURL", "openTypeNameDesignerURL")
         self.writeString(font, "manufacturer", "openTypeNameManufacturer")
         self.writeString(
             font, "manufacturerURL", "openTypeNameManufacturerURL")
-        self.writeString(font, "license", "openTypeNameLicense")
+        self.writeMultilineString(font, "license", "openTypeNameLicense")
         self.writeString(font, "licenseURL", "openTypeNameLicenseURL")
 
         self.writeInteger(font, "versionMajor", "versionMajor")
@@ -303,6 +317,7 @@ class MetricsTab(TabWidget):
         italicAngleLabel = QLabel("Italic angle:", self)
         descenderLabel = QLabel("Descender:", self)
         xHeightLabel = QLabel("x-height:", self)
+        noteLabel = QLabel("Note:", self)
         # In the UFO specs these are integer or float, and unitsPerEm is
         # non-negative integer or float
         self.loadPositiveIntegerFloat(font, "unitsPerEm", "unitsPerEm")
@@ -311,6 +326,7 @@ class MetricsTab(TabWidget):
         self.loadIntegerFloat(font, "italicAngle", "italicAngle")
         self.loadIntegerFloat(font, "descender", "descender")
         self.loadIntegerFloat(font, "xHeight", "xHeight")
+        self.loadMultilineString(font, "note", "note")
 
         mainLayout.addWidget(unitsPerEmLabel, 1, 0)
         mainLayout.addWidget(self.unitsPerEmEdit, 1, 1)
@@ -324,10 +340,6 @@ class MetricsTab(TabWidget):
         mainLayout.addWidget(self.descenderEdit, 2, 3)
         mainLayout.addWidget(xHeightLabel, 2, 4)
         mainLayout.addWidget(self.xHeightEdit, 2, 5)
-
-        noteLabel = QLabel("Note:", self)
-        self.noteEdit = QPlainTextEdit(font.info.note, self)
-
         mainLayout.addWidget(noteLabel, 3, 0)
         mainLayout.addWidget(self.noteEdit, 3, 1, 1, 5)
 
@@ -358,11 +370,7 @@ class MetricsTab(TabWidget):
         self.writeIntegerFloat(font, "capHeight", "capHeight")
         self.writeIntegerFloat(font, "xHeight", "xHeight")
 
-        note = self.noteEdit.toPlainText()
-        if note != '':
-            font.info.note = note
-        else:
-            font.info.note = None
+        self.writeMultilineString(font, "note", "note")
 
 
 class OpenTypeTab(TabWidget):
