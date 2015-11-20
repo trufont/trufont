@@ -3,7 +3,15 @@ from PyQt5.QtWidgets import (
     QGraphicsPathItem, QGraphicsItem, QStyleOptionGraphicsItem, QStyle)
 from PyQt5.QtGui import QPainterPath, QBrush, QPen, QColor
 from defconQt.util.roundPosition import roundPosition
-from defconQt.glyphScene import SceneTools
+from enum import Enum
+
+
+#TODO: DRY this!
+class SceneTools(Enum):
+    SelectionTool = 0
+    DrawingTool = 1
+    RulerTool = 2
+    KnifeTool = 3
 
 onCurvePenWidth = 1.5
 onCurvePointColor = QColor.fromRgbF(.6, .6, .6, 1)
