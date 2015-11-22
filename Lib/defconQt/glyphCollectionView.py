@@ -399,9 +399,7 @@ class GlyphCollectionWidget(QWidget):
                     selection.add(index)
                     self.selection = selection
             elif modifiers & Qt.ShiftModifier:
-                newSelection = self._linearSelection(index)
-                if newSelection is not None:
-                    self.selection = newSelection
+                self.selection = self._linearSelection(index)
             elif index not in self._selection:
                 self.selection = {index}
             else:
@@ -447,9 +445,7 @@ class GlyphCollectionWidget(QWidget):
                     selection.add(index)
                     self.selection = selection
             elif modifiers & Qt.ShiftModifier:
-                newSelection = self._linearSelection(index)
-                if newSelection is not None:
-                    self.selection = newSelection
+                self.selection = self._linearSelection(index)
             else:
                 self.selection = {index}
             self.lastSelectedCell = index

@@ -105,9 +105,6 @@ class GroupCollectionWidget(GlyphCollectionWidget):
         self.characterDropCallback = None
         self.resize(self.width(), 200)
 
-    # TODO: The standard QListWidget has scrollbar and does not need three
-    #       times parent call.
-    #       Find out how to handle that properly.
     def keyPressEvent(self, event):
         if event.key() == platformSpecific.deleteKey:
             if self.characterDeletionCallback is not None:

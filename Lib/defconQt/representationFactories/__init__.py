@@ -3,7 +3,7 @@ from defconQt.representationFactories.qPainterPathFactory import (
     QPainterPathFactory)
 from defconQt.representationFactories.glyphViewFactory import (
     NoComponentsQPainterPathFactory, OnlyComponentsQPainterPathFactory,
-    OutlineInformationFactory, StartPointsInformationFactory)
+    OutlineInformationFactory, OutlineInformationFactory_, StartPointsInformationFactory)
 
 # TODO: add a glyph pixmap factory parametrized on glyph size
 # TODO: fine-tune the destructive notifications
@@ -15,6 +15,8 @@ _factories = {
         NoComponentsQPainterPathFactory, None),
     "defconQt.OutlineInformation": (
         OutlineInformationFactory, None),
+    "defconQt.OutlineInformation_": (
+        OutlineInformationFactory_, None),
     "defconQt.StartPointsInformation": (
         StartPointsInformationFactory, None),
 }

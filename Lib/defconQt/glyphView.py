@@ -2296,7 +2296,7 @@ class GlyphView(QGraphicsView):
         pointItems = self._getSceneItems('points', clear=True)
         # use the data from the outline representation
         outlineData = self._glyph.getRepresentation(
-            "defconQt.OutlineInformation")
+            "defconQt.OutlineInformation_")
         scale = self.transform().m11()
         for onCurve in outlineData:
             # on curve

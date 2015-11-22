@@ -3,6 +3,7 @@ from defconQt.featureTextEditor import MainEditWindow
 from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
+from defconQt.glyphView_ng import MainGVWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.layerSetList import LayerSetList
 from defconQt.scriptingWindow import MainScriptingWindow
@@ -1117,7 +1118,10 @@ class MainWindow(QMainWindow):
         self.collectionWidget.glyphs = glyphs
 
     def _glyphOpened(self, glyph):
-        glyphViewWindow = MainGfxWindow(glyph, self)
+        if QApplication.keyboardModifiers() & Qt.ShiftModifier:
+            glyphViewWindow = MainGfxWindow(glyph, self)
+        else:
+            glyphViewWindow = MainGVWindow(glyph, self)
         glyphViewWindow.show()
 
     def _selectionChanged(self, selection):
