@@ -62,6 +62,47 @@ class OnlyComponentsQtPen(BasePen):
             tPen = TransformPen(self.pen, transformation)
             glyph.draw(tPen)
 
+# --------------------
+# curve path and lines
+# --------------------
+
+def SplitLinesQPainterPathFactory(glyph):
+    # No need for a glyphSet, because the glyphSet argument is only needed
+    #  to draw the components.
+    pen = SplitLinesFromPathQtPen({})
+    glyph.draw(pen)
+    pen.path.setFillRule(Qt.WindingFill)
+    return (pen.path, pen.lines)
+
+
+class SplitLinesFromPathQtPen(QtPen):
+    def __init__(self, glyphSet, path=None):
+        super().__init__(glyphSet, path)
+        self.lines = []
+        self._curPos = (0, 0)
+        self._initPos = None
+
+    def _moveTo(self, p):
+        super()._moveTo(p)
+        self._curPos = (p[0], p[1])
+        if self._initPos is None:
+            self._initPos = self._curPos
+
+    def _lineTo(self, p):
+        self.lines.append((self._curPos[0], self._curPos[1], p[0], p[1]))
+        self._moveTo(p)
+
+    def _curveToOne(self, p1, p2, p3):
+        super()._curveToOne(p1, p2, p3)
+        self._curPos = (p3[0], p3[1])
+        if self._initPos is None:
+            self._initPos = self._curPos
+
+    def _closePath(self):
+        if self._initPos is not None and self._curPos != self._initPos:
+            self.lines.append((self._curPos[0], self._curPos[1], self._initPos[0], self._initPos[1]))
+        self._initPos = None
+
 # ------------
 # start points
 # ------------
@@ -275,3 +316,53 @@ def OutlineInformationFactory_(glyph):
     pen = OutlineInformationPen_()
     glyph.drawPoints(pen)
     return pen.getData()
+
+# -----
+# image
+# -----
+
+def QPixmapFactory(image):
+    font = image.font
+    if font is None:
+        return
+    layer = image.layer
+    images = font.images
+    if image.fileName not in images:
+        return None
+    imageColor = image.color
+    if imageColor is None:
+        imageColor = layer.color
+    data = images[image.fileName]
+    data = QPixmap.loadFromData(data, len(data))
+    if imageColor is None:
+        return data
+    # XXX: color filter left unimplemented
+    return data
+    """
+    # make the input image
+    inputImage = CIImage.imageWithData_(data)
+    # make a color filter
+    r, g, b, a = imageColor
+    color0 = CIColor.colorWithRed_green_blue_(r, g, b)
+    color1 = CIColor.colorWithRed_green_blue_(1, 1, 1)
+    falseColorFilter = CIFilter.filterWithName_("CIFalseColor")
+    falseColorFilter.setValue_forKey_(inputImage, "inputImage")
+    falseColorFilter.setValue_forKey_(color0, "inputColor0")
+    falseColorFilter.setValue_forKey_(color1, "inputColor1")
+    # get the result
+    ciImage = falseColorFilter.valueForKey_("outputImage")
+    # make an NSImage
+    nsImage = NSImage.alloc().initWithSize_(ciImage.extent().size)
+    nsImage.lockFocus()
+    context = NSGraphicsContext.currentContext().CIContext()
+    context.drawImage_atPoint_fromRect_(ciImage, (0, 0), ciImage.extent())
+    nsImage.unlockFocus()
+    # apply the alpha
+    finalImage = NSImage.alloc().initWithSize_(nsImage.size())
+    finalImage.lockFocus()
+    nsImage.drawAtPoint_fromRect_operation_fraction_(
+        (0, 0), ((0, 0), nsImage.size()), NSCompositeSourceOver, a
+    )
+    finalImage.unlockFocus()
+    return finalImage
+    """

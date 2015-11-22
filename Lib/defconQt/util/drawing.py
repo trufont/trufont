@@ -60,7 +60,7 @@ _defaultColors = dict(
     # contour stroke
     glyphContourStroke=QColor.fromRgbF(0, 0, 0, 1),
     # component fill
-    glyphComponentFill=QColor.fromRgbF(0, 0, 0, 1),
+    glyphComponentFill=QColor.fromRgbF(0, 0, 0, .4),
     # component stroke
     glyphComponentStroke=QColor.fromRgbF(0, 0, 0, 1),
     # points
@@ -95,6 +95,14 @@ def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
     painter.drawLine(x1, y1, x2, y2)
     painter.restore()
 
+def drawGlyphWithAliasedLines(painter, glyph):
+    curvePath, lines = glyph.getRepresentation(
+        "defconQt.SplitLinesQPainterPathFactory")
+    painter.drawPath(curvePath)
+    # TODO: maybe switch to QLineF for this repr
+    for x1, y1, x2, y2 in lines:
+        drawLine(painter, x1, y1, x2, y2, painter.pen().widthF())
+
 # TODO: shim shadow
 def drawTextAtPoint(painter, text, x, y, scale, xAlign="left", yAlign="bottom",
                     flipped=True):
@@ -121,9 +129,6 @@ def drawTextAtPoint(painter, text, x, y, scale, xAlign="left", yAlign="bottom",
         s = scale
     painter.translate(x, y)
     painter.scale(scale, s)
-    ### TEST
-    #painter.fillRect(0, -painter.fontMetrics().ascent(), painter.fontMetrics().width(text), painter.fontMetrics().lineSpacing(), Qt.green)
-    ### END TEST
     painter.drawText(0, 0, text)
     painter.restore()
 
@@ -172,10 +177,6 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True, drawTex
     # draw text
     if drawText:
         fontSize = 9
-        # TODO: maybe add pointSize argument to drawTextAtPoint
-        #font = painter.font()
-        #font.setPointSize(fontSize)
-        #painter.setFont(font)
         x = xMin + 5 * scale
         for y, text in lines:
             y -= (fontSize / 2.0) * scale
@@ -222,22 +223,14 @@ def _drawBlues(painter, blues, rect, color):
 
 # Image
 
-def drawGlyphImage(painter, glyph, scale, rect, backgroundColor=None):
-    pass
-    """
+def drawGlyphImage(painter, glyph, scale, rect):
     if glyph.image.fileName is None:
         return
-    context = NSGraphicsContext.currentContext()
-    context.saveGraphicsState()
-    aT = NSAffineTransform.transform()
-    aT.setTransformStruct_(glyph.image.transformation)
-    aT.concat()
-    image = glyph.image.getRepresentation("defconAppKit.NSImage")
-    image.drawAtPoint_fromRect_operation_fraction_(
-        (0, 0), ((0, 0), image.size()), NSCompositeSourceOver, 1.0
-    )
-    context.restoreGraphicsState()
-    """
+    painter.save()
+    painter.setTransform(QTransform(*glyph.image.transformation), True)
+    image = glyph.image.getRepresentation("defconQt.QPixmap")
+    painter.drawPixmap(0, 0, image)
+    painter.restore()
 
 # Margins
 
@@ -285,16 +278,6 @@ def drawGlyphFillAndStroke(painter, glyph, scale, rect,
             componentFillColor = layerColor
         elif componentFillColor is None and layerColor is None:
             componentFillColor = defaultColor("glyphComponentFill")
-        """
-        # make the fill less opaque if stroking
-        if drawStroke:
-            contourFillColor = QColor(contourFillColor)
-            aF = contourFillColor.alphaF()
-            contourFillColor.setAlphaF(aF * .6)
-            componentFillColor = QColor(componentFillColor)
-            aF = componentFillColor.alphaF()
-            componentFillColor.setAlphaF(aF * .6)
-        """
         # components
         painter.fillPath(componentPath, QBrush(componentFillColor))
         # contours
@@ -310,7 +293,8 @@ def drawGlyphFillAndStroke(painter, glyph, scale, rect,
         pen = QPen(contourStrokeColor)
         pen.setWidthF(contourStrokeWidth * scale)
         painter.setPen(pen)
-        painter.drawPath(contourPath)
+        #painter.drawPath(contourPath)
+        drawGlyphWithAliasedLines(painter, glyph)
     painter.restore()
 
 # points
@@ -337,7 +321,7 @@ def drawGlyphPoints(painter, glyph, scale, rect,
         path = QPainterPath()
         for point, angle in outlineData["startPoints"]:
             x, y = point
-            if angle is not None:
+            if False and angle is not None:
                 path.moveTo(x, y)
                 # XXX
                 #path.appendBezierPathWithArcWithCenter_radius_startAngle_endAngle_clockwise_(
@@ -406,9 +390,6 @@ def drawGlyphPoints(painter, glyph, scale, rect,
         color = QColor(color)
         color.setAlphaF(color.alphaF() * .6)
         painter.save()
-        #font = painter.font()
-        #font.setPointSize(9)
-        #painter.setFont(font)
         painter.setPen(color)
         for x, y in points:
             posX = x
@@ -427,16 +408,12 @@ def drawGlyphPoints(painter, glyph, scale, rect,
 
 # Anchors
 
-def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchor=True, drawText=True, color=None):#, backgroundColor=None
+def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchor=True, drawText=True, color=None):
     if not glyph.anchors:
         return
     if color is None:
         color = defaultColor("glyphAnchor")
     fallbackColor = color
-    """
-    if backgroundColor is None:
-        backgroundColor = defaultColor("background")
-    """
     anchorSize = 6 * scale
     anchorHalfSize = anchorSize / 2
     for anchor in glyph.anchors:
@@ -461,9 +438,6 @@ def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchor=True, drawText=True
                 anchorSize, anchorSize)
             painter.fillPath(path, color)
         if drawText and name:
-            #font = painter.font()
-            #font.setPointSize(9)
-            #painter.setFont(font)
             painter.setPen(color)
             # TODO: we're using + before we shift to top, ideally this should
             # be abstracted w drawTextAtPoint taking a dy parameter that will

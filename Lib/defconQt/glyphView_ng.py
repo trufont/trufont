@@ -1,6 +1,5 @@
 from defconQt.glyphCollectionView import headerFont
-# XXX: drawingTools sound too much like canvas tools
-from defconQt.util import drawingTools
+from defconQt.util import drawing
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -12,7 +11,7 @@ class MainGVWindow(QMainWindow):
         self.view = GlyphView(self)
         self.view.setGlyph(glyph)
         self.setCentralWidget(self.view.scrollArea())
-        self.resize(800, 700)
+        self.resize(900, 700)
 
 
 class GlyphView(QWidget):
@@ -27,7 +26,7 @@ class GlyphView(QWidget):
             showGlyphStroke=True,
             showGlyphOnCurvePoints=True,
             showGlyphStartPoints=True,
-            showGlyphOffCurvePoints=True, #
+            showGlyphOffCurvePoints=True,
             showGlyphPointCoordinates=False,
             showGlyphAnchors=True,
             showGlyphImage=False,
@@ -110,7 +109,6 @@ class GlyphView(QWidget):
                 self._capHeight = font.info.capHeight
             self.setScale(self._scale)
             self.adjustSize()
-            #self.recalculateFrame()
         self.update()
 
     # --------------------
@@ -294,29 +292,29 @@ class GlyphView(QWidget):
         painter.restore()
 
     def drawImage(self, painter, glyph, layerName):
-        drawingTools.drawGlyphImage(
+        drawing.drawGlyphImage(
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawBlues(self, painter, glyph, layerName):
-        drawingTools.drawFontPostscriptBlues(
+        drawing.drawFontPostscriptBlues(
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawFamilyBlues(self, painter, glyph, layerName):
-        drawingTools.drawFontPostscriptFamilyBlues(
+        drawing.drawFontPostscriptFamilyBlues(
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawVerticalMetrics(self, painter, glyph, layerName):
-        drawingTools.drawFontVerticalMetrics(
+        drawing.drawFontVerticalMetrics(
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawMargins(self, painter, glyph, layerName):
-        drawingTools.drawGlyphMargins(
+        drawing.drawGlyphMargins(
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawFillAndStroke(self, painter, glyph, layerName):
         showFill = self.drawingAttribute("showGlyphFill", layerName)
         showStroke = self.drawingAttribute("showGlyphStroke", layerName)
-        drawingTools.drawGlyphFillAndStroke(
+        drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawFill=showFill, drawStroke=showStroke)
 
@@ -329,7 +327,7 @@ class GlyphView(QWidget):
             "showGlyphOffCurvePoints", layerName) and self._impliedPointSize > 175
         drawCoordinates = self.drawingAttribute(
             "showGlyphPointCoordinates", layerName) and self._impliedPointSize > 250
-        drawingTools.drawGlyphPoints(
+        drawing.drawGlyphPoints(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
             drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates,
@@ -337,9 +335,9 @@ class GlyphView(QWidget):
 
     def drawAnchors(self, painter, glyph, layerName):
         drawText = self._impliedPointSize > 50
-        drawingTools.drawGlyphAnchors(
+        drawing.drawGlyphAnchors(
             painter, glyph, self._inverseScale, self._drawingRect,
-            drawText=drawText)#, backgroundColor=self._backgroundColor)
+            drawText=drawText)
 
     def scrollArea(self):
         return self._scrollArea
@@ -364,29 +362,48 @@ class GlyphView(QWidget):
         return QSize(width, height)
 
     def resizeEvent(self, event):
-        print("resize!")
         self.adjustSize()
         event.accept()
 
-    def _showEvent(self, event):
-        print("showtime!")
+    '''
+    def centerOn(self, pos):
+        hSB = self._scrollArea.horizontalScrollBar()
+        vX = pos.x() / self.width()
+        hMin, hMax = hSB.minimum(), hSB.maximum()
+        hSB.setValue(hMin + (hMax - hMin) * vX)
+        vSB = self._scrollArea.verticalScrollBar()
+        vY = pos.y() / self.height()
+        vMin, vMax = vSB.minimum(), vSB.maximum()
+        vSB.setValue(vMin + (vMax - vMin) * vX)
+    '''
+
+    def showEvent(self, event):
         self._fitScale()
         self.adjustSize()
-        # TODO: switch to QRect?
-        #if self._drawingRect is not None:
-        xC, yC = self.width() / 2, self.height() / 2
-        #xM, yM = self._glyph.width / 2
-        self._scrollArea.ensureVisible(xC, yC)
+        hSB = self._scrollArea.horizontalScrollBar()
+        vSB = self._scrollArea.verticalScrollBar()
+        hSB.setValue((hSB.minimum() + hSB.maximum()) / 2)
+        vSB.setValue((vSB.minimum() + vSB.maximum()) / 2)
 
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
             factor = pow(1.2, event.angleDelta().y() / 120.0)
-            # TODO: anchor on scale
+            # compute new scrollbar position
+            # http://stackoverflow.com/a/32269574/2037879
+            oldScale = self._scale
+            newScale = self._scale * factor
+            hSB = self._scrollArea.horizontalScrollBar()
+            vSB = self._scrollArea.verticalScrollBar()
+            scrollBarPos = QPointF(hSB.value(), vSB.value())
+            deltaToPos = self.mapToParent(event.pos()) / oldScale - self.pos() / oldScale
+            delta = deltaToPos * newScale - deltaToPos * oldScale
             # TODO: maybe put out a func that does multiply by default
             self.setScale(self._scale * factor)
             # TODO: maybe merge this in setScale
             self.adjustSize()
             self.update()
+            hSB.setValue(scrollBarPos.x() + delta.x())
+            vSB.setValue(scrollBarPos.y() + delta.y())
             event.accept()
         else:
             super().wheelEvent(event)
