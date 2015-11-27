@@ -1,8 +1,10 @@
 from defconQt.objects.defcon import TGlyph
 from robofab.pens.pointPen import AbstractPointPen
 
+# TODO: maybe make this a representation
 
-class CopySelectionPen(AbstractPointPen):
+
+class FilterSelectionPen(AbstractPointPen):
 
     def __init__(self, glyph=None):
         if glyph is None:
@@ -18,7 +20,7 @@ class CopySelectionPen(AbstractPointPen):
 
     def endPath(self, keepOpened=False):
         if self._havePoint:
-            self.elideOrphanOffCurves(True)
+            self._elideOrphanOffCurves(True)
             if self._originalContourIsOpen or keepOpened:
                 self._contour[0].segmentType = "move"
             self._contour.dirty = False
@@ -36,7 +38,7 @@ class CopySelectionPen(AbstractPointPen):
                 self._havePoint = True
             self._contour.addPoint(pt, segmentType, smooth, name)
         else:
-            self.elideOrphanOffCurves(False)
+            self._elideOrphanOffCurves(False)
             if self._havePoint:
                 # We started drawing a path and we have a gap in it. Create
                 # a new contour (and leave this one opened).
@@ -46,7 +48,7 @@ class CopySelectionPen(AbstractPointPen):
     def addComponent(self, baseGlyphName, transformation):
         pass  # XXX
 
-    def elideOrphanOffCurves(self, arrivedAtBoundary):
+    def _elideOrphanOffCurves(self, arrivedAtBoundary):
         # onCurves that aren't selected and preceding offCurves if any are
         # elided
         for _ in range(2):

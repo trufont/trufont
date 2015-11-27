@@ -3,9 +3,10 @@
 	<file>resources/app.png</file>
 	<file>resources/cursor.svg</file>
 	<file>resources/curve.svg</file>
-	<file>resources/cut.svg</file>
+	<file>resources/cutter.svg</file>
 	<file>resources/ruler.svg</file>
 	<file>resources/defaultColor.svg</file>
 	<file>resources/settings.svg</file>
+	<file>resources/union.svg</file>
 </qresource>
 </RCC>

@@ -7,7 +7,7 @@ from defcon import Anchor, Component
 from defconQt import icons_db  # noqa
 from defconQt.objects.defcon import TContour, TGlyph
 from defconQt.objects.sizeGripItem import ResizeHandleItem, SizeGripItem
-from defconQt.pens.copySelectionPen import CopySelectionPen
+from defconQt.pens.filterSelectionPen import FilterSelectionPen
 from defconQt.util import platformSpecific
 from fontTools.misc import bezierTools
 from PyQt5.QtCore import QEvent, QLineF, QMimeData, QPointF, Qt
@@ -399,7 +399,7 @@ class MainGfxWindow(QMainWindow):
         knifeToolButton = toolBar.addAction(
             "Knife", self._redirect('view', 'setSceneKnife'))
         knifeToolButton.setCheckable(True)
-        knifeToolButton.setIcon(QIcon(":/resources/cut.svg"))
+        knifeToolButton.setIcon(QIcon(":/resources/cutter.svg"))
 
         # http://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
         spacer = QWidget()
@@ -927,7 +927,7 @@ class OnCurvePointItem(QGraphicsPathItem):
         else:
             delta = 1
 
-        self._contour[pointIndex + delta].selected = value
+        self._contour.getPoint(pointIndex + delta).selected = value
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -1367,7 +1367,7 @@ class GlyphScene(QGraphicsScene):
         elif event.matches(QKeySequence.Copy):
             clipboard = QApplication.clipboard()
             mimeData = QMimeData()
-            pen = CopySelectionPen()
+            pen = FilterSelectionPen()
             self._glyphObject.drawPoints(pen)
             copyGlyph = pen.getGlyph()
             # TODO: somehow try to do this in the pen

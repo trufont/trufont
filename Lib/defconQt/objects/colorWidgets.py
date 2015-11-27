@@ -30,7 +30,7 @@ class ColorVignette(QWidget):
         event.accept()
         if self._readOnly:
             return
-        dialog = QColorDialog()
+        dialog = QColorDialog(self._color)
         ok = dialog.exec_()
         if ok:
             self.setColor(dialog.currentColor())
@@ -55,7 +55,6 @@ class ColorVignette(QWidget):
         panel.lineWidth = 2
         panel.midLineWidth = 0
         panel.rect = panel.rect.adjusted(*self._margins)
-        panel.state = panel.state | QStyle.State_Sunken
         self.style().drawPrimitive(QStyle.PE_Frame, panel, painter, self)
         r = self.style().subElementRect(QStyle.SE_FrameContents, panel, self)
         painter.fillRect(r, Qt.white)
