@@ -272,7 +272,7 @@ class InspectorWindow(QWidget):
         self.move(x, y)
 
     def hSymmetry(self):
-        if not len(self._glyph):
+        if self._glyph is None:
             return
         controlPointBounds = self._glyph.controlPointBounds
         if controlPointBounds is None:
@@ -284,7 +284,7 @@ class InspectorWindow(QWidget):
         self._glyph.dirty = True
 
     def vSymmetry(self):
-        if not len(self._glyph):
+        if self._glyph is None:
             return
         controlPointBounds = self._glyph.controlPointBounds
         if controlPointBounds is None:
@@ -1363,7 +1363,7 @@ class GlyphSetTab(QWidget):
         splitter.addWidget(self.glyphSetList)
         splitter.addWidget(self.glyphSetContents)
         self.addGlyphSetButton = QPushButton("+", self)
-        self.addGlyphSetButton.clicked.connect(self.addGlyphSet)
+        self.addGlyphSetButton.clicked.connect(lambda: self.addGlyphSet())
         self.removeGlyphSetButton = QPushButton("−", self)
         self.removeGlyphSetButton.setEnabled(len(self.glyphSets) > 1)
         self.removeGlyphSetButton.clicked.connect(self.removeGlyphSet)
