@@ -2,7 +2,7 @@ from defconQt import __version__
 from defconQt.featureTextEditor import MainEditWindow
 from defconQt.fontInfo import TabDialog
 from defconQt.glyphCollectionView import GlyphCollectionWidget
-from defconQt.glyphView import MainGfxWindow
+from defconQt.mainGfxWindow import MainGfxWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.layerSetList import LayerSetList
 from defconQt.scriptingWindow import MainScriptingWindow
