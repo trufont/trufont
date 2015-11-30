@@ -115,10 +115,10 @@ class GotoDialog(QDialog):
 
 class AddAnchorDialog(QDialog):
 
-    def __init__(self, pos=None, parent=None):
+    def __init__(self, pos=None, parent=None, oldName=""):
         super(AddAnchorDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        if pos is not None:
+        if not oldName:
             self.setWindowTitle("Add anchor…")
         else:
             self.setWindowTitle("Rename anchor…")
@@ -126,7 +126,7 @@ class AddAnchorDialog(QDialog):
         layout = QGridLayout(self)
 
         anchorNameLabel = QLabel("Anchor name:", self)
-        self.anchorNameEdit = QLineEdit(self)
+        self.anchorNameEdit = QLineEdit(oldName, self)
         self.anchorNameEdit.setFocus(True)
         if pos is not None:
             anchorPositionLabel = QLabel(
@@ -149,8 +149,8 @@ class AddAnchorDialog(QDialog):
         self.setLayout(layout)
 
     @classmethod
-    def getNewAnchorName(cls, parent, pos=None):
-        dialog = cls(pos, parent)
+    def getNewAnchorName(cls, parent, pos=None, oldName=""):
+        dialog = cls(pos, parent, oldName)
         result = dialog.exec_()
         name = dialog.anchorNameEdit.text()
         return (name, result)
@@ -1122,7 +1122,9 @@ class AnchorItem(QGraphicsPathItem):
 
     def mouseDoubleClickEvent(self, event):
         view = self.scene().views()[0]
-        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(view)
+        name = self._anchor.name
+        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(view,
+                                                             oldName=name)
         if ok:
             self._anchor.name = newAnchorName
 
