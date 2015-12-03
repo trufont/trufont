@@ -40,8 +40,8 @@ except:
 setup(
     name="defconQt",
     version="0.2.0",
-    description="Trufont, a cross-platform font editor (a set of Qt interface "
-                "objects for working with font data).",
+    description="TruFont, a cross-platform font editor. Includes a set of Qt "
+                "objects for working with font data.",
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
     url="http://trufont.github.io",
@@ -49,8 +49,8 @@ setup(
     packages=[
         "defconQt",
         "defconQt.objects",
-        "defconQt.pens",
         "defconQt.representationFactories",
+        "defconQt.tools",
         "defconQt.util",
     ],
     entry_points={

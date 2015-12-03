@@ -31,6 +31,7 @@ class ColorVignette(QWidget):
         if self._readOnly:
             return
         dialog = QColorDialog(self._color)
+        dialog.setOptions(QColorDialog.ShowAlphaChannel)
         ok = dialog.exec_()
         if ok:
             self.setColor(dialog.currentColor())

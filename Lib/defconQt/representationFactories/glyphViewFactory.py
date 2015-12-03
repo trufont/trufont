@@ -1,8 +1,9 @@
 from collections import namedtuple
-import math
+from defconQt.objects.defcon import TContour, TGlyph
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
+import math
 from PyQt5.QtCore import Qt
 from robofab.pens.pointPen import AbstractPointPen
 
@@ -12,9 +13,7 @@ from robofab.pens.pointPen import AbstractPointPen
 # -------------
 
 def NoComponentsQPainterPathFactory(glyph):
-    # No need for a glyphSet, because the glyphSet argument is only needed
-    #  to draw the components.
-    pen = NoComponentsQtPen({})
+    pen = NoComponentsQtPen(glyph.layer)
     glyph.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return pen.path
@@ -31,7 +30,7 @@ class NoComponentsQtPen(QtPen):
 # ---------------
 
 def OnlyComponentsQPainterPathFactory(glyph):
-    pen = OnlyComponentsQtPen(glyph.getParent())
+    pen = OnlyComponentsQtPen(glyph.layer)
     glyph.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return pen.path
@@ -62,14 +61,105 @@ class OnlyComponentsQtPen(BasePen):
             tPen = TransformPen(self.pen, transformation)
             glyph.draw(tPen)
 
+# ---------------
+# selection glyph
+# ---------------
+
+def FilterSelectionFactory(glyph):
+    # TODO: somehow make this all a pen?
+    # I'm wary of doing it because it warrants reordering and so on
+    copyGlyph = TGlyph()
+    pen = copyGlyph.getPointPen()
+    for anchor in glyph.anchors:
+        if anchor.selected:
+            anchorDict = dict(
+                x=anchor.x,
+                y=anchor.y,
+                name=anchor.name,
+                color=anchor.color,
+                identifier=anchor.identifier,
+            )
+            copyGlyph.appendAnchor(anchorDict)
+    for contour in glyph:
+        if contour.selected:
+            contour.drawPoints(pen)
+        else:
+            workContour = TContour()
+            workContour._points = contour._points
+            lastSubcontour = None
+            segments = workContour.segments
+            # put start point at the beginning of a subcontour
+            for index, segment in reversed(list(enumerate(segments))):
+                if segment[-1].selected:
+                    lastSubcontour = index
+                else:
+                    if lastSubcontour is not None:
+                        break
+            if lastSubcontour is None:
+                continue
+            segments = segments[lastSubcontour:] + segments[:lastSubcontour]
+            # now draw filtered
+            pen.beginPath()
+            shouldMoveTo = False
+            for index, segment in enumerate(segments):
+                on = segment[-1]
+                if not on.selected:
+                    if not shouldMoveTo:
+                        pen.endPath()
+                        shouldMoveTo = True
+                    continue
+                if shouldMoveTo or not index:
+                    if shouldMoveTo:
+                        pen.beginPath()
+                        shouldMoveTo = False
+                    pen.addPoint(
+                        (on.x, on.y), segmentType="move", smooth=on.smooth,
+                        name=on.name)
+                    continue
+                for point in segment:
+                    pen.addPoint(
+                        (point.x, point.y), segmentType=point.segmentType,
+                        smooth=point.smooth, name=point.name)
+            if not shouldMoveTo:
+                pen.endPath()
+    for component in glyph.components:
+        if component.selected:
+            component.drawPoints(pen)
+    return copyGlyph
+
+def FilterSelectionQPainterPathFactory(glyph):
+    copyGlyph = glyph.getRepresentation("defconQt.FilterSelection")
+    path = copyGlyph.getRepresentation("defconQt.NoComponentsQPainterPath")
+    for anchor in glyph.anchors:
+        if anchor.selected:
+            aPath = anchor.getRepresentation("defconQt.QPainterPath")
+    for component in glyph.components:
+        if component.selected:
+            cPath = component.getRepresentation("defconQt.QPainterPath")
+            path.addPath(cPath)
+    return path
+
+# --------------
+# component path
+# --------------
+
+def ComponentQPainterPathFactory(component):
+    font = component.font
+    try:
+        baseGlyph = font[component.baseGlyph]
+    except KeyError:
+        return
+    pen = QtPen({})
+    tPen = TransformPen(pen, component.transformation)
+    baseGlyph.draw(tPen)
+    return pen.path
+
 # --------------------
 # curve path and lines
 # --------------------
 
 def SplitLinesQPainterPathFactory(glyph):
-    # No need for a glyphSet, because the glyphSet argument is only needed
-    #  to draw the components.
-    pen = SplitLinesFromPathQtPen({})
+    pen = SplitLinesFromPathQtPen(glyph.layer)
     glyph.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return (pen.path, pen.lines)
@@ -234,8 +324,10 @@ class OutlineInformationPen(AbstractPointPen):
     def endPath(self):
         pass
 
-    def addPoint(self, pt, segmentType=None, smooth=False, name=None, **kwargs):
-        d = dict(point=pt, segmentType=segmentType, smooth=smooth, name=name)
+    def addPoint(self, pt, segmentType=None, smooth=False, name=None,
+                 selected=False, **kwargs):
+        d = dict(point=pt, segmentType=segmentType, smooth=smooth, name=name,
+                 selected=selected)
         self._rawPointData[-1].append(d)
 
     def addComponent(self, baseGlyphName, transformation):

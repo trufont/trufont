@@ -1,9 +1,10 @@
-from defcon import Glyph, Image, registerRepresentationFactory
+from defcon import Glyph, Component, Image, registerRepresentationFactory
 from defconQt.representationFactories.qPainterPathFactory import (
     QPainterPathFactory)
 from defconQt.representationFactories.glyphViewFactory import (
     NoComponentsQPainterPathFactory, OnlyComponentsQPainterPathFactory,
-    SplitLinesQPainterPathFactory,
+    SplitLinesQPainterPathFactory, ComponentQPainterPathFactory,
+    FilterSelectionFactory, FilterSelectionQPainterPathFactory,
     OutlineInformationFactory, OutlineInformationFactory_,
     QPixmapFactory, StartPointsInformationFactory)
 
@@ -15,19 +16,29 @@ _glyphFactories = {
         OnlyComponentsQPainterPathFactory, None),
     "defconQt.NoComponentsQPainterPath": (
         NoComponentsQPainterPathFactory, None),
-    "defconQt.SplitLinesQPainterPathFactory": (
+    "defconQt.SplitLinesQPainterPath": (
         SplitLinesQPainterPathFactory, None),
+    "defconQt.FilterSelection": (
+        FilterSelectionFactory, ("Glyph.Changed", "Glyph.SelectionChanged")),
+    "defconQt.FilterSelectionQPainterPath": (
+        FilterSelectionQPainterPathFactory,
+        ("Glyph.Changed", "Glyph.SelectionChanged")),
     "defconQt.OutlineInformation": (
-        OutlineInformationFactory, None),
+        OutlineInformationFactory, ("Glyph.Changed", "Glyph.SelectionChanged")),
     "defconQt.OutlineInformation_": (
         OutlineInformationFactory_, None),
     "defconQt.StartPointsInformation": (
         StartPointsInformationFactory, None),
 }
+_componentFactories = {
+    "defconQt.QPainterPath": (
+        ComponentQPainterPathFactory, ("Component.Changed",
+                                       "Component.BaseGlyphDataChanged")),
+}
 _imageFactories = {
     "defconQt.QPixmap": (
-        QPixmapFactory, ["Image.FileNameChanged", "Image.ColorChanged",
-                         "Image.ImageDataChanged"])
+        QPixmapFactory, ("Image.FileNameChanged", "Image.ColorChanged",
+                         "Image.ImageDataChanged"))
 }
 
 
@@ -35,6 +46,10 @@ def registerAllFactories():
     for name, (factory, destructiveNotifications) in _glyphFactories.items():
         registerRepresentationFactory(
             Glyph, name, factory,
+            destructiveNotifications=destructiveNotifications)
+    for name, (factory, destructiveNotifications) in _componentFactories.items():
+        registerRepresentationFactory(
+            Component, name, factory,
             destructiveNotifications=destructiveNotifications)
     for name, (factory, destructiveNotifications) in _imageFactories.items():
         registerRepresentationFactory(
