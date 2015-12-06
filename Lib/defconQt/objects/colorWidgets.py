@@ -1,6 +1,9 @@
 from PyQt5.QtCore import pyqtSignal, QSize, Qt
-from PyQt5.QtWidgets import (QColorDialog, QStyle, QStyleOptionFrame,
-                             QStylePainter, QWidget)
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import (
+    QColorDialog, QStyle, QStyleOptionFrame, QStylePainter, QWidget)
+
+strikeColor = QColor(170, 0, 0)
 
 
 class ColorVignette(QWidget):
@@ -13,10 +16,11 @@ class ColorVignette(QWidget):
 
     colorChanged = pyqtSignal()
 
-    def __init__(self, color, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self._color = color
+        self._color = None
         self._margins = (0, 2, 0, -2)
+        self._mayClearColor = True
         self._readOnly = False
 
     def color(self):
@@ -26,8 +30,17 @@ class ColorVignette(QWidget):
         self._color = color
         self.update()
 
+    def mayClearColor(self):
+        return self._mayClearColor
+
+    def setMayClearColor(self, value):
+        self._mayClearColor = value
+
+    def mousePressEvent(self, event):
+        if self._mayClearColor and event.modifiers() & Qt.AltModifier:
+            self.setColor(None)
+
     def mouseDoubleClickEvent(self, event):
-        event.accept()
         if self._readOnly:
             return
         dialog = QColorDialog(self._color)
@@ -56,10 +69,25 @@ class ColorVignette(QWidget):
         panel.lineWidth = 2
         panel.midLineWidth = 0
         panel.rect = panel.rect.adjusted(*self._margins)
-        self.style().drawPrimitive(QStyle.PE_Frame, panel, painter, self)
-        r = self.style().subElementRect(QStyle.SE_FrameContents, panel, self)
-        painter.fillRect(r, Qt.white)
-        painter.fillRect(r.adjusted(2, 2, -2, -2), self._color)
+        style = self.style()
+        style.drawPrimitive(QStyle.PE_Frame, panel, painter, self)
+        rect = style.subElementRect(QStyle.SE_FrameContents, panel, self)
+        painter.fillRect(rect, Qt.white)
+        innerRect = rect.adjusted(2, 2, -2, -2)
+        if self._color is not None:
+            painter.fillRect(innerRect, self._color)
+        else:
+            pen = painter.pen()
+            pen.setColor(strikeColor)
+            pen.setWidthF(1.5)
+            painter.setPen(pen)
+            painter.setRenderHint(QStylePainter.Antialiasing)
+            painter.setClipRect(innerRect)
+            bL = innerRect.bottomLeft()
+            bL.setY(bL.y() + .5)
+            tR = innerRect.topRight()
+            tR.setY(tR.y() + 1)
+            painter.drawLine(bL, tR)
 
     def paintEvent(self, event):
         painter = QStylePainter(self)

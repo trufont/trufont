@@ -170,7 +170,7 @@ class InspectorWindow(QWidget):
         self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.rightSideBearingEdit.setValidator(QIntValidator(self))
         markColorLabel = QLabel("Flag:", self)
-        self.markColorWidget = ColorVignette(QColor(Qt.white), self)
+        self.markColorWidget = ColorVignette(self)
         self.markColorWidget.colorChanged.connect(
             self.writeMarkColor)
         self.markColorWidget.setMaximumWidth(columnOneWidth)
@@ -350,7 +350,7 @@ class InspectorWindow(QWidget):
         width = None
         leftSideBearing = None
         rightSideBearing = None
-        markColor = QColor(Qt.white)
+        markColor = None
         if self._glyph is not None:
             name = self._glyph.name
             unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" %
@@ -1604,8 +1604,10 @@ class MiscTab(QWidget):
         index = 0
         for name, color in entries.items():
             modelIndex = self.markColorModel.index(index, 0)
-            widget = ColorVignette(color, self)
+            widget = ColorVignette(self)
+            widget.setColor(color)
             widget.setMargins(2, 2, 2, 2)
+            widget.setMayClearColor(False)
             self.markColorView.setIndexWidget(modelIndex, widget)
             item = QStandardItem()
             item.setText(name)
@@ -1647,8 +1649,10 @@ class MiscTab(QWidget):
 
         modelIndex = self.markColorModel.index(index, 0)
         # TODO: not DRY with ctor
-        widget = ColorVignette(QColor(), self)
+        widget = ColorVignette(self)
+        widget.setColor(QColor(Qt.white))
         widget.setMargins(2, 2, 2, 2)
+        widget.setMayClearColor(False)
         self.markColorView.setIndexWidget(modelIndex, widget)
 
         itemIndex = self.markColorModel.index(index, 1)
