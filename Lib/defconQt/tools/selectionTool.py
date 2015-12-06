@@ -77,14 +77,22 @@ class SelectionTool(BaseTool):
             # TODO: seems weird that glyph.selection and selected don't incl.
             # anchors and components while glyph.move does... see what glyphs
             # does
+            hadSelection = False
             for anchor in self._glyph.anchors:
                 if anchor.selected:
                     anchor.move(delta)
+                    hadSelection = True
             for contour in self._glyph:
                 moveUISelection(contour, delta)
+                # XXX: shouldn't have to recalc this
+                if contour.selection:
+                    hadSelection = True
             for component in self._glyph.components:
                 if component.selected:
                     component.move(delta)
+                    hadSelection = True
+            if not hadSelection:
+                event.ignore()
         elif key in navKeys:
             pack = self._getSelectedCandidatePoint()
             if pack is not None:

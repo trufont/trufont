@@ -1,11 +1,46 @@
 from fontTools.misc import bezierTools
 from math import sqrt
 
-# TODO: distance
+# TODO: curve distance
+
+def _distance(x1, y1, x2, y2):
+    dx = x2 - x1
+    dy = y2 - y1
+    return sqrt(dx * dx + dy * dy)
+
+def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=False):
+    """
+    Returns minimum distance between line p1, p2 and point p.
+    Adapted from Grumdrig, http://stackoverflow.com/a/1501725/2037879.
+
+    If *ditchOutOfSegment* is set, this function will return None if point p
+    cannot be projected on the segment, ie. if there's no line perpendicular to
+    p1-p2 that intersects both p and a point of p1-p2.
+    This is useful for certain GUI usages.
+    """
+    l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2
+    if l2 == 0:
+        return _distance(x, y, x1, y1)
+    aX = x - x1
+    aY = y - y1
+    bX = x2 - x1
+    bY = y2 - y1
+    t = (aX * bX + aY * bY) / l2
+    if t < 0:
+        if ditchOutOfSegment:
+            return None
+        return _distance(x, y, x1, y1)
+    elif t > 1:
+        if ditchOutOfSegment:
+            return None
+        return _distance(x, y, x2, y2)
+    projX = x1 + t * bX
+    projY = y1 + t * bY
+    return _distance(x, y, projX, projY)
 
 # intersections
 
-def computeIntersections(p1, p2, p3, p4, x1, y1, x2, y2):
+def curveIntersections(p1, p2, p3, p4, x1, y1, x2, y2):
     """
     Computes intersection between a cubic spline and a line segment.
     Adapted from: https://www.particleincell.com/2013/cubic-line-intersection/
