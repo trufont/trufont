@@ -81,7 +81,13 @@ def FilterSelectionFactory(glyph):
             )
             copyGlyph.appendAnchor(anchorDict)
     for contour in glyph:
-        if contour.selected:
+        onCurvesSelected = True
+        for point in contour:
+            if point.segmentType and not point.selected:
+                onCurvesSelected = False
+                break
+        # TODO: should we care about offCurves not selected?
+        if onCurvesSelected:
             contour.drawPoints(pen)
         else:
             workContour = TContour()

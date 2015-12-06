@@ -1,5 +1,4 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QEvent
+from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QGridLayout, QLabel, QLineEdit, QListWidget,
     QRadioButton)

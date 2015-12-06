@@ -74,8 +74,7 @@ class MainMetricsWindow(QWidget):
 
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
-        self.setWindowTitle("Metrics Window – %s %s" % (
-            self.font.info.familyName, self.font.info.styleName))
+        self.setWindowTitle(font=self.font)
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
@@ -83,14 +82,20 @@ class MainMetricsWindow(QWidget):
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 
-    def close(self):
+    def setWindowTitle(self, title="Metrics Window", font=None):
+        if font is not None:
+            title = "%s – %s %s" % (
+                title, font.info.familyName, font.info.styleName)
+        super().setWindowTitle(title)
+
+    def closeEvent(self, event):
         self.font.info.removeObserver(self, "Info.Changed")
         self._unsubscribeFromGlyphs()
-        super().close()
 
     def _fontInfoChanged(self, notification):
         self.canvas.fetchFontMetrics()
         self.canvas.update()
+        self.setWindowTitle(font=self.font)
 
     def _glyphChanged(self, notification):
         self.canvas.update()

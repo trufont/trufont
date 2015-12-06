@@ -3,6 +3,7 @@ from defconQt.objects.defcon import TGlyph
 from defconQt.objects.glyphDialogs import (
     GotoDialog, AddAnchorDialog, AddComponentDialog, AddLayerDialog,
     LayerActionsDialog)
+# TODO: make stdTools reexport?
 from defconQt.tools.baseTool import BaseTool
 from defconQt.tools.selectionTool import SelectionTool
 from defconQt.tools.penTool import PenTool
@@ -22,16 +23,21 @@ import pickle
 class MainGlyphWindow(QMainWindow):
     def __init__(self, glyph, parent=None):
         super().__init__(parent)
-        self.view = GlyphView(self)
-        self.view.setGlyph(glyph)
 
         menuBar = self.menuBar()
         fileMenu = QMenu("&File", self)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
         editMenu = QMenu("&Edit", self)
-        editMenu.addAction("&Undo", self.undo, QKeySequence.Undo)
-        editMenu.addAction("&Redo", self.redo, QKeySequence.Redo)
+        # XXX: enable/disable based on notifications
+        undoManager = glyph.undoManager
+        undoAction = editMenu.addAction("&Undo", self.undo, QKeySequence.Undo)
+        undoAction.setEnabled(glyph.canUndo())
+        undoManager.canUndoChanged.connect(undoAction.setEnabled)
+        redoAction = editMenu.addAction("&Redo", self.redo, QKeySequence.Redo)
+        redoAction.setEnabled(glyph.canRedo())
+        undoManager.canRedoChanged.connect(redoAction.setEnabled)
+        editMenu.addSeparator()
         # TODO
         action = editMenu.addAction("C&ut", self.cutOutlines, QKeySequence.Cut)
         action.setEnabled(False)
@@ -45,46 +51,57 @@ class MainGlyphWindow(QMainWindow):
         glyphMenu.addAction("&Next Glyph", lambda: self.glyphOffset(1), "End")
         glyphMenu.addAction("&Previous Glyph",
                             lambda: self.glyphOffset(-1), "Home")
+        glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
+        glyphMenu.addAction("&Layer Actions…",
+                            self.layerActions, "L")
         menuBar.addMenu(glyphMenu)
 
         # create tools and buttons toolBars
         self._tools = []
         self._toolsActionGroup = QActionGroup(self)
         self._toolsToolBar = QToolBar("Tools", self)
-        # TODO: stop forbidding this, allow displaying/masking toolbars in
-        # View menu as well, put layer dropdown in a separate toolBar
-        self._toolsToolBar.setContextMenuPolicy(Qt.PreventContextMenu)
         # TODO: add context menu option for this
         self._toolsToolBar.setMovable(False)
-        selectionTool = self.installTool(SelectionTool)
-        selectionTool.trigger()
-        self.installTool(PenTool)
-        self.installTool(RulerTool)
-        self.installTool(KnifeTool)
         self._buttons = []
         self._buttonsToolBar = QToolBar("Buttons", self)
         self._buttonsToolBar.setMovable(False)
-        self.installButton(RemoveOverlapButton)
         self.addToolBar(self._toolsToolBar)
         self.addToolBar(self._buttonsToolBar)
 
         # http://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
-        layersToolBar = QToolBar("Layers", self)
+        self._layersToolBar = QToolBar("Layers", self)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._currentLayerBox = QComboBox(self)
         self._currentLayerBox.currentIndexChanged.connect(
             self._layerChanged)
+        self._layersToolBar.addWidget(spacer)
+        self._layersToolBar.addWidget(self._currentLayerBox)
+        self._layersToolBar.setContentsMargins(0, 0, 2, 0)
+        self._layersToolBar.setMovable(False)
+        self.addToolBar(self._layersToolBar)
+
+        viewMenu = self.createPopupMenu()
+        viewMenu.setTitle("View")
+        viewMenu.addSeparator()
+        action = viewMenu.addAction("Lock Toolbars", self.lockToolBars)
+        action.setCheckable(True)
+        action.setChecked(True)
+        menuBar.addMenu(viewMenu)
+
+        self.view = GlyphView(self)
+        self.setGlyph(glyph)
+        selectionTool = self.installTool(SelectionTool)
+        selectionTool.trigger()
+        self.installTool(PenTool)
+        self.installTool(RulerTool)
+        self.installTool(KnifeTool)
+        self.installButton(RemoveOverlapButton)
         self.updateLayerBox()
-        layersToolBar.addWidget(spacer)
-        layersToolBar.addWidget(self._currentLayerBox)
-        layersToolBar.setContentsMargins(0, 0, 2, 0)
-        layersToolBar.setMovable(False)
-        self.addToolBar(layersToolBar)
 
         self.setCentralWidget(self.view.scrollArea())
-        self.setWindowTitle(glyph.name, glyph.font)
         self.resize(900, 700)
+        self.view.setFocus(True)
 
     # ----------
     # Menu items
@@ -100,23 +117,53 @@ class MainGlyphWindow(QMainWindow):
         index = glyphOrder.index(currentGlyph.name)
         newIndex = (index + offset) % len(glyphOrder)
         glyph = font[glyphOrder[newIndex]]
-        self.view.setGlyph(glyph)
+        self.setGlyph(glyph)
+
+    def changeGlyph(self):
+        glyph = self.view.glyph()
+        newGlyph, ok = GotoDialog.getNewGlyph(self, glyph)
+        if ok and newGlyph is not None:
+            self.setGlyph(newGlyph)
+
+    def layerActions(self):
+        glyph = self.view.glyph()
+        newLayer, action, ok = LayerActionsDialog.getLayerAndAction(
+            self, glyph)
+        if ok and newLayer is not None:
+            # TODO: whole glyph for now, but consider selection too
+            if not glyph.name in newLayer:
+                newLayer.newGlyph(glyph.name)
+            otherGlyph = newLayer[glyph.name]
+            otherGlyph.disableNotifications()
+            if action == "Swap":
+                tempGlyph = TGlyph()
+                otherGlyph.drawPoints(tempGlyph.getPointPen())
+                tempGlyph.width = otherGlyph.width
+                otherGlyph.clearContours()
+            glyph.drawPoints(otherGlyph.getPointPen())
+            otherGlyph.width = glyph.width
+            if action != "Copy":
+                glyph.disableNotifications()
+                glyph.clearContours()
+                if action == "Swap":
+                    tempGlyph.drawPoints(glyph.getPointPen())
+                    glyph.width = tempGlyph.width
+                glyph.enableNotifications()
+            otherGlyph.enableNotifications()
 
     def undo(self):
-        glyph = self.view._glyph
-        if glyph.canUndo():
-            glyph.undo()
+        glyph = self.view.glyph()
+        glyph.undo()
 
     def redo(self):
-        glyph = self.view._glyph
-        if glyph.canRedo():
-            glyph.redo()
+        glyph = self.view.glyph()
+        glyph.redo()
 
     def cutOutlines(self):
         pass
 
     def copyOutlines(self):
-        glyph = self.view._glyph
+        glyph = self.view.glyph()
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
         copyGlyph = glyph.getRepresentation("defconQt.FilterSelection")
@@ -127,7 +174,7 @@ class MainGlyphWindow(QMainWindow):
         clipboard.setMimeData(mimeData)
 
     def pasteOutlines(self):
-        glyph = self.view._glyph
+        glyph = self.view.glyph()
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
         if mimeData.hasFormat("application/x-defconQt-glyph-data"):
@@ -143,19 +190,26 @@ class MainGlyphWindow(QMainWindow):
                 pasteGlyph.drawPoints(pen)
 
     def selectAll(self):
-        glyph = self.view._glyph
+        glyph = self.view.glyph()
         glyph.selected = True
         if not len(glyph):
             for component in glyph.components:
                 component.selected = True
 
     def deselect(self):
-        glyph = self.view._glyph
+        glyph = self.view.glyph()
         for anchor in glyph.anchors:
             anchor.selected = False
         for component in glyph.components:
             component.selected = False
         glyph.selected = False
+
+    def lockToolBars(self):
+        action = self.sender()
+        movable = not action.isChecked()
+        for toolBar in (
+            self._toolsToolBar, self._buttonsToolBar, self._layersToolBar):
+            toolBar.setMovable(movable)
 
     # --------------------------
     # Tools & buttons management
@@ -203,6 +257,7 @@ class MainGlyphWindow(QMainWindow):
     def _subscribeToGlyph(self, glyph):
         if glyph is not None:
             glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
+            glyph.addObserver(self, "_glyphNameChanged", "Glyph.NameChanged")
             glyph.addObserver(self, "_glyphChanged", "Glyph.SelectionChanged")
             font = glyph.font
             if font is not None:
@@ -211,6 +266,7 @@ class MainGlyphWindow(QMainWindow):
     def _unsubscribeFromGlyph(self, glyph):
         if glyph is not None:
             glyph.removeObserver(self, "Glyph.Changed")
+            glyph.removeObserver(self, "Glyph.NameChanged")
             glyph.removeObserver(self, "Glyph.SelectionChanged")
             font = glyph.font
             if font is not None:
@@ -219,8 +275,14 @@ class MainGlyphWindow(QMainWindow):
     def _glyphChanged(self, notification):
         self.view.glyphChanged()
 
+    def _glyphNameChanged(self, notification):
+        glyph = self.view.glyph()
+        self.setWindowTitle(glyph.name, glyph.font)
+
     def _fontChanged(self, notification):
         self.view.fontChanged()
+        glyph = self.view.glyph()
+        self.setWindowTitle(glyph.name, glyph.font)
 
     # --------------
     # Public Methods
@@ -231,6 +293,8 @@ class MainGlyphWindow(QMainWindow):
         self._unsubscribeFromGlyph(currentGlyph)
         self._subscribeToGlyph(glyph)
         self.view.setGlyph(glyph)
+        self.updateLayerBox()
+        self.setWindowTitle(glyph.name, glyph.font)
 
     def setDrawingAttribute(self, attr, value, layerName=None):
         self.view.setDrawingAttribute(attr, value, layerName)
@@ -259,10 +323,7 @@ class MainGlyphWindow(QMainWindow):
         else:
             # TODO: make sure we mimic defcon ufo3 APIs for that
             newGlyph = self._makeLayerGlyph(layer, glyph)
-        self._unsubscribeFromGlyph(glyph)
-        self.view.setGlyph(newGlyph)
-        self._subscribeToGlyph(newGlyph)
-        self.updateLayerBox()
+        self.setGlyph(newGlyph)
 
         # setting the layer-glyph here
         app = QApplication.instance()
@@ -698,7 +759,7 @@ class GlyphView(QWidget):
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
             factor = pow(1.2, event.angleDelta().y() / 120.0)
-            pos = event.localPos()
+            pos = event.pos()
             # compute new scrollbar position
             # http://stackoverflow.com/a/32269574/2037879
             oldScale = self._scale
@@ -706,10 +767,10 @@ class GlyphView(QWidget):
             hSB = self._scrollArea.horizontalScrollBar()
             vSB = self._scrollArea.verticalScrollBar()
             scrollBarPos = QPointF(hSB.value(), vSB.value())
-            deltaToPos = self.mapToParent(pos) / oldScale - self.pos() / oldScale
-            delta = deltaToPos * newScale - deltaToPos * oldScale
+            deltaToPos = (self.mapToParent(pos) - self.pos()) / oldScale
+            delta = deltaToPos * (newScale - oldScale)
             # TODO: maybe put out a func that does multiply by default
-            self.setScale(self._scale * factor)
+            self.setScale(newScale)
             # TODO: maybe merge this in setScale
             self.adjustSize()
             self.update()

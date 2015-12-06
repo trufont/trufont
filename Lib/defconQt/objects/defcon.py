@@ -1,6 +1,7 @@
 from booleanOperations.booleanGlyph import BooleanGlyph
 from defcon import Font, Contour, Glyph, Anchor, Component, Point
 from defcon.objects.base import BaseObject
+from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
 import fontTools
 
@@ -328,8 +329,12 @@ class GlyphSet(object):
                           doc="List of glyph names.")
 
 
-class UndoManager(object):
+class UndoManager(QObject):
+    canUndoChanged = pyqtSignal(bool)
+    canRedoChanged = pyqtSignal(bool)
+
     def __init__(self, parent):
+        super().__init__()
         self._stack = []
         self._ptr = -1
         self._parent = parent
@@ -340,8 +345,14 @@ class UndoManager(object):
         # prune eventual redo and add push state
         self._stack = self._stack[:self._ptr+1] + [(data, title)]
         # set ptr to current state
+        undoWasLocked = not self.canUndo()
+        redoWasEnabled = self.canRedo()
         self._ptr = len(self._stack) - 1
         self._shouldBackupCurrent = True
+        if undoWasLocked:
+            self.canUndoChanged.emit(True)
+        if redoWasEnabled:
+            self.canRedoChanged.emit(False)
 
     def canUndo(self):
         return self._ptr >= 0
@@ -356,6 +367,7 @@ class UndoManager(object):
         if index < 0 or self._ptr < 0:
             raise IndexError
         data = self._stack[index]
+        redoWasLocked = not self.canRedo()
         if self._shouldBackupCurrent:
             forwardData = self._parent.serialize()
             self._stack.append((forwardData, None))
@@ -363,6 +375,10 @@ class UndoManager(object):
         self._ptr = index - (not self._shouldBackupCurrent)
         print("u:e", self._ptr)
         self._shouldBackupCurrent = False
+        if redoWasLocked:
+            self.canRedoChanged.emit(True)
+        if not self.canUndo():
+            self.canUndoChanged.emit(False)
 
     def canRedo(self):
         return self._ptr < len(self._stack) - 1
@@ -377,6 +393,11 @@ class UndoManager(object):
         if self._ptr >= len(self._stack) - 1 or index > len(self._stack) - 1:
             raise IndexError
         data = self._stack[index]
+        undoWasLocked = not self.canUndo()
         self._parent.deserialize(data[0])
         self._ptr = index
         print("r:e", self._ptr)
+        if undoWasLocked:
+            self.canUndoChanged.emit(True)
+        if not self.canRedo():
+            self.canRedoChanged.emit(False)

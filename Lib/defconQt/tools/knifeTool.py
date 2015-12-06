@@ -51,7 +51,7 @@ class KnifeTool(BaseTool):
                     continue
                 prev = segments[index - 1][-1]
                 if len(seg) == 3:
-                    i = bezierMath.computeIntersections(
+                    i = bezierMath.curveIntersections(
                         prev, seg[0], seg[1], seg[2],
                         line.x1(), line.y1(), pos.x(), pos.y())
                     for pt in i:
