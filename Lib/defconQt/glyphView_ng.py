@@ -29,14 +29,8 @@ class MainGlyphWindow(QMainWindow):
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
         editMenu = QMenu("&Edit", self)
-        # XXX: enable/disable based on notifications
-        undoManager = glyph.undoManager
-        undoAction = editMenu.addAction("&Undo", self.undo, QKeySequence.Undo)
-        undoAction.setEnabled(glyph.canUndo())
-        undoManager.canUndoChanged.connect(undoAction.setEnabled)
-        redoAction = editMenu.addAction("&Redo", self.redo, QKeySequence.Redo)
-        redoAction.setEnabled(glyph.canRedo())
-        undoManager.canRedoChanged.connect(redoAction.setEnabled)
+        self._undoAction = editMenu.addAction("&Undo", self.undo, QKeySequence.Undo)
+        self._redoAction = editMenu.addAction("&Redo", self.redo, QKeySequence.Redo)
         editMenu.addSeparator()
         # TODO
         action = editMenu.addAction("C&ut", self.cutOutlines, QKeySequence.Cut)
@@ -108,7 +102,7 @@ class MainGlyphWindow(QMainWindow):
     # ----------
 
     def glyphOffset(self, offset):
-        currentGlyph = self.view._glyph
+        currentGlyph = self.view.glyph()
         font = currentGlyph.font
         glyphOrder = font.glyphOrder
         # should be enforced in fontView already
@@ -294,7 +288,16 @@ class MainGlyphWindow(QMainWindow):
         self._subscribeToGlyph(glyph)
         self.view.setGlyph(glyph)
         self.updateLayerBox()
+        self.updateUndoRedo()
         self.setWindowTitle(glyph.name, glyph.font)
+
+    def updateUndoRedo(self):
+        glyph = self.view.glyph()
+        undoManager = glyph.undoManager
+        self._undoAction.setEnabled(glyph.canUndo())
+        undoManager.canUndoChanged.connect(self._undoAction.setEnabled)
+        self._redoAction.setEnabled(glyph.canRedo())
+        undoManager.canRedoChanged.connect(self._redoAction.setEnabled)
 
     def setDrawingAttribute(self, attr, value, layerName=None):
         self.view.setDrawingAttribute(attr, value, layerName)
@@ -476,10 +479,17 @@ class GlyphView(QWidget):
             font = self._font = glyph.font
             if font is not None:
                 self._unitsPerEm = font.info.unitsPerEm
+                if self._unitsPerEm is None:
+                    self._unitsPerEm = 1000
                 self._descender = font.info.descender
-                self._xHeight = font.info.xHeight
+                if self._descender is None:
+                    self._descender = -250
                 self._ascender = font.info.ascender
+                if self._ascender is None:
+                    self._ascender = self._unitsPerEm + self._descender
                 self._capHeight = font.info.capHeight
+                if self._capHeight is None:
+                    self._capHeight = self._ascender
             self.setScale(self._scale)
             self.adjustSize()
         self._currentTool.toolActivated()
