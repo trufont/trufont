@@ -36,7 +36,8 @@ class MainGlyphWindow(QMainWindow):
         action = editMenu.addAction("C&ut", self.cutOutlines, QKeySequence.Cut)
         action.setEnabled(False)
         # TODO: enable only when selection is available
-        editMenu.addAction("&Copy", self.copyOutlines, QKeySequence.Copy)
+        self._copyAction = editMenu.addAction(
+            "&Copy", self.copyOutlines, QKeySequence.Copy)
         editMenu.addAction("&Paste", self.pasteOutlines, QKeySequence.Paste)
         editMenu.addAction("Select &All", self.selectAll, QKeySequence.SelectAll)
         editMenu.addAction("&Deselect", self.deselect, "Ctrl+D")
@@ -46,6 +47,7 @@ class MainGlyphWindow(QMainWindow):
         glyphMenu.addAction("&Previous Glyph",
                             lambda: self.glyphOffset(-1), "Home")
         glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
+        glyphMenu.addSeparator()
         glyphMenu.addAction("&Layer Actions…",
                             self.layerActions, "L")
         menuBar.addMenu(glyphMenu)
@@ -54,7 +56,6 @@ class MainGlyphWindow(QMainWindow):
         self._tools = []
         self._toolsActionGroup = QActionGroup(self)
         self._toolsToolBar = QToolBar("Tools", self)
-        # TODO: add context menu option for this
         self._toolsToolBar.setMovable(False)
         self._buttons = []
         self._buttonsToolBar = QToolBar("Buttons", self)
@@ -252,7 +253,8 @@ class MainGlyphWindow(QMainWindow):
         if glyph is not None:
             glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
             glyph.addObserver(self, "_glyphNameChanged", "Glyph.NameChanged")
-            glyph.addObserver(self, "_glyphChanged", "Glyph.SelectionChanged")
+            glyph.addObserver(
+                self, "_glyphSelectionChanged", "Glyph.SelectionChanged")
             font = glyph.font
             if font is not None:
                 font.info.addObserver(self, "_fontChanged", "Info.Changed")
@@ -273,6 +275,10 @@ class MainGlyphWindow(QMainWindow):
         glyph = self.view.glyph()
         self.setWindowTitle(glyph.name, glyph.font)
 
+    def _glyphSelectionChanged(self, notification):
+        self.updateSelection()
+        self.view.glyphChanged()
+
     def _fontChanged(self, notification):
         self.view.fontChanged()
         glyph = self.view.glyph()
@@ -289,6 +295,7 @@ class MainGlyphWindow(QMainWindow):
         self.view.setGlyph(glyph)
         self.updateLayerBox()
         self.updateUndoRedo()
+        self.updateSelection()
         self.setWindowTitle(glyph.name, glyph.font)
 
     def updateUndoRedo(self):
@@ -298,6 +305,21 @@ class MainGlyphWindow(QMainWindow):
         undoManager.canUndoChanged.connect(self._undoAction.setEnabled)
         self._redoAction.setEnabled(glyph.canRedo())
         undoManager.canRedoChanged.connect(self._redoAction.setEnabled)
+
+    def updateSelection(self):
+        def hasSelection():
+            glyph = self.view.glyph()
+            for contour in glyph:
+                if len(contour.selection):
+                    return True
+            for anchor in glyph.anchors:
+                if anchor.selected:
+                    return True
+            for component in glyph.components:
+                if component.selected:
+                    return True
+            return False
+        self._copyAction.setEnabled(hasSelection())
 
     def setDrawingAttribute(self, attr, value, layerName=None):
         self.view.setDrawingAttribute(attr, value, layerName)

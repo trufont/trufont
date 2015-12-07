@@ -379,10 +379,7 @@ class UndoManager(QObject):
             self.canUndoChanged.emit(False)
 
     def canRedo(self):
-        index = self._ptr
-        if index == -1:
-            index += 1
-        return index < len(self._stack) - 1
+        return max(self._ptr, 0) < len(self._stack) - 1
 
     def getRedoTitle(self, index):
         data = self._stack[index]

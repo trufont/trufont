@@ -69,10 +69,14 @@ class SelectionTool(BaseTool):
     def keyPressEvent(self, event):
         key = event.key()
         if key == platformSpecific.deleteKey:
+            # TODO: prune
+            self._glyph.prepareUndo()
             preserveShape = not event.modifiers() & Qt.ShiftModifier
             for contour in reversed(self._glyph):
                 removeUISelection(contour, preserveShape)
         elif key in arrowKeys:
+            # TODO: prune
+            self._glyph.prepareUndo()
             delta = self._moveForEvent(event)
             # TODO: seems weird that glyph.selection and selected don't incl.
             # anchors and components while glyph.move does... see what glyphs

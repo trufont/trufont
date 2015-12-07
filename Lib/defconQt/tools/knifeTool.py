@@ -15,7 +15,7 @@ class KnifeTool(BaseTool):
         self._knifeLine = None
         self._knifeDots = None
 
-    def _appendIntersection(self, pt, dotHalf, dotWidth):
+    def _appendIntersection(self, contour, index, pt, dotHalf, dotWidth):
         dotHeight = dotWidth
         x = pt[0] - dotHalf
         y = pt[1] - dotHalf
@@ -55,13 +55,15 @@ class KnifeTool(BaseTool):
                         prev, seg[0], seg[1], seg[2],
                         line.x1(), line.y1(), pos.x(), pos.y())
                     for pt in i:
-                        self._appendIntersection(pt, dotHalf, dotWidth)
+                        self._appendIntersection(
+                            contour, index, pt, dotHalf, dotWidth)
                 else:
                     pt = bezierMath.lineIntersection(
                         prev.x, prev.y, seg[0].x, seg[0].y,
                         line.x1(), line.y1(), pos.x(), pos.y())
                     if pt is not None:
-                        self._appendIntersection(pt, dotHalf, dotWidth)
+                        self._appendIntersection(
+                            contour, index, pt, dotHalf, dotWidth)
         widget.update()
 
     def mouseReleaseEvent(self, event):
