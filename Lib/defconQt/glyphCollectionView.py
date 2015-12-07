@@ -39,12 +39,11 @@ def proceedWithDeletion(self):
         return True
     return False
 
-"""
-A widget that presents a list of glyphs in cells.
-"""
-
 
 class GlyphCollectionWidget(QWidget):
+    """
+    A widget that presents a list of glyphs in cells.
+    """
 
     def __init__(self, parent=None):
         super(GlyphCollectionWidget, self).__init__(parent)
@@ -175,6 +174,7 @@ class GlyphCollectionWidget(QWidget):
     def pipeDropEvent(self, event):
         # TODO: consider dropping this check, maybe only subclasses should do
         # it so as to dispatch but here we presumably don't need it
+        # TODO: shouldn't this mutate font.glyphOrder
         if event.source() == self:
             insert = self.currentDropIndex
             newGlyphNames = event.mimeData().text().split(" ")
@@ -214,6 +214,7 @@ class GlyphCollectionWidget(QWidget):
             max(math.ceil(len(self._glyphs) / self._columns) * self.squareSize,
                 self._scrollArea.height()))
 
+    # TODO: consider moving this to caller, it isn't specific to this widget
     def _computeGlyphSelection(self):
         if self.glyphSelectedCallback is None:
             return
@@ -375,7 +376,7 @@ class GlyphCollectionWidget(QWidget):
         return newSelection
 
     # TODO: in mousePressEvent and mouseMoveEvent below, self._lastSelectedCell
-    # must be updated at all exit point
+    # must be updated at all exit points
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._oldSelection = self._selection
