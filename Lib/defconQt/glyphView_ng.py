@@ -92,7 +92,6 @@ class MainGlyphWindow(QMainWindow):
         self.installTool(RulerTool)
         self.installTool(KnifeTool)
         self.installButton(RemoveOverlapButton)
-        self.updateLayerBox()
 
         self.setCentralWidget(self.view.scrollArea())
         self.resize(900, 700)
@@ -276,7 +275,7 @@ class MainGlyphWindow(QMainWindow):
         self.setWindowTitle(glyph.name, glyph.font)
 
     def _glyphSelectionChanged(self, notification):
-        self.updateSelection()
+        self._updateSelection()
         self.view.glyphChanged()
 
     def _fontChanged(self, notification):
@@ -284,21 +283,7 @@ class MainGlyphWindow(QMainWindow):
         glyph = self.view.glyph()
         self.setWindowTitle(glyph.name, glyph.font)
 
-    # --------------
-    # Public Methods
-    # --------------
-
-    def setGlyph(self, glyph):
-        currentGlyph = self.view.glyph()
-        self._unsubscribeFromGlyph(currentGlyph)
-        self._subscribeToGlyph(glyph)
-        self.view.setGlyph(glyph)
-        self.updateLayerBox()
-        self.updateUndoRedo()
-        self.updateSelection()
-        self.setWindowTitle(glyph.name, glyph.font)
-
-    def updateUndoRedo(self):
+    def _updateUndoRedo(self):
         glyph = self.view.glyph()
         undoManager = glyph.undoManager
         self._undoAction.setEnabled(glyph.canUndo())
@@ -306,7 +291,7 @@ class MainGlyphWindow(QMainWindow):
         self._redoAction.setEnabled(glyph.canRedo())
         undoManager.canRedoChanged.connect(self._redoAction.setEnabled)
 
-    def updateSelection(self):
+    def _updateSelection(self):
         def hasSelection():
             glyph = self.view.glyph()
             for contour in glyph:
@@ -320,6 +305,20 @@ class MainGlyphWindow(QMainWindow):
                     return True
             return False
         self._copyAction.setEnabled(hasSelection())
+
+    # --------------
+    # Public Methods
+    # --------------
+
+    def setGlyph(self, glyph):
+        currentGlyph = self.view.glyph()
+        self._unsubscribeFromGlyph(currentGlyph)
+        self._subscribeToGlyph(glyph)
+        self.view.setGlyph(glyph)
+        self._updateLayerBox()
+        self._updateUndoRedo()
+        self._updateSelection()
+        self.setWindowTitle(glyph.name, glyph.font)
 
     def setDrawingAttribute(self, attr, value, layerName=None):
         self.view.setDrawingAttribute(attr, value, layerName)
@@ -340,7 +339,7 @@ class MainGlyphWindow(QMainWindow):
                 # restore comboBox to active index
                 layerSet = glyph.layerSet
                 index = layerSet.layerOrder.index(glyph.layer.name)
-                self._setComboBoxIndex(index)
+                self._setLayerBoxIndex(index)
                 return
 
         if glyph.name in layer:
@@ -356,11 +355,13 @@ class MainGlyphWindow(QMainWindow):
 
     def _makeLayer(self):
         # TODO: what with duplicate names?
+        glyph = self.view.glyph()
         newLayerName, ok = AddLayerDialog.getNewLayerName(self)
         if ok:
+            layerSet = glyph.layerSet
             # TODO: this should return the layer
-            self._layerSet.newLayer(newLayerName)
-            return self._layerSet[newLayerName]
+            layerSet.newLayer(newLayerName)
+            return layerSet[newLayerName]
         else:
             return None
 
@@ -370,7 +371,7 @@ class MainGlyphWindow(QMainWindow):
         glyph.template = True
         return glyph
 
-    def updateLayerBox(self):
+    def _updateLayerBox(self):
         comboBox = self._currentLayerBox
         glyph = self.view.glyph()
         comboBox.blockSignals(True)
@@ -379,6 +380,12 @@ class MainGlyphWindow(QMainWindow):
             comboBox.addItem(layer.name, layer)
         comboBox.setCurrentText(glyph.layer.name)
         comboBox.addItem("New layer…", None)
+        comboBox.blockSignals(False)
+
+    def _setLayerBoxIndex(self, index):
+        comboBox = self._currentLayerBox
+        comboBox.blockSignals(True)
+        comboBox.setCurrentIndex(index)
         comboBox.blockSignals(False)
 
     # ---------------------
