@@ -5,6 +5,7 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
 import math
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
 from robofab.pens.pointPen import AbstractPointPen
 
 
@@ -64,6 +65,7 @@ class OnlyComponentsQtPen(BasePen):
 # ---------------
 # selection glyph
 # ---------------
+
 
 def FilterSelectionFactory(glyph):
     # TODO: somehow make this all a pen?
@@ -133,12 +135,14 @@ def FilterSelectionFactory(glyph):
             component.drawPoints(pen)
     return copyGlyph
 
+
 def FilterSelectionQPainterPathFactory(glyph):
     copyGlyph = glyph.getRepresentation("defconQt.FilterSelection")
     path = copyGlyph.getRepresentation("defconQt.NoComponentsQPainterPath")
     for anchor in glyph.anchors:
         if anchor.selected:
             aPath = anchor.getRepresentation("defconQt.QPainterPath")
+            path.addPath(aPath)
     for component in glyph.components:
         if component.selected:
             cPath = component.getRepresentation("defconQt.QPainterPath")
@@ -148,6 +152,7 @@ def FilterSelectionQPainterPathFactory(glyph):
 # --------------
 # component path
 # --------------
+
 
 def ComponentQPainterPathFactory(component):
     font = component.font
@@ -163,6 +168,7 @@ def ComponentQPainterPathFactory(component):
 # --------------------
 # curve path and lines
 # --------------------
+
 
 def SplitLinesQPainterPathFactory(glyph):
     pen = SplitLinesFromPathQtPen(glyph.layer)
@@ -196,7 +202,8 @@ class SplitLinesFromPathQtPen(QtPen):
 
     def _closePath(self):
         if self._initPos is not None and self._curPos != self._initPos:
-            self.lines.append((self._curPos[0], self._curPos[1], self._initPos[0], self._initPos[1]))
+            self.lines.append((self._curPos[0], self._curPos[1],
+                               self._initPos[0], self._initPos[1]))
         self._initPos = None
 
 # ------------
@@ -276,7 +283,9 @@ class OutlineInformationPen(AbstractPointPen):
         self._bezierHandleData = []
 
     def getData(self):
-        data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[], bezierHandles=[], anchors=[], components=self._rawComponentData)
+        data = dict(startPoints=[], onCurvePoints=[], offCurvePoints=[],
+                    bezierHandles=[], anchors=[],
+                    components=self._rawComponentData)
         for contour in self._rawPointData:
             # anchor
             if len(contour) == 1 and contour[0]["name"] is not None:
@@ -307,7 +316,8 @@ class OutlineInformationPen(AbstractPointPen):
                         if not haveFirst:
                             haveFirst = True
                             nextOn = None
-                            for nextPoint in contour[pointIndex:] + contour[:pointIndex]:
+                            for nextPoint in contour[pointIndex:] + \
+                                    contour[:pointIndex]:
                                 #if nextPoint["segmentType"] is None:
                                 #    continue
                                 if nextPoint["point"] == point["point"]:
@@ -320,7 +330,8 @@ class OutlineInformationPen(AbstractPointPen):
                                 x2, y2 = nextOn["point"]
                                 xDiff = x2 - x1
                                 yDiff = y2 - y1
-                                angle = round(math.atan2(yDiff, xDiff) * 180 / math.pi, 3)
+                                angle = round(math.atan2(
+                                    yDiff, xDiff) * 180 / math.pi, 3)
                             data["startPoints"].append((point["point"], angle))
         return data
 
@@ -337,7 +348,6 @@ class OutlineInformationPen(AbstractPointPen):
         self._rawPointData[-1].append(d)
 
     def addComponent(self, baseGlyphName, transformation):
-        d = dict(baseGlyphName=baseGlyphName, transformation=transformation)
         self._rawComponentData.append((baseGlyphName, transformation))
 
 

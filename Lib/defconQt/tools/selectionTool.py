@@ -1,11 +1,10 @@
-from defconQt.objects.defcon import TComponent, TPoint
+from defconQt.objects.defcon import TPoint
 from defconQt.tools.baseTool import BaseTool
 from defconQt.util import platformSpecific
 from defconQt.util.uiMethods import moveUISelection, removeUISelection
-from PyQt5.QtCore import QRectF, QPointF, QSize, Qt
+from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import QPainter, QTransform
-from PyQt5.QtWidgets import (
-    QRubberBand, QStyle, QStyleOptionRubberBand, QStylePainter)
+from PyQt5.QtWidgets import QRubberBand, QStyle, QStyleOptionRubberBand
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
@@ -128,7 +127,8 @@ class SelectionTool(BaseTool):
                     notification="Contour.SelectionChanged")
             self._shouldPrepareUndo = True
         else:
-            # XXX: need to account for anchors and components, no more in our API :t
+            # XXX: need to account for anchors and components,
+            # no more in our API :t
             if addToSelection:
                 self._oldSelection = self._glyph.selection
             else:
@@ -146,8 +146,8 @@ class SelectionTool(BaseTool):
             if self._shouldPrepareUndo:
                 self._glyph.prepareUndo()
                 self._shouldPrepareUndo = False
-            itemUnderMouse = self._itemTuple[0]
             # TODO: maybe return a dict to dispatch?
+            #itemUnderMouse = self._itemTuple[0]
             #if isinstance(itemUnderMouse, TComponent):
             #    transform = itemUnderMouse.transformation
             #    x, y = transform[0], transform[3]
@@ -165,7 +165,6 @@ class SelectionTool(BaseTool):
                     component.move((dx, dy))
             self._origin = canvasPos
         else:
-            prevSelection = self._glyph.selection
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
             # TODO: consider returning two lists to avoid this
             items = set(i[0] for i in widget.items(self._rubberBandRect))

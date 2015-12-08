@@ -3,6 +3,7 @@ from defconQt.util import drawing
 from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import QPainterPath
 
+
 class RulerTool(BaseTool):
     name = "Ruler"
     iconPath = ":/resources/ruler.svg"
@@ -69,14 +70,10 @@ class RulerTool(BaseTool):
             # operating in
             xAlign, yAlign = "left", "bottom"
             dx = cursorElem.x - baseElem.x
-            if dx >= 0:
-                px = cursorElem.x
-            else:
+            if dx < 0:
                 xAlign = "right"
             dy = cursorElem.y - baseElem.y
-            if dy > 0:
-                py = baseElem.y
-            else:
+            if dy <= 0:
                 yAlign = "top"
             # XXX: draw multiLines arg
             drawing.drawTextAtPoint(

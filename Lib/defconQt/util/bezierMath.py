@@ -8,15 +8,16 @@ def _distance(x1, y1, x2, y2):
     dy = y2 - y1
     return sqrt(dx * dx + dy * dy)
 
-def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=False):
+
+def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     """
     Returns minimum distance between line p1, p2 and point p.
     Adapted from Grumdrig, http://stackoverflow.com/a/1501725/2037879.
 
     If *ditchOutOfSegment* is set, this function will return None if point p
     cannot be projected on the segment, ie. if there's no line perpendicular to
-    p1-p2 that intersects both p and a point of p1-p2.
-    This is useful for certain GUI usages.
+    p1 p2 that intersects both p and a point of p1 p2.
+    This is useful for certain GUI usages. Set by default.
     """
     l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2
     if l2 == 0:
@@ -39,6 +40,7 @@ def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=False):
     return _distance(x, y, projX, projY)
 
 # intersections
+
 
 def curveIntersections(p1, p2, p3, p4, x1, y1, x2, y2):
     """
@@ -71,6 +73,7 @@ def curveIntersections(p1, p2, p3, p4, x1, y1, x2, y2):
         if not (t < 0 or t > 1 or s < 0 or s > 1):
             sol.append((s0, s1, t))
     return sol
+
 
 def lineIntersection(x1, y1, x2, y2, x3, y3, x4, y4):
     """

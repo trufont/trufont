@@ -24,7 +24,8 @@ _glyphFactories = {
         FilterSelectionQPainterPathFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged")),
     "defconQt.OutlineInformation": (
-        OutlineInformationFactory, ("Glyph.Changed", "Glyph.SelectionChanged")),
+        OutlineInformationFactory,
+        ("Glyph.Changed", "Glyph.SelectionChanged")),
     "defconQt.OutlineInformation_": (
         OutlineInformationFactory_, None),
     "defconQt.StartPointsInformation": (
@@ -47,7 +48,8 @@ def registerAllFactories():
         registerRepresentationFactory(
             Glyph, name, factory,
             destructiveNotifications=destructiveNotifications)
-    for name, (factory, destructiveNotifications) in _componentFactories.items():
+    for name, (factory, destructiveNotifications) in \
+            _componentFactories.items():
         registerRepresentationFactory(
             Component, name, factory,
             destructiveNotifications=destructiveNotifications)

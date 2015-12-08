@@ -189,10 +189,6 @@ class GroupsWindow(QWidget):
                 title, font.info.familyName, font.info.styleName)
         super().setWindowTitle(title)
 
-    def closeEvent(self, event):
-        self.font.groups.removeObserver(self, "Groups.Changed")
-        self.font.info.removeObserver(self, "Info.Changed")
-
     def _alignmentChanged(self):
         alignRight = self.alignRightBox.isChecked()
         self.stackWidget.setAlignment(alignRight)
@@ -294,5 +290,6 @@ class GroupsWindow(QWidget):
         self._groupChanged()
 
     def closeEvent(self, event):
-        self.font.removeObserver(self, "Groups.Changed")
+        self.font.groups.removeObserver(self, "Groups.Changed")
+        self.font.info.removeObserver(self, "Info.Changed")
         event.accept()

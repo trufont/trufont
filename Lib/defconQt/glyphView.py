@@ -17,11 +17,10 @@ from PyQt5.QtGui import (
     QBrush, QColor, QFont, QIcon, QKeySequence, QPainter, QPainterPath, QPen,
     QPixmap, QTransform)
 from PyQt5.QtWidgets import (
-    QAction, QActionGroup, QApplication, QColorDialog, QComboBox, QDialog,
-    QDialogButtonBox, QGraphicsEllipseItem, QGraphicsItem, QGraphicsLineItem,
-    QGraphicsPathItem, QGraphicsPixmapItem, QGraphicsScene,
-    QGraphicsSimpleTextItem, QGraphicsView, QGridLayout, QLabel, QLineEdit,
-    QListWidget, QMainWindow, QMenu, QRadioButton, QSizePolicy, QStyle,
+    QAction, QActionGroup, QApplication, QColorDialog, QComboBox,
+    QGraphicsEllipseItem, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem,
+    QGraphicsPixmapItem, QGraphicsScene, QGraphicsSimpleTextItem,
+    QGraphicsView, QMainWindow, QMenu, QSizePolicy, QStyle,
     QStyleOptionGraphicsItem, QToolBar, QWidget)
 
 

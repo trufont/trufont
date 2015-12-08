@@ -1,8 +1,7 @@
-from defconQt.objects.defcon import TContour, TPoint
+from defconQt.objects.defcon import TContour
 from defconQt.tools.baseTool import BaseTool
 from defconQt.util.uiMethods import moveUIPoint
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainterPath
 
 
 class PenTool(BaseTool):
@@ -121,7 +120,6 @@ class PenTool(BaseTool):
             else:
                 pt.move((dx, dy))
                 contour.dirty = True
-
 
     def mouseReleaseEvent(self, event):
         self._targetContour = None

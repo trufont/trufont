@@ -67,13 +67,15 @@ _defaultColors = dict(
     glyphOnCurvePoints=QColor(4, 100, 166, 190),
     glyphOtherPoints=QColor.fromRgbF(.6, .6, .6, 1),
     # anchors
-    glyphAnchor=QColor(228, 96, 15, 200),#QColor.fromRgbF(1, .2, 0, 1),
+    glyphAnchor=QColor(228, 96, 15, 200),  # QColor.fromRgbF(1, .2, 0, 1),
     # selection
     glyphSelection=QColor(165, 190, 216, 155),
 )
 
+
 def colorToQColor(color):
     return QColor.fromRgbF(*Color(color))
+
 
 def defaultColor(name):
     return _defaultColors[name]
@@ -81,6 +83,7 @@ def defaultColor(name):
 # ----------
 # Primitives
 # ----------
+
 
 def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
     painter.save()
@@ -97,6 +100,7 @@ def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
     painter.setPen(pen)
     painter.drawLine(x1, y1, x2, y2)
     painter.restore()
+
 
 def drawGlyphWithAliasedLines(painter, glyph):
     curvePath, lines = glyph.getRepresentation(
@@ -115,7 +119,7 @@ def drawGlyphWithAliasedLines(painter, glyph):
         drawLine(painter, x1, y1, x2, y2, painter.pen().widthF())
     painter.restore()
 
-# TODO: shim shadow
+
 def drawTextAtPoint(painter, text, x, y, scale, xAlign="left", yAlign="bottom",
                     flipped=True):
     if xAlign != "left" or yAlign != "bottom":
@@ -131,6 +135,7 @@ def drawTextAtPoint(painter, text, x, y, scale, xAlign="left", yAlign="bottom",
             y += height / 2
         elif yAlign == "top":
             y += height
+    # TODO: shim shadow
     painter.save()
     if flipped:
         s = -scale
@@ -150,8 +155,9 @@ def drawTextAtPoint(painter, text, x, y, scale, xAlign="left", yAlign="bottom",
 
 # Vertical Metrics
 
+
 def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
-    drawText=True, color=None):
+                            drawText=True, color=None):
     font = glyph.font
     if font is None:
         return
@@ -198,6 +204,7 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
 
 # Blues
 
+
 def drawFontPostscriptBlues(painter, glyph, scale, rect, color=None):
     font = glyph.font
     if font is None:
@@ -212,6 +219,7 @@ def drawFontPostscriptBlues(painter, glyph, scale, rect, color=None):
     if color is None:
         color = defaultColor("fontPostscriptBlues")
     _drawBlues(painter, blues, rect, color)
+
 
 def drawFontPostscriptFamilyBlues(painter, glyph, scale, rect, color=None):
     font = glyph.font
@@ -228,6 +236,7 @@ def drawFontPostscriptFamilyBlues(painter, glyph, scale, rect, color=None):
         color = defaultColor("fontPostscriptFamilyBlues")
     _drawBlues(painter, blues, rect, color)
 
+
 def _drawBlues(painter, blues, rect, color):
     x = rect[0]
     w = rect[2]
@@ -235,6 +244,7 @@ def _drawBlues(painter, blues, rect, color):
         painter.fillRect(x, yMin, w, yMax - yMin, color)
 
 # Image
+
 
 def drawGlyphImage(painter, glyph, scale, rect):
     if glyph.image.fileName is None:
@@ -247,8 +257,9 @@ def drawGlyphImage(painter, glyph, scale, rect):
 
 # Margins
 
+
 def drawGlyphMargins(painter, glyph, scale, rect, drawFill=True,
-    drawStroke=True, fillColor=None, strokeColor=None):
+                     drawStroke=True, fillColor=None, strokeColor=None):
     if fillColor is None:
         fillColor = defaultColor("glyphMarginsFill")
     if strokeColor is None:
@@ -268,10 +279,12 @@ def drawGlyphMargins(painter, glyph, scale, rect, drawFill=True,
 
 # Fill and Stroke
 
-def drawGlyphFillAndStroke(painter, glyph, scale, rect,
-    drawFill=True, drawStroke=True, drawSelection=True, partialAliasing=True,
-    contourFillColor=None, contourStrokeColor=None, componentFillColor=None,
-    contourStrokeWidth=1.0, selectionColor=None):
+
+def drawGlyphFillAndStroke(
+        painter, glyph, scale, rect, drawFill=True, drawStroke=True,
+        drawSelection=True, partialAliasing=True, contourFillColor=None,
+        contourStrokeColor=None, componentFillColor=None,
+        contourStrokeWidth=1.0, selectionColor=None):
     # get the layer color
     layer = glyph.layer
     layerColor = None
@@ -325,15 +338,17 @@ def drawGlyphFillAndStroke(painter, glyph, scale, rect,
 
 # points
 
-def drawGlyphPoints(painter, glyph, scale, rect,
-    drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
-    drawCoordinates=True, onCurveColor=None, otherColor=None,
-    backgroundColor=None):
+
+def drawGlyphPoints(
+        painter, glyph, scale, rect,
+        drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
+        drawCoordinates=True, onCurveColor=None, otherColor=None,
+        backgroundColor=None):
     layer = glyph.layer
-    layerColor = None
+    onCurveColor = None
     if layer is not None:
         if layer.color is not None:
-            color = colorToQColor(layer.color)
+            onCurveColor = colorToQColor(layer.color)
     if onCurveColor is None:
         onCurveColor = defaultColor("glyphOnCurvePoints")
     if otherColor is None:
@@ -358,7 +373,6 @@ def drawGlyphPoints(painter, glyph, scale, rect,
             else:
                 path.addEllipse(
                     x - startHalf, y - startHalf, startWidth, startHeight)
-        # TODO: pointColor was named here?
         startPointColor = QColor(otherColor)
         aF = startPointColor.alphaF()
         startPointColor.setAlphaF(aF * .3)
@@ -451,8 +465,9 @@ def drawGlyphPoints(painter, glyph, scale, rect,
 
 # Anchors
 
+
 def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
-    drawText=True, color=None):
+                     drawText=True, color=None):
     if not glyph.anchors:
         return
     if color is None:

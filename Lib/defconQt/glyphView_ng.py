@@ -21,6 +21,7 @@ import pickle
 
 
 class MainGlyphWindow(QMainWindow):
+
     def __init__(self, glyph, parent=None):
         super().__init__(parent)
 
@@ -29,8 +30,10 @@ class MainGlyphWindow(QMainWindow):
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
         editMenu = QMenu("&Edit", self)
-        self._undoAction = editMenu.addAction("&Undo", self.undo, QKeySequence.Undo)
-        self._redoAction = editMenu.addAction("&Redo", self.redo, QKeySequence.Redo)
+        self._undoAction = editMenu.addAction(
+            "&Undo", self.undo, QKeySequence.Undo)
+        self._redoAction = editMenu.addAction(
+            "&Redo", self.redo, QKeySequence.Redo)
         editMenu.addSeparator()
         # TODO
         action = editMenu.addAction("C&ut", self.cutOutlines, QKeySequence.Cut)
@@ -39,17 +42,18 @@ class MainGlyphWindow(QMainWindow):
         self._copyAction = editMenu.addAction(
             "&Copy", self.copyOutlines, QKeySequence.Copy)
         editMenu.addAction("&Paste", self.pasteOutlines, QKeySequence.Paste)
-        editMenu.addAction("Select &All", self.selectAll, QKeySequence.SelectAll)
+        editMenu.addAction(
+            "Select &All", self.selectAll, QKeySequence.SelectAll)
         editMenu.addAction("&Deselect", self.deselect, "Ctrl+D")
         menuBar.addMenu(editMenu)
         glyphMenu = QMenu("&Glyph", self)
         glyphMenu.addAction("&Next Glyph", lambda: self.glyphOffset(1), "End")
-        glyphMenu.addAction("&Previous Glyph",
-                            lambda: self.glyphOffset(-1), "Home")
+        glyphMenu.addAction(
+            "&Previous Glyph", lambda: self.glyphOffset(-1), "Home")
         glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
         glyphMenu.addSeparator()
-        glyphMenu.addAction("&Layer Actions…",
-                            self.layerActions, "L")
+        glyphMenu.addAction(
+            "&Layer Actions…", self.layerActions, "L")
         menuBar.addMenu(glyphMenu)
 
         # create tools and buttons toolBars
@@ -202,7 +206,7 @@ class MainGlyphWindow(QMainWindow):
         action = self.sender()
         movable = not action.isChecked()
         for toolBar in (
-            self._toolsToolBar, self._buttonsToolBar, self._layersToolBar):
+                self._toolsToolBar, self._buttonsToolBar, self._layersToolBar):
             toolBar.setMovable(movable)
 
     # --------------------------
@@ -411,6 +415,7 @@ class MainGlyphWindow(QMainWindow):
 
 
 class GlyphView(QWidget):
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._currentTool = BaseTool()
@@ -473,7 +478,8 @@ class GlyphView(QWidget):
         left = min(0, left)
         right = max(right, self._glyph.width)
         bottom = self._descender
-        top = max(self._capHeight, self._ascender, self._unitsPerEm + self._descender)
+        top = max(self._capHeight, self._ascender,
+                  self._unitsPerEm + self._descender)
         width = abs(left) + right
         height = -bottom + top
         return width, height
@@ -660,11 +666,14 @@ class GlyphView(QWidget):
         drawStartPoints = self.drawingAttribute(
             "showGlyphStartPoints", layerName) and self._impliedPointSize > 175
         drawOnCurves = self.drawingAttribute(
-            "showGlyphOnCurvePoints", layerName) and self._impliedPointSize > 175
+            "showGlyphOnCurvePoints", layerName) and \
+            self._impliedPointSize > 175
         drawOffCurves = self.drawingAttribute(
-            "showGlyphOffCurvePoints", layerName) and self._impliedPointSize > 175
+            "showGlyphOffCurvePoints", layerName) and \
+            self._impliedPointSize > 175
         drawCoordinates = self.drawingAttribute(
-            "showGlyphPointCoordinates", layerName) and self._impliedPointSize > 250
+            "showGlyphPointCoordinates", layerName) and \
+            self._impliedPointSize > 250
         drawing.drawGlyphPoints(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
@@ -737,24 +746,24 @@ class GlyphView(QWidget):
                 self.drawImage(painter, glyph, layerName)
             # draw the blues
             if layerName is None and self.drawingAttribute(
-                "showFontPostscriptBlues", None):
+                    "showFontPostscriptBlues", None):
                 self.drawBlues(painter, glyph, layerName)
             if layerName is None and self.drawingAttribute(
-                "showFontPostscriptFamilyBlues", None):
+                    "showFontPostscriptFamilyBlues", None):
                 self.drawFamilyBlues(painter, glyph, layerName)
             # draw the margins
             if self.drawingAttribute("showGlyphMargins", layerName):
                 self.drawMargins(painter, glyph, layerName)
             # draw the vertical metrics
             if layerName is None and self.drawingAttribute(
-                "showFontVerticalMetrics", None):
+                    "showFontVerticalMetrics", None):
                 self.drawVerticalMetrics(painter, glyph, layerName)
             # draw the glyph
             if self.drawingAttribute("showGlyphFill", layerName) or \
-                self.drawingAttribute("showGlyphStroke", layerName):
+                    self.drawingAttribute("showGlyphStroke", layerName):
                 self.drawFillAndStroke(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphOnCurvePoints", layerName) or \
-                self.drawingAttribute("showGlyphOffCurvePoints", layerName):
+                    self.drawingAttribute("showGlyphOffCurvePoints", layerName):
                 self.drawPoints(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphAnchors", layerName):
                 self.drawAnchors(painter, glyph, layerName)
@@ -862,7 +871,6 @@ class GlyphView(QWidget):
         y = (pos.y() - yOffsetInv) / (- self._inverseScale) + self.height()
         return QPointF(x, y)
 
-
     def _redirectEvent(self, event, callback, transmuteMouseEvent=False):
         if transmuteMouseEvent:
             # construct a new event with pos in canvas coordinates
@@ -938,7 +946,7 @@ class GlyphView(QWidget):
         for anchor in reversed(self._glyph.anchors):
             path = QPainterPath()
             path.addEllipse(anchor.x - anchorHalfSize,
-                anchor.y - anchorHalfSize, anchorSize, anchorSize)
+                            anchor.y - anchorHalfSize, anchorSize, anchorSize)
             if func(path, obj):
                 if justOne:
                     return (anchor, None)

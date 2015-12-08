@@ -51,7 +51,7 @@ def moveUIPoint(contour, point, delta):
             onDistance = line.p1() - onCurvePoint
             newDistance = targetPoint - onCurvePoint
             if (onDistance.x() >= 0) != (newDistance.x() <= 0) or \
-                (onDistance.y() >= 0) != (newDistance.y() <= 0):
+                    (onDistance.y() >= 0) != (newDistance.y() <= 0):
                 targetPoint = onCurvePoint
             # ok, now set pos
             point.x, point.y = targetPoint.x(), targetPoint.y()

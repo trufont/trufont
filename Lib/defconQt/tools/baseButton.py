@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QObject
 
+
 class BaseButton(QObject):
     name = "Button"
     iconPath = None

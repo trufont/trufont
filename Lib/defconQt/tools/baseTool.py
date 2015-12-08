@@ -1,6 +1,7 @@
 from math import copysign
 from PyQt5.QtCore import QObject
-from PyQt5.QtGui import QCursor, QPainterPath
+from PyQt5.QtGui import QCursor
+
 
 class BaseTool(QObject):
     name = "Tool"

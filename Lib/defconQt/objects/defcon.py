@@ -239,6 +239,7 @@ class TContour(Contour):
     def getPoint(self, index):
         return self[index % len(self)]
 
+
 class TAnchor(Anchor):
     def __init__(self, *args, **kwargs):
         self._selected = False
