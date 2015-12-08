@@ -8,10 +8,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from robofab.pens.pointPen import AbstractPointPen
 
-
 # -------------
 # no components
 # -------------
+
 
 def NoComponentsQPainterPathFactory(glyph):
     pen = NoComponentsQtPen(glyph.layer)
@@ -141,8 +141,11 @@ def FilterSelectionQPainterPathFactory(glyph):
     path = copyGlyph.getRepresentation("defconQt.NoComponentsQPainterPath")
     for anchor in glyph.anchors:
         if anchor.selected:
+            pass  # XXX
+            """
             aPath = anchor.getRepresentation("defconQt.QPainterPath")
             path.addPath(aPath)
+            """
     for component in glyph.components:
         if component.selected:
             cPath = component.getRepresentation("defconQt.QPainterPath")
@@ -428,6 +431,7 @@ def OutlineInformationFactory_(glyph):
 # -----
 # image
 # -----
+
 
 def QPixmapFactory(image):
     font = image.font

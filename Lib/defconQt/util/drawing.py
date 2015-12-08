@@ -1,7 +1,7 @@
 from defcon import Color
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtGui import (
+    QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
 
 """
 Adapted from DefconAppKit.
@@ -488,7 +488,7 @@ def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
         if drawAnchors:
             path = QPainterPath()
             path.addEllipse(x - anchorHalfSize, y - anchorHalfSize,
-                anchorSize, anchorSize)
+                            anchorSize, anchorSize)
             painter.fillPath(path, color)
         if drawText and name:
             painter.setPen(color)

@@ -1,8 +1,7 @@
 from defconQt.glyphCollectionView import headerFont
 from defconQt.objects.defcon import TGlyph
 from defconQt.objects.glyphDialogs import (
-    GotoDialog, AddAnchorDialog, AddComponentDialog, AddLayerDialog,
-    LayerActionsDialog)
+    GotoDialog, AddLayerDialog, LayerActionsDialog)
 # TODO: make stdTools reexport?
 from defconQt.tools.baseTool import BaseTool
 from defconQt.tools.selectionTool import SelectionTool
@@ -763,7 +762,8 @@ class GlyphView(QWidget):
                     self.drawingAttribute("showGlyphStroke", layerName):
                 self.drawFillAndStroke(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphOnCurvePoints", layerName) or \
-                    self.drawingAttribute("showGlyphOffCurvePoints", layerName):
+                    self.drawingAttribute("showGlyphOffCurvePoints",
+                                          layerName):
                 self.drawPoints(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphAnchors", layerName):
                 self.drawAnchors(painter, glyph, layerName)
