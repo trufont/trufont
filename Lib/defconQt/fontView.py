@@ -16,14 +16,13 @@ from PyQt5.QtCore import (
     pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
 from PyQt5.QtGui import (
     QColor, QCursor, QIcon, QIntValidator, QKeySequence, QPixmap,
-    QRegularExpressionValidator, QStandardItem, QStandardItemModel,
-    QTextCursor)
+    QRegularExpressionValidator, QTextCursor)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QAction, QApplication, QCheckBox, QComboBox, QDialog,
     QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
-    QTextEdit, QToolTip, QTreeView, QVBoxLayout, QWidget)
+    QTextEdit, QToolTip, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 from collections import OrderedDict
 import os
 import pickle
@@ -1592,27 +1591,22 @@ class MiscTab(QWidget):
 
         self.markColorLabel = QLabel("Default flag colors:", self)
         # TODO: enforce duplicate names avoidance
-        self.markColorView = QTreeView(self)
-        self.markColorView.setRootIsDecorated(False)
-        self.markColorView.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.markColorWidget = QTreeWidget(self)
+        self.markColorWidget.setHeaderLabels(("Color", "Name"))
+        self.markColorWidget.setRootIsDecorated(False)
+        self.markColorWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
         # TODO: make this work correctly, top-level items only
-        # self.markColorView.setDragDropMode(QAbstractItemView.InternalMove)
+        # self.markColorWidget.setDragDropMode(QAbstractItemView.InternalMove)
         entries = readMarkColors(settings)
-        self.markColorModel = QStandardItemModel(len(entries), 2)
-        self.markColorModel.setHorizontalHeaderLabels(["Color", "Name"])
-        self.markColorView.setModel(self.markColorModel)
-        index = 0
         for name, color in entries.items():
-            modelIndex = self.markColorModel.index(index, 0)
+            item = QTreeWidgetItem(self.markColorWidget)
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
             widget = ColorVignette(self)
             widget.setColor(color)
             widget.setMargins(2, 2, 2, 2)
             widget.setMayClearColor(False)
-            self.markColorView.setIndexWidget(modelIndex, widget)
-            item = QStandardItem()
-            item.setText(name)
-            self.markColorModel.setItem(index, 1, item)
-            index += 1
+            self.markColorWidget.setItemWidget(item, 0, widget)
+            item.setText(1, name)
         self.addItemButton = QPushButton("+", self)
         self.addItemButton.clicked.connect(self.addItem)
         self.removeItemButton = QPushButton("−", self)
@@ -1626,7 +1620,7 @@ class MiscTab(QWidget):
         l += 1
         layout.addWidget(self.markColorLabel, l, 0, 1, 3)
         l += 1
-        layout.addWidget(self.markColorView, l, 0, 1, 3)
+        layout.addWidget(self.markColorWidget, l, 0, 1, 3)
         l += 1
         layout.addWidget(self.addItemButton, l, 0)
         layout.addWidget(self.removeItemButton, l, 1)
@@ -1637,33 +1631,29 @@ class MiscTab(QWidget):
         def mangleNewName():
             name = "New"
             index = 0
-            while self.markColorModel.findItems(name, column=1):
+            while self.markColorWidget.findItems(name, Qt.MatchExactly, 1):
                 index += 1
                 name = "New ({})".format(index)
             return name
 
-        index = self.markColorModel.rowCount()
-        item = QStandardItem()
-        item.setText(mangleNewName())
-        self.markColorModel.setItem(index, 1, item)
-
-        modelIndex = self.markColorModel.index(index, 0)
         # TODO: not DRY with ctor
+        item = QTreeWidgetItem(self.markColorWidget)
+        item.setFlags(item.flags() | Qt.ItemIsEditable)
         widget = ColorVignette(self)
         widget.setColor(QColor(Qt.white))
         widget.setMargins(2, 2, 2, 2)
         widget.setMayClearColor(False)
-        self.markColorView.setIndexWidget(modelIndex, widget)
+        self.markColorWidget.setItemWidget(item, 0, widget)
+        item.setText(1, mangleNewName())
 
-        itemIndex = self.markColorModel.index(index, 1)
-        self.markColorView.setCurrentIndex(itemIndex)
-        self.markColorView.edit(itemIndex)
+        self.markColorWidget.setCurrentItem(item)
+        self.markColorWidget.editItem(item, 1)
         self.removeItemButton.setEnabled(True)
 
     def removeItem(self):
-        i = self.markColorView.currentIndex().row()
-        self.markColorModel.takeRow(i)
-        if not self.markColorModel.rowCount():
+        i = self.markColorWidget.selectionModel().currentIndex().row()
+        self.markColorWidget.takeTopLevelItem(i)
+        if not self.markColorWidget.topLevelItemCount():
             self.removeItemButton.setEnabled(False)
 
     def writeMarkColors(self, settings=None):
@@ -1671,12 +1661,11 @@ class MiscTab(QWidget):
             settings = QSettings()
         settings.beginWriteArray("misc/markColors")
         # serialized in UFO form
-        for i in range(self.markColorModel.rowCount()):
+        for i in range(self.markColorWidget.topLevelItemCount()):
             settings.setArrayIndex(i)
-            name = self.markColorModel.item(i, 1).text()
-            widgetIndex = self.markColorModel.index(i, 0)
-            color = self.markColorView.indexWidget(widgetIndex).color()
-            settings.setValue("name", name)
+            item = self.markColorWidget.topLevelItem(i)
+            color = self.markColorWidget.itemWidget(item, 0).color()
+            settings.setValue("name", item.text(1))
             settings.setValue("color", str(Color(color.getRgbF())))
         settings.endArray()
 
