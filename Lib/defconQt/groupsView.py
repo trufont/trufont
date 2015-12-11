@@ -200,12 +200,14 @@ class GroupsWindow(QWidget):
             while "%s %d" % (groupName, index) in self.font.groups:
                 index += 1
             groupName = "%s %d" % (groupName, index)
+        self.font.groups.disableNotifications(observer=self)
         self.font.groups[groupName] = []
         item = QListWidgetItem(groupName, self.groupsList)
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.groupsList.setCurrentItem(item)
         self.groupsList.editItem(item)
         self.removeGroupButton.setEnabled(True)
+        self.font.groups.enableNotifications(observer=self)
 
     def _groupChanged(self):
         currentItem = self.groupsList.currentItem()
@@ -248,10 +250,11 @@ class GroupsWindow(QWidget):
         self._groupChanged()
 
     def _groupsChanged(self, notification):
+        groups = notification.object
         self._cachedName = None
         self.groupsList.blockSignals(True)
         self.groupsList.clear()
-        self.groupsList.fillGroupNames(self)
+        self.groupsList.fillGroupNames(groups.keys())
         # TODO: consider transferring currentGroup as well
         self.groupsList.blockSignals(False)
         # self.groupsList.setCurrentRow(0)

@@ -34,10 +34,9 @@ class MainGlyphWindow(QMainWindow):
         self._redoAction = editMenu.addAction(
             "&Redo", self.redo, QKeySequence.Redo)
         editMenu.addSeparator()
-        # TODO
+        # XXX
         action = editMenu.addAction("C&ut", self.cutOutlines, QKeySequence.Cut)
         action.setEnabled(False)
-        # TODO: enable only when selection is available
         self._copyAction = editMenu.addAction(
             "&Copy", self.copyOutlines, QKeySequence.Copy)
         editMenu.addAction("&Paste", self.pasteOutlines, QKeySequence.Paste)
@@ -51,6 +50,7 @@ class MainGlyphWindow(QMainWindow):
             "&Previous Glyph", lambda: self.glyphOffset(-1), "Home")
         glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
         glyphMenu.addSeparator()
+        # TODO: enable only when len(layerSet) > 1
         glyphMenu.addAction(
             "&Layer Actions…", self.layerActions, "L")
         menuBar.addMenu(glyphMenu)

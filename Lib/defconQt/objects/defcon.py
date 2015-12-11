@@ -336,19 +336,19 @@ class UndoManager(QObject):
 
     def __init__(self, parent):
         super().__init__()
-        self._stack = []
-        self._ptr = -1
+        self._undoStack = []
+        self._redoStack = []
         self._parent = parent
         self._shouldBackupCurrent = False
 
     def prepareTarget(self, title=None):
         data = self._parent.serialize()
-        # prune eventual redo and add push state
-        self._stack = self._stack[:self._ptr+1] + [(data, title)]
-        # set ptr to current state
         undoWasLocked = not self.canUndo()
         redoWasEnabled = self.canRedo()
-        self._ptr = len(self._stack) - 1
+        # prune eventual redo and add push state
+        self._redoStack = []
+        self._undoStack.append((data, title))
+        # set ptr to current state
         self._shouldBackupCurrent = True
         if undoWasLocked:
             self.canUndoChanged.emit(True)
@@ -356,23 +356,21 @@ class UndoManager(QObject):
             self.canRedoChanged.emit(False)
 
     def canUndo(self):
-        return self._ptr >= 0
+        return bool(len(self._undoStack))
 
     def getUndoTitle(self, index):
-        data = self._stack[index]
+        data = self._undoStack[index]
         return data[1]
 
     def undo(self, index):
-        index = self._ptr + index + 1
-        if index < 0 or self._ptr < 0:
-            raise IndexError
-        data = self._stack[index]
+        data = self._undoStack[index]
         redoWasLocked = not self.canRedo()
         if self._shouldBackupCurrent:
             forwardData = self._parent.serialize()
-            self._stack.append((forwardData, None))
+            self._redoStack.append((forwardData, None))
         self._parent.deserialize(data[0])
-        self._ptr = index - 1
+        self._redoStack = self._undoStack[index:] + self._redoStack
+        self._undoStack = self._undoStack[:index]
         self._shouldBackupCurrent = False
         if redoWasLocked:
             self.canRedoChanged.emit(True)
@@ -380,22 +378,21 @@ class UndoManager(QObject):
             self.canUndoChanged.emit(False)
 
     def canRedo(self):
-        return max(self._ptr, 0) < len(self._stack) - 1
+        return bool(len(self._redoStack))
 
     def getRedoTitle(self, index):
-        data = self._stack[index]
+        data = self._redoStack[index]
         return data[1]
 
     def redo(self, index):
-        if self._ptr == -1:
-            index += 1
-        index = self._ptr + index + 1
-        if self._ptr >= len(self._stack) - 1 or index > len(self._stack) - 1:
-            raise IndexError
-        data = self._stack[index]
+        data = self._redoStack[index]
         undoWasLocked = not self.canUndo()
         self._parent.deserialize(data[0])
-        self._ptr = index
+        self._undoStack = self._undoStack + self._redoStack[:index+1]
+        if index + 1 < len(self._redoStack):
+            self._redoStack = self._redoStack[index+1:]
+        else:
+            self._redoStack = []
         if undoWasLocked:
             self.canUndoChanged.emit(True)
         if not self.canRedo():
