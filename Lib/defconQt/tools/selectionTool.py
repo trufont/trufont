@@ -166,18 +166,17 @@ class SelectionTool(BaseTool):
             self._origin = canvasPos
         else:
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
-            # TODO: consider returning two lists to avoid this
-            items = set(i[0] for i in widget.items(self._rubberBandRect))
+            items = widget.items(self._rubberBandRect)
+            points = set(items["points"])
             if event.modifiers() & Qt.ShiftModifier:
-                items ^= self._oldSelection
+                points ^= self._oldSelection
             # TODO: fine-tune this more, maybe add optional args to items...
             if event.modifiers() & Qt.AltModifier:
-                for item in list(items):
-                    if isinstance(item, TPoint) and not item.segmentType:
-                        items.remove(item)
-                #items = set(i for i in items if i.segmentType)
-            if items != self._glyph.selection:
-                self._glyph.selection = items
+                points = set(pt for pt in points if pt.segmentType)
+            if points != self._glyph.selection:
+                # TODO: doing this takes more time than by-contour
+                # discrimination for large point count
+                self._glyph.selection = points
         widget.update()
 
     def mouseReleaseEvent(self, event):

@@ -942,7 +942,12 @@ class GlyphView(QWidget):
         smoothHalf = smoothWidth / 2.0
 
         if not justOne:
-            ret = []
+            ret = dict(
+                anchors=[],
+                contours=[],
+                points=[],
+                components=[],
+            )
         for anchor in reversed(self._glyph.anchors):
             path = QPainterPath()
             path.addEllipse(anchor.x - anchorHalfSize,
@@ -950,7 +955,7 @@ class GlyphView(QWidget):
             if func(path, obj):
                 if justOne:
                     return (anchor, None)
-                ret.append((anchor, None))
+                ret["anchors"].append(anchor)
         for contour in reversed(self._glyph):
             for point in contour:
                 path = QPainterPath()
@@ -969,13 +974,14 @@ class GlyphView(QWidget):
                 if func(path, obj):
                     if justOne:
                         return (point, contour)
-                    ret.append((point, contour))
+                    ret["contours"].append(contour)
+                    ret["points"].append(point)
         for component in reversed(self._glyph.components):
             path = component.getRepresentation("defconQt.QPainterPath")
             if func(path, obj):
                 if justOne:
                     return (component, None)
-                ret.append((component, None))
+                ret["components"].append(component)
         if not justOne:
             return ret
         return None
@@ -992,18 +998,12 @@ class GlyphView(QWidget):
     def itemsAt(self, pos, items=False):
         """
         Find items at *pos*.
-
-        An item is a (point, contour) or (anchor, None) or (component, None)
-        tuple.
         """
         return self._itemsAt(lambda path, pos: path.contains(pos), pos, items)
 
     def items(self, rect):
         """
         Find items that intersect with *rect* (can be any QPainterPath).
-
-        An item is a (point, contour) or (anchor, None) or (component, None)
-        tuple.
         """
         return self._itemsAt(
             lambda path, rect: path.intersects(rect), rect, False)
