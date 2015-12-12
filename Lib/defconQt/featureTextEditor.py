@@ -25,8 +25,7 @@ class MainEditWindow(QMainWindow):
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle(font=self.font)
-        # now arm `undoAvailable` to `setWindowModified`
-        self.editor.undoAvailable.connect(self.setWindowModified)
+        self.editor.modificationChanged.connect(self.setWindowModified)
 
     def setWindowTitle(self, title="Font Features", font=None):
         if font is not None:
@@ -81,6 +80,7 @@ class FeatureTextEditor(CodeEditor):
 
     def write(self, features):
         features.text = self.toPlainText()
+        self.document().setModified(False)
 
     def keyPressEvent(self, event):
         key = event.key()
