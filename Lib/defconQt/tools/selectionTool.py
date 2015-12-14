@@ -1,4 +1,3 @@
-from defconQt.objects.defcon import TPoint
 from defconQt.tools.baseTool import BaseTool
 from defconQt.util import platformSpecific
 from defconQt.util.uiMethods import moveUISelection, removeUISelection

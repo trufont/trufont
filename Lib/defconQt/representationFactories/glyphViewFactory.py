@@ -166,6 +166,8 @@ def ComponentQPainterPathFactory(component):
     pen = QtPen({})
     tPen = TransformPen(pen, component.transformation)
     baseGlyph.draw(tPen)
+    # XXX: why do we need to call that manually?
+    pen.closePath()
     return pen.path
 
 # --------------------
@@ -303,7 +305,7 @@ class OutlineInformationPen(AbstractPointPen):
                         # look for handles
                         back = contour[pointIndex - 1]
                         forward = contour[(pointIndex + 1) % len(contour)]
-                        if back["segmentType"] in ("curve", "line"):
+                        if back["segmentType"] is not None:
                             p1 = back["point"]
                             p2 = point["point"]
                             if p1 != p2:

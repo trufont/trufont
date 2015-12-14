@@ -1,7 +1,7 @@
 from defconQt.objects.defcon import TContour
 from defconQt.tools.baseTool import BaseTool
 from defconQt.util.uiMethods import moveUIPoint
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QPointF, Qt
 
 
 class PenTool(BaseTool):
@@ -10,6 +10,7 @@ class PenTool(BaseTool):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._shouldMoveOnCurve = False
         self._targetContour = None
 
     # helpers
@@ -39,7 +40,24 @@ class PenTool(BaseTool):
             return next(iter(candidates))
         return None
 
+    def _updateOnCurveSmoothness(self, event):
+        if self._targetContour is not None:
+            pt = self._targetContour[-1]
+            if pt.selected:
+                onCurve = self._targetContour[-2]
+                onCurve.smooth = not event.modifiers() & Qt.AltModifier
+                self._targetContour.dirty = True
+
     # events
+
+    def keyPressEvent(self, event):
+        self._updateOnCurveSmoothness(event)
+        self._shouldMoveOnCurve = event.key() == Qt.Key_Space
+
+    def keyReleaseEvent(self, event):
+        self._updateOnCurveSmoothness(event)
+        if event.key() == Qt.Key_Space:
+            self._shouldMoveOnCurve = False
 
     def mousePressEvent(self, event):
         canvasPos = event.localPos()
@@ -86,14 +104,17 @@ class PenTool(BaseTool):
             self._targetContour = contour
 
     def mouseMoveEvent(self, event):
-        canvasPos = event.localPos()
-        # we don't make any check here, mousePressEvent did it for us
         contour = self._targetContour
+        if contour is None:
+            return
+        # we don't make any check here, mousePressEvent did it for us
+        pos = self.magnetPos(event.localPos())
         pt = contour[-1]
         if pt.segmentType:
             pt.selected = False
             pt.smooth = not event.modifiers() & Qt.AltModifier
             contour.disableNotifications()
+            # TODO: defer this if Alt is pressed
             if pt.segmentType == "line":
                 # remove the onCurve
                 contour.removePoint(pt)
@@ -101,25 +122,32 @@ class PenTool(BaseTool):
                 otherPt = contour[-1]
                 contour.addPoint((otherPt.x, otherPt.y))
                 # add an offCurve before pt
-                inverseX = 2 * pt.x - canvasPos.x()
-                inverseY = 2 * pt.y - canvasPos.y()
+                inverseX = 2 * pt.x - pos.x()
+                inverseY = 2 * pt.y - pos.y()
                 contour.addPoint((inverseX, inverseY))
                 # now add pt back as curve point
                 pt.segmentType = "curve"
                 contour.insertPoint(len(self._targetContour), pt)
-            contour.addPoint((canvasPos.x(), canvasPos.y()))
+            contour.addPoint((pos.x(), pos.y()))
             contour[-1].selected = True
             contour.enableNotifications()
         else:
-            dx = canvasPos.x() - pt.x
-            dy = canvasPos.y() - pt.y
-            if len(contour) >= 3:
-                moveUIPoint(contour, pt, (dx, dy))
-                otherSidePoint = contour[-3]
-                moveUIPoint(contour, otherSidePoint, (-dx, -dy))
+            onCurve = contour[-2]
+            if event.modifiers() & Qt.ShiftModifier:
+                pos = self.clampToOrigin(
+                    pos, QPointF(onCurve.x, onCurve.y))
+            if self._shouldMoveOnCurve:
+                dx = pos.x() - pt.x
+                dy = pos.y() - pt.y
+                moveUIPoint(contour, onCurve, (dx, dy))
             else:
-                pt.move((dx, dy))
-                contour.dirty = True
+                pt.x = pos.x()
+                pt.y = pos.y()
+                if len(contour) >= 3 and onCurve.smooth:
+                    otherSidePoint = contour[-3]
+                    otherSidePoint.x = 2 * onCurve.x - pos.x()
+                    otherSidePoint.y = 2 * onCurve.y - pos.y()
+            contour.dirty = True
 
     def mouseReleaseEvent(self, event):
         self._targetContour = None

@@ -23,8 +23,7 @@ class MainScriptingWindow(QMainWindow):
 
         self.setCentralWidget(self.editor)
         self.setWindowTitle("[*]Untitled.py")
-        # arm `undoAvailable` to `setWindowModified`
-        self.editor.undoAvailable.connect(self.setWindowModified)
+        self.editor.modificationChanged.connect(self.setWindowModified)
 
     def runScript(self):
         app = QApplication.instance()
