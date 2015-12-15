@@ -91,8 +91,10 @@ def removeUISelection(contour, preserveShape=True):
                 glyph.removeContour(contour)
                 return
             # using preserveShape at the edge of an open contour will traceback
-            if contour.open and contour.index(onCurve) == len(contour):
-                preserveShape = False
+            if preserveShape and contour.open:
+                index = contour.index(onCurve)
+                if index == len(contour) or index == 0:
+                    preserveShape = False
             contour.removeSegment(index, preserveShape)
             # remove segment so we can keep track of how many remain
             del segments[index]
