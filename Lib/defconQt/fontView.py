@@ -173,9 +173,6 @@ class InspectorWindow(QWidget):
         self.markColorWidget.colorChanged.connect(
             self.writeMarkColor)
         self.markColorWidget.setMaximumWidth(columnOneWidth)
-        app = QApplication.instance()
-        self.updateGlyph()
-        app.currentGlyphChanged.connect(self.updateGlyph)
 
         l = 0
         glyphLayout.addWidget(nameLabel, l, 0)
@@ -253,8 +250,16 @@ class InspectorWindow(QWidget):
 
         layerSetGroup = QGroupBox("Layers", self)
         layerSetGroup.setFlat(True)
-        layerSetLayout = QGridLayout(self)
-        layerSetLayout.addWidget(LayerSetList(), 0, 0)
+        layerSetLayout = QVBoxLayout(self)
+
+        self.layerSetWidget = QTreeWidget(self)
+        self.layerSetWidget.setHeaderLabels(("Layer Name", "Color"))
+        self.layerSetWidget.setRootIsDecorated(False)
+        self.layerSetWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        # TODO: make this work correctly, top-level items only
+        # self.layerSetWidget.setDragDropMode(QAbstractItemView.InternalMove)
+
+        layerSetLayout.addWidget(self.layerSetWidget)
         layerSetGroup.setLayout(layerSetLayout)
 
         mainLayout = QVBoxLayout()
@@ -262,6 +267,10 @@ class InspectorWindow(QWidget):
         mainLayout.addWidget(transformGroup)
         mainLayout.addWidget(layerSetGroup)
         self.setLayout(mainLayout)
+
+        app = QApplication.instance()
+        self.updateGlyph()
+        app.currentGlyphChanged.connect(self.updateGlyph)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -335,11 +344,19 @@ class InspectorWindow(QWidget):
         app = QApplication.instance()
         if self._glyph is not None:
             self._glyph.removeObserver(self, "Glyph.Changed")
+            layerSet = self._glyph.layerSet
+            if layerSet is not None:
+                layerSet.removeObserver(self, "LayerSet.Changed")
         self._glyph = app.currentGlyph()
         if self._glyph is not None:
             self._glyph.addObserver(
                 self, "updateGlyphAttributes", "Glyph.Changed")
+            layerSet = self._glyph.layerSet
+            if layerSet is not None:
+                layerSet.addObserver(
+                    self, "updateLayerAttributes", "LayerSet.Changed")
         self.updateGlyphAttributes()
+        self.updateLayerAttributes()
 
     def updateGlyphAttributes(self, notification=None):
         if self._blocked:
@@ -370,6 +387,30 @@ class InspectorWindow(QWidget):
         self.leftSideBearingEdit.setText(leftSideBearing)
         self.rightSideBearingEdit.setText(rightSideBearing)
         self.markColorWidget.setColor(markColor)
+
+    def updateLayerAttributes(self, notification=None):
+        self.layerSetWidget.clear()
+        if self._glyph is None:
+            return
+        layerSet = self._glyph.layerSet
+        if layerSet is None:
+            return
+        for layer in layerSet:
+            item = QTreeWidgetItem(self.layerSetWidget)
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
+            item.setText(0, layer.name)
+            widget = ColorVignette(self)
+            color = layer.color
+            if color is not None:
+                color = QColor.fromRgbF(*tuple(color))
+            widget.setColor(color)
+            widget.setMargins(2, 2, 2, 2)
+            widget.setMayClearColor(False)
+            widget.colorChanged.connect(
+                self.writeLayerColor)
+            widget.setProperty("layer", layer)
+            self.layerSetWidget.setItemWidget(item, 1, widget)
+        self.layerSetWidget.setColumnWidth(1, 100)
 
     def writeGlyphName(self):
         if self._glyph is None:
@@ -412,7 +453,17 @@ class InspectorWindow(QWidget):
 
     def writeMarkColor(self):
         color = self.markColorWidget.color()
-        self._glyph.markColor = Color(color.getRgbF())
+        if color is not None:
+            color = Color(color.getRgbF())
+        self._glyph.markColor = color
+
+    def writeLayerColor(self):
+        widget = self.sender()
+        color = widget.color()
+        layer = widget.property("layer")
+        if color is not None:
+            color = Color(color.getRgbF())
+        layer.color = color
 
 
 class AddGlyphsDialog(QDialog):
