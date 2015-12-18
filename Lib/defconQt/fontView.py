@@ -747,9 +747,11 @@ class MainWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         editMenu = QMenu("&Edit", self)
+        # TODO: undo/redo support
         self.markColorMenu = QMenu("&Flag Color", self)
         self.updateMarkColors()
         editMenu.addMenu(self.markColorMenu)
+        # TODO: cut
         editMenu.addAction("&Copy", self.copy, QKeySequence.Copy)
         editMenu.addAction("Copy &As Component",
                            self.copyAsComponent, "Ctrl+Alt+C")

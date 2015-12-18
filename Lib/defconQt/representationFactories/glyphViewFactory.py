@@ -1,4 +1,3 @@
-from collections import namedtuple
 from defconQt.objects.defcon import TContour, TGlyph
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen

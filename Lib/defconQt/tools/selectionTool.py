@@ -4,7 +4,7 @@ from defconQt.tools.baseTool import BaseTool
 from defconQt.util import platformSpecific
 from defconQt.util.uiMethods import moveUISelection, removeUISelection
 from PyQt5.QtCore import QRectF, Qt
-from PyQt5.QtGui import QCursor, QPainter, QTransform
+from PyQt5.QtGui import QPainter, QTransform
 from PyQt5.QtWidgets import QMenu, QRubberBand, QStyle, QStyleOptionRubberBand
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
