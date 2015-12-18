@@ -1,4 +1,4 @@
-cython
+setuptools>=18.0
 -e git+https://github.com/typemytype/booleanOperations.git#egg=booleanOperations
 -e git+https://github.com/behdad/fonttools.git#egg=fonttools
 -e git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
