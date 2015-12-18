@@ -1,6 +1,6 @@
 from defconQt import icons_db  # noqa
 from defconQt.glyphCollectionView import cellSelectionColor
-from defconQt.glyphView import MainGfxWindow
+from defconQt.glyphView import MainGlyphWindow
 from defconQt.objects.defcon import TGlyph
 from getpass import getuser
 from PyQt5.QtCore import QEvent, QSettings, QSize, Qt
@@ -103,7 +103,7 @@ class MainMetricsWindow(QWidget):
             self.table.updateCells(self.canvas._editing)
 
     def _glyphOpened(self, glyph):
-        glyphViewWindow = MainGfxWindow(glyph, self.parent())
+        glyphViewWindow = MainGlyphWindow(glyph, self.parent())
         glyphViewWindow.show()
 
     def _textChanged(self):
