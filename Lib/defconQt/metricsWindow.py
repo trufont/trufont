@@ -1,6 +1,6 @@
 from defconQt import icons_db  # noqa
 from defconQt.glyphCollectionView import cellSelectionColor
-from defconQt.glyphView import MainGfxWindow
+from defconQt.glyphView import MainGlyphWindow
 from defconQt.objects.defcon import TGlyph
 from getpass import getuser
 from PyQt5.QtCore import QEvent, QSettings, QSize, Qt
@@ -74,8 +74,7 @@ class MainMetricsWindow(QWidget):
 
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
-        self.setWindowTitle("Metrics Window – %s %s" % (
-            self.font.info.familyName, self.font.info.styleName))
+        self.setWindowTitle(font=self.font)
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
@@ -83,14 +82,20 @@ class MainMetricsWindow(QWidget):
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 
-    def close(self):
+    def setWindowTitle(self, title="Metrics Window", font=None):
+        if font is not None:
+            title = "%s – %s %s" % (
+                title, font.info.familyName, font.info.styleName)
+        super().setWindowTitle(title)
+
+    def closeEvent(self, event):
         self.font.info.removeObserver(self, "Info.Changed")
         self._unsubscribeFromGlyphs()
-        super().close()
 
     def _fontInfoChanged(self, notification):
         self.canvas.fetchFontMetrics()
         self.canvas.update()
+        self.setWindowTitle(font=self.font)
 
     def _glyphChanged(self, notification):
         self.canvas.update()
@@ -98,7 +103,7 @@ class MainMetricsWindow(QWidget):
             self.table.updateCells(self.canvas._editing)
 
     def _glyphOpened(self, glyph):
-        glyphViewWindow = MainGfxWindow(glyph, self.parent())
+        glyphViewWindow = MainGlyphWindow(glyph, self.parent())
         glyphViewWindow.show()
 
     def _textChanged(self):

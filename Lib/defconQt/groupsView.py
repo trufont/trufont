@@ -105,9 +105,6 @@ class GroupCollectionWidget(GlyphCollectionWidget):
         self.characterDropCallback = None
         self.resize(self.width(), 200)
 
-    # TODO: The standard QListWidget has scrollbar and does not need three
-    #       times parent call.
-    #       Find out how to handle that properly.
     def keyPressEvent(self, event):
         if event.key() == platformSpecific.deleteKey:
             if self.characterDeletionCallback is not None:
@@ -141,7 +138,8 @@ class GroupsWindow(QWidget):
     def __init__(self, font, parent=None):
         super(GroupsWindow, self).__init__(parent, Qt.Window)
         self.font = font
-        self.font.addObserver(self, "_groupsChanged", "Groups.Changed")
+        self.font.groups.addObserver(self, "_groupsChanged", "Groups.Changed")
+        self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
         groups = self.font.groups.keys()
         self.groupsList = GroupListWidget(groups, self)
@@ -183,8 +181,13 @@ class GroupsWindow(QWidget):
         self.setLayout(layout)
         self.adjustSize()
 
-        self.setWindowTitle("Groups window – %s %s" % (
-            self.font.info.familyName, self.font.info.styleName))
+        self.setWindowTitle(font=self.font)
+
+    def setWindowTitle(self, title="Groups Window", font=None):
+        if font is not None:
+            title = "%s – %s %s" % (
+                title, font.info.familyName, font.info.styleName)
+        super().setWindowTitle(title)
 
     def _alignmentChanged(self):
         alignRight = self.alignRightBox.isChecked()
@@ -197,12 +200,14 @@ class GroupsWindow(QWidget):
             while "%s %d" % (groupName, index) in self.font.groups:
                 index += 1
             groupName = "%s %d" % (groupName, index)
+        self.font.groups.disableNotifications(observer=self)
         self.font.groups[groupName] = []
         item = QListWidgetItem(groupName, self.groupsList)
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.groupsList.setCurrentItem(item)
         self.groupsList.editItem(item)
         self.removeGroupButton.setEnabled(True)
+        self.font.groups.enableNotifications(observer=self)
 
     def _groupChanged(self):
         currentItem = self.groupsList.currentItem()
@@ -244,15 +249,18 @@ class GroupsWindow(QWidget):
             self.removeGroupButton.setEnabled(False)
         self._groupChanged()
 
-    # XXX: it seems the notification doesn't trigger...
     def _groupsChanged(self, notification):
+        groups = notification.object
         self._cachedName = None
         self.groupsList.blockSignals(True)
         self.groupsList.clear()
-        self.groupsList.fillGroupNames(self)
+        self.groupsList.fillGroupNames(groups.keys())
         # TODO: consider transferring currentGroup as well
         self.groupsList.blockSignals(False)
         # self.groupsList.setCurrentRow(0)
+
+    def _fontInfoChanged(self, notification):
+        self.setWindowTitle(font=self.font)
 
     def characterDeleteEvent(self, selection):
         currentGroup = self.groupsList.currentItem().text()
@@ -285,5 +293,6 @@ class GroupsWindow(QWidget):
         self._groupChanged()
 
     def closeEvent(self, event):
-        self.font.removeObserver(self, "Groups.Changed")
+        self.font.groups.removeObserver(self, "Groups.Changed")
+        self.font.info.removeObserver(self, "Info.Changed")
         event.accept()

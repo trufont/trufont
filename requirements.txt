@@ -1,3 +1,4 @@
+git+https://github.com/typemytype/booleanOperations.git#egg=booleanOperations
 git+https://github.com/behdad/fonttools.git#egg=fonttools
 git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
 git+https://github.com/trufont/robofab.git@python3-ufo3#egg=robofab

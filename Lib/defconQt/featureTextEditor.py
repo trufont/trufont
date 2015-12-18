@@ -12,28 +12,31 @@ class MainEditWindow(QMainWindow):
         super(MainEditWindow, self).__init__(parent)
 
         self.font = font
+        self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
         self.editor = FeatureTextEditor(self.font.features.text, self)
         self.resize(600, 500)
 
         fileMenu = QMenu("&File", self)
-        fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
+        fileMenu.addAction("&Save…", self.save, QKeySequence.Save)
         fileMenu.addSeparator()
         fileMenu.addAction("&Reload From Disk", self.reload)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 
         self.setCentralWidget(self.editor)
-        self.setWindowTitle("Font features", self.font)
-        # now arm `undoAvailable` to `setWindowModified`
-        self.editor.undoAvailable.connect(self.setWindowModified)
+        self.setWindowTitle(font=self.font)
+        self.editor.modificationChanged.connect(self.setWindowModified)
 
-    def setWindowTitle(self, title, font):
+    def setWindowTitle(self, title="Font Features", font=None):
         if font is not None:
             puts = "[*]%s – %s %s" % (
                 title, self.font.info.familyName, self.font.info.styleName)
         else:
             puts = "[*]%s" % title
         super(MainEditWindow, self).setWindowTitle(puts)
+
+    def _fontInfoChanged(self, notification):
+        self.setWindowTitle(font=self.font)
 
     def closeEvent(self, event):
         if self.editor.document().isModified():
@@ -57,6 +60,8 @@ class MainEditWindow(QMainWindow):
                 event.accept()
             else:
                 event.ignore()
+                return
+            self.font.info.removeObserver(self, "Info.Changed")
 
     def reload(self):
         self.font.reloadFeatures()
@@ -75,6 +80,7 @@ class FeatureTextEditor(CodeEditor):
 
     def write(self, features):
         features.text = self.toPlainText()
+        self.document().setModified(False)
 
     def keyPressEvent(self, event):
         key = event.key()
