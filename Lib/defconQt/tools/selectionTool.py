@@ -1,9 +1,11 @@
+from defconQt.objects.defcon import TAnchor, TComponent
+from defconQt.objects.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from defconQt.tools.baseTool import BaseTool
 from defconQt.util import platformSpecific
 from defconQt.util.uiMethods import moveUISelection, removeUISelection
 from PyQt5.QtCore import QRectF, Qt
-from PyQt5.QtGui import QPainter, QTransform
-from PyQt5.QtWidgets import QRubberBand, QStyle, QStyleOptionRubberBand
+from PyQt5.QtGui import QCursor, QPainter, QTransform
+from PyQt5.QtWidgets import QMenu, QRubberBand, QStyle, QStyleOptionRubberBand
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
@@ -21,6 +23,25 @@ class SelectionTool(BaseTool):
         self._shouldPrepareUndo = False
 
     # helpers
+
+    def _createAnchor(self, *args):
+        widget = self.parent()
+        pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
+        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(widget, pos)
+        if ok:
+            anchor = TAnchor()
+            anchor.x = pos.x()
+            anchor.y = pos.y()
+            anchor.name = newAnchorName
+            self._glyph.appendAnchor(anchor)
+
+    def _createComponent(self, *args):
+        widget = self.parent()
+        newGlyph, ok = AddComponentDialog.getNewGlyph(widget, self._glyph)
+        if ok and newGlyph is not None:
+            component = TComponent()
+            component.baseGlyph = newGlyph.name
+            self._glyph.appendComponent(component)
 
     def _getSelectedCandidatePoint(self):
         """
@@ -62,16 +83,33 @@ class SelectionTool(BaseTool):
                 dy *= 10
         return (dx, dy)
 
+    # actions
+
+    def showContextMenu(self, pos):
+        self._cachedPos = pos
+        menu = QMenu(self.parent())
+        menu.addAction("Add Anchor…", self._createAnchor)
+        menu.addAction("Add Component…", self._createComponent)
+        menu.exec_(self._cachedPos)
+        self._cachedPos = None
+
     # events
 
     def keyPressEvent(self, event):
         key = event.key()
         if key == platformSpecific.deleteKey:
+            glyph = self._glyph
             # TODO: prune
-            self._glyph.prepareUndo()
+            glyph.prepareUndo()
             preserveShape = not event.modifiers() & Qt.ShiftModifier
-            for contour in reversed(self._glyph):
+            for anchor in glyph.anchors:
+                if anchor.selected:
+                    glyph.removeAnchor(anchor)
+            for contour in reversed(glyph):
                 removeUISelection(contour, preserveShape)
+            for component in glyph.components:
+                if component.selected:
+                    glyph.removeComponent(component)
         elif key in arrowKeys:
             # TODO: prune
             self._glyph.prepareUndo()
@@ -108,6 +146,9 @@ class SelectionTool(BaseTool):
                     notification="Contour.SelectionChanged")
 
     def mousePressEvent(self, event):
+        if event.button() & Qt.RightButton:
+            self.showContextMenu(event.globalPos())
+            return
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ShiftModifier
         self._origin = event.localPos()
@@ -145,13 +186,6 @@ class SelectionTool(BaseTool):
             if self._shouldPrepareUndo:
                 self._glyph.prepareUndo()
                 self._shouldPrepareUndo = False
-            # TODO: maybe return a dict to dispatch?
-            #itemUnderMouse = self._itemTuple[0]
-            #if isinstance(itemUnderMouse, TComponent):
-            #    transform = itemUnderMouse.transformation
-            #    x, y = transform[0], transform[3]
-            #else:
-            #    x, y = itemUnderMouse.x, itemUnderMouse.y
             dx = canvasPos.x() - self._origin.x()
             dy = canvasPos.y() - self._origin.y()
             for anchor in self._glyph.anchors:

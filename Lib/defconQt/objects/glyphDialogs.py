@@ -112,7 +112,7 @@ class AddAnchorDialog(QDialog):
         if pos is not None:
             anchorPositionLabel = QLabel(
                 "The anchor will be added at ({}, {})."
-                .format(pos.x(), pos.y()), self)
+                .format(round(pos.x(), 2), round(pos.y(), 2)), self)
 
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
