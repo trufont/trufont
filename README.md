@@ -1,24 +1,30 @@
 # TruFont
 
+![fontView Window](misc/fontView.png)
+
 TruFont is a font-editing application written with Python3, ufoLib, defcon and PyQt.
 
-Dependencies:
+## Dependencies
 
 - Python 3
 - PyQt5
+- cython & [booleanOperations]
 - [fontTools]
 - [robofab, python3-ufo3 branch]
 - [defcon, python3-ufo3 branch]
 
 Optional:
 
+- [extractor, python3-ufo3 branch]
 - [ufo2fdk, python3-ufo3 branch]
 
-Run:
+## Run
 
-`cd Lib && python -m defconQt`
+Install: `python setup.py install && trufont`
 
-Install notes:
+Virtualenv: `cd Lib && python -m defconQt`
+
+## Install notes
 
 - On OSX, it is highly recommended to install all dependencies with [Homebrew]
   in order to have a correct Qt namespace (`brew` handles it all by itself).  
@@ -31,8 +37,10 @@ Install notes:
   * `python3.5`
   * …
 
+[booleanOperations]: https://github.com/typemytype/booleanOperations
 [fontTools]: https://github.com/behdad/fonttools
 [robofab, python3-ufo3 branch]: https://github.com/trufont/robofab
 [defcon, python3-ufo3 branch]: https://github.com/trufont/defcon
+[extractor, python3-ufo3 branch]: https://github.com/trufont/extractor
 [ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
 [Homebrew]: http://brew.sh/
