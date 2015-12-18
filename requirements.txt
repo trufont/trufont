@@ -1,7 +1,7 @@
 cython
-git+https://github.com/typemytype/booleanOperations.git#egg=booleanOperations
-git+https://github.com/behdad/fonttools.git#egg=fonttools
-git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
-git+https://github.com/trufont/robofab.git@python3-ufo3#egg=robofab
-git+https://github.com/trufont/ufo2fdk.git@python3-ufo3#egg=ufo2fdk
+-e git+https://github.com/typemytype/booleanOperations.git#egg=booleanOperations
+-e git+https://github.com/behdad/fonttools.git#egg=fonttools
+-e git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
+-e git+https://github.com/trufont/robofab.git@python3-ufo3#egg=robofab
+-e git+https://github.com/trufont/ufo2fdk.git@python3-ufo3#egg=ufo2fdk
 PyInstaller==3.0
