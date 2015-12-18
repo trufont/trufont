@@ -251,24 +251,22 @@ class MainGlyphWindow(QMainWindow):
     # Notification support
     # --------------------
 
+    # glyph
+
     def _subscribeToGlyph(self, glyph):
         if glyph is not None:
             glyph.addObserver(self, "_glyphChanged", "Glyph.Changed")
             glyph.addObserver(self, "_glyphNameChanged", "Glyph.NameChanged")
             glyph.addObserver(
                 self, "_glyphSelectionChanged", "Glyph.SelectionChanged")
-            font = glyph.font
-            if font is not None:
-                font.info.addObserver(self, "_fontChanged", "Info.Changed")
+            self._subscribeToFontAndLayerSet(glyph.font)
 
     def _unsubscribeFromGlyph(self, glyph):
         if glyph is not None:
             glyph.removeObserver(self, "Glyph.Changed")
             glyph.removeObserver(self, "Glyph.NameChanged")
             glyph.removeObserver(self, "Glyph.SelectionChanged")
-            font = glyph.font
-            if font is not None:
-                font.info.removeObserver(self, "Info.Changed")
+            self._unsubscribeFromFontAndLayerSet(glyph.font)
 
     def _glyphChanged(self, notification):
         self.view.glyphChanged()
@@ -281,10 +279,47 @@ class MainGlyphWindow(QMainWindow):
         self._updateSelection()
         self.view.glyphChanged()
 
-    def _fontChanged(self, notification):
-        self.view.fontChanged()
+    def _fontInfoChanged(self, notification):
+        self.view.fontInfoChanged()
         glyph = self.view.glyph()
         self.setWindowTitle(glyph.name, glyph.font)
+
+    # layers & font
+
+    def _subscribeToFontAndLayerSet(self, font):
+        """Note: called by _subscribeToGlyph."""
+        if font is None:
+            return
+        font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
+        layerSet = font.layers
+        if layerSet is None:
+            return
+        layerSet.addObserver(self, '_layerSetLayerDeleted',
+                             'LayerSet.LayerDeleted')
+        for event in ('LayerSet.LayerAdded', 'LayerSet.LayerChanged',
+                      'LayerSet.LayerOrderChanged'):
+            layerSet.addObserver(self, '_layerSetEvents', event)
+
+    def _unsubscribeFromFontAndLayerSet(self, font):
+        """Note: called by _unsubscribeFromGlyph."""
+        if font is None:
+            return
+        font.info.removeObserver(self, "Info.Changed")
+        layerSet = font.layers
+        if layerSet is None:
+            return
+        for event in ('LayerSet.LayerAdded', 'LayerSet.LayerChanged',
+                      'LayerSet.LayerOrderChanged', 'LayerSet.LayerDeleted'):
+            layerSet.removeObserver(self, event)
+
+    def _layerSetEvents(self, notification):
+        self._updateLayerBox()
+
+    def _layerSetLayerDeleted(self, notification):
+        self._layerSetEvents(notification)
+        self._currentLayerBox.setCurrentIndex(0)
+
+    # other updaters
 
     def _updateUndoRedo(self):
         glyph = self.view.glyph()
@@ -536,7 +571,7 @@ class GlyphView(QWidget):
     def glyphChanged(self):
         self.update()
 
-    def fontChanged(self):
+    def fontInfoChanged(self):
         self.setGlyph(self._glyph)
 
     # ---------------
