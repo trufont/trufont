@@ -5,12 +5,11 @@ from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGfxWindow
 from defconQt.glyphView_ng import MainGlyphWindow
 from defconQt.groupsView import GroupsWindow
-from defconQt.layerSetList import LayerSetList
 from defconQt.scriptingWindow import MainScriptingWindow
 from defconQt.objects.colorWidgets import ColorVignette
-from defconQt.objects.defcon import GlyphSet, TFont, TGlyph
+from defconQt.objects.defcon import GlyphSet, TComponent, TFont, TGlyph
 from defconQt.util import platformSpecific
-from defcon import Color, Component
+from defcon import Color
 from defconQt.metricsWindow import MainMetricsWindow, comboBoxItems
 from PyQt5.QtCore import (
     pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
@@ -884,7 +883,7 @@ class MainWindow(QMainWindow):
     def saveFileAs(self):
         fileFormats = OrderedDict([
             ("UFO Font version 3 (*.ufo)", 3),
-            ("UFO Fonts version 2 (*.ufo)", 2),
+            ("UFO Font version 2 (*.ufo)", 2),
         ])
         # TODO: see if OSX works nicely with UFO as files, then switch
         # to directory on platforms that need it
@@ -1107,7 +1106,7 @@ class MainWindow(QMainWindow):
             glyph = glyphs[index]
             componentGlyph = TGlyph()
             componentGlyph.width = glyph.width
-            component = Component()
+            component = TComponent()
             component.baseGlyph = glyph.name
             componentGlyph.appendComponent(component)
             pickled.append(componentGlyph.serialize())
