@@ -80,28 +80,27 @@ class PenTool(BaseTool):
                 item.selected = True
                 candidate.dirty = True
                 self._targetContour = candidate
-        # otherwise, add a point to canvas
-        else:
-            # add to current contour if applicable
-            if candidate is not None:
-                contour = candidate
-                lastPoint = contour[-1]
-                lastPoint.selected = False
-                if lastPoint.segmentType:
-                    pointType = "line"
-                else:
-                    pointType = "curve"
-                    contour.addPoint((x, y))
-            # or create a new one
+                return
+        # otherwise, add a point to current contour if applicable
+        if candidate is not None:
+            contour = candidate
+            lastPoint = contour[-1]
+            lastPoint.selected = False
+            if lastPoint.segmentType:
+                pointType = "line"
             else:
-                contour = TContour()
-                self._glyph.appendContour(contour)
-                pointType = "move"
-            # in any case, unselect all points (*click*) and enable new point
-            self._glyph.selected = False
-            contour.addPoint((x, y), pointType)
-            contour[-1].selected = True
-            self._targetContour = contour
+                pointType = "curve"
+                contour.addPoint((x, y))
+        # or create a new one
+        else:
+            contour = TContour()
+            self._glyph.appendContour(contour)
+            pointType = "move"
+        # in any case here, unselect all points (*click*) and enable new point
+        self._glyph.selected = False
+        contour.addPoint((x, y), pointType)
+        contour[-1].selected = True
+        self._targetContour = contour
 
     def mouseMoveEvent(self, event):
         contour = self._targetContour
