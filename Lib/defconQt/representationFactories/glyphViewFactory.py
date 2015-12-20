@@ -164,9 +164,11 @@ def ComponentQPainterPathFactory(component):
         return
     pen = QtPen({})
     tPen = TransformPen(pen, component.transformation)
-    baseGlyph.draw(tPen)
-    # XXX: why do we need to call that manually?
-    pen.closePath()
+    for contour in baseGlyph:
+        contour.draw(tPen)
+    for component in baseGlyph.components:
+        path = component.getRepresentation("defconQt.QPainterPath")
+        pen.path.addPath(path)
     return pen.path
 
 # --------------------
