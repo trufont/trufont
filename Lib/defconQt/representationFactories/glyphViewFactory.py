@@ -176,7 +176,8 @@ def ComponentQPainterPathFactory(component):
 
 def SplitLinesQPainterPathFactory(glyph):
     pen = SplitLinesFromPathQtPen(glyph.layer)
-    glyph.draw(pen)
+    for contour in glyph:
+        contour.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return (pen.path, pen.lines)
 

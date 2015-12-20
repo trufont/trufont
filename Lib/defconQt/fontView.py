@@ -26,7 +26,6 @@ import os
 import pickle
 import platform
 import subprocess
-import traceback
 
 cannedDesign = [
     dict(type="cannedDesign", allowPseudoUnicode=True)
@@ -66,7 +65,8 @@ latinDefault = GlyphSet(
 
 try:
     gitShortHash = subprocess.check_output(
-        ['git', 'rev-parse', '--short', 'HEAD']).decode()
+        ['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL
+    ).decode()
 except:
     gitShortHash = ""
 
@@ -446,7 +446,7 @@ class InspectorWindow(QWidget):
         if self._glyph is None:
             return
         self._blocked = True
-        self._glyph.rightMargin = int(self.nameEdit.text())
+        self._glyph.rightMargin = int(self.rightSideBearingEdit.text())
         self._blocked = False
 
     def writeMarkColor(self):
@@ -849,8 +849,9 @@ class MainWindow(QMainWindow):
                     return
             try:
                 font = TFont(path)
-            except:
-                print(traceback.format_exc())
+            except Exception as e:
+                title = e.__class__.__name__
+                QMessageBox.critical(self, title, str(e))
                 return
             if not stickToSelf:
                 window = MainWindow(font)
