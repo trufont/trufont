@@ -243,7 +243,7 @@ class SelectionTool(BaseTool):
         widgetMove = widget.mapToWidget(self._rubberBandRect.topRight())
         option = QStyleOptionRubberBand()
         option.initFrom(widget)
-        option.opaque = True
+        option.opaque = False
         option.rect = QRectF(widgetOrigin, widgetMove).toRect()
         option.shape = QRubberBand.Rectangle
         painter.save()
