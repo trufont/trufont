@@ -184,7 +184,10 @@ class MainGlyphWindow(QMainWindow):
                 # TODO: if we serialize selected state, we don't need to do
                 # this
                 pasteGlyph.selected = True
-                pasteGlyph.drawPoints(pen)
+                if len(pasteGlyph) or len(pasteGlyph.components) or \
+                        len(pasteGlyph.anchors):
+                    glyph.prepareUndo()
+                    pasteGlyph.drawPoints(pen)
 
     def selectAll(self):
         glyph = self.view.glyph()
