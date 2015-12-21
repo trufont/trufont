@@ -747,15 +747,21 @@ class MainWindow(QMainWindow):
         menuBar.addMenu(fileMenu)
 
         editMenu = QMenu("&Edit", self)
-        # TODO: undo/redo support
+        self._undoAction = editMenu.addAction(
+            "&Undo", self.undo, QKeySequence.Undo)
+        self._redoAction = editMenu.addAction(
+            "&Redo", self.redo, QKeySequence.Redo)
+        editMenu.addSeparator()
         self.markColorMenu = QMenu("&Flag Color", self)
         self.updateMarkColors()
         editMenu.addMenu(self.markColorMenu)
-        # TODO: cut
-        editMenu.addAction("&Copy", self.copy, QKeySequence.Copy)
-        editMenu.addAction("Copy &As Component",
-                           self.copyAsComponent, "Ctrl+Alt+C")
-        editMenu.addAction("&Paste", self.paste, QKeySequence.Paste)
+        cut = editMenu.addAction("C&ut", self.cut, QKeySequence.Cut)
+        copy = editMenu.addAction("&Copy", self.copy, QKeySequence.Copy)
+        copyComponent = editMenu.addAction(
+            "Copy &As Component", self.copyAsComponent, "Ctrl+Alt+C")
+        paste = editMenu.addAction(
+            "&Paste", self.paste, QKeySequence.Paste)
+        self._clipboardActions = (cut, copy, copyComponent, paste)
         editMenu.addSeparator()
         editMenu.addAction("&Settings…", self.settings)
         menuBar.addMenu(editMenu)
@@ -797,6 +803,10 @@ class MainWindow(QMainWindow):
         statusBar = self.statusBar()
         statusBar.addPermanentWidget(self.sqSizeSlider)
         statusBar.addWidget(self.selectionLabel)
+
+        app = QApplication.instance()
+        self._updateGlyphActions()
+        app.currentGlyphChanged.connect(self._updateGlyphActions)
 
         self.setCentralWidget(self.collectionWidget.scrollArea())
         self.resize(605, 430)
@@ -955,6 +965,14 @@ class MainWindow(QMainWindow):
             print(reports["autohint"])
             print(reports["makeotf"])
 
+    def undo(self):
+        glyph = self.collectionWidget.lastSelectedGlyph()
+        glyph.undo()
+
+    def redo(self):
+        glyph = self.collectionWidget.lastSelectedGlyph()
+        glyph.redo()
+
     def setCurrentFile(self, path):
         if path is None:
             return
@@ -998,6 +1016,28 @@ class MainWindow(QMainWindow):
             pixmap.fill(color)
             action.setIcon(QIcon(pixmap))
             action.setData(color)
+
+    def _updateGlyphActions(self):
+        currentGlyph = self.collectionWidget.lastSelectedGlyph()
+        # disconnect eventual signal of previous glyph
+        self._undoAction.disconnect()
+        self._undoAction.triggered.connect(self.undo)
+        self._redoAction.disconnect()
+        self._redoAction.triggered.connect(self.redo)
+        # now update status
+        if currentGlyph is None:
+            self._undoAction.setEnabled(False)
+            self._redoAction.setEnabled(False)
+        else:
+            undoManager = currentGlyph.undoManager
+            self._undoAction.setEnabled(currentGlyph.canUndo())
+            undoManager.canUndoChanged.connect(self._undoAction.setEnabled)
+            self._redoAction.setEnabled(currentGlyph.canRedo())
+            undoManager.canRedoChanged.connect(self._redoAction.setEnabled)
+        # and other actions
+        for action in self._clipboardActions:
+            action.setEnabled(currentGlyph is not None)
+        self.markColorMenu.setEnabled(currentGlyph is not None)
 
     def closeEvent(self, event):
         ok = self.maybeSaveBeforeExit()
@@ -1088,6 +1128,13 @@ class MainWindow(QMainWindow):
     def getGlyphs(self):
         return self.collectionWidget.glyphs
 
+    def cut(self):
+        self.copy()
+        glyphs = self.collectionWidget.glyphs
+        for index in self.collectionWidget.selection:
+            glyph = glyphs[index]
+            glyph.clear()
+
     def copy(self):
         glyphs = self.collectionWidget.glyphs
         pickled = []
@@ -1127,6 +1174,8 @@ class MainWindow(QMainWindow):
             glyphs = self.collectionWidget.getSelectedGlyphs()
             if len(data) == len(glyphs):
                 for pickled, glyph in zip(data, glyphs):
+                    # XXX: prune
+                    glyph.prepareUndo()
                     glyph.deserialize(pickled)
 
     def settings(self):

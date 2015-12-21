@@ -262,6 +262,9 @@ class MainGlyphWindow(QMainWindow):
             glyph.addObserver(self, "_glyphNameChanged", "Glyph.NameChanged")
             glyph.addObserver(
                 self, "_glyphSelectionChanged", "Glyph.SelectionChanged")
+            undoManager = glyph.undoManager
+            undoManager.canUndoChanged.connect(self._undoAction.setEnabled)
+            undoManager.canRedoChanged.connect(self._redoAction.setEnabled)
             self._subscribeToFontAndLayerSet(glyph.font)
 
     def _unsubscribeFromGlyph(self, glyph):
@@ -269,6 +272,9 @@ class MainGlyphWindow(QMainWindow):
             glyph.removeObserver(self, "Glyph.Changed")
             glyph.removeObserver(self, "Glyph.NameChanged")
             glyph.removeObserver(self, "Glyph.SelectionChanged")
+            undoManager = glyph.undoManager
+            undoManager.canUndoChanged.disconnect(self._undoAction.setEnabled)
+            undoManager.canRedoChanged.disconnect(self._redoAction.setEnabled)
             self._unsubscribeFromFontAndLayerSet(glyph.font)
 
     def _glyphChanged(self, notification):
@@ -326,11 +332,8 @@ class MainGlyphWindow(QMainWindow):
 
     def _updateUndoRedo(self):
         glyph = self.view.glyph()
-        undoManager = glyph.undoManager
         self._undoAction.setEnabled(glyph.canUndo())
-        undoManager.canUndoChanged.connect(self._undoAction.setEnabled)
         self._redoAction.setEnabled(glyph.canRedo())
-        undoManager.canRedoChanged.connect(self._redoAction.setEnabled)
 
     def _updateSelection(self):
         def hasSelection():

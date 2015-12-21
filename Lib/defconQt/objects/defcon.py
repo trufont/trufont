@@ -180,6 +180,7 @@ class TGlyph(Glyph):
         # TODO: we're halting removeOverlap for collinear vector diffs (changes
         # point count, not contour), is this what we want to do?
         if len(bGlyph.contours) != len(self):
+            self.prepareUndo()
             self.clearContours()
             bGlyph.draw(self.getPen())
             self.dirty = True
