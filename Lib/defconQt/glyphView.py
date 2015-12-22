@@ -50,8 +50,7 @@ class MainGlyphWindow(QMainWindow):
             "&Previous Glyph", lambda: self.glyphOffset(-1), "Home")
         glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
         glyphMenu.addSeparator()
-        # TODO: enable only when len(layerSet) > 1
-        glyphMenu.addAction(
+        self._layerAction = glyphMenu.addAction(
             "&Layer Actions…", self.layerActions, "L")
         menuBar.addMenu(glyphMenu)
 
@@ -322,7 +321,7 @@ class MainGlyphWindow(QMainWindow):
             layerSet.removeObserver(self, event)
 
     def _layerSetEvents(self, notification):
-        self._updateLayerBox()
+        self._updateLayerControls()
 
     def _layerSetLayerDeleted(self, notification):
         self._layerSetEvents(notification)
@@ -359,7 +358,7 @@ class MainGlyphWindow(QMainWindow):
         self._unsubscribeFromGlyph(currentGlyph)
         self._subscribeToGlyph(glyph)
         self.view.setGlyph(glyph)
-        self._updateLayerBox()
+        self._updateLayerControls()
         self._updateUndoRedo()
         self._updateSelection()
         self.setWindowTitle(glyph.name, glyph.font)
@@ -415,7 +414,7 @@ class MainGlyphWindow(QMainWindow):
         glyph.template = True
         return glyph
 
-    def _updateLayerBox(self):
+    def _updateLayerControls(self):
         comboBox = self._currentLayerBox
         glyph = self.view.glyph()
         comboBox.blockSignals(True)
@@ -425,6 +424,7 @@ class MainGlyphWindow(QMainWindow):
         comboBox.setCurrentText(glyph.layer.name)
         comboBox.addItem("New layer…", None)
         comboBox.blockSignals(False)
+        self._layerAction.setEnabled(len(glyph.layerSet) > 1)
 
     def _setLayerBoxIndex(self, index):
         comboBox = self._currentLayerBox
