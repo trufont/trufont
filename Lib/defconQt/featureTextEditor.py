@@ -86,9 +86,10 @@ class FeatureTextEditor(CodeEditor):
         key = event.key()
         if key == Qt.Key_Return:
             cursor = self.textCursor()
-            indentLvl = self.findLineIndentLevel(cursor)
+            indentLvl = self.findLineIndentLevel()
             newBlock = False
 
+            pos = cursor.position()
             cursor.movePosition(QTextCursor.PreviousCharacter,
                                 QTextCursor.KeepAnchor)
             if cursor.selectedText() == self.openBlockDelimiter:
@@ -108,8 +109,8 @@ class FeatureTextEditor(CodeEditor):
                     newBlock = True
                 indentLvl += 1
 
-            cursor.select(QTextCursor.LineUnderCursor)
             if newBlock:
+                cursor.select(QTextCursor.LineUnderCursor)
                 txt = cursor.selectedText().lstrip(" ").split(" ")
                 if len(txt) > 1:
                     if len(txt) < 3 and txt[-1][-1] == self.openBlockDelimiter:
@@ -118,7 +119,7 @@ class FeatureTextEditor(CodeEditor):
                         feature = txt[1]
                 else:
                     feature = None
-            cursor.movePosition(QTextCursor.EndOfLine)
+            cursor.setPosition(pos)
 
             cursor.insertText("\n")
             newLineSpace = "".join(self.indent for _ in range(indentLvl))

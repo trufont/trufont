@@ -95,7 +95,9 @@ class CodeEditor(QPlainTextEdit):
         self.lineNumbers.setGeometry(cr.left(), cr.top(),
                                      self.lineNumberAreaWidth(), cr.height())
 
-    def findLineIndentLevel(self, cursor):
+    def findLineIndentLevel(self, cursor=None):
+        if cursor is None:
+            cursor = self.textCursor()
         indent = 0
         cursor.select(QTextCursor.LineUnderCursor)
         lineLength = len(cursor.selectedText()) // len(self.indent)
@@ -119,7 +121,7 @@ class CodeEditor(QPlainTextEdit):
         key = event.key()
         if key == Qt.Key_Return:
             cursor = self.textCursor()
-            indentLvl = self.findLineIndentLevel(cursor)
+            indentLvl = self.findLineIndentLevel()
             if self.openBlockDelimiter is not None:
                 cursor.movePosition(QTextCursor.PreviousCharacter,
                                     QTextCursor.KeepAnchor)
