@@ -87,14 +87,11 @@ def FilterSelectionFactory(glyph):
             if point.segmentType and not point.selected:
                 onCurvesSelected = False
                 break
-        # TODO: should we care about offCurves not selected?
         if onCurvesSelected:
             contour.drawPoints(pen)
         else:
-            workContour = TContour()
-            workContour._points = contour._points
             lastSubcontour = None
-            segments = workContour.segments
+            segments = contour.segments
             # put start point at the beginning of a subcontour
             for index, segment in reversed(list(enumerate(segments))):
                 if segment[-1].selected:

@@ -510,13 +510,8 @@ class GlyphView(QWidget):
     def _getGlyphWidthHeight(self):
         if self._glyph is None:
             return 0, 0
-        bounds = self._glyph.bounds
-        if bounds is not None:
-            left, bottom, right, top = self._glyph.bounds
-        else:
-            left = right = bottom = top = 0
-        left = min(0, left)
-        right = max(right, self._glyph.width)
+        left = 0
+        right = self._glyph.width
         bottom = self._descender
         top = max(self._capHeight, self._ascender,
                   self._unitsPerEm + self._descender)
