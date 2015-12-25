@@ -157,18 +157,9 @@ def FilterSelectionQPainterPathFactory(glyph):
 
 
 def ComponentQPainterPathFactory(component):
-    font = component.font
-    try:
-        baseGlyph = font[component.baseGlyph]
-    except KeyError:
-        return
-    pen = QtPen({})
-    tPen = TransformPen(pen, component.transformation)
-    for contour in baseGlyph:
-        contour.draw(tPen)
-    for component in baseGlyph.components:
-        path = component.getRepresentation("defconQt.QPainterPath")
-        pen.path.addPath(path)
+    pen = OnlyComponentsQtPen(component.font)
+    component.draw(pen)
+    pen.path.setFillRule(Qt.WindingFill)
     return pen.path
 
 # --------------------
