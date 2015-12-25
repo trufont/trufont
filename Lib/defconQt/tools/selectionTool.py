@@ -167,8 +167,6 @@ class SelectionTool(BaseTool):
                     notification="Contour.SelectionChanged")
             self._shouldPrepareUndo = True
         else:
-            # XXX: need to account for anchors and components,
-            # no more in our API :t
             if addToSelection:
                 self._oldSelection = self._glyph.selection
             else:

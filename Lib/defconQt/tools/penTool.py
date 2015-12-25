@@ -42,6 +42,8 @@ class PenTool(BaseTool):
 
     def _updateOnCurveSmoothness(self, event):
         if self._targetContour is not None:
+            if len(self._targetContour) < 2:
+                return
             pt = self._targetContour[-1]
             if pt.selected:
                 onCurve = self._targetContour[-2]
@@ -86,6 +88,10 @@ class PenTool(BaseTool):
             contour = candidate
             lastPoint = contour[-1]
             lastPoint.selected = False
+            if event.modifiers() & Qt.ShiftModifier:
+                pos = self.clampToOrigin(
+                    canvasPos, QPointF(lastPoint.x, lastPoint.y))
+                x, y = pos.x(), pos.y()
             if lastPoint.segmentType:
                 pointType = "line"
             else:
@@ -131,7 +137,10 @@ class PenTool(BaseTool):
             contour[-1].selected = True
             contour.enableNotifications()
         else:
-            onCurve = contour[-2]
+            if contour.open:
+                onCurve = contour[-2]
+            else:
+                onCurve = contour[0]
             if event.modifiers() & Qt.ShiftModifier:
                 pos = self.clampToOrigin(
                     pos, QPointF(onCurve.x, onCurve.y))
@@ -142,7 +151,7 @@ class PenTool(BaseTool):
             else:
                 pt.x = pos.x()
                 pt.y = pos.y()
-                if len(contour) >= 3 and onCurve.smooth:
+                if contour.open and len(contour) >= 3 and onCurve.smooth:
                     otherSidePoint = contour[-3]
                     otherSidePoint.x = 2 * onCurve.x - pos.x()
                     otherSidePoint.y = 2 * onCurve.y - pos.y()
