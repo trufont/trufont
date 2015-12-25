@@ -104,4 +104,4 @@ class PythonHighlighter(CodeHighlighter):
         quotationFormat = QTextCharFormat()
         quotationFormat.setForeground(QColor(223, 17, 68))
         self.highlightingRules.append(
-            ("'.*'|[\"]{1,3}.*[\"]{1,3}", quotationFormat))
+            ("'.*?'|\".*?\"(?!\")", quotationFormat))
