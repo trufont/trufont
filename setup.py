@@ -22,24 +22,9 @@ except:
           "see:")
     print("    https://github.com/trufont/defcon")
 
-# if "sdist" in sys.argv:
-#    import os
-#    import subprocess
-#    import shutil
-#    docFolder = os.path.join(os.getcwd(), "documentation")
-#    # remove existing
-#    doctrees = os.path.join(docFolder, "build", "doctrees")
-#    if os.path.exists(doctrees):
-#        shutil.rmtree(doctrees)
-#    # compile
-#    p = subprocess.Popen(["make", "html"], cwd=docFolder)
-#    p.wait()
-#    # remove doctrees
-#    shutil.rmtree(doctrees)
-
 setup(
     name="defconQt",
-    version="0.2.0",
+    version="0.3.0",
     description="TruFont, a cross-platform font editor. Includes a set of Qt "
                 "objects for working with font data.",
     author="Adrien Tétar",

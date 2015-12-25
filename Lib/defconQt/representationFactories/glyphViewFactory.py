@@ -1,4 +1,4 @@
-from defconQt.objects.defcon import TContour, TGlyph
+from defconQt.objects.defcon import TGlyph
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen

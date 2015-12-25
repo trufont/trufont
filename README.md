@@ -1,4 +1,4 @@
-# TruFont
+# TruFont [![Build Status](https://travis-ci.org/trufont/trufont.svg)](https://travis-ci.org/trufont/trufont)
 
 ![fontView Window](misc/fontView.png)
 
