@@ -184,9 +184,10 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
     xMin = rect[0]
     xMax = xMin + rect[2]
     lines = []
-    # TODO: why sorted?
-    for y, names in sorted(positions.items()):
+    for y, names in positions.items():
         names = ", ".join(names)
+        if y != 0:
+            names = "%s (%d)" % (names, y)
         lines.append((y, names))
     # draw lines
     if drawLines:
@@ -196,9 +197,9 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
     # draw text
     if drawText:
         fontSize = 9
-        x = xMin + 5 * scale
+        x = glyph.width + 6 * scale
         for y, text in lines:
-            y -= (fontSize / 2.0) * scale
+            y -= (fontSize / 3.5) * scale
             drawTextAtPoint(painter, text, x, y, scale)
     painter.restore()
 
