@@ -225,6 +225,7 @@ class SelectionTool(BaseTool):
                 return
             point, contour = item, parent
             if point.segmentType is not None:
+                self._glyph.prepareUndo()
                 point.smooth = not point.smooth
             contour.dirty = True
 

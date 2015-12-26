@@ -41,8 +41,10 @@ class BaseTool(QObject):
         itemTuple = widget.itemAt(pos)
         if itemTuple is not None:
             itemUnderMouse, _ = itemTuple
-            pos.setX(itemUnderMouse.x)
-            pos.setY(itemUnderMouse.y)
+            # e.g. for components, we can't clamp on a single coordinate
+            if hasattr(itemUnderMouse, "x"):
+                pos.setX(itemUnderMouse.x)
+                pos.setY(itemUnderMouse.y)
         return pos
 
     # events
