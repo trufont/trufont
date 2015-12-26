@@ -510,19 +510,27 @@ class GlyphView(QWidget):
     def _getGlyphWidthHeight(self):
         if self._glyph is None:
             return 0, 0
-        left = 0
-        right = self._glyph.width
         bottom = self._descender
         top = max(self._capHeight, self._ascender,
                   self._unitsPerEm + self._descender)
-        width = abs(left) + right
+        width = self._glyph.width
         height = -bottom + top
         return width, height
 
-    # TODO: this is fit to font metrics. Add a fit to bbox facility as well.
-    def _fitScale(self):
+    def fitScaleMetrics(self):
         fitHeight = self._scrollArea.viewport().height()
         _, glyphHeight = self._getGlyphWidthHeight()
+        glyphHeight += self._noPointSizePadding * 2
+        self.setScale(fitHeight / glyphHeight)
+
+    def fitScaleBBox(self):
+        if self._glyph is None:
+            return
+        if self._glyph.bounds is None:
+            self.fitScaleMetrics()
+        _, bottom, _, top = self._glyph.bounds
+        fitHeight = self._scrollArea.viewport().height()
+        glyphHeight = top - bottom
         glyphHeight += self._noPointSizePadding * 2
         self.setScale(fitHeight / glyphHeight)
 
@@ -849,7 +857,8 @@ class GlyphView(QWidget):
         event.accept()
 
     def showEvent(self, event):
-        self._fitScale()
+        # TODO: use fitScaleBBox and adjust scrollBars accordingly
+        self.fitScaleMetrics()
         self.adjustSize()
         hSB = self._scrollArea.horizontalScrollBar()
         vSB = self._scrollArea.verticalScrollBar()
