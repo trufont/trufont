@@ -40,9 +40,8 @@ class BaseTool(QObject):
         widget = self.parent()
         itemTuple = widget.itemAt(pos)
         if itemTuple is not None:
-            itemUnderMouse, _ = itemTuple
-            # e.g. for components, we can't clamp on a single coordinate
-            if hasattr(itemUnderMouse, "x"):
+            itemUnderMouse, parent = itemTuple
+            if parent is not None:
                 pos.setX(itemUnderMouse.x)
                 pos.setY(itemUnderMouse.y)
         return pos

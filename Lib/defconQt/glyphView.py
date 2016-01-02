@@ -528,6 +528,7 @@ class GlyphView(QWidget):
             return
         if self._glyph.bounds is None:
             self.fitScaleMetrics()
+            return
         _, bottom, _, top = self._glyph.bounds
         fitHeight = self._scrollArea.viewport().height()
         glyphHeight = top - bottom

@@ -4,4 +4,3 @@ setuptools>=18.0
 -e git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
 -e git+https://github.com/trufont/robofab.git@python3-ufo3#egg=robofab
 -e git+https://github.com/trufont/ufo2fdk.git@python3-ufo3#egg=ufo2fdk
-PyInstaller==3.0
