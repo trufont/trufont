@@ -5,15 +5,14 @@ from setuptools import setup
 try:
     import fontTools  # noqa
 except:
-    print("*** Warning: trufont requires FontTools, see:")
+    print("*** Warning: trufont requires fontTools, see:")
     print("    https://github.com/behdad/fonttools/")
 
 try:
-    import robofab  # noqa
+    import ufoLib  # noqa
 except:
-    print("*** Warning: trufont requires RoboFab (the python3-ufo3 branch), "
-          "see:")
-    print("    https://github.com/trufont/robofab")
+    print("*** Warning: trufont requires ufoLib, see:")
+    print("    https://github.com/unified-font-object/ufoLib")
 
 try:
     import defcon  # noqa
