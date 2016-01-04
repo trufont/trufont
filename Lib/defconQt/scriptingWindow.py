@@ -33,7 +33,7 @@ class MainScriptingWindow(QMainWindow):
             "AllFonts": app.allFonts,
             "CurrentFont": app.currentFont,
             "CurrentGlyph": app.currentGlyph,
-            "rootHandle": self,
+            "qApp": app,
         }
         try:
             code = compile(script, "<string>", "exec")
