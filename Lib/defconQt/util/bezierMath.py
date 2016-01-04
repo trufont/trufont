@@ -1,16 +1,139 @@
 from fontTools.misc import bezierTools
 from math import sqrt
+from sympy import poly, sturm, Symbol
 
-# TODO: curve distance
+# distance
 
 
-def _distance(x1, y1, x2, y2):
+def distance(x1, y1, x2, y2):
+    """
+    Returns distance between two points x1 y1 and x2 y2.
+    """
     dx = x2 - x1
     dy = y2 - y1
     return sqrt(dx * dx + dy * dy)
 
 
-def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
+def _sturmApprox(sturm, a, b):
+    """
+    Discriminate real roots onto distinct intervals using Sturm theorem, given
+    sturm chain and search interval.
+
+    http://math.ucsb.edu/~padraic/mathcamp_2013/root_find_alg/
+    Mathcamp_2013_Root-Finding_Algorithms_Day_2.pdf
+    """
+
+    def isRoot(c):
+        for polyn in sturm:
+            if abs(polyn.eval(c)) < 1e-6:
+                return True
+        return False
+
+    # sigma(a) - sigma(b), we're looking at [a, b] interval
+    sigma = []
+    for e in (a, b):
+        count = 0
+        isPositive = None
+        for polyn in sturm:
+            value = polyn.eval(e) >= 0
+            if isPositive is not None and isPositive != value:
+                count += 1
+            isPositive = value
+        sigma.append(count)
+    res = sigma[0] - sigma[1]
+    if res == 0:
+        # no roots in this interval
+        return []
+    elif res == 1:
+        return [a, b]
+    else:
+        c = (a + b) / 2
+        while isRoot(c):
+            c += 1e-3
+        assert(c < a)
+        return _sturmApprox(sturm, a, c) + _sturmApprox(sturm, c, b)
+
+
+def curveProjection(p1, p2, p3, p4, x, y):
+    """
+    Returns projection of point p on 3rd order Bézier curve p1 p2 p3 p4.
+    Adapted from "Improved Algebraic Algorithm On Point Projection For Bézier
+    Curves" by Xiao-Diao Chen, Yin Zhou, Zhenyu Shu, Hua Su and Jean-Claude
+    Paul.
+    """
+
+    a, b, c, d = bezierTools.calcCubicParameters(
+        (p1.x, p1.y), (p2.x, p2.y), (p3.x, p3.y), (p4.x, p4.y))
+    # eqn formulation and first solving pass
+    lo = None
+    p = (x, y)
+    t = Symbol('t')
+    Vs = []
+    for i in (0, 1):
+        # explicit curve eqn
+        V = a[i] * t**3 + b[i] * t**2 + c[i] * t + d[i]
+        # first derivative
+        Vp = 3 * a[i] * t**2 + 2 * b[i] * t + c[i]
+        # distance eqn
+        g = Vp * (p[i] - V)
+        if g == 0:
+            # collinear CPs... the curve is a li(n)e!
+            # XXX: fill in w lineDistance here
+            continue
+        g = poly(g)
+        Vs.append(poly(V))
+        # approx. roots using the sturm theorem
+        intervals = _sturmApprox(sturm(g), 0, 1)
+        # pruning: roots are valid iff g(ai) < 0 and g(bi) > 0
+        psol = []
+        print(intervals)
+        for ai, bi in zip(intervals[::2], intervals[1::2]):
+            print("here--", g.eval(ai), g.eval(bi))
+            if g.eval(ai) < 0 and g.eval(bi) > 0:
+                print("pruned")
+            psol.append((ai, bi))
+        # bisection
+        roots = []
+        for ai, bi in psol:
+            while True:
+                mi = (ai + bi) / 2
+                if bi - ai < 1e-6:
+                    roots.append((mi, i))
+                    break
+                gmi = g.eval(mi)
+                if gmi == 0:
+                    roots.append((mi, i))
+                    break
+                elif gmi < 0:
+                    ai = mi
+                else:
+                    bi = mi
+        # picking: choose the root that minimizes the distance
+        for ri, i in roots:
+            gri = g.eval(ri)
+            if lo is None:
+                lo = (ri, gri)
+            else:
+                if gri < lo[1]:
+                    lo = (ri, gri)
+    if lo is not None:
+        root = lo[0]
+        rx = Vs[0].eval(root)
+        ry = Vs[1].eval(root)
+        return (rx, ry)
+    return None
+
+
+def curveDistance(p1, p2, p3, p4, x, y):
+    """
+    Returns minimum distance between 3rd order Bézier curve p1 p2 p3 p4 and
+    point p.
+    """
+    rx, ry = curveProjection(p1, p2, p3, p4, x, y)
+    return distance(rx, ry, x, y)
+
+
+def lineProjection(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     """
     Returns minimum distance between line p1, p2 and point p.
     Adapted from Grumdrig, http://stackoverflow.com/a/1501725/2037879.
@@ -20,9 +143,10 @@ def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     p1 p2 that intersects both p and a point of p1 p2.
     This is useful for certain GUI usages. Set by default.
     """
+
     l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2
     if l2 == 0:
-        return _distance(x, y, x1, y1)
+        return (x1, y1)
     aX = x - x1
     aY = y - y1
     bX = x2 - x1
@@ -31,14 +155,19 @@ def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     if t < 0:
         if ditchOutOfSegment:
             return None
-        return _distance(x, y, x1, y1)
+        return (x1, y1)
     elif t > 1:
         if ditchOutOfSegment:
             return None
-        return _distance(x, y, x2, y2)
+        return (x2, y2)
     projX = x1 + t * bX
     projY = y1 + t * bY
-    return _distance(x, y, projX, projY)
+    return (projX, projY)
+
+
+def lineDistance(x1, y1, x2, y2, x, y):
+    rx, ry = lineProjection(x1, y1, x2, y2, x, y)
+    return distance(rx, ry, x, y)
 
 # intersections
 

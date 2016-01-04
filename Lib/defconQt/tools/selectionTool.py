@@ -21,6 +21,7 @@ class SelectionTool(BaseTool):
         self._oldSelection = set()
         self._rubberBandRect = None
         self._shouldPrepareUndo = False
+        self._projected = None
 
     # helpers
 
@@ -195,6 +196,31 @@ class SelectionTool(BaseTool):
                 if component.selected:
                     component.move((dx, dy))
             self._origin = canvasPos
+        elif True:
+            from defconQt.util import bezierMath
+            x, y = canvasPos.x(), canvasPos.y()
+            self._projected = None
+            for contour in self._glyph:
+                segments = contour.segments
+                for index, seg in enumerate(segments):
+                    p0 = segments[index-1][-1]
+                    if len(seg) == 3:
+                        try:
+                            proj = bezierMath.curveProjection(
+                                p0, seg[-3], seg[-2], seg[-1], x, y)
+                        except:
+                            import traceback
+                            traceback.print_exc()
+                            print()
+                            proj = None
+                    else:
+                        proj = bezierMath.lineProjection(
+                            p0.x, p0.y, seg[-1].x, seg[-1].y, x, y)
+                    if proj is None:
+                        continue
+                    dist = bezierMath.distance(proj[0], proj[1], x, y)
+                    if self._projected is None or dist < self._projected[2]:
+                        self._projected = (proj, (x, y), dist)
         else:
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
             items = widget.items(self._rubberBandRect)
@@ -214,6 +240,7 @@ class SelectionTool(BaseTool):
         self._itemTuple = None
         self._oldSelection = set()
         self._rubberBandRect = None
+        self._projected = None
         self.parent().update()
 
     def mouseDoubleClickEvent(self, event):
@@ -232,6 +259,9 @@ class SelectionTool(BaseTool):
     # custom painting
 
     def paint(self, painter):
+        if self._projected is not None:
+            proj, pt, _ = self._projected
+            painter.drawLine(proj[0], proj[1], pt[0], pt[1])
         if self._rubberBandRect is None:
             return
         widget = self.parent()
