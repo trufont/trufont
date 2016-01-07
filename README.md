@@ -18,10 +18,10 @@ Dependencies can be fetched with `pip install -r requirements.txt`
 
 - Python 3
 - PyQt5
-- cython & [booleanOperations]
 - [fontTools]
 - [ufoLib]
 - [defcon, python3-ufo3 branch]
+- cython & [booleanOperations]
 
 Optional:
 
@@ -41,10 +41,10 @@ Optional:
   * `python3.5`
   * …
 
-[booleanOperations]: https://github.com/typemytype/booleanOperations
 [fontTools]: https://github.com/behdad/fonttools
 [ufoLib]: https://github.com/unified-font-object/ufoLib
 [defcon, python3-ufo3 branch]: https://github.com/trufont/defcon
+[booleanOperations]: https://github.com/trufont/booleanOperations
 [extractor, python3-ufo3 branch]: https://github.com/trufont/extractor
 [ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
 [Homebrew]: http://brew.sh/

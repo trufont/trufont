@@ -1,6 +1,7 @@
 setuptools>=18.0
--e git+https://github.com/typemytype/booleanOperations.git#egg=booleanOperations
 -e git+https://github.com/behdad/fonttools.git#egg=fonttools
 -e git+https://github.com/unified-font-object/ufoLib.git#egg=ufoLib
 -e git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
+-e git+https://github.com/trufont/booleanOperations.git#egg=booleanOperations
+-e git+https://github.com/trufont/extractor.git@python3-ufo3#egg=extractor
 -e git+https://github.com/trufont/ufo2fdk.git@python3-ufo3#egg=ufo2fdk
