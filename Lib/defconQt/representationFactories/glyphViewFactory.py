@@ -5,7 +5,7 @@ from fontTools.pens.qtPen import QtPen
 import math
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from robofab.pens.pointPen import AbstractPointPen
+from ufoLib.pointPen import AbstractPointPen
 
 # -------------
 # no components
