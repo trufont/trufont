@@ -135,13 +135,6 @@ def FilterSelectionFactory(glyph):
 def FilterSelectionQPainterPathFactory(glyph):
     copyGlyph = glyph.getRepresentation("defconQt.FilterSelection")
     path = copyGlyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-    for anchor in glyph.anchors:
-        if anchor.selected:
-            pass  # XXX
-            """
-            aPath = anchor.getRepresentation("defconQt.QPainterPath")
-            path.addPath(aPath)
-            """
     for component in glyph.components:
         if component.selected:
             cPath = component.getRepresentation("defconQt.QPainterPath")

@@ -468,11 +468,14 @@ def drawGlyphPoints(
 
 
 def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
-                     drawText=True, color=None):
+                     drawSelection=True, drawText=True, color=None,
+                     selectionColor=None):
     if not glyph.anchors:
         return
     if color is None:
         color = defaultColor("glyphAnchor")
+    if selectionColor is None:
+        selectionColor = defaultColor("glyphSelection")
     fallbackColor = color
     anchorSize = 6 * scale
     anchorHalfSize = anchorSize / 2
@@ -485,12 +488,16 @@ def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
         y = anchor.y
         name = anchor.name
         painter.save()
-        # XXX: put gfx form to selected anchors
         if drawAnchors:
             path = QPainterPath()
             path.addEllipse(x - anchorHalfSize, y - anchorHalfSize,
                             anchorSize, anchorSize)
             painter.fillPath(path, color)
+            if drawSelection and anchor.selected:
+                pen = QPen(selectionColor)
+                pen.setWidthF(5.0 * scale)
+                painter.setPen(pen)
+                painter.drawPath(path)
         if drawText and name:
             painter.setPen(color)
             # TODO: we're using + before we shift to top, ideally this should

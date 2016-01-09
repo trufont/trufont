@@ -158,7 +158,7 @@ class SelectionTool(BaseTool):
             self.showContextMenu(event.globalPos())
             return
         widget = self.parent()
-        addToSelection = event.modifiers() & Qt.ShiftModifier
+        addToSelection = event.modifiers() & Qt.ControlModifier
         self._origin = self.magnetPos(event.localPos())
         self._itemTuple = widget.itemAt(self._origin)
         if self._itemTuple is not None:
