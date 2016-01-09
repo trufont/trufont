@@ -3,7 +3,7 @@ from defconQt.objects.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from defconQt.tools.baseTool import BaseTool
 from defconQt.util import platformSpecific
 from defconQt.util.uiMethods import moveUISelection, removeUISelection
-from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPainter, QTransform
 from PyQt5.QtWidgets import QMenu, QRubberBand, QStyle, QStyleOptionRubberBand
 
@@ -62,6 +62,14 @@ class SelectionTool(BaseTool):
         if len(candidates) == 1:
             return next(iter(candidates))
         return None
+
+    def _getOffCurveSiblingPoint(self, contour, point):
+        index = contour.index(point)
+        for d in (-1, 1):
+            sibling = contour.getPoint(index + d)
+            if sibling.segmentType is not None:
+                return sibling
+        raise IndexError
 
     def _moveForEvent(self, event):
         key = event.key()
@@ -151,7 +159,7 @@ class SelectionTool(BaseTool):
             return
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ShiftModifier
-        self._origin = event.localPos()
+        self._origin = self.magnetPos(event.localPos())
         self._itemTuple = widget.itemAt(self._origin)
         if self._itemTuple is not None:
             itemUnderMouse, parentContour = self._itemTuple
@@ -181,6 +189,13 @@ class SelectionTool(BaseTool):
         canvasPos = event.localPos()
         widget = self.parent()
         if self._itemTuple is not None:
+            if event.modifiers() & Qt.ShiftModifier:
+                item, parent = self._itemTuple
+                if parent is not None:
+                    if item.segmentType is None:
+                        onCurve = self._getOffCurveSiblingPoint(parent, item)
+                        canvasPos = self.clampToOrigin(
+                            canvasPos, QPointF(onCurve.x, onCurve.y))
             if self._shouldPrepareUndo:
                 self._glyph.prepareUndo()
                 self._shouldPrepareUndo = False
