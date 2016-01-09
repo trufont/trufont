@@ -81,6 +81,15 @@ class Application(QApplication):
         self._currentMainWindow = None
         self.GL2UV = None
 
+    def event(self, event):
+        # respond to OSX open events
+        if event.type() == QEvent.FileOpen:
+            filePath = event.file()
+            self._currentMainWindow.openFile(filePath)
+            return True
+        else:
+            return super().event(event)
+
     def allFonts(self):
         fonts = []
         for window in QApplication.topLevelWidgets():
