@@ -5,7 +5,7 @@ from defconQt.representationFactories.glyphViewFactory import (
     NoComponentsQPainterPathFactory, OnlyComponentsQPainterPathFactory,
     SplitLinesQPainterPathFactory, ComponentQPainterPathFactory,
     FilterSelectionFactory, FilterSelectionQPainterPathFactory,
-    OutlineInformationFactory, QPixmapFactory, StartPointsInformationFactory)
+    OutlineInformationFactory, QPixmapFactory)
 
 # TODO: add a glyph pixmap factory parametrized on glyph size
 # TODO: fine-tune the destructive notifications
@@ -25,8 +25,6 @@ _glyphFactories = {
     "defconQt.OutlineInformation": (
         OutlineInformationFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged")),
-    "defconQt.StartPointsInformation": (
-        StartPointsInformationFactory, None),
 }
 _componentFactories = {
     "defconQt.QPainterPath": (
