@@ -1,5 +1,5 @@
 from defcon import Color
-from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
 
@@ -98,7 +98,7 @@ def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
     pen = painter.pen()
     pen.setWidthF(lineWidth)
     painter.setPen(pen)
-    painter.drawLine(x1, y1, x2, y2)
+    painter.drawLine(QPointF(x1, y1), QPointF(x2, y2))
     painter.restore()
 
 
