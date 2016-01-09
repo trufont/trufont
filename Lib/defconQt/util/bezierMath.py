@@ -50,7 +50,7 @@ def _sturmApprox(sturm, a, b):
         c = (a + b) / 2
         while isRoot(c):
             c += 1e-3
-        assert(c < a)
+        assert(c < b)
         return _sturmApprox(sturm, a, c) + _sturmApprox(sturm, c, b)
 
 
