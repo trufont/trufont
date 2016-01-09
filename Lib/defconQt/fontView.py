@@ -1104,15 +1104,23 @@ class MainWindow(QMainWindow):
             self._font.removeObserver(self, "Font.Changed")
             self._font.removeObserver(self, "Font.GlyphOrderChanged")
         self._font = font
+        if self._font is None:
+            return
+        try:
+            if self._font.glyphOrder is None:
+                # TODO: cannedDesign or carry sortDescriptor from previous font?
+                self.sortDescriptor = cannedDesign
+            else:
+                # use the glyphOrder from the font
+                self.sortDescriptor = None
+        except Exception as e:
+            title = e.__class__.__name__
+            QMessageBox.critical(self, title, str(e))
+            self._font = None
+            return
         self._font.addObserver(self, "_fontChanged", "Font.Changed")
         self._font.addObserver(
             self, "_glyphOrderChanged", "Font.GlyphOrderChanged")
-        if self._font.glyphOrder is None:
-            # TODO: cannedDesign or carry sortDescriptor from previous font?
-            self.sortDescriptor = cannedDesign
-        else:
-            # use the glyphOrder from the font
-            self.sortDescriptor = None
 
     font = property(_get_font, _set_font, doc="The fontView font. Subscribes \
         to the new font, updates the sorting order and cells widget when set.")
