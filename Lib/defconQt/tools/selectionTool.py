@@ -1,7 +1,7 @@
 from defconQt.objects.defcon import TAnchor, TComponent
 from defconQt.objects.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from defconQt.tools.baseTool import BaseTool
-from defconQt.util import platformSpecific
+from defconQt.util import bezierMath, platformSpecific
 from defconQt.util.uiMethods import moveUISelection, removeUISelection
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPainter, QTransform
@@ -70,6 +70,24 @@ class SelectionTool(BaseTool):
             if sibling.segmentType is not None:
                 return sibling
         raise IndexError
+
+    def _moveOnCurveAlongHandles(self, contour, pt, x, y):
+        # TODO: offCurves
+        if pt.segmentType is not None and pt.smooth and len(contour) >= 3:
+            index = contour.index(pt)
+            prevCP = contour.getPoint(index - 1)
+            nextCP = contour.getPoint(index + 1)
+            # we need at least one offCurve so that it makes sense
+            # slide the onCurve around
+            if prevCP.segmentType is None or nextCP.segmentType is None:
+                projX, projY = bezierMath.lineProjection(
+                    prevCP.x, prevCP.y, nextCP.x, nextCP.y, x, y, False)
+                # short-circuit UIMove because we're only moving this point
+                pt.x = projX
+                pt.y = projY
+                contour.dirty = True
+                return True
+        return False
 
     def _moveForEvent(self, event):
         key = event.key()
@@ -189,16 +207,26 @@ class SelectionTool(BaseTool):
         canvasPos = event.localPos()
         widget = self.parent()
         if self._itemTuple is not None:
-            if event.modifiers() & Qt.ShiftModifier:
+            if self._shouldPrepareUndo:
+                self._glyph.prepareUndo()
+                self._shouldPrepareUndo = False
+            modifiers = event.modifiers()
+            # Alt: move point along handles
+            if modifiers & Qt.AltModifier and len(self._glyph.selection) == 1:
+                item, parent = self._itemTuple
+                if parent is not None:
+                    x, y = canvasPos.x(), canvasPos.y()
+                    didMove = self._moveOnCurveAlongHandles(parent, item, x, y)
+                    if didMove:
+                        return
+            # Shift: clamp pos on axis
+            elif modifiers & Qt.ShiftModifier:
                 item, parent = self._itemTuple
                 if parent is not None:
                     if item.segmentType is None:
                         onCurve = self._getOffCurveSiblingPoint(parent, item)
                         canvasPos = self.clampToOrigin(
                             canvasPos, QPointF(onCurve.x, onCurve.y))
-            if self._shouldPrepareUndo:
-                self._glyph.prepareUndo()
-                self._shouldPrepareUndo = False
             dx = canvasPos.x() - self._origin.x()
             dy = canvasPos.y() - self._origin.y()
             for anchor in self._glyph.anchors:
