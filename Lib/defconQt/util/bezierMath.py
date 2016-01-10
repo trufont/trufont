@@ -4,13 +4,13 @@ from math import sqrt
 # TODO: curve distance
 
 
-def _distance(x1, y1, x2, y2):
+def distance(x1, y1, x2, y2):
     dx = x2 - x1
     dy = y2 - y1
     return sqrt(dx * dx + dy * dy)
 
 
-def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
+def lineProjection(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     """
     Returns minimum distance between line p1, p2 and point p.
     Adapted from Grumdrig, http://stackoverflow.com/a/1501725/2037879.
@@ -22,7 +22,7 @@ def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     """
     l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2
     if l2 == 0:
-        return _distance(x, y, x1, y1)
+        return (x1, y1)
     aX = x - x1
     aY = y - y1
     bX = x2 - x1
@@ -31,14 +31,18 @@ def lineDistance(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     if t < 0:
         if ditchOutOfSegment:
             return None
-        return _distance(x, y, x1, y1)
+        return (x1, y1)
     elif t > 1:
         if ditchOutOfSegment:
             return None
-        return _distance(x, y, x2, y2)
+        return (x2, y2)
     projX = x1 + t * bX
     projY = y1 + t * bY
-    return _distance(x, y, projX, projY)
+    return (projX, projY)
+
+def lineDistance(x1, y1, x2, y2, x, y):
+    projX, projY = lineProjection(x1, y1, x2, y2, x, y)
+    return distance(x, y, projX, projY)
 
 # intersections
 
