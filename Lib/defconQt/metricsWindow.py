@@ -99,8 +99,7 @@ class MainMetricsWindow(QWidget):
 
     def _glyphChanged(self, notification):
         self.canvas.update()
-        if not self.table._editing:
-            self.table.updateCells(self.canvas._editing)
+        self.table.updateCells()
 
     def _glyphOpened(self, glyph):
         glyphViewWindow = MainGlyphWindow(glyph, self.parent())
@@ -346,7 +345,6 @@ class GlyphsCanvas(QWidget):
         self.ptSize = pointSize
         self.calculateScale()
         self.padding = 10
-        self._editing = False
         self._showKerning = False
         self._showMetrics = False
         self._verticalFlip = False
@@ -555,7 +553,6 @@ class GlyphsCanvas(QWidget):
     def _arrowKeyPressEvent(self, event):
         key = event.key()
         modifiers = event.modifiers()
-        self._editing = True
         if self._selected is not None:
             glyph = self.glyphs[self._selected]
             # TODO: not really DRY w other widgets
@@ -571,7 +568,6 @@ class GlyphsCanvas(QWidget):
                     glyph.leftMargin += delta
             else:
                 glyph.width += delta
-        self._editing = False
         event.accept()
 
     def keyPressEvent(self, event):
@@ -781,15 +777,13 @@ class SpaceTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         # edit cell on single click, not double
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
-        self._editing = False
         self.selectionChangedCallback = None
 
     def setGlyphs(self, newGlyphs):
         self.glyphs = newGlyphs
-        # TODO: we don't need to reallocate cells, split alloc and fill
-        self.updateCells()
+        self.updateCells(False)
 
-    def updateCells(self, keepColor=False):
+    def updateCells(self, keepColor=True):
         self.blockSignals(True)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         coloredColumn = self._coloredColumn
@@ -811,19 +805,12 @@ class SpaceTable(QTableWidget):
         item = int(item)
         # -1 because the first col contains descriptive text
         glyph = self.glyphs[col - 1]
-        # != comparisons avoid making glyph dirty when editor content is
-        # unchanged
-        self._editing = True
         if row == 1:
-            if item != glyph.width:
-                glyph.width = item
+            glyph.width = item
         elif row == 2:
-            if item != glyph.leftMargin:
-                glyph.leftMargin = item
+            glyph.leftMargin = item
         elif row == 3:
-            if item != glyph.rightMargin:
-                glyph.rightMargin = item
-        self._editing = False
+            glyph.rightMargin = item
         # defcon callbacks do the update
 
     def _itemChanged(self, current, previous):
