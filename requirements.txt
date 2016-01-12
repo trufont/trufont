@@ -4,4 +4,5 @@ setuptools>=18.0
 -e git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
 -e git+https://github.com/trufont/booleanOperations.git#egg=booleanOperations
 -e git+https://github.com/trufont/extractor.git@python3-ufo3#egg=extractor
+-e git+https://github.com/daltonmaag/featools.git@py23#egg=featools
 -e git+https://github.com/jamesgk/ufo2ft.git#egg=ufo2ft
