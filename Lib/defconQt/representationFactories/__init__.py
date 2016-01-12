@@ -1,4 +1,4 @@
-from defcon import Glyph, Component, Image, registerRepresentationFactory
+from defcon import Font, Glyph, Component, Image, registerRepresentationFactory
 from defconQt.representationFactories.qPainterPathFactory import (
     QPainterPathFactory)
 from defconQt.representationFactories.glyphViewFactory import (
@@ -6,7 +6,13 @@ from defconQt.representationFactories.glyphViewFactory import (
     SplitLinesQPainterPathFactory, ComponentQPainterPathFactory,
     FilterSelectionFactory, FilterSelectionQPainterPathFactory,
     OutlineInformationFactory, QPixmapFactory)
+from defconQt.representationFactories.openTypeFactory import (
+    TTFontFactory, QuadraticTTFontFactory)
 
+_fontFactories = {
+    "defconQt.TTFont": (TTFontFactory, None),
+    "defconQt.QuadraticTTFont": (QuadraticTTFontFactory, None),
+}
 # TODO: add a glyph pixmap factory parametrized on glyph size
 # TODO: fine-tune the destructive notifications
 _glyphFactories = {
@@ -39,6 +45,10 @@ _imageFactories = {
 
 
 def registerAllFactories():
+    for name, (factory, destructiveNotifications) in _fontFactories.items():
+        registerRepresentationFactory(
+            Font, name, factory,
+            destructiveNotifications=destructiveNotifications)
     for name, (factory, destructiveNotifications) in _glyphFactories.items():
         registerRepresentationFactory(
             Glyph, name, factory,

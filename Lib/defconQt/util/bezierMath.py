@@ -40,6 +40,7 @@ def lineProjection(x1, y1, x2, y2, x, y, ditchOutOfSegment=True):
     projY = y1 + t * bY
     return (projX, projY)
 
+
 def lineDistance(x1, y1, x2, y2, x, y):
     projX, projY = lineProjection(x1, y1, x2, y2, x, y)
     return distance(x, y, projX, projY)

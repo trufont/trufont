@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
     QTextEdit, QToolTip, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+from ufo2ft import compileOTF
 from collections import OrderedDict
 import os
 import pickle
@@ -952,27 +953,16 @@ class MainWindow(QMainWindow):
             window.show()
 
     def exportFile(self):
-        try:
-            from ufo2fdk import haveFDK, OTFCompiler
-        except Exception as e:
-            title = e.__class__.__name__
-            QMessageBox.critical(self, title, str(e))
-            return
-        if not haveFDK():
-            QMessageBox.critical(self, "Missing dependency", "The Adobe FDK "
-                                 "could not be found.")
-            return
-
         path, _ = QFileDialog.getSaveFileName(self, "Export File", None,
                                               "OpenType PS font (*.otf)")
         if path:
-            compiler = OTFCompiler()
-            # XXX: allow choosing parameters
-            reports = compiler.compile(self.font, path, checkOutlines=False,
-                                       autohint=True, releaseMode=True)
-
-            print(reports["autohint"])
-            print(reports["makeotf"])
+            try:
+                otf = self.font.getRepresentation("defconQt.TTFont")
+            except Exception as e:
+                title = e.__class__.__name__
+                QMessageBox.critical(self, title, str(e))
+                return
+            otf.save(path)
 
     def undo(self):
         glyph = self.collectionWidget.lastSelectedGlyph()
@@ -1108,7 +1098,7 @@ class MainWindow(QMainWindow):
             return
         try:
             if self._font.glyphOrder is None:
-                # TODO: cannedDesign or carry sortDescriptor from previous font?
+                # TODO: cannedDesign or carry sortDescriptor from prev. font?
                 self.sortDescriptor = cannedDesign
             else:
                 # use the glyphOrder from the font
