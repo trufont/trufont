@@ -96,8 +96,7 @@ def removeUISelection(contour, preserveShape=True):
                 return
             # using preserveShape at the edge of an open contour will traceback
             if preserveShape and contour.open:
-                index = contour.index(onCurve)
-                if index == len(contour) or index == 0:
+                if index in (0, len(segments) - 1):
                     preserveShape = False
             contour.removeSegment(index, preserveShape)
             # remove segment so we can keep track of how many remain
