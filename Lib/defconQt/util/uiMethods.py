@@ -102,6 +102,12 @@ def removeUISelection(contour, preserveShape=True):
             contour.removeSegment(index, preserveShape)
             # remove segment so we can keep track of how many remain
             del segments[index]
+        elif len(segment) == 2:
+            # move with trailing offCurve
+            offCurve = segment[0]
+            if offCurve.selected:
+                assert(offCurve.segmentType is None)
+                contour.removePoint(offCurve)
         elif len(segment) == 3:
             # if offCurve selected, wipe them
             for i in (0, 1):
