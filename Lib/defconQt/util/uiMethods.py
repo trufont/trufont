@@ -60,6 +60,10 @@ def moveUIPoint(contour, point, delta):
         index = contour.index(point)
         point.move(delta)
         for d in (-1, 1):
+            # edge-case: contour open, trailing offCurve and moving first
+            # onCurve in contour
+            if contour.open and index == 0 and d == -1:
+                continue
             pt = contour.getPoint(index + d)
             if pt.segmentType is None:
                 pt.move(delta)

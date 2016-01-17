@@ -194,6 +194,9 @@ class SplitLinesFromPathQtPen(QtPen):
                                self._initPos[0], self._initPos[1]))
         self._initPos = None
 
+    def _endPath(self):
+        self._initPos = None
+
 # ----------
 # point data
 # ----------

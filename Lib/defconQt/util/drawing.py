@@ -2,6 +2,7 @@ from defcon import Color
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
+import traceback
 
 """
 Adapted from DefconAppKit.
@@ -297,8 +298,12 @@ def drawGlyphFillAndStroke(
     contourPath = glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
     componentPath = glyph.getRepresentation(
         "defconQt.OnlyComponentsQPainterPath")
-    selectionPath = glyph.getRepresentation(
-        "defconQt.FilterSelectionQPainterPath")
+    try:
+        selectionPath = glyph.getRepresentation(
+            "defconQt.FilterSelectionQPainterPath")
+    except:
+        traceback.print_exc()
+        selectionPath = QPainterPath()
     painter.save()
     # fill
     if drawFill:

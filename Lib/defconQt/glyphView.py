@@ -14,8 +14,8 @@ from PyQt5.QtCore import QEvent, QMimeData, QPointF, QSize, Qt
 from PyQt5.QtGui import (
     QIcon, QKeySequence, QMouseEvent, QPainter, QPainterPath)
 from PyQt5.QtWidgets import (
-    QActionGroup, QApplication, QComboBox, QMainWindow, QMenu, QScrollArea,
-    QSizePolicy, QToolBar, QWidget)
+    QApplication, QComboBox, QMainWindow, QMenu, QScrollArea, QSizePolicy,
+    QToolBar, QWidget)
 import pickle
 
 
