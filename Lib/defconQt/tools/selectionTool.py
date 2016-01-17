@@ -242,7 +242,7 @@ class SelectionTool(BaseTool):
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
             items = widget.items(self._rubberBandRect)
             points = set(items["points"])
-            if event.modifiers() & Qt.ShiftModifier:
+            if event.modifiers() & Qt.ControlModifier:
                 points ^= self._oldSelection
             # TODO: fine-tune this more, maybe add optional args to items...
             if event.modifiers() & Qt.AltModifier:

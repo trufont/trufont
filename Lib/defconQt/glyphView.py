@@ -56,7 +56,6 @@ class MainGlyphWindow(QMainWindow):
 
         # create tools and buttons toolBars
         self._tools = []
-        self._toolsActionGroup = QActionGroup(self)
         self._toolsToolBar = QToolBar("Tools", self)
         self._toolsToolBar.setMovable(False)
         self._buttons = []
@@ -215,12 +214,12 @@ class MainGlyphWindow(QMainWindow):
     # --------------------------
 
     def installTool(self, tool):
-        # TODO: add shortcut with number
         action = self._toolsToolBar.addAction(
             QIcon(tool.iconPath), tool.name, self._setViewTool)
         action.setCheckable(True)
-        action.setData(len(self._tools))
-        self._toolsActionGroup.addAction(action)
+        num = len(self._tools)
+        action.setData(num)
+        action.setShortcut(QKeySequence(str(num + 1)))
         self._tools.append(tool(parent=self.view))
         return action
 
@@ -229,9 +228,20 @@ class MainGlyphWindow(QMainWindow):
 
     def _setViewTool(self):
         action = self.sender()
-        action.setChecked(True)
         index = action.data()
-        self.view.currentTool = self._tools[index]
+        newTool = self._tools[index]
+        if newTool == self.view.currentTool():
+            action.setChecked(True)
+            return
+        ok = self.view.setCurrentTool(newTool)
+        # if view did change tool, disable them all and enable the one we want
+        # otherwise, just disable the tool that was clicked.
+        # previously we used QActionGroup to have exclusive buttons, but doing
+        # it manually allows us to NAK a button change.
+        if ok:
+            for act in self._toolsToolBar.actions():
+                act.setChecked(False)
+        action.setChecked(ok)
 
     def installButton(self, button):
         action = self._buttonsToolBar.addAction(
@@ -459,6 +469,7 @@ class GlyphView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._currentTool = BaseTool()
+        self._mouseClicked = False
         self._glyph = None
 
         # drawing attributes
@@ -552,6 +563,8 @@ class GlyphView(QWidget):
         return self._glyph
 
     def setGlyph(self, glyph):
+        # TODO: disable/enable there makes sense, right?
+        self._currentTool.toolDisabled()
         self._glyph = glyph
         self._font = None
         if glyph is not None:
@@ -896,14 +909,16 @@ class GlyphView(QWidget):
 
     # current tool
 
-    @property
     def currentTool(self):
         return self._currentTool
 
-    @currentTool.setter
-    def currentTool(self, tool):
+    def setCurrentTool(self, tool):
+        if self._mouseClicked:
+            return False
+        self._currentTool.toolDisabled()
         self._currentTool = tool
         self._currentTool.toolActivated()
+        return True
 
     # event directing
 
@@ -955,6 +970,7 @@ class GlyphView(QWidget):
         self._redirectEvent(event, self._currentTool.keyReleaseEvent)
 
     def mousePressEvent(self, event):
+        self._mouseClicked = True
         self._redirectEvent(event, self._currentTool.mousePressEvent, True)
 
     def mouseMoveEvent(self, event):
@@ -962,6 +978,7 @@ class GlyphView(QWidget):
 
     def mouseReleaseEvent(self, event):
         self._redirectEvent(event, self._currentTool.mouseReleaseEvent, True)
+        self._mouseClicked = False
 
     def mouseDoubleClickEvent(self, event):
         self._redirectEvent(

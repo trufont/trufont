@@ -21,7 +21,6 @@ from PyQt5.QtWidgets import (
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
     QTextEdit, QToolTip, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
-from ufo2ft import compileOTF
 from collections import OrderedDict
 import os
 import pickle

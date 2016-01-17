@@ -14,6 +14,9 @@ class BaseTool(QObject):
     def toolActivated(self):
         pass
 
+    def toolDisabled(self):
+        pass
+
     @property
     def _glyph(self):
         return self.parent().glyph()

@@ -12,6 +12,10 @@ class RulerTool(BaseTool):
         super().__init__(parent)
         self._rulerObject = None
 
+    def toolDisabled(self):
+        self._rulerObject = None
+        self.parent().update()
+
     # events
 
     def mousePressEvent(self, event):
@@ -54,8 +58,7 @@ class RulerTool(BaseTool):
         text = self._rulerObject[1]
         if text == "0":
             # delete no-op ruler
-            self._rulerObject = None
-            self.parent().update()
+            self.toolDisabled()
 
     # custom painting
 
