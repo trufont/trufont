@@ -1,11 +1,10 @@
 from defconQt import __version__, representationFactories
 from defconQt import icons_db  # noqa
-from defconQt.fontView import Application, MainWindow
-from defconQt.objects.defcon import TFont
-import sys
-import os
+from defconQt.fontView import Application
 from PyQt5.QtCore import QCommandLineParser, QSettings
 from PyQt5.QtGui import QIcon
+import os
+import sys
 
 
 def main():
