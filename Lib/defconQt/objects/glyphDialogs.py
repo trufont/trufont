@@ -130,8 +130,9 @@ class AddAnchorDialog(QDialog):
         self.setLayout(layout)
 
     @classmethod
-    def getNewAnchorName(cls, parent, pos=None):
+    def getNewAnchorName(cls, parent, pos=None, name=None):
         dialog = cls(pos, parent)
+        dialog.anchorNameEdit.setText(name)
         result = dialog.exec_()
         name = dialog.anchorNameEdit.text()
         return (name, result)

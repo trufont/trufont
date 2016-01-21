@@ -109,6 +109,13 @@ class SelectionTool(BaseTool):
                 dy *= 10
         return (dx, dy)
 
+    def _renameAnchor(self, anchor):
+        widget = self.parent()
+        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(
+            widget, None, anchor.name)
+        if ok:
+            anchor.name = newAnchorName
+
     # actions
 
     def showContextMenu(self, pos):
@@ -265,12 +272,14 @@ class SelectionTool(BaseTool):
         if self._itemTuple is not None:
             item, parent = self._itemTuple
             if parent is None:
-                return
-            point, contour = item, parent
-            if point.segmentType is not None:
-                self._glyph.prepareUndo()
-                point.smooth = not point.smooth
-            contour.dirty = True
+                if isinstance(item, TAnchor):
+                    self._renameAnchor(item)
+            else:
+                point, contour = item, parent
+                if point.segmentType is not None:
+                    self._glyph.prepareUndo()
+                    point.smooth = not point.smooth
+                contour.dirty = True
 
     # custom painting
 
