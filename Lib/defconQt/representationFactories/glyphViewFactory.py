@@ -67,8 +67,6 @@ class OnlyComponentsQtPen(BasePen):
 
 
 def FilterSelectionFactory(glyph):
-    # TODO: somehow make this all a pen?
-    # I'm wary of doing it because it warrants reordering and so on
     copyGlyph = TGlyph()
     pen = copyGlyph.getPointPen()
     for anchor in glyph.anchors:
@@ -90,9 +88,11 @@ def FilterSelectionFactory(glyph):
         if onCurvesSelected:
             contour.drawPoints(pen)
         else:
-            lastSubcontour = None
+            # TODO: somehow make this into a pen?
+            # I'm wary of doing it because it warrants reordering and so on
             segments = contour.segments
             # put start point at the beginning of a subcontour
+            lastSubcontour = None
             for index, segment in reversed(list(enumerate(segments))):
                 if segment[-1].selected:
                     lastSubcontour = index
@@ -103,8 +103,7 @@ def FilterSelectionFactory(glyph):
                 continue
             segments = segments[lastSubcontour:] + segments[:lastSubcontour]
             # now draw filtered
-            pen.beginPath()
-            shouldMoveTo = False
+            shouldMoveTo = True
             for index, segment in enumerate(segments):
                 on = segment[-1]
                 if not on.selected:
@@ -112,13 +111,15 @@ def FilterSelectionFactory(glyph):
                         pen.endPath()
                         shouldMoveTo = True
                     continue
-                if shouldMoveTo or not index:
-                    if shouldMoveTo:
-                        pen.beginPath()
-                        shouldMoveTo = False
+                if on.segmentType == "move" and not shouldMoveTo:
+                    pen.endPath()
+                    shouldMoveTo = True
+                if shouldMoveTo:
+                    pen.beginPath()
                     pen.addPoint(
                         (on.x, on.y), segmentType="move", smooth=on.smooth,
                         name=on.name)
+                    shouldMoveTo = False
                     continue
                 for point in segment:
                     pen.addPoint(
