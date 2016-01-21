@@ -85,10 +85,55 @@ class Application(QApplication):
         # respond to OSX open events
         if event.type() == QEvent.FileOpen:
             filePath = event.file()
-            self._currentMainWindow.openFile(filePath)
+            self.openFile(filePath)
             return True
         else:
             return super().event(event)
+
+    def newFile(self):
+        font = TFont()
+        font.info.unitsPerEm = 1000
+        font.info.ascender = 750
+        font.info.descender = -250
+        font.info.capHeight = 750
+        font.info.xHeight = 500
+        defaultGlyphSet = QSettings().value("settings/defaultGlyphSet",
+                                            latinDefault.name, type=str)
+        if defaultGlyphSet:
+            glyphNames = None
+            if defaultGlyphSet == latinDefault.name:
+                glyphNames = latinDefault.glyphNames
+            else:
+                glyphSets = readGlyphSets()
+                if defaultGlyphSet in glyphSets:
+                    glyphNames = glyphSets[defaultGlyphSet]
+            if glyphNames is not None:
+                for name in glyphNames:
+                    font.newStandardGlyph(name, asTemplate=True)
+        font.dirty = False
+
+        window = MainWindow(font)
+        window.show()
+
+    def openFile(self, path):
+        if ".plist" in path:
+            path = os.path.dirname(path)
+        path = os.path.normpath(path)
+        for window in self.topLevelWidgets():
+            if (isinstance(window, MainWindow) and window._font is not None
+                    and window._font.path == path):
+                window.raise_()
+                return
+        try:
+            font = TFont(path)
+            window = MainWindow(font)
+        except Exception as e:
+            title = e.__class__.__name__
+            messageBox = QMessageBox(
+                QMessageBox.Critical, title, str(e).capitalize())
+            messageBox.exec_()
+            return
+        window.show()
 
     def allFonts(self):
         fonts = []
@@ -711,21 +756,11 @@ class MainWindow(QMainWindow):
     def __init__(self, font):
         super(MainWindow, self).__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
-
-        squareSize = 56
-        self.collectionWidget = GlyphCollectionWidget(self)
         self._font = None
         self._sortDescriptor = None
-        settings = QSettings()
-        loadRecentFile = settings.value("misc/loadRecentFile", False, bool)
-        if font is None and loadRecentFile:
-            recentFiles = settings.value("core/recentFiles", [], type=str)
-            if len(recentFiles):
-                self.openFile(recentFiles[0], True)
-        elif font is not None:
-            self.font = font
-        if self._font is None:
-            self.newFile(True)
+
+        self.collectionWidget = GlyphCollectionWidget(self)
+        self.font = font
         self.collectionWidget.glyphSelectedCallback = self._selectionChanged
         self.collectionWidget.doubleClickCallback = self._glyphOpened
         # TODO: should default be True or False?
@@ -806,7 +841,7 @@ class MainWindow(QMainWindow):
         self.sqSizeSlider.setMinimum(36)
         self.sqSizeSlider.setMaximum(96)
         self.sqSizeSlider.setFixedWidth(.9 * self.sqSizeSlider.width())
-        self.sqSizeSlider.setValue(squareSize)
+        self.sqSizeSlider.setValue(self.collectionWidget.squareSize)
         self.sqSizeSlider.valueChanged.connect(self._squareSizeChanged)
         self.selectionLabel = QLabel(self)
         statusBar = self.statusBar()
@@ -823,64 +858,20 @@ class MainWindow(QMainWindow):
             self.setCurrentFile(font.path)
         self.setWindowTitle()
 
-    def newFile(self, stickToSelf=False):
-        font = TFont()
-        font.info.unitsPerEm = 1000
-        font.info.ascender = 750
-        font.info.descender = -250
-        font.info.capHeight = 750
-        font.info.xHeight = 500
-        defaultGlyphSet = QSettings().value("settings/defaultGlyphSet",
-                                            latinDefault.name, type=str)
-        if defaultGlyphSet:
-            glyphNames = None
-            if defaultGlyphSet == latinDefault.name:
-                glyphNames = latinDefault.glyphNames
-            else:
-                glyphSets = readGlyphSets()
-                if defaultGlyphSet in glyphSets:
-                    glyphNames = glyphSets[defaultGlyphSet]
-            if glyphNames is not None:
-                for name in glyphNames:
-                    font.newStandardGlyph(name, asTemplate=True)
-        font.dirty = False
-        if not stickToSelf:
-            window = MainWindow(font)
-            window.show()
-        else:
-            self.font = font
+    def newFile(self):
+        QApplication.instance().newFile()
 
-    def openFile(self, path=None, stickToSelf=False):
-        if not path:
-            path, _ = QFileDialog.getOpenFileName(
-                self, "Open File", '',
-                platformSpecific.fileFormats
-            )
-            if not path:
-                return
+    def openFile(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Open File", '',
+            platformSpecific.fileFormats
+        )
         if path:
-            if ".plist" in path:
-                path = os.path.dirname(path)
-            for window in QApplication.topLevelWidgets():
-                if (isinstance(window, MainWindow) and window._font is not None
-                        and window._font.path == path):
-                    window.raise_()
-                    return
-            try:
-                font = TFont(path)
-            except Exception as e:
-                title = e.__class__.__name__
-                QMessageBox.critical(self, title, str(e))
-                return
-            if not stickToSelf:
-                window = MainWindow(font)
-                window.show()
-            else:
-                self.font = font
+            QApplication.instance().openFile(path)
 
     def openRecentFile(self):
         fontPath = self.sender().toolTip()
-        self.openFile(fontPath)
+        QApplication.instance().openFile(fontPath)
 
     def saveFile(self, path=None, ufoFormatVersion=3):
         if path is None and self.font.path is None:
@@ -924,7 +915,7 @@ class MainWindow(QMainWindow):
             import extractor
         except Exception as e:
             title = e.__class__.__name__
-            QMessageBox.critical(self, title, str(e))
+            QMessageBox.critical(self, title, str(e).capitalize())
             return
 
         # TODO: systematize this into extractor
@@ -946,7 +937,7 @@ class MainWindow(QMainWindow):
                 extractor.extractUFO(path, font)
             except Exception as e:
                 title = e.__class__.__name__
-                QMessageBox.critical(self, title, str(e))
+                QMessageBox.critical(self, title, str(e).capitalize())
                 return
             window = MainWindow(font)
             window.show()
@@ -959,7 +950,7 @@ class MainWindow(QMainWindow):
                 otf = self.font.getRepresentation("defconQt.TTFont")
             except Exception as e:
                 title = e.__class__.__name__
-                QMessageBox.critical(self, title, str(e))
+                QMessageBox.critical(self, title, str(e).capitalize())
                 return
             otf.save(path)
 
@@ -1095,18 +1086,12 @@ class MainWindow(QMainWindow):
         self._font = font
         if self._font is None:
             return
-        try:
-            if self._font.glyphOrder is None:
-                # TODO: cannedDesign or carry sortDescriptor from prev. font?
-                self.sortDescriptor = cannedDesign
-            else:
-                # use the glyphOrder from the font
-                self.sortDescriptor = None
-        except Exception as e:
-            title = e.__class__.__name__
-            QMessageBox.critical(self, title, str(e))
-            self._font = None
-            return
+        if self._font.glyphOrder is None:
+            # TODO: cannedDesign or carry sortDescriptor from prev. font?
+            self.sortDescriptor = cannedDesign
+        else:
+            # use the glyphOrder from the font
+            self.sortDescriptor = None
         self._font.addObserver(self, "_fontChanged", "Font.Changed")
         self._font.addObserver(
             self, "_glyphOrderChanged", "Font.GlyphOrderChanged")

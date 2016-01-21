@@ -37,13 +37,21 @@ def main():
     parser.process(app)
     args = parser.positionalArguments()
     if not len(args):
-        window = MainWindow(None)
-        window.show()
+        fontPath = None
+        # maybe load recent file
+        settings = QSettings()
+        loadRecentFile = settings.value("misc/loadRecentFile", False, bool)
+        if loadRecentFile:
+            recentFiles = settings.value("core/recentFiles", [], type=str)
+            if len(recentFiles):
+                fontPath = recentFiles[0]
+                app.openFile(fontPath)
+        # otherwise, create a new file
+        if fontPath is None:
+            app.newFile()
     else:
-        for arg in args:
-            font = TFont(os.path.abspath(arg))
-            window = MainWindow(font)
-            window.show()
+        for fontPath in args:
+            app.openFile(fontPath)
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
