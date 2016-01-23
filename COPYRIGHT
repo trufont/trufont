@@ -1,10 +1,14 @@
 The TruFont Project is Copyright 2015, The TruFont Project Developers.
 
 Licensed under the GNU General Public License version 3 (see
-LICENSE.GPLv3) or the GNU Lesser General Public License version 2.1
-(see LICENSE.LGPLv21), at your option.
+LICENSE.GPLv3) or the GNU Lesser General Public License version 3
+(see LICENSE.LGPLv3), at your option.
 
-Note that the TruFont Project uses PyQt5 as a library, which free
-version is provided under the GNU GPLv3 license. Copyleft clause may
-apply, in which case the end-user is left with choosing the GNU GPL v3
-as the end-user license.
+Note that the TruFont Project uses Qt and PyQt5 libraries. Qt is
+provided freely under the GNU LGPLv3 license, while PyQt is 
+provided freely under the GNU GPLv3 license. You may purchase 
+additional licenses from the Qt and PyQt developers to get 
+additional permission so that you may distribute TruFont code
+under the terms of the LGPLv3, but without those additional
+paid licenses you must distribute TruFont code under the terms
+of the GNU GPL v3, to comply with the PyQt5 GPLv3.
