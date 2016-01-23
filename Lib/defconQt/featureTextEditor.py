@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (QColor, QFont, QKeySequence, QTextCharFormat,
                          QTextCursor)
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QMessageBox
+import os
 
 
 # TODO: implement search and replace
@@ -134,6 +135,32 @@ class FeatureTextEditor(CodeEditor):
                 self.setTextCursor(cursor)
         else:
             super(FeatureTextEditor, self).keyPressEvent(event)
+
+    def dragEnterEvent(self, event):
+        if event.source() != self:
+            mimeData = event.mimeData()
+            if mimeData.hasUrls():
+                paths = mimeData.urls()
+                for path in paths:
+                    localPath = paths[0].toLocalFile()
+                    if os.path.splitext(localPath)[1] == ".fea":
+                        event.acceptProposedAction()
+                return
+        super().dragEnterEvent(event)
+
+    def dropEvent(self, event):
+        if event.source() != self:
+            mimeData = event.mimeData()
+            if mimeData.hasUrls():
+                paths = mimeData.urls()
+                textCursor = self.textCursor()
+                for path in paths:
+                    localPath = paths[0].toLocalFile()
+                    if os.path.splitext(localPath)[1] == ".fea":
+                        textCursor.insertText(
+                            "include(%s);\n" % localPath)
+                return
+        super().dropEvent(event)
 
 keywordPatterns = [
     "Ascender", "Attach", "CapHeight", "CaretOffset", "CodePageRange",
