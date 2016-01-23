@@ -142,9 +142,10 @@ class FeatureTextEditor(CodeEditor):
             if mimeData.hasUrls():
                 paths = mimeData.urls()
                 for path in paths:
-                    localPath = paths[0].toLocalFile()
+                    localPath = path.toLocalFile()
                     if os.path.splitext(localPath)[1] == ".fea":
                         event.acceptProposedAction()
+                        break
                 return
         super().dragEnterEvent(event)
 
@@ -153,13 +154,22 @@ class FeatureTextEditor(CodeEditor):
             mimeData = event.mimeData()
             if mimeData.hasUrls():
                 paths = mimeData.urls()
-                textCursor = self.textCursor()
+                feaPaths = []
                 for path in paths:
-                    localPath = paths[0].toLocalFile()
+                    localPath = path.toLocalFile()
                     if os.path.splitext(localPath)[1] == ".fea":
-                        textCursor.insertText(
-                            "include(%s);\n" % localPath)
-                return
+                        feaPaths.append(localPath)
+                textCursor = self.cursorForPosition(event.pos())
+                textCursor.insertText("\n".join(
+                    "include(%s);" % feaPath for feaPath in feaPaths))
+                self.setTextCursor(textCursor)
+                # XXX: Qt uses cleanup routines in a private namespace
+                # called by the superclass. Ugh. We have no choice but to make
+                # up an empty event if we want to exit drag state.
+                mimeData = mimeData.__class__()
+                event = event.__class__(
+                    event.posF(), event.possibleActions(), mimeData,
+                    event.mouseButtons(), event.keyboardModifiers())
         super().dropEvent(event)
 
 keywordPatterns = [
