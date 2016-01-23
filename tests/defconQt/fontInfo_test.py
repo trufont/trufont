@@ -5,6 +5,7 @@ from PyQt5.QtGui import QDoubleValidator, QIntValidator
 from PyQt5.QtWidgets import QWidget
 from defconQt.fontView import Application, MainWindow
 from defconQt.fontInfo import InfoTabWidget
+from defconQt.objects.defcon import TFont
 
 
 class InfoTabWidgetTest(unittest.TestCase):
@@ -45,7 +46,14 @@ class TabTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, methodName)
 
     def setUp(self):
-        self.mainWindow = MainWindow(None)
+        font = TFont()
+        font.info.unitsPerEm = 1000
+        font.info.ascender = 750
+        font.info.descender = -250
+        font.info.capHeight = 750
+        font.info.xHeight = 500
+
+        self.mainWindow = MainWindow(font)
         self.mainWindow.fontInfo()
         self.font = self.mainWindow.font
         self.fontInfo = self.mainWindow.fontInfoWindow
