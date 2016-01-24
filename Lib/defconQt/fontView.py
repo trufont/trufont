@@ -954,6 +954,18 @@ class MainWindow(QMainWindow):
             window.show()
 
     def exportFile(self):
+        # check for missing required attributes
+        missingAttrs = []
+        for attr in ("familyName", "styleName", "unitsPerEm", "ascender",
+                     "descender", "xHeight", "capHeight"):
+            if getattr(self.font.info, attr) is None:
+                missingAttrs.append(attr)
+        if len(missingAttrs):
+            text = "Attributes required for font generation are missing: %s" \
+                   % " ".join(missingAttrs)
+            QMessageBox.critical(self, "Export Error", text)
+            return
+        # go ahead
         path, _ = QFileDialog.getSaveFileName(self, "Export File", None,
                                               "OpenType PS font (*.otf)")
         if path:
