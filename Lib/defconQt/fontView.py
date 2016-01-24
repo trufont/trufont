@@ -5,6 +5,7 @@ from defconQt.glyphCollectionView import GlyphCollectionWidget
 from defconQt.glyphView import MainGlyphWindow
 from defconQt.groupsView import GroupsWindow
 from defconQt.scriptingWindow import MainScriptingWindow
+from defconQt.objects import errorReports
 from defconQt.objects.colorWidgets import ColorVignette
 from defconQt.objects.defcon import GlyphSet, TComponent, TFont, TGlyph
 from defconQt.util import platformSpecific
@@ -128,10 +129,7 @@ class Application(QApplication):
             font = TFont(path)
             window = MainWindow(font)
         except Exception as e:
-            title = e.__class__.__name__
-            messageBox = QMessageBox(
-                QMessageBox.Critical, title, str(e).capitalize())
-            messageBox.exec_()
+            errorReports.showCriticalException(e)
             return
         window.show()
 
@@ -914,8 +912,7 @@ class MainWindow(QMainWindow):
         try:
             import extractor
         except Exception as e:
-            title = e.__class__.__name__
-            QMessageBox.critical(self, title, str(e).capitalize())
+            errorReports.showCriticalException(e)
             return
 
         # TODO: systematize this into extractor
@@ -936,8 +933,7 @@ class MainWindow(QMainWindow):
             try:
                 extractor.extractUFO(path, font)
             except Exception as e:
-                title = e.__class__.__name__
-                QMessageBox.critical(self, title, str(e).capitalize())
+                errorReports.showCriticalException(e)
                 return
             window = MainWindow(font)
             window.show()
@@ -949,8 +945,7 @@ class MainWindow(QMainWindow):
             try:
                 otf = self.font.getRepresentation("defconQt.TTFont")
             except Exception as e:
-                title = e.__class__.__name__
-                QMessageBox.critical(self, title, str(e).capitalize())
+                errorReports.showCriticalException(e)
                 return
             otf.save(path)
 

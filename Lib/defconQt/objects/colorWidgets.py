@@ -76,7 +76,7 @@ class ColorVignette(QWidget):
             else:
                 self.pickColor()
         else:
-            super().mousePressEvent(event)
+            super().keyPressEvent(event)
 
     def mousePressEvent(self, event):
         if self._mayClearColor and event.modifiers() & Qt.AltModifier:
