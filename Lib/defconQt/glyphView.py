@@ -818,23 +818,7 @@ class GlyphView(QWidget):
             # draw the glyph
             if self.drawingAttribute("showGlyphFill", layerName) or \
                     self.drawingAttribute("showGlyphStroke", layerName):
-                # XXX: trying to debug an assertion failure
-                try:
-                    self.drawFillAndStroke(painter, glyph, layerName)
-                except AssertionError as e:
-                    import traceback
-                    print("**********")
-                    print("Internal error:", str(e))
-                    print()
-                    print(traceback.print_exc())
-                    print()
-                    for contour in self._glyph:
-                        for point in contour:
-                            print(point)
-                        print()
-                    print("**********")
-                    painter.restore()
-                    return
+                self.drawFillAndStroke(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphOnCurvePoints", layerName) or \
                     self.drawingAttribute("showGlyphOffCurvePoints",
                                           layerName):
