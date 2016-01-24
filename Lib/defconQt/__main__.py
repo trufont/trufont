@@ -16,6 +16,7 @@ def main():
     app.setApplicationName("TruFont")
     app.setApplicationVersion(__version__)
     app.setWindowIcon(QIcon(":/resources/app.png"))
+    app.loadGlyphList()
     # parse options and open fonts
     parser = QCommandLineParser()
     parser.setApplicationDescription("The TruFont font editor.")

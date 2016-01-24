@@ -81,7 +81,6 @@ class Application(QApplication):
         self._currentGlyph = None
         self._currentMainWindow = None
         self.GL2UV = None
-        self.loadGlyphList()
 
     def event(self, event):
         # respond to OSX open events
