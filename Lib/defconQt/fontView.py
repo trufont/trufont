@@ -81,6 +81,7 @@ class Application(QApplication):
         self._currentGlyph = None
         self._currentMainWindow = None
         self.GL2UV = None
+        self.loadGlyphList()
 
     def event(self, event):
         # respond to OSX open events
@@ -90,6 +91,21 @@ class Application(QApplication):
             return True
         else:
             return super().event(event)
+
+    def loadGlyphList(self):
+        settings = QSettings()
+        glyphListPath = settings.value("settings/glyphListPath", type=str)
+        if glyphListPath and os.path.exists(glyphListPath):
+            from defconQt.util import glyphList
+            try:
+                glyphList = glyphList.parseGlyphList(glyphListPath)
+            except Exception as e:
+                msg = "The glyph list at %s cannot be parsed \
+                       and will be dropped." % glyphListPath
+                errorReports.showWarningException(e, msg)
+                settings.remove("settings/glyphListPath")
+            else:
+                self.GL2UV = glyphList
 
     def newFile(self):
         font = TFont()

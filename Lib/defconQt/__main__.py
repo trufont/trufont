@@ -3,7 +3,6 @@ from defconQt import icons_db  # noqa
 from defconQt.fontView import Application
 from PyQt5.QtCore import QCommandLineParser, QSettings
 from PyQt5.QtGui import QIcon
-import os
 import sys
 
 
@@ -17,16 +16,6 @@ def main():
     app.setApplicationName("TruFont")
     app.setApplicationVersion(__version__)
     app.setWindowIcon(QIcon(":/resources/app.png"))
-    settings = QSettings()
-    glyphListPath = settings.value("settings/glyphListPath", "", type=str)
-    if glyphListPath and os.path.exists(glyphListPath):
-        from defconQt.util import glyphList
-        try:
-            glyphList = glyphList.parseGlyphList(glyphListPath)
-        except Exception as e:
-            print(e)
-        else:
-            app.GL2UV = glyphList
     # parse options and open fonts
     parser = QCommandLineParser()
     parser.setApplicationDescription("The TruFont font editor.")
