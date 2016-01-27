@@ -899,9 +899,9 @@ class MainWindow(QMainWindow):
                 glyphNames.append(glyph.name)
             self.font.lib["public.glyphOrder"] = glyphNames
             self.font.save(path, ufoFormatVersion)
-            self.font.dirty = False
             for glyph in self.font:
                 glyph.dirty = False
+            self.font.dirty = False
             self.setCurrentFile(path)
             self.setWindowModified(False)
 

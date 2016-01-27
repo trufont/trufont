@@ -5,4 +5,4 @@ setuptools>=18.0
 -e git+https://github.com/typemytype/booleanOperations.git#egg=booleanOperations
 -e git+https://github.com/typesupply/extractor.git@ufo3#egg=extractor
 -e git+https://github.com/typesupply/featools.git#egg=featools
--e git+https://github.com/jamesgk/ufo2ft.git#egg=ufo2ft
+-e git+https://github.com/googlei18n/ufo2ft.git#egg=ufo2ft

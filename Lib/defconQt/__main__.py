@@ -3,6 +3,7 @@ from defconQt import icons_db  # noqa
 from defconQt.fontView import Application
 from PyQt5.QtCore import QCommandLineParser, QSettings
 from PyQt5.QtGui import QIcon
+import os
 import sys
 
 
@@ -32,7 +33,7 @@ def main():
         loadRecentFile = settings.value("misc/loadRecentFile", False, bool)
         if loadRecentFile:
             recentFiles = settings.value("core/recentFiles", [], type=str)
-            if len(recentFiles):
+            if len(recentFiles) and os.path.exists(recentFiles[0]):
                 fontPath = recentFiles[0]
                 app.openFile(fontPath)
         # otherwise, create a new file

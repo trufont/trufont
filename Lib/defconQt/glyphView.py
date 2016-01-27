@@ -469,7 +469,7 @@ class GlyphView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._currentTool = BaseTool()
-        self._mouseClicked = False
+        self._mouseDown = False
         self._glyph = None
 
         # drawing attributes
@@ -897,7 +897,7 @@ class GlyphView(QWidget):
         return self._currentTool
 
     def setCurrentTool(self, tool):
-        if self._mouseClicked:
+        if self._mouseDown:
             return False
         self._currentTool.toolDisabled()
         self._currentTool = tool
@@ -954,7 +954,7 @@ class GlyphView(QWidget):
         self._redirectEvent(event, self._currentTool.keyReleaseEvent)
 
     def mousePressEvent(self, event):
-        self._mouseClicked = True
+        self._mouseDown = True
         self._redirectEvent(event, self._currentTool.mousePressEvent, True)
 
     def mouseMoveEvent(self, event):
@@ -962,7 +962,7 @@ class GlyphView(QWidget):
 
     def mouseReleaseEvent(self, event):
         self._redirectEvent(event, self._currentTool.mouseReleaseEvent, True)
-        self._mouseClicked = False
+        self._mouseDown = False
 
     def mouseDoubleClickEvent(self, event):
         self._redirectEvent(

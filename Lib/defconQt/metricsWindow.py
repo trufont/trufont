@@ -78,7 +78,7 @@ class MainMetricsWindow(QWidget):
 
     def setupFileMenu(self):
         fileMenu = QMenu("&File", self)
-        fileMenu.addAction("&Save...", self.save, QKeySequence.Save)
+        fileMenu.addAction("&Save…", self.save, QKeySequence.Save)
         fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 
