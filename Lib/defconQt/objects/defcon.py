@@ -1,5 +1,5 @@
 from booleanOperations.booleanGlyph import BooleanGlyph
-from defcon import Font, Contour, Glyph, Anchor, Component, Point
+from defcon import Font, Contour, Glyph, Layer, Anchor, Component, Point
 from defcon.objects.base import BaseObject
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
@@ -9,17 +9,19 @@ import fontTools
 class TFont(Font):
 
     def __init__(self, *args, **kwargs):
-        if "glyphAnchorClass" not in kwargs:
-            kwargs["glyphAnchorClass"] = TAnchor
-        if "glyphComponentClass" not in kwargs:
-            kwargs["glyphComponentClass"] = TComponent
-        if "glyphClass" not in kwargs:
-            kwargs["glyphClass"] = TGlyph
-        if "glyphContourClass" not in kwargs:
-            kwargs["glyphContourClass"] = TContour
-        if "glyphPointClass" not in kwargs:
-            kwargs["glyphPointClass"] = TPoint
-        super(TFont, self).__init__(*args, **kwargs)
+        # TODO: maybe subclass all objects into our own for caller stability
+        attrs = (
+            ("glyphAnchorClass", TAnchor),
+            ("glyphComponentClass", TComponent),
+            ("glyphClass", TGlyph),
+            ("glyphContourClass", TContour),
+            ("glyphPointClass", TPoint),
+            ("layerClass", TLayer)
+        )
+        for attr, defaultClass in attrs:
+            if attr not in kwargs:
+                kwargs[attr] = defaultClass
+        super().__init__(*args, **kwargs)
 
     def newStandardGlyph(self, name, override=False, addUnicode=True,
                          asTemplate=False, width=500):
@@ -33,12 +35,12 @@ class TFont(Font):
         glyph.template = asTemplate
         return glyph
 
-    # TODO: stop using that workaround now that we're ufo3
-    def save(self, path=None, formatVersion=None):
-        for glyph in self:
-            if glyph.template:
-                glyph.dirty = False
-        super(TFont, self).save(path, formatVersion)
+
+class TLayer(Layer):
+
+    def saveGlyph(self, glyph, glyphSet, saveAs=False):
+        if not glyph.template:
+            super().saveGlyph(glyph, glyphSet, saveAs)
 
 
 class TGlyph(Glyph):
