@@ -116,13 +116,34 @@ class SelectionTool(BaseTool):
         if ok:
             anchor.name = newAnchorName
 
+    def _reverse(self):
+        selectedContours = set()
+        for contour in self._glyph:
+            if contour.selection:
+                selectedContours.add(contour)
+        target = selectedContours or self._glyph
+        for contour in target:
+            contour.reverse()
+
+    def _setStartPoint(self, point, contour):
+        index = contour.index(point)
+        contour.setStartPoint(index)
+
     # actions
 
-    def showContextMenu(self, pos):
-        self._cachedPos = pos
-        menu = QMenu(self.parent())
+    def showContextMenu(self, event):
+        widget = self.parent()
+        self._cachedPos = event.globalPos()
+        menu = QMenu(widget)
         menu.addAction("Add Anchor…", self._createAnchor)
         menu.addAction("Add Component…", self._createComponent)
+        menu.addAction("Reverse", self._reverse)
+        itemTuple = widget.itemAt(event.localPos())
+        if itemTuple is not None:
+            item, parent = itemTuple
+            if parent is not None and item.segmentType:
+                menu.addSeparator()
+                menu.addAction("Set Start Point", lambda: self._setStartPoint(item, parent))
         menu.exec_(self._cachedPos)
         self._cachedPos = None
 
@@ -180,7 +201,7 @@ class SelectionTool(BaseTool):
 
     def mousePressEvent(self, event):
         if event.button() & Qt.RightButton:
-            self.showContextMenu(event.globalPos())
+            self.showContextMenu(event)
             return
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ControlModifier
