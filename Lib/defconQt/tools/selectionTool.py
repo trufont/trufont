@@ -143,7 +143,8 @@ class SelectionTool(BaseTool):
             item, parent = itemTuple
             if parent is not None and item.segmentType:
                 menu.addSeparator()
-                menu.addAction("Set Start Point", lambda: self._setStartPoint(item, parent))
+                menu.addAction("Set Start Point",
+                               lambda: self._setStartPoint(item, parent))
         menu.exec_(self._cachedPos)
         self._cachedPos = None
 

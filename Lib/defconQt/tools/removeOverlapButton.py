@@ -16,6 +16,7 @@ def removeSelectionOverlap(glyph):
         for contour in unselContours:
             glyph.appendContour(contour)
 
+
 class RemoveOverlapButton(BaseButton):
     name = "Remove Overlap"
     iconPath = ":resources/union.svg"

@@ -288,13 +288,7 @@ class GlyphCollectionWidget(QWidget):
                     font = glyph.font
                     if erase:
                         del font[glyph.name]
-                        del self._glyphs[key]
-                        # TODO: remove dep on parent
-                        font.disableNotifications(
-                            "Font.GlyphOrderChanged", self.parent())
-                        font.glyphOrder = [glyph.name for glyph in self._glyphs]
-                        font.enableNotifications(
-                            "Font.GlyphOrderChanged", self.parent())
+                        # Font.GlyphOrderChanged will do the update
                     else:
                         # TODO: consider putting this in glyph template setter
                         glyph.prepareUndo()
