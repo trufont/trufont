@@ -174,18 +174,34 @@ class TGlyph(Glyph):
         self.unicodes = [uni]
 
     def hasOverlap(self):
-        bGlyph = BooleanGlyph(self).removeOverlap()
-        return len(bGlyph.contours) != len(self)
+        bGlyph = BooleanGlyph()
+        pen = bGlyph.getPointPen()
+        openContours = 0
+        for contour in self:
+            if not contour.open:
+                contour.drawPoints(pen)
+            else:
+                openContours += 1
+        bGlyph.removeOverlap()
+        return len(bGlyph.contours) + openContours != len(self)
 
     def removeOverlap(self):
-        bGlyph = BooleanGlyph(self).removeOverlap()
-        # TODO: we're halting removeOverlap for collinear vector diffs (changes
-        # point count, not contour), is this what we want to do?
-        if len(bGlyph.contours) != len(self):
-            self.prepareUndo()
-            self.clearContours()
-            bGlyph.draw(self.getPen())
-            self.dirty = True
+        # TODO: maybe clear undo stack if no changes
+        self.prepareUndo()
+        bGlyph = BooleanGlyph()
+        pen = bGlyph.getPointPen()
+        for contour in list(self):
+            if not contour.open:
+                contour.drawPoints(pen)
+                self.removeContour(contour)
+            else:
+                contour.selected = False
+        bGlyph = bGlyph.removeOverlap()
+        pen = self.getPointPen()
+        for contour in bGlyph.contours:
+            contour.drawPoints(pen)
+
+        self.dirty = True
 
 
 class TContour(Contour):
