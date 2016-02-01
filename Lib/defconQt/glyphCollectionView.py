@@ -29,26 +29,6 @@ metrics = QFontMetrics(headerFont)
 arrowKeys = (Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right)
 
 
-def proceedWithDeletion(self, erase=False):
-    clear_header = QApplication.translate(
-        "GlyphCollectionWidget", "Clear glyphs")
-    clear_text = QApplication.translate(
-        "GlyphCollectionWidget", "Do you want to clear selected glyphs?")
-    erase_header = QApplication.translate(
-        "GlyphCollectionWidget", "Delete glyphs")
-    erase_text = QApplication.translate(
-        "GlyphCollectionWidget", "Do you want to delete selected glyphs?")
-    closeDialog = QMessageBox(
-        QMessageBox.Question, "", clear_header if not erase else erase_header,
-        QMessageBox.Yes | QMessageBox.No, self)
-    closeDialog.setInformativeText(clear_text if not erase else erase_text)
-    closeDialog.setModal(True)
-    ret = closeDialog.exec_()
-    if ret == QMessageBox.Yes:
-        return True
-    return False
-
-
 class GlyphCollectionWidget(QWidget):
     """
     A widget that presents a list of glyphs in cells.
@@ -83,6 +63,23 @@ class GlyphCollectionWidget(QWidget):
         self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self._scrollArea.setWidget(self)
+
+    def proceedWithDeletion(self, erase=False):
+        clear_header = self.tr("Clear glyphs")
+        clear_text = self.tr("Do you want to clear selected glyphs?")
+        erase_header = self.tr("Delete glyphs")
+        erase_text = self.tr("Do you want to delete selected glyphs?")
+        closeDialog = QMessageBox(
+            QMessageBox.Question, "",
+            clear_header if not erase else erase_header,
+            QMessageBox.Yes | QMessageBox.No, self)
+        closeDialog.setInformativeText(
+            clear_text if not erase else erase_text)
+        closeDialog.setModal(True)
+        ret = closeDialog.exec_()
+        if ret == QMessageBox.Yes:
+            return True
+        return False
 
     def _get_glyphs(self):
         return self._glyphs
@@ -288,7 +285,7 @@ class GlyphCollectionWidget(QWidget):
         elif key == platformSpecific.deleteKey:
             erase = modifiers & Qt.ShiftModifier
             # if self.characterDeletionCallback is not None:
-            if len(self._selection) and proceedWithDeletion(self, erase):
+            if len(self._selection) and self.proceedWithDeletion(erase):
                 # we need to del in reverse order to keep key references valid
                 for key in sorted(self._selection, reverse=True):
                     glyph = self._glyphs[key]
