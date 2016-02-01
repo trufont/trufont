@@ -2,10 +2,11 @@ from defconQt.tools.baseTool import BaseTool
 from defconQt.util import drawing
 from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import QPainterPath
+from PyQt5.QtWidgets import QApplication
 
 
 class RulerTool(BaseTool):
-    name = "Ruler"
+    name = QApplication.translate("RulerTool", "Ruler")
     iconPath = ":/resources/ruler.svg"
 
     def __init__(self, parent=None):

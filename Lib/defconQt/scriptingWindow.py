@@ -15,14 +15,14 @@ class MainScriptingWindow(QMainWindow):
         self.editor = PythonEditor(parent=self)
         self.resize(600, 500)
 
-        fileMenu = QMenu("&File", self)
-        fileMenu.addAction("&Run…", self.runScript, "Ctrl+R")
+        fileMenu = QMenu(self.tr("&File"), self)
+        fileMenu.addAction(self.tr("&Run…"), self.runScript, "Ctrl+R")
         fileMenu.addSeparator()
-        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 
         self.setCentralWidget(self.editor)
-        self.setWindowTitle("[*]Untitled.py")
+        self.setWindowTitle(self.tr("[*]Untitled.py"))
         self.editor.modificationChanged.connect(self.setWindowModified)
 
     def runScript(self):

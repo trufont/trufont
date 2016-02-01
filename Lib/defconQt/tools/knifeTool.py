@@ -3,10 +3,11 @@ from defconQt.tools.baseTool import BaseTool
 from defconQt.util import bezierMath
 from PyQt5.QtCore import QLineF, Qt
 from PyQt5.QtGui import QPainterPath
+from PyQt5.QtWidgets import QApplication
 
 
 class KnifeTool(BaseTool):
-    name = "Knife"
+    name = QApplication.translate("KnifeTool", "Knife")
     iconPath = ":/resources/cutter.svg"
 
     def __init__(self, parent=None):

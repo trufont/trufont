@@ -38,7 +38,7 @@ class TabDialog(QDialog):
         mainLayout.addWidget(buttonBox)
         self.setLayout(mainLayout)
 
-        self.setWindowTitle("Font Info – %s %s" % (
+        self.setWindowTitle(self.tr("Font Info – {0} {1}").format(
             self.font.info.familyName, self.font.info.styleName))
 
     def accept(self):
@@ -179,23 +179,25 @@ class TabWidget(QWidget):
 class GeneralTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super().__init__(parent, name="General")
+        super().__init__(parent)
+        self.name = self.tr("General")
+
         mainLayout = QGridLayout(self)
 
-        familyNameLabel = QLabel("Family name:", self)
-        styleNameLabel = QLabel("Style name:", self)
-        designerLabel = QLabel("Designer:", self)
-        designerURLLabel = QLabel("Designer URL:", self)
-        manufacturerLabel = QLabel("Manufacturer:", self)
-        manufacturerURLLabel = QLabel("Manufacturer URL:", self)
-        copyrightLabel = QLabel("Copyright:", self)
-        licenseLabel = QLabel("License:", self)
-        licenseURLLabel = QLabel("License URL:", self)
-        trademarkLabel = QLabel("Trademark:", self)
+        familyNameLabel = QLabel(self.tr("Family name:"), self)
+        styleNameLabel = QLabel(self.tr("Style name:"), self)
+        designerLabel = QLabel(self.tr("Designer:"), self)
+        designerURLLabel = QLabel(self.tr("Designer URL:"), self)
+        manufacturerLabel = QLabel(self.tr("Manufacturer:"), self)
+        manufacturerURLLabel = QLabel(self.tr("Manufacturer URL:"), self)
+        copyrightLabel = QLabel(self.tr("Copyright:"), self)
+        licenseLabel = QLabel(self.tr("License:"), self)
+        licenseURLLabel = QLabel(self.tr("License URL:"), self)
+        trademarkLabel = QLabel(self.tr("Trademark:"), self)
         # TODO: give visual feedback of input data validity using QLineEdit
         # lose focus event
         # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/ # noqa
-        versionLabel = QLabel("Version:", self)
+        versionLabel = QLabel(self.tr("Version:"), self)
         versionDotLabel = QLabel(".", self)
         self.loadString(font, "familyName", "familyName")
         self.loadString(font, "styleName", "styleName")
@@ -230,7 +232,7 @@ class GeneralTab(TabWidget):
         mainLayout.addWidget(versionDotLabel, 6, 2)
         mainLayout.addWidget(self.versionMinorEdit, 6, 3)
 
-        dateCreatedLabel = QLabel("Date created:", self)
+        dateCreatedLabel = QLabel(self.tr("Date created:"), self)
         dateTime = QDateTime()
         # dateTime.fromString(font.info.openTypeHeadCreated, "yyyy/MM/dd
         # hh:mm:ss") # XXX: why does this not work?
@@ -284,15 +286,18 @@ class GeneralTab(TabWidget):
 class MetricsTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super().__init__(parent, name="Metrics")
+        super().__init__(parent)
+        self.name = self.tr("Metrics")
+
         mainLayout = QGridLayout()
 
-        styleMapFamilyLabel = QLabel("Style map family name:", self)
+        styleMapFamilyLabel = QLabel(self.tr("Style map family name:"), self)
         self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName, self)
 
-        styleMapStyleLabel = QLabel("Style map style name:", self)
+        styleMapStyleLabel = QLabel(self.tr("Style map style name:"), self)
         self.styleMapStyleDrop = QComboBox(self)
-        items = ["None", "Regular", "Italic", "Bold", "Bold Italic"]
+        items = [self.tr("None"), self.tr("Regular"), self.tr("Italic"),
+                 self.tr("Bold"), self.tr("Bold Italic")]
         self.styleMapStyleDrop.insertItems(0, items)
         sn = font.info.styleMapStyleName
         if sn == "regular":
@@ -311,13 +316,13 @@ class MetricsTab(TabWidget):
         mainLayout.addWidget(styleMapStyleLabel, 0, 4)
         mainLayout.addWidget(self.styleMapStyleDrop, 0, 5)
 
-        unitsPerEmLabel = QLabel("Units per em:", self)
-        ascenderLabel = QLabel("Ascender:", self)
-        capHeightLabel = QLabel("Cap height:", self)
-        italicAngleLabel = QLabel("Italic angle:", self)
-        descenderLabel = QLabel("Descender:", self)
-        xHeightLabel = QLabel("x-height:", self)
-        noteLabel = QLabel("Note:", self)
+        unitsPerEmLabel = QLabel(self.tr("Units per em:"), self)
+        ascenderLabel = QLabel(self.tr("Ascender:"), self)
+        capHeightLabel = QLabel(self.tr("Cap height:"), self)
+        italicAngleLabel = QLabel(self.tr("Italic angle:"), self)
+        descenderLabel = QLabel(self.tr("Descender:"), self)
+        xHeightLabel = QLabel(self.tr("x-height:"), self)
+        noteLabel = QLabel(self.tr("Note:"), self)
         # In the UFO specs these are integer or float, and unitsPerEm is
         # non-negative integer or float
         self.loadPositiveIntegerFloat(font, "unitsPerEm", "unitsPerEm")
@@ -376,21 +381,24 @@ class MetricsTab(TabWidget):
 class OpenTypeTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super().__init__(parent, name="OpenType")
+        super().__init__(parent)
+        self.name = self.tr("OpenType")
 
-        nameGroup = QGroupBox("name table", self)
+        nameGroup = QGroupBox(self.tr("name table"), self)
         # nameGroup.setFlat(True)
         nameLayout = QGridLayout(self)
 
-        preferredFamilyNameLabel = QLabel("Pref. Family Name:", self)
-        preferredSubfamilyNameLabel = QLabel("Pref. Subfamily Name:", self)
-        compatibleFullNameLabel = QLabel("Compatible Full Name:", self)
-        WWSFamilyNameLabel = QLabel("WWS Family Name:", self)
-        WWSSubfamilyNameLabel = QLabel("WWS Subfamily Name:", self)
-        versionLabel = QLabel("Version:", self)
-        uniqueIDLabel = QLabel("Unique ID:", self)
-        descriptionLabel = QLabel("Description:", self)
-        sampleTextLabel = QLabel("Sample text:", self)
+        preferredFamilyNameLabel = QLabel(self.tr("Pref. Family Name:"), self)
+        preferredSubfamilyNameLabel = QLabel(self.tr("Pref. Subfamily Name:"),
+                                             self)
+        compatibleFullNameLabel = QLabel(self.tr("Compatible Full Name:"),
+                                         self)
+        WWSFamilyNameLabel = QLabel(self.tr("WWS Family Name:"), self)
+        WWSSubfamilyNameLabel = QLabel(self.tr("WWS Subfamily Name:"), self)
+        versionLabel = QLabel(self.tr("Version:"), self)
+        uniqueIDLabel = QLabel(self.tr("Unique ID:"), self)
+        descriptionLabel = QLabel(self.tr("Description:"), self)
+        sampleTextLabel = QLabel(self.tr("Sample text:"), self)
         self.loadString(
             font, "openTypeNamePreferredFamilyName", "preferredFamilyName")
         self.loadString(
@@ -431,16 +439,16 @@ class OpenTypeTab(TabWidget):
         nameLayout.addWidget(self.sampleTextEdit, l, 4, 1, 2)
         nameGroup.setLayout(nameLayout)
 
-        hheaGroup = QGroupBox("hhea table", self)
+        hheaGroup = QGroupBox(self.tr("hhea table"), self)
         # hheaGroup.setFlat(True)
         hheaLayout = QGridLayout(self)
 
-        ascenderLabel = QLabel("Ascender:", self)
-        descenderLabel = QLabel("Descender:", self)
-        lineGapLabel = QLabel("LineGap:", self)
-        caretSlopeRiseLabel = QLabel("caretSlopeRise:", self)
-        caretSlopeRunLabel = QLabel("caretSlopeRun:", self)
-        caretOffsetLabel = QLabel("caretOffset:", self)
+        ascenderLabel = QLabel(self.tr("Ascender:"), self)
+        descenderLabel = QLabel(self.tr("Descender:"), self)
+        lineGapLabel = QLabel(self.tr("LineGap:"), self)
+        caretSlopeRiseLabel = QLabel(self.tr("caretSlopeRise:"), self)
+        caretSlopeRunLabel = QLabel(self.tr("caretSlopeRun:"), self)
+        caretOffsetLabel = QLabel(self.tr("caretOffset:"), self)
         self.loadInteger(font, "openTypeHheaAscender", "ascender")
         self.loadInteger(font, "openTypeHheaDescender", "descender")
         self.loadInteger(font, "openTypeHheaLineGap", "lineGap")
@@ -465,16 +473,16 @@ class OpenTypeTab(TabWidget):
         hheaLayout.addWidget(self.caretOffsetEdit, l, 4, 1, 2)
         hheaGroup.setLayout(hheaLayout)
 
-        vheaGroup = QGroupBox("vhea table", self)
+        vheaGroup = QGroupBox(self.tr("vhea table"), self)
         # vheaGroup.setFlat(True)
         vheaLayout = QGridLayout(self)
 
-        vertTypoAscenderLabel = QLabel("vertTypoAscender:", self)
-        vertTypoDescenderLabel = QLabel("vertTypoDescender:", self)
-        vertTypoLineGapLabel = QLabel("vertTypoLineGap:", self)
-        vheaCaretSlopeRiseLabel = QLabel("caretSlopeRise:", self)
-        vheaCaretSlopeRunLabel = QLabel("caretSlopeRun:", self)
-        vheaCaretOffsetLabel = QLabel("caretOffset:", self)
+        vertTypoAscenderLabel = QLabel(self.tr("vertTypoAscender:"), self)
+        vertTypoDescenderLabel = QLabel(self.tr("vertTypoDescender:"), self)
+        vertTypoLineGapLabel = QLabel(self.tr("vertTypoLineGap:"), self)
+        vheaCaretSlopeRiseLabel = QLabel(self.tr("caretSlopeRise:"), self)
+        vheaCaretSlopeRunLabel = QLabel(self.tr("caretSlopeRun:"), self)
+        vheaCaretOffsetLabel = QLabel(self.tr("caretOffset:"), self)
         self.loadInteger(
             font, "openTypeVheaVertTypoAscender", "vertTypoAscender")
         self.loadInteger(
@@ -547,24 +555,27 @@ class OpenTypeTab(TabWidget):
 class OS2Tab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super().__init__(parent, name="OS/2")
+        super().__init__(parent)
+        self.name = self.tr("OS/2")
 
         # OS2Group = QGroupBox("OS/2 table", self)
         # OS2Group.setFlat(True)
         OS2Layout = QGridLayout(self)
 
-        usWidthClassLabel = QLabel("usWidthClass:", self)
+        usWidthClassLabel = QLabel(self.tr("usWidthClass:"), self)
         self.usWidthClassDrop = QComboBox(self)
         items = [
-            "None", "Ultra-condensed", "Extra-condensed", "Condensed",
-            "Semi-Condensed", "Medium (normal)", "Semi-expanded", "Expanded",
-            "Extra-expanded", "Ultra-expanded"]
+            self.tr("None"), self.tr("Ultra-condensed"),
+            self.tr("Extra-condensed"), self.tr("Condensed"),
+            self.tr("Semi-Condensed"), self.tr("Medium (normal)"),
+            self.tr("Semi-expanded"), self.tr("Expanded"),
+            self.tr("Extra-expanded"), self.tr("Ultra-expanded")]
         self.usWidthClassDrop.insertItems(0, items)
         if font.info.openTypeOS2WidthClass is not None:
             self.usWidthClassDrop.setCurrentIndex(
                 font.info.openTypeOS2WidthClass)
 
-        fsSelectionLabel = QLabel("fsSelection:", self)
+        fsSelectionLabel = QLabel(self.tr("fsSelection:"), self)
         fsSelection = font.info.openTypeOS2Selection
         self.fsSelectionList = QListView(self)
         items = [
@@ -585,20 +596,21 @@ class OS2Tab(TabWidget):
             model.setItem(index, item)
         self.fsSelectionList.setModel(model)
 
-        achVendorIDLabel = QLabel("achVendorID:", self)
+        achVendorIDLabel = QLabel(self.tr("achVendorID:"), self)
         self.achVendorIDEdit = QLineEdit(font.info.openTypeOS2VendorID, self)
         self.achVendorIDEdit.setMaxLength(4)
 
-        fsTypeLabel = QLabel("fsType:", self)
+        fsTypeLabel = QLabel(self.tr("fsType:"), self)
         fsType = font.info.openTypeOS2Type
         self.fsTypeDrop = QComboBox(self)
         items = [
-            "No embedding restrictions", "Restricted embedding",
-            "Preview and print embedding allowed",
-            "Editable embedding allowed"]
-        self.allowSubsettingBox = QCheckBox("Allow subsetting", self)
+            self.tr("No embedding restrictions"),
+            self.tr("Restricted embedding"),
+            self.tr("Preview and print embedding allowed"),
+            self.tr("Editable embedding allowed")]
+        self.allowSubsettingBox = QCheckBox(self.tr("Allow subsetting"), self)
         self.allowBitmapEmbeddingBox = QCheckBox(
-            "Allow only bitmap embedding", self)
+            self.tr("Allow only bitmap embedding"), self)
         self.fsTypeDrop.currentIndexChanged[int].connect(
             self._updateFsTypeVisibility)
         self.fsTypeDrop.insertItems(0, items)
@@ -614,22 +626,24 @@ class OS2Tab(TabWidget):
 
         # XXX: ulCodePageRange
 
-        sTypoAscenderLabel = QLabel("sTypoAscender:", self)
-        sTypoDescenderLabel = QLabel("sTypoDescender:", self)
-        sTypoLineGapLabel = QLabel("sTypoLineGap:", self)
-        usWeightClassLabel = QLabel("usWeightClass:", self)
-        usWinAscentLabel = QLabel("usWinAscent:", self)
-        usWinDescentLabel = QLabel("usWinDescent:", self)
-        ySubscriptXSizeLabel = QLabel("ySubscriptXSize:", self)
-        ySubscriptYSizeLabel = QLabel("ySubscriptYSize:", self)
-        ySubscriptXOffsetLabel = QLabel("ySubscriptXOffset:", self)
-        ySubscriptYOffsetLabel = QLabel("ySubscriptYOffset:", self)
-        ySuperscriptXSizeLabel = QLabel("ySuperscriptXSize:", self)
-        ySuperscriptYSizeLabel = QLabel("ySuperscriptYSize:", self)
-        ySuperscriptXOffsetLabel = QLabel("ySuperscriptXOffset:", self)
-        ySuperscriptYOffsetLabel = QLabel("ySuperscriptYOffset:", self)
-        yStrikeoutSizeLabel = QLabel("yStrikeoutSize:", self)
-        yStrikeoutPositionLabel = QLabel("yStrikeoutPosition:", self)
+        sTypoAscenderLabel = QLabel(self.tr("sTypoAscender:"), self)
+        sTypoDescenderLabel = QLabel(self.tr("sTypoDescender:"), self)
+        sTypoLineGapLabel = QLabel(self.tr("sTypoLineGap:"), self)
+        usWeightClassLabel = QLabel(self.tr("usWeightClass:"), self)
+        usWinAscentLabel = QLabel(self.tr("usWinAscent:"), self)
+        usWinDescentLabel = QLabel(self.tr("usWinDescent:"), self)
+        ySubscriptXSizeLabel = QLabel(self.tr("ySubscriptXSize:"), self)
+        ySubscriptYSizeLabel = QLabel(self.tr("ySubscriptYSize:"), self)
+        ySubscriptXOffsetLabel = QLabel(self.tr("ySubscriptXOffset:"), self)
+        ySubscriptYOffsetLabel = QLabel(self.tr("ySubscriptYOffset:"), self)
+        ySuperscriptXSizeLabel = QLabel(self.tr("ySuperscriptXSize:"), self)
+        ySuperscriptYSizeLabel = QLabel(self.tr("ySuperscriptYSize:"), self)
+        ySuperscriptXOffsetLabel = QLabel(self.tr("ySuperscriptXOffset:"),
+                                          self)
+        ySuperscriptYOffsetLabel = QLabel(self.tr("ySuperscriptYOffset:"),
+                                          self)
+        yStrikeoutSizeLabel = QLabel(self.tr("yStrikeoutSize:"), self)
+        yStrikeoutPositionLabel = QLabel(self.tr("yStrikeoutPosition:"), self)
         self.loadPositiveInteger(
             font, "openTypeOS2WeightClass", "usWeightClass")
         self.loadInteger(font, "openTypeOS2TypoAscender", "sTypoAscender")
@@ -788,16 +802,17 @@ class OS2Tab(TabWidget):
 class PostScriptTab(TabWidget):
 
     def __init__(self, font, parent=None):
-        super().__init__(parent, name="PostScript")
+        super().__init__(parent)
+        self.name = self.tr("PostScript")
 
-        namingGroup = QGroupBox("Naming", self)
+        namingGroup = QGroupBox(self.tr("Naming"), self)
         # namingGroup.setFlat(True)
         namingLayout = QGridLayout(self)
 
-        fontNameLabel = QLabel("FontName:", self)
-        fullNameLabel = QLabel("FullName:", self)
-        weightNameLabel = QLabel("WeightName:", self)
-        uniqueIDLabel = QLabel("Unique ID:", self)
+        fontNameLabel = QLabel(self.tr("FontName:"), self)
+        fullNameLabel = QLabel(self.tr("FullName:"), self)
+        weightNameLabel = QLabel(self.tr("WeightName:"), self)
+        uniqueIDLabel = QLabel(self.tr("UniqueID:"), self)
         self.loadString(font, "postscriptFontName", "fontName")
         self.loadString(font, "postscriptFullName", "fullName")
         self.loadString(font, "postscriptWeightName", "weightName")
@@ -815,7 +830,7 @@ class PostScriptTab(TabWidget):
         namingLayout.addWidget(self.uniqueIDEdit, l, 4, 1, 2)
         namingGroup.setLayout(namingLayout)
 
-        hintingGroup = QGroupBox("Hinting", self)
+        hintingGroup = QGroupBox(self.tr("Hints"), self)
         # hintingGroup.setFlat(True)
         hintingLayout = QGridLayout(self)
 
@@ -824,10 +839,10 @@ class PostScriptTab(TabWidget):
         self.loadIntegerFloatList(font, "postscriptFamilyBlues", "familyBlues")
         self.loadIntegerFloatList(
             font, "postscriptFamilyOtherBlues", "familyOtherBlues")
-        blueValuesLabel = QLabel("Blue values:", self)
-        otherBluesLabel = QLabel("Other blues:", self)
-        familyBluesLabel = QLabel("Family blues:", self)
-        familyOtherBluesLabel = QLabel("Family other blues:", self)
+        blueValuesLabel = QLabel(self.tr("BlueValues:"), self)
+        otherBluesLabel = QLabel(self.tr("OtherBlues:"), self)
+        familyBluesLabel = QLabel(self.tr("FamilyBlues:"), self)
+        familyOtherBluesLabel = QLabel(self.tr("FamilyOtherBlues:"), self)
 
         l = 0
         hintingLayout.addWidget(blueValuesLabel, l, 0)
@@ -841,18 +856,18 @@ class PostScriptTab(TabWidget):
         hintingLayout.addWidget(self.familyOtherBluesEdit, l, 4, 1, 2)
         l += 1
 
-        blueFuzzLabel = QLabel("Blue fuzz:", self)
-        stemSnapHLabel = QLabel("StemSnapH:", self)
-        blueScaleLabel = QLabel("Blue scale:", self)
-        stemSnapVLabel = QLabel("StemSnapV:", self)
-        blueShiftLabel = QLabel("Blue shift:", self)
+        blueFuzzLabel = QLabel(self.tr("BlueFuzz:"), self)
+        stemSnapHLabel = QLabel(self.tr("StemSnapH:"), self)
+        blueScaleLabel = QLabel(self.tr("BlueScale:"), self)
+        stemSnapVLabel = QLabel(self.tr("StemSnapV:"), self)
+        blueShiftLabel = QLabel(self.tr("BlueShift:"), self)
         self.loadIntegerFloatList(font, "postscriptStemSnapH", "stemSnapH")
         self.loadIntegerFloatList(font, "postscriptStemSnapV", "stemSnapV")
         self.loadIntegerFloat(font, "postscriptBlueFuzz", "blueFuzz")
         self.loadIntegerFloat(font, "postscriptBlueScale", "blueScale")
         self.loadIntegerFloat(font, "postscriptBlueShift", "blueShift")
 
-        forceBoldLabel = QLabel("Force bold:", self)
+        forceBoldLabel = QLabel(self.tr("ForceBold:"), self)
         self.loadBoolean(font, "postscriptForceBold", "forceBold")
 
         hintingLayout.addWidget(blueFuzzLabel, l, 0)
@@ -871,15 +886,15 @@ class PostScriptTab(TabWidget):
         hintingLayout.addWidget(self.forceBoldBox, l, 4, 1, 2)
         hintingGroup.setLayout(hintingLayout)
 
-        metricsGroup = QGroupBox("Metrics", self)
+        metricsGroup = QGroupBox(self.tr("Metrics"), self)
         # metricsGroup.setFlat(True)
         metricsLayout = QGridLayout(self)
 
-        defaultWidthXLabel = QLabel("DefaultWidthX:", self)
-        underlineThicknessLabel = QLabel("UnderlineThickness:", self)
-        nominalWidthXLabel = QLabel("NominalWidthX:", self)
-        underlinePositionLabel = QLabel("UnderlinePosition:", self)
-        slantAngleLabel = QLabel("SlantAngle:", self)
+        defaultWidthXLabel = QLabel(self.tr("DefaultWidthX:"), self)
+        underlineThicknessLabel = QLabel(self.tr("UnderlineThickness:"), self)
+        nominalWidthXLabel = QLabel(self.tr("NominalWidthX:"), self)
+        underlinePositionLabel = QLabel(self.tr("UnderlinePosition:"), self)
+        slantAngleLabel = QLabel(self.tr("SlantAngle:"), self)
         self.loadIntegerFloat(font, "postscriptDefaultWidthX", "defaultWidthX")
         self.loadIntegerFloat(font, "postscriptNominalWidthX", "nominalWidthX")
         self.loadIntegerFloat(
@@ -888,7 +903,7 @@ class PostScriptTab(TabWidget):
             font, "postscriptUnderlinePosition", "underlinePosition")
         self.loadIntegerFloat(font, "postscriptSlantAngle", "slantAngle")
 
-        isFixedPitchLabel = QLabel("isFixedPitched:", self)
+        isFixedPitchLabel = QLabel(self.tr("isFixedPitched:"), self)
         self.loadBoolean(font, "postscriptIsFixedPitch", "isFixedPitch")
 
         l = 0
@@ -908,20 +923,24 @@ class PostScriptTab(TabWidget):
         metricsLayout.addWidget(self.isFixedPitchBox, l, 4, 1, 2)
         metricsGroup.setLayout(metricsLayout)
 
-        charactersGroup = QGroupBox("Characters", self)
+        charactersGroup = QGroupBox(self.tr("Characters"), self)
         # charactersGroup.setFlat(True)
         charactersLayout = QGridLayout(self)
 
-        defaultCharacterLabel = QLabel("Default character:", self)
+        defaultCharacterLabel = QLabel(self.tr("Default character:"), self)
         self.loadString(font, "postscriptDefaultCharacter", "defaultCharacter")
 
-        windowsCharacterSetLabel = QLabel("Windows character set:", self)
+        windowsCharacterSetLabel = QLabel(self.tr("Windows character set:"),
+                                          self)
         self.windowsCharacterSetDrop = QComboBox(self)
         items = [
-            "None", "ANSI", "Default", "Symbol", "Macintosh", "Shift JIS",
-            "Hangul", "Hangul (Johab)", "GB2312", "Chinese BIG5", "Greek",
-            "Turkish", "Vietnamese", "Hebrew", "Arabic", "Baltic", "Bitstream",
-            "Cyrillic", "Thai", "Eastern European", "OEM"]
+            self.tr("None"), self.tr("ANSI"), self.tr("Default"),
+            self.tr("Symbol"), self.tr("Macintosh"), self.tr("Shift JIS"),
+            self.tr("Hangul"), self.tr("Hangul (Johab)"), self.tr("GB2312"),
+            self.tr("Chinese BIG5"), self.tr("Greek"), self.tr("Turkish"),
+            self.tr("Vietnamese"), self.tr("Hebrew"), self.tr("Arabic"),
+            self.tr("Baltic"), self.tr("Bitstream"), self.tr("Cyrillic"),
+            self.tr("Thai"), self.tr("Eastern European"), self.tr("OEM")]
         self.windowsCharacterSetDrop.insertItems(0, items)
         if font.info.postscriptWindowsCharacterSet is not None:
             self.windowsCharacterSetDrop.setCurrentIndex(

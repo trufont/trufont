@@ -1,4 +1,5 @@
 import re
+from PyQt5.QtWidgets import QApplication
 
 _parseGL_RE = re.compile("([A-Za-z_0-9.]+);([0-9A-F]{4})")
 
@@ -11,11 +12,16 @@ def parseGlyphList(path):
                 continue
             m = _parseGL_RE.match(line)
             if not m:
-                raise SyntaxError("syntax error in glyphlist: {}"
-                                  .format(repr(line[:20])))
+                raise SyntaxError(
+                    QApplication.translate(
+                        "parseGlyphList",
+                        "syntax error in glyphlist: {}").format(
+                        repr(line[:20])))
             glyphName = m.group(1)
             if glyphName in GL2UV:
-                print("warning: glyphName redefined in glyphList: {}".format(
+                print(QApplication.translate(
+                    "parseGlyphList",
+                    "warning: glyphName redefined in glyphList: {}").format(
                     glyphName))
             GL2UV[glyphName] = int(m.group(2), 16)
     return GL2UV

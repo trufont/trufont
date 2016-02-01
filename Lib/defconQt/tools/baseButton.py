@@ -1,8 +1,9 @@
 from PyQt5.QtCore import QObject
+from PyQt5.QtWidgets import QApplication
 
 
 class BaseButton(QObject):
-    name = "Button"
+    name = QApplication.translate("BaseButton", "Button")
     iconPath = None
 
     def __init__(self, parent=None):

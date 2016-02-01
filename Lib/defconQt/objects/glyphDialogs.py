@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QGridLayout, QLabel, QLineEdit, QListWidget,
-    QRadioButton)
+    QRadioButton, QApplication)
 
 
 class GotoDialog(QDialog):
@@ -12,20 +12,23 @@ class GotoDialog(QDialog):
     def __init__(self, currentGlyph, parent=None):
         super(GotoDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Go to…")
+        self.setWindowTitle(self.tr("Go to…"))
         self.font = currentGlyph.getParent()
         self._sortedGlyphs = self.font.unicodeData.sortGlyphNames(
             self.font.keys(), self.alphabetical)
 
         layout = QGridLayout(self)
-        self.glyphLabel = QLabel("Glyph:", self)
+        self.glyphLabel = QLabel(
+            QApplication.translate("GotoDialog", "Glyph:"), self)
         self.glyphEdit = QLineEdit(self)
         self.glyphEdit.textChanged.connect(self.updateGlyphList)
         self.glyphEdit.event = self.lineEvent
         self.glyphEdit.keyPressEvent = self.lineKeyPressEvent
 
-        self.beginsWithBox = QRadioButton("Begins with", self)
-        self.containsBox = QRadioButton("Contains", self)
+        self.beginsWithBox = QRadioButton(QApplication.translate(
+            "GotoDialog", "Begins with"), self)
+        self.containsBox = QRadioButton(QApplication.translate(
+            "GotoDialog", "Contains"), self)
         self.beginsWithBox.setChecked(True)
         self.beginsWithBox.toggled.connect(self.updateGlyphList)
 
@@ -100,18 +103,18 @@ class AddAnchorDialog(QDialog):
         super(AddAnchorDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         if pos is not None:
-            self.setWindowTitle("Add anchor…")
+            self.setWindowTitle(self.tr("Add anchor…"))
         else:
-            self.setWindowTitle("Rename anchor…")
+            self.setWindowTitle(self.tr("Rename anchor…"))
 
         layout = QGridLayout(self)
 
-        anchorNameLabel = QLabel("Anchor name:", self)
+        anchorNameLabel = QLabel(self.tr("Anchor name:"), self)
         self.anchorNameEdit = QLineEdit(self)
         self.anchorNameEdit.setFocus(True)
         if pos is not None:
             anchorPositionLabel = QLabel(
-                "The anchor will be added at ({}, {})."
+                self.tr("The anchor will be added at ({}, {}).")
                 .format(round(pos.x(), 2), round(pos.y(), 2)), self)
 
         buttonBox = QDialogButtonBox(
@@ -142,7 +145,7 @@ class AddComponentDialog(GotoDialog):
 
     def __init__(self, *args, **kwargs):
         super(AddComponentDialog, self).__init__(*args, **kwargs)
-        self.setWindowTitle("Add component…")
+        self.setWindowTitle(self.tr("Add component…"))
         self._sortedGlyphs.remove(args[0].name)
         self.updateGlyphList(False)
 
@@ -152,11 +155,11 @@ class AddLayerDialog(QDialog):
     def __init__(self, parent=None):
         super(AddLayerDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Add layer…")
+        self.setWindowTitle(self.tr("Add layer…"))
 
         layout = QGridLayout(self)
 
-        layerNameLabel = QLabel("Layer name:", self)
+        layerNameLabel = QLabel(self.tr("Layer name:"), self)
         self.layerNameEdit = QLineEdit(self)
         self.layerNameEdit.setFocus(True)
 
@@ -185,7 +188,7 @@ class LayerActionsDialog(QDialog):
     def __init__(self, currentGlyph, parent=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Layer actions…")
+        self.setWindowTitle(self.tr("Layer actions…"))
         self._workableLayers = []
         for layer in currentGlyph.layerSet:
             if layer != currentGlyph.layer:
@@ -193,9 +196,9 @@ class LayerActionsDialog(QDialog):
 
         layout = QGridLayout(self)
 
-        copyBox = QRadioButton("Copy", self)
-        moveBox = QRadioButton("Move", self)
-        swapBox = QRadioButton("Swap", self)
+        copyBox = QRadioButton(self.tr("Copy"), self)
+        moveBox = QRadioButton(self.tr("Move"), self)
+        swapBox = QRadioButton(self.tr("Swap"), self)
         self.otherCheckBoxes = (moveBox, swapBox)
         copyBox.setChecked(True)
 

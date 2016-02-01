@@ -2,6 +2,7 @@ from defcon import Color
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
+from PyQt5.QtWidgets import QApplication
 import traceback
 
 """
@@ -168,11 +169,15 @@ def drawFontVerticalMetrics(painter, glyph, scale, rect, drawLines=True,
     painter.setPen(color)
     # gather y positions
     toDraw = [
-        ("Descender", font.info.descender),
-        ("Baseline", 0),
-        ("x-height", font.info.xHeight),
-        ("Cap height", font.info.capHeight),
-        ("Ascender", font.info.ascender),
+        (QApplication.translate("drawing", "Descender"),
+            font.info.descender),
+        (QApplication.translate("drawing", "Baseline"), 0),
+        (QApplication.translate("drawing", "x-height"),
+            font.info.xHeight),
+        (QApplication.translate("drawing", "Cap height"),
+            font.info.capHeight),
+        (QApplication.translate("drawing", "Ascender"),
+            font.info.ascender),
     ]
     positions = {}
     for name, position in toDraw:

@@ -1,10 +1,11 @@
 from math import copysign
 from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QCursor
+from PyQt5.QtWidgets import QApplication
 
 
 class BaseTool(QObject):
-    name = "Tool"
+    name = QApplication.translate("BaseTool", "Tool")
     cursor = QCursor()
     iconPath = None
 
