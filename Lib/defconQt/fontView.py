@@ -1,3 +1,4 @@
+from defcon.tools.notifications import NotificationCenter
 from defconQt import __version__
 from defconQt.featureTextEditor import MainEditWindow
 from defconQt.fontInfo import TabDialog
@@ -73,6 +74,7 @@ except:
 
 
 class Application(QApplication):
+    # TODO: maybe remove this redundancy
     currentFontChanged = pyqtSignal()
     currentGlyphChanged = pyqtSignal()
 
@@ -80,16 +82,37 @@ class Application(QApplication):
         super(Application, self).__init__(*args, **kwargs)
         self._currentGlyph = None
         self._currentMainWindow = None
+        self._launched = False
+        self.dispatcher = NotificationCenter()
+        self.focusChanged.connect(lambda: self.updateCurrentMainWindow())
         self.GL2UV = None
 
     def event(self, event):
+        eventType = event.type()
         # respond to OSX open events
-        if event.type() == QEvent.FileOpen:
+        if eventType == QEvent.FileOpen:
             filePath = event.file()
             self.openFile(filePath)
             return True
-        else:
-            return super().event(event)
+        elif eventType == QEvent.ApplicationStateChange:
+            applicationState = self.applicationState()
+            if applicationState == Qt.ApplicationActive:
+                if not self._launched:
+                    notification = "applicationLaunched"
+                    self.loadGlyphList()
+                    self._launched = True
+                else:
+                    notification = "applicationActivated"
+                self.postNotification(notification)
+                self.updateCurrentMainWindow()
+            elif applicationState == Qt.ApplicationInactive:
+                self.postNotification("applicationWillIdle")
+        return super().event(event)
+
+    def postNotification(self, notification, data=None):
+        dispatcher = self.dispatcher
+        dispatcher.postNotification(
+            notification=notification, observable=self, data=data)
 
     def loadGlyphList(self):
         settings = QSettings()
@@ -129,8 +152,11 @@ class Application(QApplication):
                     font.newStandardGlyph(name, asTemplate=True)
         font.dirty = False
 
+        data = dict(font=font)
+        self.postNotification("newFontWillOpen", data)
         window = MainWindow(font)
         window.show()
+        self.postNotification("newFontOpened", data)
 
     def openFile(self, path):
         if ".plist" in path:
@@ -167,20 +193,7 @@ class Application(QApplication):
             return
         self._currentGlyph = glyph
         self.currentGlyphChanged.emit()
-        if self._currentGlyph is None:
-            return
-        # update currentMainWindow if we need to.
-        # XXX: find a way to update currentMainWindow when we switch to any
-        # child of a MainWindow instead of the MainWindow itself.
-        # Currently, what's below serves for the glyphView but should probably
-        # be expanded.
-        font = glyph.getParent()
-        if font != self.currentFont():
-            for window in QApplication.topLevelWidgets():
-                if isinstance(window, MainWindow):
-                    if window._font == font:
-                        self.setCurrentMainWindow(window)
-                        break
+        self.postNotification("currentGlyphChanged")
 
     def currentMainWindow(self):
         return self._currentMainWindow
@@ -190,6 +203,19 @@ class Application(QApplication):
             return
         self._currentMainWindow = mainWindow
         self.currentFontChanged.emit()
+        self.postNotification("currentFontChanged")
+
+    def updateCurrentMainWindow(self):
+        window = self.activeWindow()
+        if window is None:
+            return
+        while True:
+            parent = window.parent()
+            if parent is None:
+                break
+            window = parent
+        if isinstance(window, MainWindow):
+            self.setCurrentMainWindow(window)
 
 MAX_RECENT_FILES = 6
 
@@ -905,6 +931,12 @@ class MainWindow(QMainWindow):
         else:
             if path is None:
                 path = self.font.path
+            app = QApplication.instance()
+            data = dict(
+                font=self.font,
+                path=path,
+            )
+            app.postNotification("fontWillSave", data)
             glyphs = self.collectionWidget.glyphs
             # TODO: save sortDescriptor somewhere in lib as well
             glyphNames = []
@@ -917,6 +949,7 @@ class MainWindow(QMainWindow):
             self.font.dirty = False
             self.setCurrentFile(path)
             self.setWindowModified(False)
+            app.postNotification("fontSaved", data)
 
     def saveFileAs(self):
         fileFormats = OrderedDict([
@@ -965,6 +998,13 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 errorReports.showCriticalException(e)
                 return
+            else:
+                app = QApplication.instance()
+                data = dict(
+                    font=font,
+                    # XXX: get format info from extractor
+                )
+                app.postNotification("binaryFontWillOpen", data)
             window = MainWindow(font)
             window.show()
 
@@ -985,12 +1025,20 @@ class MainWindow(QMainWindow):
             self, self.tr("Export File"), None,
             self.tr("OpenType PS font {}").format("(*.otf)"))
         if path:
+            app = QApplication.instance()
+            data = dict(
+                font=self.font,
+                format="otf",
+                path=path,
+            )
+            app.postNotification("fontWillGenerate", data)
             try:
                 otf = self.font.getRepresentation("defconQt.TTFont")
             except Exception as e:
                 errorReports.showCriticalException(e)
                 return
             otf.save(path)
+            app.postNotification("fontGenerated", data)
 
     def undo(self):
         glyph = self.collectionWidget.lastSelectedGlyph()
@@ -1069,6 +1117,9 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         ok = self.maybeSaveBeforeExit()
         if ok:
+            app = QApplication.instance()
+            data = dict(font=self.font)
+            app.postNotification("fontWillClose", data)
             self.font.removeObserver(self, "Font.Changed")
             event.accept()
         else:

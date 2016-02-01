@@ -368,6 +368,8 @@ class MainGlyphWindow(QMainWindow):
     # --------------
 
     def setGlyph(self, glyph):
+        app = QApplication.instance()
+        app.postNotification("glyphWindowGlyphWillChange")
         currentGlyph = self.view.glyph()
         self._unsubscribeFromGlyph(currentGlyph)
         self._subscribeToGlyph(glyph)
@@ -376,6 +378,7 @@ class MainGlyphWindow(QMainWindow):
         self._updateUndoRedo()
         self._updateSelection()
         self.setWindowTitle(glyph.name, glyph.font)
+        app.postNotification("glyphWindowGlyphChanged")
 
     def setDrawingAttribute(self, attr, value, layerName=None):
         self.view.setDrawingAttribute(attr, value, layerName)
@@ -456,7 +459,17 @@ class MainGlyphWindow(QMainWindow):
             app.setCurrentGlyph(self.view.glyph())
         return super().event(event)
 
+    def showEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("glyphWindowWillOpen", data)
+        super().showEvent(event)
+        app.postNotification("glyphWindowOpened", data)
+
     def closeEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("glyphWindowWillClose", data)
         glyph = self.view.glyph()
         self._unsubscribeFromGlyph(glyph)
         event.accept()
@@ -759,6 +772,12 @@ class GlyphView(QWidget):
 
         # draw the background
         painter.fillRect(rect, Qt.white)
+        app = QApplication.instance()
+        data = dict(
+            window=self,
+            painter=painter,
+        )
+        app.postNotification("glyphViewPaintBackground", data)
         if self._glyph is None:
             return
 
@@ -829,6 +848,7 @@ class GlyphView(QWidget):
                 self.drawPoints(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphAnchors", layerName):
                 self.drawAnchors(painter, glyph, layerName)
+        app.postNotification("glyphViewPaint", data)
         self._currentTool.paint(painter)
         painter.restore()
 

@@ -33,7 +33,6 @@ def main():
                        "/resources")
     app.installTranslator(appTranslator)
 
-    app.loadGlyphList()
     # parse options and open fonts
     parser = QCommandLineParser()
     parser.setApplicationDescription(QApplication.translate(

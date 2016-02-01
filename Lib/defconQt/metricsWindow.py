@@ -82,7 +82,17 @@ class MainMetricsWindow(QWidget):
                 title, font.info.familyName, font.info.styleName)
         super().setWindowTitle(title)
 
+    def showEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("metricsWindowWillOpen", data)
+        super().showEvent(event)
+        app.postNotification("metricsWindowOpened", data)
+
     def closeEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("metricsWindowWillClose", data)
         self.font.info.removeObserver(self, "Info.Changed")
         self._unsubscribeFromGlyphs()
 
