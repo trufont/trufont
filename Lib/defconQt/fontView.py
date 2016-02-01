@@ -99,8 +99,9 @@ class Application(QApplication):
             try:
                 glyphList = glyphList.parseGlyphList(glyphListPath)
             except Exception as e:
-                msg = "The glyph list at %s cannot be parsed \
-                       and will be dropped." % glyphListPath
+                msg = self.tr(
+                    "The glyph list at {0} cannot "
+                    "be parsed and will be dropped.").format(glyphListPath)
                 errorReports.showWarningException(e, msg)
                 settings.remove("settings/glyphListPath")
             else:
@@ -197,43 +198,43 @@ class InspectorWindow(QWidget):
 
     def __init__(self):
         super().__init__(flags=Qt.Tool)
-        self.setWindowTitle("Inspector")
+        self.setWindowTitle(self.tr("Inspector"))
         self._blocked = False
         self._glyph = None
 
-        glyphGroup = QGroupBox("Glyph", self)
+        glyphGroup = QGroupBox(self.tr("Glyph"), self)
         glyphGroup.setFlat(True)
         glyphLayout = QGridLayout(self)
         columnOneWidth = self.fontMetrics().width('0') * 7
 
-        nameLabel = QLabel("Name:", self)
+        nameLabel = QLabel(self.tr("Name:"), self)
         self.nameEdit = QLineEdit(self)
         self.nameEdit.editingFinished.connect(self.writeGlyphName)
-        unicodesLabel = QLabel("Unicode:", self)
+        unicodesLabel = QLabel(self.tr("Unicode:"), self)
         self.unicodesEdit = QLineEdit(self)
         self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
         unicodesRegExp = QRegularExpression(
             "(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
         unicodesValidator = QRegularExpressionValidator(unicodesRegExp, self)
         self.unicodesEdit.setValidator(unicodesValidator)
-        widthLabel = QLabel("Width:", self)
+        widthLabel = QLabel(self.tr("Width:"), self)
         self.widthEdit = QLineEdit(self)
         self.widthEdit.editingFinished.connect(self.writeWidth)
         self.widthEdit.setMaximumWidth(columnOneWidth)
         self.widthEdit.setValidator(QIntValidator(self))
-        leftSideBearingLabel = QLabel("Left:", self)
+        leftSideBearingLabel = QLabel(self.tr("Left:"), self)
         self.leftSideBearingEdit = QLineEdit(self)
         self.leftSideBearingEdit.editingFinished.connect(
             self.writeLeftSideBearing)
         self.leftSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.leftSideBearingEdit.setValidator(QIntValidator(self))
-        rightSideBearingLabel = QLabel("Right:", self)
+        rightSideBearingLabel = QLabel(self.tr("Right:"), self)
         self.rightSideBearingEdit = QLineEdit(self)
         self.rightSideBearingEdit.editingFinished.connect(
             self.writeRightSideBearing)
         self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.rightSideBearingEdit.setValidator(QIntValidator(self))
-        markColorLabel = QLabel("Flag:", self)
+        markColorLabel = QLabel(self.tr("Flag:"), self)
         self.markColorWidget = ColorVignette(self)
         self.markColorWidget.colorChanged.connect(
             self.writeMarkColor)
@@ -258,20 +259,20 @@ class InspectorWindow(QWidget):
         glyphLayout.addWidget(self.markColorWidget, l, 1)
         glyphGroup.setLayout(glyphLayout)
 
-        transformGroup = QGroupBox("Transform", self)
+        transformGroup = QGroupBox(self.tr("Transform"), self)
         transformGroup.setFlat(True)
         transformLayout = QGridLayout(self)
 
         # TODO: should this be implemented for partial selection?
         # TODO: phase out fake button
-        symmetryButton = QPushButton("Symmetry", self)
+        symmetryButton = QPushButton(self.tr("Symmetry"), self)
         symmetryButton.setEnabled(False)
-        hSymmetryButton = QPushButton("H", self)
+        hSymmetryButton = QPushButton(self.tr("H"), self)
         hSymmetryButton.clicked.connect(self.hSymmetry)
-        vSymmetryButton = QPushButton("V", self)
+        vSymmetryButton = QPushButton(self.tr("V"), self)
         vSymmetryButton.clicked.connect(self.vSymmetry)
 
-        moveButton = QPushButton("Move", self)
+        moveButton = QPushButton(self.tr("Move"), self)
         moveButton.clicked.connect(self.moveGlyph)
         moveXLabel = QLabel("x:", self)
         self.moveXEdit = QLineEdit("0", self)
@@ -282,7 +283,7 @@ class InspectorWindow(QWidget):
         moveXYBox = QCheckBox("x=y", self)
         moveXYBox.clicked.connect(self.lockMove)
 
-        scaleButton = QPushButton("Scale", self)
+        scaleButton = QPushButton(self.tr("Scale"), self)
         scaleButton.clicked.connect(self.scaleGlyph)
         scaleXLabel = QLabel("x:", self)
         self.scaleXEdit = QLineEdit("100", self)
@@ -313,12 +314,13 @@ class InspectorWindow(QWidget):
         transformLayout.addWidget(scaleXYBox, l, 5)
         transformGroup.setLayout(transformLayout)
 
-        layerSetGroup = QGroupBox("Layers", self)
+        layerSetGroup = QGroupBox(self.tr("Layers"), self)
         layerSetGroup.setFlat(True)
         layerSetLayout = QVBoxLayout(self)
 
         self.layerSetWidget = QTreeWidget(self)
-        self.layerSetWidget.setHeaderLabels(("Layer Name", "Color"))
+        self.layerSetWidget.setHeaderLabels(
+            (self.tr("Layer Name"), self.tr("Color")))
         self.layerSetWidget.setRootIsDecorated(False)
         self.layerSetWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
         # TODO: make this work correctly, top-level items only
@@ -537,13 +539,13 @@ class AddGlyphsDialog(QDialog):
     def __init__(self, currentGlyphs=None, parent=None):
         super(AddGlyphsDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Add Glyphs…")
+        self.setWindowTitle(self.tr("Add Glyphs…"))
         self.currentGlyphs = currentGlyphs
         self.currentGlyphNames = [glyph.name for glyph in currentGlyphs]
 
         layout = QGridLayout(self)
         self.importCharDrop = QComboBox(self)
-        self.importCharDrop.addItem("Import glyphnames…")
+        self.importCharDrop.addItem(self.tr("Import glyphnames…"))
         glyphSets = readGlyphSets()
         for name, glyphNames in glyphSets.items():
             self.importCharDrop.addItem(name, glyphNames)
@@ -551,12 +553,12 @@ class AddGlyphsDialog(QDialog):
         self.addGlyphsEdit = QPlainTextEdit(self)
         self.addGlyphsEdit.setFocus(True)
 
-        self.addUnicodeBox = QCheckBox("Add Unicode", self)
+        self.addUnicodeBox = QCheckBox(self.tr("Add Unicode"), self)
         self.addUnicodeBox.setChecked(True)
-        self.addAsTemplateBox = QCheckBox("Add as template", self)
+        self.addAsTemplateBox = QCheckBox(self.tr("Add as template"), self)
         self.addAsTemplateBox.setChecked(True)
-        self.sortFontBox = QCheckBox("Sort font", self)
-        self.overrideBox = QCheckBox("Override", self)
+        self.sortFontBox = QCheckBox(self.tr("Sort font"), self)
+        self.overrideBox = QCheckBox(self.tr("Override"), self)
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
@@ -615,20 +617,20 @@ class SortDialog(QDialog):
     def __init__(self, desc=None, parent=None):
         super(SortDialog, self).__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Sort…")
+        self.setWindowTitle(self.tr("Sort…"))
 
-        self.smartSortBox = QRadioButton("Canned sort", self)
-        self.smartSortBox.setToolTip("A combination of simple, complex and "
-                                     "custom sorts that give optimized "
-                                     "ordering results.")
-        self.glyphSetBox = QRadioButton("Glyph set", self)
+        self.smartSortBox = QRadioButton(self.tr("Canned sort"), self)
+        self.smartSortBox.setToolTip(
+            self.tr("A combination of simple, complex and custom "
+                    "sorts that give optimized ordering results."))
+        self.glyphSetBox = QRadioButton(self.tr("Glyph set"), self)
         self.glyphSetBox.toggled.connect(self.glyphSetToggle)
         self.glyphSetDrop = QComboBox(self)
         self.glyphSetDrop.setEnabled(False)
         glyphSets = readGlyphSets()
         for name, glyphNames in glyphSets.items():
             self.glyphSetDrop.addItem(name, glyphNames)
-        self.customSortBox = QRadioButton("Custom…", self)
+        self.customSortBox = QRadioButton(self.tr("Custom…"), self)
         self.customSortBox.toggled.connect(self.customSortToggle)
 
         self.customSortGroup = QGroupBox(parent=self)
@@ -652,8 +654,8 @@ class SortDialog(QDialog):
         for i, line in enumerate(self.customDescriptors):
             line.append(QComboBox(self))
             line[0].insertItems(0, sortItems)
-            line.append(QCheckBox("Ascending", self))
-            line.append(QCheckBox("Allow pseudo-unicode", self))
+            line.append(QCheckBox(self.tr("Ascending"), self))
+            line.append(QCheckBox(self.tr("Allow pseudo-unicode"), self))
             if self.customSortBox.isChecked():
                 line[0].setCurrentIndex(
                     self.indexFromItemName(desc[i]["type"]))
@@ -732,7 +734,7 @@ class SortDialog(QDialog):
         for index, item in enumerate(sortItems):
             if name == item:
                 return index
-        print("Unknown descriptor name: %s", name)
+        print(self.tr("Unknown descriptor name: %s"), name)
         return 0
 
     @classmethod
@@ -782,11 +784,12 @@ class MainWindow(QMainWindow):
 
         menuBar = self.menuBar()
         # TODO: make shortcuts platform-independent
-        fileMenu = QMenu("&File", self)
-        fileMenu.addAction("&New…", self.newFile, QKeySequence.New)
-        fileMenu.addAction("&Open…", self.openFile, QKeySequence.Open)
+        fileMenu = QMenu(self.tr("&File"), self)
+        fileMenu.addAction(self.tr("&New…"), self.newFile, QKeySequence.New)
+        fileMenu.addAction(self.tr("&Open…"), self.openFile,
+                           QKeySequence.Open)
         # recent files
-        self.recentFilesMenu = QMenu("Open &Recent…", self)
+        self.recentFilesMenu = QMenu(self.tr("Open &Recent"), self)
         for i in range(MAX_RECENT_FILES):
             action = QAction(self.recentFilesMenu)
             action.setVisible(False)
@@ -794,60 +797,70 @@ class MainWindow(QMainWindow):
             self.recentFilesMenu.addAction(action)
         self.updateRecentFiles()
         fileMenu.addMenu(self.recentFilesMenu)
-        fileMenu.addAction("&Import…", self.importFile)
+        fileMenu.addAction(self.tr("&Import…"), self.importFile)
         fileMenu.addSeparator()
-        fileMenu.addAction("&Save", self.saveFile, QKeySequence.Save)
-        fileMenu.addAction("Save &As…", self.saveFileAs, QKeySequence.SaveAs)
-        fileMenu.addAction("&Export…", self.exportFile)
-        fileMenu.addAction("&Reload From Disk", self.reloadFile)
-        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Save"), self.saveFile, QKeySequence.Save)
+        fileMenu.addAction(self.tr("Save &As…"), self.saveFileAs,
+                           QKeySequence.SaveAs)
+        fileMenu.addAction(self.tr("&Export…"), self.exportFile)
+        fileMenu.addAction(self.tr("&Reload From Disk"), self.reloadFile)
+        fileMenu.addAction(self.tr("E&xit"), self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
 
-        editMenu = QMenu("&Edit", self)
+        editMenu = QMenu(self.tr("&Edit"), self)
         self._undoAction = editMenu.addAction(
-            "&Undo", self.undo, QKeySequence.Undo)
+            self.tr("&Undo"), self.undo, QKeySequence.Undo)
         self._redoAction = editMenu.addAction(
-            "&Redo", self.redo, QKeySequence.Redo)
+            self.tr("&Redo"), self.redo, QKeySequence.Redo)
         editMenu.addSeparator()
-        self.markColorMenu = QMenu("&Flag Color", self)
+        self.markColorMenu = QMenu(self.tr("&Flag Color"), self)
         self.updateMarkColors()
         editMenu.addMenu(self.markColorMenu)
-        cut = editMenu.addAction("C&ut", self.cut, QKeySequence.Cut)
-        copy = editMenu.addAction("&Copy", self.copy, QKeySequence.Copy)
+        cut = editMenu.addAction(self.tr("C&ut"), self.cut, QKeySequence.Cut)
+        copy = editMenu.addAction(self.tr("&Copy"), self.copy,
+                                  QKeySequence.Copy)
         copyComponent = editMenu.addAction(
-            "Copy &As Component", self.copyAsComponent, "Ctrl+Alt+C")
+            self.tr("Copy &As Component"), self.copyAsComponent, "Ctrl+Alt+C")
         paste = editMenu.addAction(
-            "&Paste", self.paste, QKeySequence.Paste)
+            self.tr("&Paste"), self.paste, QKeySequence.Paste)
         self._clipboardActions = (cut, copy, copyComponent, paste)
         editMenu.addSeparator()
-        editMenu.addAction("&Settings…", self.settings)
+        editMenu.addAction(self.tr("&Settings…"), self.settings)
         menuBar.addMenu(editMenu)
 
-        fontMenu = QMenu("&Font", self)
+        fontMenu = QMenu(self.tr("&Font"), self)
         # TODO: work out sensible shortcuts and make sure they're
         # cross-platform ready - consider extracting them into separate file?
-        fontMenu.addAction("&Add Glyphs…", self.addGlyphs, "Ctrl+G")
-        fontMenu.addAction("Font &Info", self.fontInfo, "Ctrl+Alt+I")
-        fontMenu.addAction("Font &Features", self.fontFeatures, "Ctrl+Alt+F")
+        fontMenu.addAction(self.tr("&Add Glyphs…"), self.addGlyphs,
+                           "Ctrl+G")
+        fontMenu.addAction(self.tr("Font &Info"), self.fontInfo,
+                           "Ctrl+Alt+I")
+        fontMenu.addAction(self.tr("Font &Features"), self.fontFeatures,
+                           "Ctrl+Alt+F")
         fontMenu.addSeparator()
-        fontMenu.addAction("&Sort…", self.sortGlyphs)
+        fontMenu.addAction(self.tr("&Sort…"), self.sortGlyphs)
         menuBar.addMenu(fontMenu)
 
-        pythonMenu = QMenu("&Python", self)
-        pythonMenu.addAction("Scripting &Window", self.scripting, "Ctrl+Alt+R")
+        pythonMenu = QMenu(self.tr("&Python"), self)
+        pythonMenu.addAction(self.tr("Scripting &Window"), self.scripting,
+                             "Ctrl+Alt+R")
         menuBar.addMenu(pythonMenu)
 
-        windowMenu = QMenu("&Windows", self)
-        action = windowMenu.addAction("&Inspector", self.inspector, "Ctrl+I")
+        windowMenu = QMenu(self.tr("&Windows"), self)
+        action = windowMenu.addAction(self.tr("&Inspector"), self.inspector,
+                                      "Ctrl+I")
         # XXX: we're getting duplicate shortcut when we spawn a new window...
         action.setShortcutContext(Qt.ApplicationShortcut)
-        windowMenu.addAction("&Metrics Window", self.metrics, "Ctrl+Alt+S")
-        windowMenu.addAction("&Groups Window", self.groups, "Ctrl+Alt+G")
+        windowMenu.addAction(self.tr("&Metrics Window"), self.metrics,
+                             "Ctrl+Alt+S")
+        windowMenu.addAction(self.tr("&Groups Window"), self.groups,
+                             "Ctrl+Alt+G")
         menuBar.addMenu(windowMenu)
 
-        helpMenu = QMenu("&Help", self)
-        helpMenu.addAction("&About", self.about)
-        helpMenu.addAction("About &Qt", QApplication.instance().aboutQt)
+        helpMenu = QMenu(self.tr("&Help"), self)
+        helpMenu.addAction(self.tr("&About"), self.about)
+        helpMenu.addAction(self.tr("About &Qt"),
+                           QApplication.instance().aboutQt)
         menuBar.addMenu(helpMenu)
 
         self.sqSizeSlider = QSlider(Qt.Horizontal, self)
@@ -876,7 +889,7 @@ class MainWindow(QMainWindow):
 
     def openFile(self):
         path, _ = QFileDialog.getOpenFileName(
-            self, "Open File", '',
+            self, self.tr("Open File"), '',
             platformSpecific.fileFormats
         )
         if path:
@@ -907,8 +920,8 @@ class MainWindow(QMainWindow):
 
     def saveFileAs(self):
         fileFormats = OrderedDict([
-            ("UFO Font version 3 (*.ufo)", 3),
-            ("UFO Font version 2 (*.ufo)", 2),
+            (self.tr("UFO Font version 3 {}").format("(*.ufo)"), 3),
+            (self.tr("UFO Font version 2 {}").format("(*.ufo)"), 2),
         ])
         # TODO: see if OSX works nicely with UFO as files, then switch
         # to directory on platforms that need it
@@ -932,16 +945,18 @@ class MainWindow(QMainWindow):
 
         # TODO: systematize this into extractor
         fileFormats = (
-            "OpenType Font file (*.otf *.ttf)",
-            "Type1 Font file (*.pfa *.pfb)",
-            "ttx Font file (*.ttx)",
-            "WOFF Font file (*.woff)",
-            "All supported files (*.otf *.pfa *.pfb *.ttf *.ttx *.woff)",
-            "All files (*.*)",
+            self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
+            self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
+            self.tr("ttx Font file {}").format("(*.ttx)"),
+            self.tr("WOFF Font file {}").format("(*.woff)"),
+            self.tr("All supported files {}").format(
+                "(*.otf *.pfa *.pfb *.ttf *.ttx *.woff)"),
+            self.tr("All files {}").format("(*.*)"),
         )
 
         path, _ = QFileDialog.getOpenFileName(
-            self, "Import File", None, ";;".join(fileFormats), fileFormats[4])
+            self, self.tr("Import File"), None,
+            ";;".join(fileFormats), fileFormats[4])
 
         if path:
             font = TFont()
@@ -961,13 +976,14 @@ class MainWindow(QMainWindow):
             if getattr(self.font.info, attr) is None:
                 missingAttrs.append(attr)
         if len(missingAttrs):
-            text = "Attributes required for font generation are missing: %s" \
-                   % " ".join(missingAttrs)
+            text = self.tr("Attributes required for font generation are "
+                           "missing: {}").format(" ".join(missingAttrs))
             QMessageBox.critical(self, "Export Error", text)
             return
         # go ahead
-        path, _ = QFileDialog.getSaveFileName(self, "Export File", None,
-                                              "OpenType PS font (*.otf)")
+        path, _ = QFileDialog.getSaveFileName(
+            self, self.tr("Export File"), None,
+            self.tr("OpenType PS font {}").format("(*.otf)"))
         if path:
             try:
                 otf = self.font.getRepresentation("defconQt.TTFont")
@@ -1064,15 +1080,15 @@ class MainWindow(QMainWindow):
                 # TODO: maybe cache this font name in the Font
                 currentFont = os.path.basename(self.font.path.rstrip(os.sep))
             else:
-                currentFont = "Untitled.ufo"
-            body = "Do you want to save the changes you made to “%s”?" \
-                % currentFont
+                currentFont = self.tr("Untitled.ufo")
+            body = self.tr("Do you want to save the changes you made "
+                           "to “{}”?").format(currentFont)
             closeDialog = QMessageBox(
                 QMessageBox.Question, None, body,
                 QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
                 self)
             closeDialog.setInformativeText(
-                "Your changes will be lost if you don’t save them.")
+                self.tr("Your changes will be lost if you don’t save them."))
             closeDialog.setModal(True)
             ret = closeDialog.exec_()
             if ret == QMessageBox.Save:
@@ -1243,7 +1259,7 @@ class MainWindow(QMainWindow):
                 count = selection
                 text = ""
             if not count == 0:
-                text = "%s(%d selected)" % (text, count)
+                text = self.tr("{0}(%n selected)".format(text), n=count)
         else:
             text = ""
         self.selectionLabel.setText(text)
@@ -1267,7 +1283,7 @@ class MainWindow(QMainWindow):
             if self.font.path is not None:
                 title = os.path.basename(self.font.path.rstrip(os.sep))
             else:
-                title = "Untitled.ufo"
+                title = self.tr("Untitled.ufo")
         super(MainWindow, self).setWindowTitle("[*]{}".format(title))
 
     def fontInfo(self):
@@ -1371,20 +1387,21 @@ class MainWindow(QMainWindow):
     def about(self):
         name = QApplication.applicationName()
         domain = QApplication.organizationDomain()
-        text = "<h3>About {n}</h3>" \
-            "<p>{n} is a cross-platform, modular typeface design " \
-            "application.</p><p>{n} is built on top of " \
-            "<a href='http://ts-defcon.readthedocs.org/en/ufo3/'>defcon</a> " \
-            "and includes scripting support " \
-            "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>" \
-            "<p>Version {} {} – Python {}.".format(
-                __version__, gitShortHash, platform.python_version(), n=name)
+        text = self.tr(
+            "<h3>About {n}</h3>"
+            "<p>{n} is a cross-platform, modular typeface design "
+            "application.</p><p>{n} is built on top of "
+            "<a href='http://ts-defcon.readthedocs.org/en/ufo3/'>defcon</a> "
+            "and includes scripting support "
+            "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>"
+            "<p>Version {} {} – Python {}.").format(
+            __version__, gitShortHash, platform.python_version(), n=name)
         if domain:
-            text += "<br>See <a href='http://{d}'>{d}</a> for more " \
-                    "information.</p>".format(d=domain)
+            text += self.tr("<br>See <a href='http://{d}'>{d}</a> for more "
+                            "information.</p>").format(d=domain)
         else:
             text += "</p>"
-        QMessageBox.about(self, "About {}".format(name), text)
+        QMessageBox.about(self, self.tr("About {}").format(name), text)
 
 
 class SettingsDialog(QDialog):
@@ -1392,12 +1409,13 @@ class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super(SettingsDialog, self).__init__(parent)
         # self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle("Settings")
+        self.setWindowTitle(self.tr("Settings"))
 
         self.tabWidget = QTabWidget(self)
-        self.tabWidget.addTab(GlyphSetTab(self), "Glyph sets")
-        self.tabWidget.addTab(MetricsWindowTab(self), "Metrics Window")
-        self.tabWidget.addTab(MiscTab(self), "Misc")
+        self.tabWidget.addTab(GlyphSetTab(self), self.tr("Glyph sets"))
+        self.tabWidget.addTab(MetricsWindowTab(self),
+                              self.tr("Metrics Window"))
+        self.tabWidget.addTab(MiscTab(self), self.tr("Misc"))
 
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -1448,7 +1466,8 @@ class GlyphSetTab(QWidget):
         super().__init__(parent)
 
         settings = QSettings()
-        self.defaultGlyphSetBox = QCheckBox("Default glyph set:", self)
+        self.defaultGlyphSetBox = QCheckBox(self.tr("Default glyph set:"),
+                                            self)
         self.defaultGlyphSetDrop = QComboBox(self)
         defaultGlyphSet = settings.value(
             "settings/defaultGlyphSet", latinDefault.name, str)
@@ -1481,18 +1500,18 @@ class GlyphSetTab(QWidget):
         self.removeGlyphSetButton = QPushButton("−", self)
         self.removeGlyphSetButton.setEnabled(len(self.glyphSets) > 1)
         self.removeGlyphSetButton.clicked.connect(self.removeGlyphSet)
-        self.importButton = QPushButton("Import", self)
+        self.importButton = QPushButton(self.tr("Import"), self)
         importMenu = QMenu(self)
-        importMenu.addAction("Import from current font",
+        importMenu.addAction(self.tr("Import from current font"),
                              self.importFromCurrentFont)
         self.importButton.setMenu(importMenu)
         glyphListPath = settings.value("settings/glyphListPath", type=str)
-        self.glyphListBox = QCheckBox("Glyph list path:", self)
+        self.glyphListBox = QCheckBox(self.tr("Glyph list path:"), self)
         self.glyphListBox.setChecked(bool(glyphListPath))
         self.glyphListEdit = QLineEdit(glyphListPath, self)
         self.glyphListEdit.setEnabled(bool(glyphListPath))
         self.glyphListEdit.setReadOnly(True)
-        self.glyphListButton = QPushButton("Browse…", self)
+        self.glyphListButton = QPushButton(self.tr("Browse…"), self)
         self.glyphListButton.setEnabled(bool(glyphListPath))
         self.glyphListButton.clicked.connect(self.getGlyphList)
         self.glyphListButton.setFixedWidth(72)
@@ -1518,7 +1537,9 @@ class GlyphSetTab(QWidget):
         mainLayout.addLayout(secondLayout)
         self.setLayout(mainLayout)
 
-    def addGlyphSet(self, glyphNames=[], glyphSetName="New glyph set"):
+    def addGlyphSet(self, glyphNames=[], glyphSetName=None):
+        if glyphSetName is None:
+            glyphSetName = self.tr("New glyph set")
         if glyphSetName in self.glyphSets:
             index = 1
             while "%s %d" % (glyphSetName, index) in self.glyphSets:
@@ -1584,11 +1605,11 @@ class GlyphSetTab(QWidget):
 
     def getGlyphList(self):
         fileFormats = (
-            "Text file (*.txt)",
-            "All files (*.*)",
+            self.tr("Text file {}").format("(*.txt)"),
+            self.tr("All files {}").format("(*.*)"),
         )
         path, _ = QFileDialog.getOpenFileName(
-            self, "Open File", '', ";;".join(fileFormats)
+            self, self.tr("Open File"), '', ";;".join(fileFormats)
         )
         if path:
             self.glyphListEdit.setText(path)
@@ -1618,7 +1639,7 @@ class MetricsWindowTab(QWidget):
         super().__init__(parent)
 
         settings = QSettings()
-        self.inputTextLabel = QLabel("Default text:", self)
+        self.inputTextLabel = QLabel(self.tr("Default text:"), self)
         self.inputTextList = QListWidget(self)
         self.inputTextList.setDragDropMode(QAbstractItemView.InternalMove)
         entries = settings.value("metricsWindow/comboBoxItems", comboBoxItems,
@@ -1696,16 +1717,18 @@ class MiscTab(QWidget):
 
         settings = QSettings()
         loadRecentFile = settings.value("misc/loadRecentFile", False, bool)
-        self.loadRecentFileBox = QCheckBox("Load most recent file on start",
-                                           self)
+        self.loadRecentFileBox = QCheckBox(
+            self.tr("Load most recent file on start"), self)
         self.loadRecentFileBox.setChecked(loadRecentFile)
 
-        self.markColorLabel = QLabel("Default flag colors:", self)
+        self.markColorLabel = QLabel(self.tr("Default flag colors:"), self)
         # TODO: enforce duplicate names avoidance
         self.markColorWidget = QTreeWidget(self)
-        self.markColorWidget.setHeaderLabels(("Color", "Name"))
+        self.markColorWidget.setHeaderLabels((self.tr("Color"),
+                                              self.tr("Name")))
         self.markColorWidget.setRootIsDecorated(False)
-        self.markColorWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.markColorWidget.setSelectionBehavior(
+            QAbstractItemView.SelectRows)
         # TODO: make this work correctly, top-level items only
         # self.markColorWidget.setDragDropMode(QAbstractItemView.InternalMove)
         entries = readMarkColors(settings)
@@ -1740,11 +1763,11 @@ class MiscTab(QWidget):
     def addItem(self):
 
         def mangleNewName():
-            name = "New"
+            name = self.tr("New")
             index = 0
             while self.markColorWidget.findItems(name, Qt.MatchExactly, 1):
                 index += 1
-                name = "New ({})".format(index)
+                name = "{0} ({1})".format(name, index)
             return name
 
         # TODO: not DRY with ctor

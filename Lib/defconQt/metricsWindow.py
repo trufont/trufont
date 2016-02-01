@@ -8,7 +8,7 @@ from PyQt5.QtGui import (
     QBrush, QColor, QIcon, QIntValidator, QKeySequence, QPainter, QPalette,
     QPen)
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QActionGroup, QApplication, QComboBox, QLineEdit, QMenu,
+    QAbstractItemView, QApplication, QComboBox, QLineEdit, QMenu,
     QPushButton, QScrollArea, QStyledItemDelegate, QTableWidget,
     QTableWidgetItem, QVBoxLayout, QSizePolicy, QToolBar, QWidget)
 import re
@@ -41,10 +41,9 @@ class MainMetricsWindow(QWidget):
 
         if string is None:
             try:
-                string = getuser()
+                string = self.tr("Hello {0}").format(getuser())
             except:
-                string = "World"
-            string = "Hello %s" % string
+                string = self.tr("Hello World")
         # TODO: drop self.font and self.glyphs, store in the widgets only
         self.font = font
         self.glyphs = []
@@ -77,12 +76,14 @@ class MainMetricsWindow(QWidget):
         self.setWindowTitle(font=self.font)
 
     def setupFileMenu(self):
-        fileMenu = QMenu("&File", self)
-        fileMenu.addAction("&Save…", self.save, QKeySequence.Save)
-        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        fileMenu = QMenu(self.tr("&File"), self)
+        fileMenu.addAction(self.tr("&Save…"), self.save, QKeySequence.Save)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 
-    def setWindowTitle(self, title="Metrics Window", font=None):
+    def setWindowTitle(self, title=None, font=None):
+        if title is None:
+            title = self.tr("Metrics Window")
         if font is not None:
             title = "%s – %s %s" % (
                 title, font.info.familyName, font.info.styleName)
@@ -257,18 +258,19 @@ class FontToolBar(QToolBar):
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px")
         self.toolsMenu = QMenu(self)
         showKerning = self.toolsMenu.addAction(
-            "Show Kerning", self.showKerning)
+            self.tr("Show Kerning"), self.showKerning)
         showKerning.setCheckable(True)
         showMetrics = self.toolsMenu.addAction(
-            "Show Metrics", self.showMetrics)
+            self.tr("Show Metrics"), self.showMetrics)
         showMetrics.setCheckable(True)
         self.toolsMenu.addSeparator()
-        wrapLines = self.toolsMenu.addAction("Wrap lines", self.wrapLines)
+        wrapLines = self.toolsMenu.addAction(self.tr("Wrap lines"),
+                                             self.wrapLines)
         wrapLines.setCheckable(True)
         wrapLines.setChecked(True)
         self.toolsMenu.addSeparator()
         verticalFlip = self.toolsMenu.addAction(
-            "Vertical flip", self.verticalFlip)
+            self.tr("Vertical flip"), self.verticalFlip)
         verticalFlip.setCheckable(True)
         """
         lineHeight = QWidgetAction(self.toolsMenu)
@@ -740,7 +742,7 @@ class SpaceTable(QTableWidget):
         super(SpaceTable, self).__init__(4, 1, parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self.setItemDelegate(GlyphCellItemDelegate(self))
-        data = [None, "Width", "Left", "Right"]
+        data = [None, self.tr("Width"), self.tr("Left"), self.tr("Right")]
         # Don't grey-out disabled cells
         palette = self.palette()
         fgColor = palette.color(QPalette.Text)

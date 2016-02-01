@@ -5,14 +5,15 @@ from defconQt.util import bezierMath, platformSpecific
 from defconQt.util.uiMethods import moveUISelection, removeUISelection
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPainter, QTransform
-from PyQt5.QtWidgets import QMenu, QRubberBand, QStyle, QStyleOptionRubberBand
+from PyQt5.QtWidgets import (
+    QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
 
 
 class SelectionTool(BaseTool):
-    name = "Selection"
+    name = QApplication.translate("SelectionTool", "Selection")
     iconPath = ":/resources/cursor.svg"
 
     def __init__(self, parent=None):
@@ -135,15 +136,15 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         self._cachedPos = event.globalPos()
         menu = QMenu(widget)
-        menu.addAction("Add Anchor…", self._createAnchor)
-        menu.addAction("Add Component…", self._createComponent)
-        menu.addAction("Reverse", self._reverse)
+        menu.addAction(self.tr("Add Anchor…"), self._createAnchor)
+        menu.addAction(self.tr("Add Component…"), self._createComponent)
+        menu.addAction(self.tr("Reverse"), self._reverse)
         itemTuple = widget.itemAt(event.localPos())
         if itemTuple is not None:
             item, parent = itemTuple
             if parent is not None and item.segmentType:
                 menu.addSeparator()
-                menu.addAction("Set Start Point",
+                menu.addAction(self.tr("Set Start Point"),
                                lambda: self._setStartPoint(item, parent))
         menu.exec_(self._cachedPos)
         self._cachedPos = None

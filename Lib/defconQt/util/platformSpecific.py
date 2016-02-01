@@ -1,14 +1,16 @@
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
 import sys
 
 # -----------
 # File dialog
 # -----------
+_ufoFileFormat = QApplication.translate("File dialog", "UFO Fonts {}")
 
 if sys.platform == "darwin":
-    fileFormats = "UFO Fonts (*.ufo)"
+    fileFormats = _ufoFileFormat.format("(*.ufo)")
 else:
-    fileFormats = "UFO Fonts (metainfo.plist)"
+    fileFormats = _ufoFileFormat.format("(metainfo.plist)")
 
 # ---------
 # Font size

@@ -156,8 +156,8 @@ class GroupsWindow(QWidget):
         if not groups:
             self.removeGroupButton.setEnabled(False)
 
-        self.alignLeftBox = QRadioButton("Align left", self)
-        self.alignRightBox = QRadioButton("Align right", self)
+        self.alignLeftBox = QRadioButton(self.tr("Align left"), self)
+        self.alignRightBox = QRadioButton(self.tr("Align right"), self)
         self.alignLeftBox.setChecked(True)
         self.alignLeftBox.toggled.connect(self._alignmentChanged)
         self._autoDirection = True
@@ -183,7 +183,9 @@ class GroupsWindow(QWidget):
 
         self.setWindowTitle(font=self.font)
 
-    def setWindowTitle(self, title="Groups Window", font=None):
+    def setWindowTitle(self, title=None, font=None):
+        if title is None:
+            title = self.tr("Groups Window")
         if font is not None:
             title = "%s – %s %s" % (
                 title, font.info.familyName, font.info.styleName)
@@ -194,7 +196,7 @@ class GroupsWindow(QWidget):
         self.stackWidget.setAlignment(alignRight)
 
     def _groupAdd(self):
-        groupName = "New group"
+        groupName = self.tr("New group")
         if groupName in self.font.groups:
             index = 1
             while "%s %d" % (groupName, index) in self.font.groups:

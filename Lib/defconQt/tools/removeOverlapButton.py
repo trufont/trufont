@@ -1,3 +1,4 @@
+from PyQt5.QtWidgets import QApplication
 from defconQt.tools.baseButton import BaseButton
 
 
@@ -18,7 +19,7 @@ def removeSelectionOverlap(glyph):
 
 
 class RemoveOverlapButton(BaseButton):
-    name = "Remove Overlap"
+    name = QApplication.translate("RemoveOverlapButton", "Remove Overlap")
     iconPath = ":resources/union.svg"
 
     def clicked(self):

@@ -30,11 +30,18 @@ arrowKeys = (Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right)
 
 
 def proceedWithDeletion(self, erase=False):
-    do = "clear" if not erase else "delete"
+    clear_header = QApplication.translate(
+        "GlyphCollectionWidget", "Clear glyphs")
+    clear_text = QApplication.translate(
+        "GlyphCollectionWidget", "Do you want to clear selected glyphs?")
+    erase_header = QApplication.translate(
+        "GlyphCollectionWidget", "Delete glyphs")
+    erase_text = QApplication.translate(
+        "GlyphCollectionWidget", "Do you want to delete selected glyphs?")
     closeDialog = QMessageBox(
-        QMessageBox.Question, "", "%s glyphs" % do.capitalize(),
+        QMessageBox.Question, "", clear_header if not erase else erase_header,
         QMessageBox.Yes | QMessageBox.No, self)
-    closeDialog.setInformativeText("Do you want to %s selected glyphs?" % do)
+    closeDialog.setInformativeText(clear_text if not erase else erase_text)
     closeDialog.setModal(True)
     ret = closeDialog.exec_()
     if ret == QMessageBox.Yes:

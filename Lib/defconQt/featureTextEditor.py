@@ -17,27 +17,24 @@ class MainEditWindow(QMainWindow):
         self.editor = FeatureTextEditor(self.font.features.text, self)
         self.resize(600, 500)
 
-        fileMenu = QMenu("&File", self)
-        fileMenu.addAction("&Save…", self.save, QKeySequence.Save)
+        fileMenu = QMenu(self.tr("&File"), self)
+        fileMenu.addAction(self.tr("&Save…"), self.save, QKeySequence.Save)
         fileMenu.addSeparator()
-        fileMenu.addAction("&Reload From Disk", self.reload)
-        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Reload From Disk"), self.reload)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
         self.menuBar().addMenu(fileMenu)
 
         self.setCentralWidget(self.editor)
-        self.setWindowTitle(font=self.font)
+        self.setWindowTitle(self.tr("Font Features - {0} {1}").format(
+            self.font.info.familyName, self.font.info.styleName))
         self.editor.modificationChanged.connect(self.setWindowModified)
 
     def setWindowTitle(self, title="Font Features", font=None):
-        if font is not None:
-            puts = "[*]%s – %s %s" % (
-                title, self.font.info.familyName, self.font.info.styleName)
-        else:
-            puts = "[*]%s" % title
-        super(MainEditWindow, self).setWindowTitle(puts)
+        super(MainEditWindow, self).setWindowTitle("[*]" + title)
 
     def _fontInfoChanged(self, notification):
-        self.setWindowTitle(font=self.font)
+        self.setWindowTitle(self.tr("Font Features - {0} {1}").format(
+            self.font.info.familyName, self.font.info.styleName))
 
     def closeEvent(self, event):
         if self.editor.document().isModified():
@@ -45,12 +42,12 @@ class MainEditWindow(QMainWindow):
             closeDialog = QMessageBox(
                 QMessageBox.Question,
                 name,
-                "Save your changes?",
+                self.tr("Save your changes?"),
                 QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
                 self
             )
             closeDialog.setInformativeText(
-                "Your changes will be lost if you don’t save them."
+                self.tr("Your changes will be lost if you don’t save them.")
             )
             closeDialog.setModal(True)
             ret = closeDialog.exec_()

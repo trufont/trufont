@@ -25,47 +25,50 @@ class MainGlyphWindow(QMainWindow):
         super().__init__(parent)
 
         menuBar = self.menuBar()
-        fileMenu = QMenu("&File", self)
-        fileMenu.addAction("E&xit", self.close, QKeySequence.Quit)
+        fileMenu = QMenu(self.tr("&File"), self)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
         menuBar.addMenu(fileMenu)
-        editMenu = QMenu("&Edit", self)
+        editMenu = QMenu(self.tr("&Edit"), self)
         self._undoAction = editMenu.addAction(
-            "&Undo", self.undo, QKeySequence.Undo)
+            self.tr("&Undo"), self.undo, QKeySequence.Undo)
         self._redoAction = editMenu.addAction(
-            "&Redo", self.redo, QKeySequence.Redo)
+            self.tr("&Redo"), self.redo, QKeySequence.Redo)
         editMenu.addSeparator()
         # XXX
-        action = editMenu.addAction("C&ut", self.cutOutlines, QKeySequence.Cut)
+        action = editMenu.addAction(self.tr("C&ut"), self.cutOutlines,
+                                    QKeySequence.Cut)
         action.setEnabled(False)
         self._copyAction = editMenu.addAction(
-            "&Copy", self.copyOutlines, QKeySequence.Copy)
-        editMenu.addAction("&Paste", self.pasteOutlines, QKeySequence.Paste)
+            self.tr("&Copy"), self.copyOutlines, QKeySequence.Copy)
+        editMenu.addAction(self.tr("&Paste"), self.pasteOutlines,
+                           QKeySequence.Paste)
         editMenu.addAction(
-            "Select &All", self.selectAll, QKeySequence.SelectAll)
-        editMenu.addAction("&Deselect", self.deselect, "Ctrl+D")
+            self.tr("Select &All"), self.selectAll, QKeySequence.SelectAll)
+        editMenu.addAction(self.tr("&Deselect"), self.deselect, "Ctrl+D")
         menuBar.addMenu(editMenu)
-        glyphMenu = QMenu("&Glyph", self)
-        glyphMenu.addAction("&Next Glyph", lambda: self.glyphOffset(1), "End")
+        glyphMenu = QMenu(self.tr("&Glyph"), self)
+        glyphMenu.addAction(self.tr("&Next Glyph"),
+                            lambda: self.glyphOffset(1), "End")
         glyphMenu.addAction(
-            "&Previous Glyph", lambda: self.glyphOffset(-1), "Home")
-        glyphMenu.addAction("&Go To…", self.changeGlyph, "G")
+            self.tr("&Previous Glyph"), lambda: self.glyphOffset(-1), "Home")
+        glyphMenu.addAction(self.tr("&Go To…"), self.changeGlyph, "G")
         glyphMenu.addSeparator()
         self._layerAction = glyphMenu.addAction(
-            "&Layer Actions…", self.layerActions, "L")
+            self.tr("&Layer Actions…"), self.layerActions, "L")
         menuBar.addMenu(glyphMenu)
 
         # create tools and buttons toolBars
         self._tools = []
-        self._toolsToolBar = QToolBar("Tools", self)
+        self._toolsToolBar = QToolBar(self.tr("Tools"), self)
         self._toolsToolBar.setMovable(False)
         self._buttons = []
-        self._buttonsToolBar = QToolBar("Buttons", self)
+        self._buttonsToolBar = QToolBar(self.tr("Buttons"), self)
         self._buttonsToolBar.setMovable(False)
         self.addToolBar(self._toolsToolBar)
         self.addToolBar(self._buttonsToolBar)
 
         # http://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
-        self._layersToolBar = QToolBar("Layers", self)
+        self._layersToolBar = QToolBar(self.tr("Layers"), self)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._currentLayerBox = QComboBox(self)
@@ -78,9 +81,10 @@ class MainGlyphWindow(QMainWindow):
         self.addToolBar(self._layersToolBar)
 
         viewMenu = self.createPopupMenu()
-        viewMenu.setTitle("View")
+        viewMenu.setTitle(self.tr("View"))
         viewMenu.addSeparator()
-        action = viewMenu.addAction("Lock Toolbars", self.lockToolBars)
+        action = viewMenu.addAction(self.tr("Lock Toolbars"),
+                                    self.lockToolBars)
         action.setCheckable(True)
         action.setChecked(True)
         menuBar.addMenu(viewMenu)
@@ -432,7 +436,7 @@ class MainGlyphWindow(QMainWindow):
         for layer in glyph.layerSet:
             comboBox.addItem(layer.name, layer)
         comboBox.setCurrentText(glyph.layer.name)
-        comboBox.addItem("New layer…", None)
+        comboBox.addItem(self.tr("New layer…"), None)
         comboBox.blockSignals(False)
         self._layerAction.setEnabled(len(glyph.layerSet) > 1)
 
