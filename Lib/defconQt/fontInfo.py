@@ -194,11 +194,26 @@ class GeneralTab(TabWidget):
         licenseLabel = QLabel(self.tr("License:"), self)
         licenseURLLabel = QLabel(self.tr("License URL:"), self)
         trademarkLabel = QLabel(self.tr("Trademark:"), self)
+        versionLabel = QLabel(self.tr("Version:"), self)
+        versionDotLabel = QLabel(".", self)
+
+        alignment = Qt.AlignRight | Qt.AlignVCenter
+        familyNameLabel.setAlignment(alignment)
+        styleNameLabel.setAlignment(alignment)
+        designerLabel.setAlignment(alignment)
+        designerURLLabel.setAlignment(alignment)
+        manufacturerLabel.setAlignment(alignment)
+        manufacturerURLLabel.setAlignment(alignment)
+        copyrightLabel.setAlignment(alignment)
+        licenseLabel.setAlignment(alignment)
+        licenseURLLabel.setAlignment(alignment)
+        trademarkLabel.setAlignment(alignment)
+        versionLabel.setAlignment(alignment)
+        versionDotLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+
         # TODO: give visual feedback of input data validity using QLineEdit
         # lose focus event
         # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/ # noqa
-        versionLabel = QLabel(self.tr("Version:"), self)
-        versionDotLabel = QLabel(".", self)
         self.loadString(font, "familyName", "familyName")
         self.loadString(font, "styleName", "styleName")
         self.loadString(font, "openTypeNameDesigner", "designer")
@@ -323,6 +338,18 @@ class MetricsTab(TabWidget):
         descenderLabel = QLabel(self.tr("Descender:"), self)
         xHeightLabel = QLabel(self.tr("x-height:"), self)
         noteLabel = QLabel(self.tr("Note:"), self)
+
+        alignment = Qt.AlignRight | Qt.AlignVCenter
+        styleMapFamilyLabel.setAlignment(alignment)
+        styleMapStyleLabel.setAlignment(alignment)
+        unitsPerEmLabel.setAlignment(alignment)
+        ascenderLabel.setAlignment(alignment)
+        capHeightLabel.setAlignment(alignment)
+        italicAngleLabel.setAlignment(alignment)
+        descenderLabel.setAlignment(alignment)
+        xHeightLabel.setAlignment(alignment)
+        noteLabel.setAlignment(alignment)
+
         # In the UFO specs these are integer or float, and unitsPerEm is
         # non-negative integer or float
         self.loadPositiveIntegerFloat(font, "unitsPerEm", "unitsPerEm")
@@ -399,6 +426,18 @@ class OpenTypeTab(TabWidget):
         uniqueIDLabel = QLabel(self.tr("Unique ID:"), self)
         descriptionLabel = QLabel(self.tr("Description:"), self)
         sampleTextLabel = QLabel(self.tr("Sample text:"), self)
+
+        alignment = Qt.AlignRight | Qt.AlignVCenter
+        preferredFamilyNameLabel.setAlignment(alignment)
+        preferredSubfamilyNameLabel.setAlignment(alignment)
+        compatibleFullNameLabel.setAlignment(alignment)
+        WWSFamilyNameLabel.setAlignment(alignment)
+        WWSSubfamilyNameLabel.setAlignment(alignment)
+        versionLabel.setAlignment(alignment)
+        uniqueIDLabel.setAlignment(alignment)
+        descriptionLabel.setAlignment(alignment)
+        sampleTextLabel.setAlignment(alignment)
+
         self.loadString(
             font, "openTypeNamePreferredFamilyName", "preferredFamilyName")
         self.loadString(
@@ -449,6 +488,14 @@ class OpenTypeTab(TabWidget):
         caretSlopeRiseLabel = QLabel(self.tr("caretSlopeRise:"), self)
         caretSlopeRunLabel = QLabel(self.tr("caretSlopeRun:"), self)
         caretOffsetLabel = QLabel(self.tr("caretOffset:"), self)
+
+        ascenderLabel.setAlignment(alignment)
+        descenderLabel.setAlignment(alignment)
+        lineGapLabel.setAlignment(alignment)
+        caretSlopeRiseLabel.setAlignment(alignment)
+        caretSlopeRunLabel.setAlignment(alignment)
+        caretOffsetLabel.setAlignment(alignment)
+
         self.loadInteger(font, "openTypeHheaAscender", "ascender")
         self.loadInteger(font, "openTypeHheaDescender", "descender")
         self.loadInteger(font, "openTypeHheaLineGap", "lineGap")
@@ -483,6 +530,14 @@ class OpenTypeTab(TabWidget):
         vheaCaretSlopeRiseLabel = QLabel(self.tr("caretSlopeRise:"), self)
         vheaCaretSlopeRunLabel = QLabel(self.tr("caretSlopeRun:"), self)
         vheaCaretOffsetLabel = QLabel(self.tr("caretOffset:"), self)
+
+        vertTypoAscenderLabel.setAlignment(alignment)
+        vertTypoDescenderLabel.setAlignment(alignment)
+        vertTypoLineGapLabel.setAlignment(alignment)
+        vheaCaretSlopeRiseLabel.setAlignment(alignment)
+        vheaCaretSlopeRunLabel.setAlignment(alignment)
+        vheaCaretOffsetLabel.setAlignment(alignment)
+
         self.loadInteger(
             font, "openTypeVheaVertTypoAscender", "vertTypoAscender")
         self.loadInteger(
@@ -644,6 +699,29 @@ class OS2Tab(TabWidget):
                                           self)
         yStrikeoutSizeLabel = QLabel(self.tr("yStrikeoutSize:"), self)
         yStrikeoutPositionLabel = QLabel(self.tr("yStrikeoutPosition:"), self)
+
+        alignment = Qt.AlignRight | Qt.AlignVCenter
+        usWidthClassLabel.setAlignment(alignment)
+        fsSelectionLabel.setAlignment(alignment)
+        achVendorIDLabel.setAlignment(alignment)
+        fsTypeLabel.setAlignment(alignment)
+        sTypoAscenderLabel.setAlignment(alignment)
+        sTypoDescenderLabel.setAlignment(alignment)
+        sTypoLineGapLabel.setAlignment(alignment)
+        usWeightClassLabel.setAlignment(alignment)
+        usWinAscentLabel.setAlignment(alignment)
+        usWinDescentLabel.setAlignment(alignment)
+        ySubscriptXSizeLabel.setAlignment(alignment)
+        ySubscriptYSizeLabel.setAlignment(alignment)
+        ySubscriptXOffsetLabel.setAlignment(alignment)
+        ySubscriptYOffsetLabel.setAlignment(alignment)
+        ySuperscriptXSizeLabel.setAlignment(alignment)
+        ySuperscriptYSizeLabel.setAlignment(alignment)
+        ySuperscriptXOffsetLabel.setAlignment(alignment)
+        ySuperscriptYOffsetLabel.setAlignment(alignment)
+        yStrikeoutSizeLabel.setAlignment(alignment)
+        yStrikeoutPositionLabel.setAlignment(alignment)
+
         self.loadPositiveInteger(
             font, "openTypeOS2WeightClass", "usWeightClass")
         self.loadInteger(font, "openTypeOS2TypoAscender", "sTypoAscender")
@@ -813,6 +891,13 @@ class PostScriptTab(TabWidget):
         fullNameLabel = QLabel(self.tr("FullName:"), self)
         weightNameLabel = QLabel(self.tr("WeightName:"), self)
         uniqueIDLabel = QLabel(self.tr("UniqueID:"), self)
+
+        alignment = Qt.AlignRight | Qt.AlignVCenter
+        fontNameLabel.setAlignment(alignment)
+        fullNameLabel.setAlignment(alignment)
+        weightNameLabel.setAlignment(alignment)
+        uniqueIDLabel.setAlignment(alignment)
+
         self.loadString(font, "postscriptFontName", "fontName")
         self.loadString(font, "postscriptFullName", "fullName")
         self.loadString(font, "postscriptWeightName", "weightName")
@@ -844,6 +929,11 @@ class PostScriptTab(TabWidget):
         familyBluesLabel = QLabel(self.tr("FamilyBlues:"), self)
         familyOtherBluesLabel = QLabel(self.tr("FamilyOtherBlues:"), self)
 
+        blueValuesLabel.setAlignment(alignment)
+        otherBluesLabel.setAlignment(alignment)
+        familyBluesLabel.setAlignment(alignment)
+        familyOtherBluesLabel.setAlignment(alignment)
+
         l = 0
         hintingLayout.addWidget(blueValuesLabel, l, 0)
         hintingLayout.addWidget(self.blueValuesEdit, l, 1, 1, 2)
@@ -870,6 +960,13 @@ class PostScriptTab(TabWidget):
         forceBoldLabel = QLabel(self.tr("ForceBold:"), self)
         self.loadBoolean(font, "postscriptForceBold", "forceBold")
 
+        blueFuzzLabel.setAlignment(alignment)
+        stemSnapHLabel.setAlignment(alignment)
+        blueScaleLabel.setAlignment(alignment)
+        stemSnapVLabel.setAlignment(alignment)
+        blueShiftLabel.setAlignment(alignment)
+        forceBoldLabel.setAlignment(alignment)
+
         hintingLayout.addWidget(blueFuzzLabel, l, 0)
         hintingLayout.addWidget(self.blueFuzzEdit, l, 1, 1, 2)
         hintingLayout.addWidget(stemSnapHLabel, l, 3)
@@ -895,6 +992,7 @@ class PostScriptTab(TabWidget):
         nominalWidthXLabel = QLabel(self.tr("NominalWidthX:"), self)
         underlinePositionLabel = QLabel(self.tr("UnderlinePosition:"), self)
         slantAngleLabel = QLabel(self.tr("SlantAngle:"), self)
+
         self.loadIntegerFloat(font, "postscriptDefaultWidthX", "defaultWidthX")
         self.loadIntegerFloat(font, "postscriptNominalWidthX", "nominalWidthX")
         self.loadIntegerFloat(
@@ -905,6 +1003,13 @@ class PostScriptTab(TabWidget):
 
         isFixedPitchLabel = QLabel(self.tr("isFixedPitched:"), self)
         self.loadBoolean(font, "postscriptIsFixedPitch", "isFixedPitch")
+
+        defaultWidthXLabel.setAlignment(alignment)
+        underlineThicknessLabel.setAlignment(alignment)
+        nominalWidthXLabel.setAlignment(alignment)
+        underlinePositionLabel.setAlignment(alignment)
+        slantAngleLabel.setAlignment(alignment)
+        isFixedPitchLabel.setAlignment(alignment)
 
         l = 0
         metricsLayout.addWidget(defaultWidthXLabel, l, 0)
@@ -945,6 +1050,9 @@ class PostScriptTab(TabWidget):
         if font.info.postscriptWindowsCharacterSet is not None:
             self.windowsCharacterSetDrop.setCurrentIndex(
                 font.info.postscriptWindowsCharacterSet)
+
+        defaultCharacterLabel.setAlignment(alignment)
+        windowsCharacterSetLabel.setAlignment(alignment)
 
         l = 0
         charactersLayout.addWidget(defaultCharacterLabel, l, 0)
