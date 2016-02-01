@@ -7,7 +7,7 @@
 #      is not to be derived from or mixed with others[1], use `self.tr("Some
 #      user visible text")` instead of the bare string to mark it for
 #      translation. When outside a QObject-derived class (e.g. a stand-alone
-#      function), use `QCoreApplication.translate('context, e.g. stand-alone
+#      function), use `QApplication.translate('context, e.g. stand-alone
 #      function', "Some user visible text")`.
 #   2. Add the file here unless already present.
 #   3. Run `pylupdate5 translations.pro`. This will scan all (Python) source 
