@@ -29,10 +29,12 @@ metrics = QFontMetrics(headerFont)
 arrowKeys = (Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right)
 
 
-def proceedWithDeletion(self):
-    closeDialog = QMessageBox(QMessageBox.Question, "", "Delete glyphs",
-                              QMessageBox.Yes | QMessageBox.No, self)
-    closeDialog.setInformativeText("Are you sure you want to delete them?")
+def proceedWithDeletion(self, erase=False):
+    do = "clear" if not erase else "delete"
+    closeDialog = QMessageBox(
+        QMessageBox.Question, "", "%s glyphs" % do.capitalize(),
+        QMessageBox.Yes | QMessageBox.No, self)
+    closeDialog.setInformativeText("Do you want to %s selected glyphs?" % do)
     closeDialog.setModal(True)
     ret = closeDialog.exec_()
     if ret == QMessageBox.Yes:
@@ -178,7 +180,7 @@ class GlyphCollectionWidget(QWidget):
         if event.source() == self:
             insert = self.currentDropIndex
             newGlyphNames = event.mimeData().text().split(" ")
-            font = self._glyphs[0].getParent()
+            font = self._glyphs[0].font
             # TODO: should glyphOrder change activate font.dirty?
             newGlyphs = [font[name] for name in newGlyphNames]
             # put all glyphs to be moved to None (deleting them would
@@ -194,6 +196,11 @@ class GlyphCollectionWidget(QWidget):
             self.currentDropIndex = None
             self.glyphs = [glyph
                            for glyph in self._glyphs if glyph is not None]
+            # update glyphOrder
+            # TODO: remove dep on parent
+            font.disableNotifications("Font.GlyphOrderChanged", self.parent())
+            font.glyphOrder = [glyph.name for glyph in self._glyphs]
+            font.enableNotifications("Font.GlyphOrderChanged", self.parent())
 
     def resizeEvent(self, event):
         self._rewindColumns()
@@ -272,18 +279,26 @@ class GlyphCollectionWidget(QWidget):
         # XXX: this is specific to fontView so should be done thru subclassing
         # of a base widget, as is done in groupsView
         elif key == platformSpecific.deleteKey:
+            erase = modifiers & Qt.ShiftModifier
             # if self.characterDeletionCallback is not None:
-            if proceedWithDeletion(self) and self.selection:
+            if len(self._selection) and proceedWithDeletion(self, erase):
                 # we need to del in reverse order to keep key references valid
                 for key in sorted(self._selection, reverse=True):
                     glyph = self._glyphs[key]
-                    font = glyph.getParent()
-                    if modifiers & Qt.ShiftModifier:
+                    font = glyph.font
+                    if erase:
                         del font[glyph.name]
-                        # XXX: need a del fn in property
                         del self._glyphs[key]
+                        # TODO: remove dep on parent
+                        font.disableNotifications(
+                            "Font.GlyphOrderChanged", self.parent())
+                        font.glyphOrder = [glyph.name for glyph in self._glyphs]
+                        font.enableNotifications(
+                            "Font.GlyphOrderChanged", self.parent())
                     else:
-                        # XXX: have template setter clear glyph content
+                        # TODO: consider putting this in glyph template setter
+                        glyph.prepareUndo()
+                        glyph.clear()
                         glyph.template = True
                 self.selection = set()
         elif modifiers in (Qt.NoModifier, Qt.ShiftModifier) and \
