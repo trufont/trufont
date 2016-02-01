@@ -265,8 +265,7 @@ class FontToolBar(QToolBar):
         self.toolsMenu.addSeparator()
         wrapLines = self.toolsMenu.addAction("Wrap lines", self.wrapLines)
         wrapLines.setCheckable(True)
-        noWrapLines = self.toolsMenu.addAction("No wrap", self.noWrapLines)
-        noWrapLines.setCheckable(True)
+        wrapLines.setChecked(True)
         self.toolsMenu.addSeparator()
         verticalFlip = self.toolsMenu.addAction(
             "Vertical flip", self.verticalFlip)
@@ -286,10 +285,6 @@ class FontToolBar(QToolBar):
         self.toolsMenu.addAction(lineHeight)
         """
 
-        wrapLinesGroup = QActionGroup(self)
-        wrapLinesGroup.addAction(wrapLines)
-        wrapLinesGroup.addAction(noWrapLines)
-        wrapLines.setChecked(True)
         # self.toolsMenu.setActiveAction(wrapLines)
         self.configBar.setMenu(self.toolsMenu)
 
@@ -324,10 +319,7 @@ class FontToolBar(QToolBar):
         self.parent().canvas.setLineHeight(value / 100)
 
     def wrapLines(self):
-        self.parent().canvas.setWrapLines(True)
-
-    def noWrapLines(self):
-        self.parent().canvas.setWrapLines(False)
+        self.parent().canvas.toggleWrapLines()
 
 
 class GlyphsCanvas(QWidget):
@@ -390,10 +382,8 @@ class GlyphsCanvas(QWidget):
         self.adjustSize()
         self.update()
 
-    def setWrapLines(self, wrapLines):
-        if self._wrapLines == wrapLines:
-            return
-        self._wrapLines = wrapLines
+    def toggleWrapLines(self):
+        self._wrapLines = not self._wrapLines
         self.adjustSize()
         if self._wrapLines:
             self._scrollArea.setHorizontalScrollBarPolicy(
