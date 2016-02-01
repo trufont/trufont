@@ -5,8 +5,7 @@ from defconQt.objects.defcon import TGlyph
 from getpass import getuser
 from PyQt5.QtCore import QEvent, QSettings, QSize, Qt
 from PyQt5.QtGui import (
-    QBrush, QColor, QIcon, QIntValidator, QKeySequence, QPainter, QPalette,
-    QPen)
+    QBrush, QColor, QIcon, QIntValidator, QPainter, QPalette, QPen)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QComboBox, QLineEdit, QMenu,
     QPushButton, QScrollArea, QStyledItemDelegate, QTableWidget,
@@ -74,12 +73,6 @@ class MainMetricsWindow(QWidget):
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
         self.setWindowTitle(font=self.font)
-
-    def setupFileMenu(self):
-        fileMenu = QMenu(self.tr("&File"), self)
-        fileMenu.addAction(self.tr("&Save…"), self.save, QKeySequence.Save)
-        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
-        self.menuBar().addMenu(fileMenu)
 
     def setWindowTitle(self, title=None, font=None):
         if title is None:
