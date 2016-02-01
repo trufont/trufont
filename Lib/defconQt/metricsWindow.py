@@ -265,8 +265,7 @@ class FontToolBar(QToolBar):
         self.toolsMenu.addSeparator()
         wrapLines = self.toolsMenu.addAction("Wrap lines", self.wrapLines)
         wrapLines.setCheckable(True)
-        noWrapLines = self.toolsMenu.addAction("No wrap", self.noWrapLines)
-        noWrapLines.setCheckable(True)
+        wrapLines.setChecked(True)
         self.toolsMenu.addSeparator()
         verticalFlip = self.toolsMenu.addAction(
             "Vertical flip", self.verticalFlip)
@@ -286,11 +285,6 @@ class FontToolBar(QToolBar):
         self.toolsMenu.addAction(lineHeight)
         """
 
-        wrapLinesGroup = QActionGroup(self)
-        wrapLinesGroup.addAction(wrapLines)
-        wrapLinesGroup.addAction(noWrapLines)
-        wrapLines.setChecked(True)
-        # self.toolsMenu.setActiveAction(wrapLines)
         self.configBar.setMenu(self.toolsMenu)
 
         self.addWidget(self.leftTextField)
@@ -324,10 +318,8 @@ class FontToolBar(QToolBar):
         self.parent().canvas.setLineHeight(value / 100)
 
     def wrapLines(self):
-        self.parent().canvas.setWrapLines(True)
-
-    def noWrapLines(self):
-        self.parent().canvas.setWrapLines(False)
+        action = self.sender()
+        self.parent().canvas.setWrapLines(action.isChecked())
 
 
 class GlyphsCanvas(QWidget):
