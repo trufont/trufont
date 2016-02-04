@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
     QCheckBox, QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox,
     QGridLayout, QGroupBox, QLabel, QLineEdit, QListView, QPlainTextEdit,
     QTabWidget, QVBoxLayout, QWidget)
+from defconQt.util.rlabel import RLabel
 
 
 class InfoTabWidget(QTabWidget):
@@ -184,31 +185,19 @@ class GeneralTab(TabWidget):
 
         mainLayout = QGridLayout(self)
 
-        familyNameLabel = QLabel(self.tr("Family name:"), self)
-        styleNameLabel = QLabel(self.tr("Style name:"), self)
-        designerLabel = QLabel(self.tr("Designer:"), self)
-        designerURLLabel = QLabel(self.tr("Designer URL:"), self)
-        manufacturerLabel = QLabel(self.tr("Manufacturer:"), self)
-        manufacturerURLLabel = QLabel(self.tr("Manufacturer URL:"), self)
-        copyrightLabel = QLabel(self.tr("Copyright:"), self)
-        licenseLabel = QLabel(self.tr("License:"), self)
-        licenseURLLabel = QLabel(self.tr("License URL:"), self)
-        trademarkLabel = QLabel(self.tr("Trademark:"), self)
-        versionLabel = QLabel(self.tr("Version:"), self)
+        familyNameLabel = RLabel(self.tr("Family name:"), self)
+        styleNameLabel = RLabel(self.tr("Style name:"), self)
+        designerLabel = RLabel(self.tr("Designer:"), self)
+        designerURLLabel = RLabel(self.tr("Designer URL:"), self)
+        manufacturerLabel = RLabel(self.tr("Manufacturer:"), self)
+        manufacturerURLLabel = RLabel(self.tr("Manufacturer URL:"), self)
+        copyrightLabel = RLabel(self.tr("Copyright:"), self)
+        licenseLabel = RLabel(self.tr("License:"), self)
+        licenseURLLabel = RLabel(self.tr("License URL:"), self)
+        trademarkLabel = RLabel(self.tr("Trademark:"), self)
+        versionLabel = RLabel(self.tr("Version:"), self)
         versionDotLabel = QLabel(".", self)
 
-        alignment = Qt.AlignRight | Qt.AlignVCenter
-        familyNameLabel.setAlignment(alignment)
-        styleNameLabel.setAlignment(alignment)
-        designerLabel.setAlignment(alignment)
-        designerURLLabel.setAlignment(alignment)
-        manufacturerLabel.setAlignment(alignment)
-        manufacturerURLLabel.setAlignment(alignment)
-        copyrightLabel.setAlignment(alignment)
-        licenseLabel.setAlignment(alignment)
-        licenseURLLabel.setAlignment(alignment)
-        trademarkLabel.setAlignment(alignment)
-        versionLabel.setAlignment(alignment)
         versionDotLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
 
         # TODO: give visual feedback of input data validity using QLineEdit
@@ -247,7 +236,7 @@ class GeneralTab(TabWidget):
         mainLayout.addWidget(versionDotLabel, 6, 2)
         mainLayout.addWidget(self.versionMinorEdit, 6, 3)
 
-        dateCreatedLabel = QLabel(self.tr("Date created:"), self)
+        dateCreatedLabel = RLabel(self.tr("Date created:"), self)
         dateTime = QDateTime()
         # dateTime.fromString(font.info.openTypeHeadCreated, "yyyy/MM/dd
         # hh:mm:ss") # XXX: why does this not work?
@@ -306,10 +295,10 @@ class MetricsTab(TabWidget):
 
         mainLayout = QGridLayout()
 
-        styleMapFamilyLabel = QLabel(self.tr("Style map family name:"), self)
+        styleMapFamilyLabel = RLabel(self.tr("Style map family name:"), self)
         self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName, self)
 
-        styleMapStyleLabel = QLabel(self.tr("Style map style name:"), self)
+        styleMapStyleLabel = RLabel(self.tr("Style map style name:"), self)
         self.styleMapStyleDrop = QComboBox(self)
         items = [self.tr("None"), self.tr("Regular"), self.tr("Italic"),
                  self.tr("Bold"), self.tr("Bold Italic")]
@@ -331,24 +320,13 @@ class MetricsTab(TabWidget):
         mainLayout.addWidget(styleMapStyleLabel, 0, 4)
         mainLayout.addWidget(self.styleMapStyleDrop, 0, 5)
 
-        unitsPerEmLabel = QLabel(self.tr("Units per em:"), self)
-        ascenderLabel = QLabel(self.tr("Ascender:"), self)
-        capHeightLabel = QLabel(self.tr("Cap height:"), self)
-        italicAngleLabel = QLabel(self.tr("Italic angle:"), self)
-        descenderLabel = QLabel(self.tr("Descender:"), self)
-        xHeightLabel = QLabel(self.tr("x-height:"), self)
-        noteLabel = QLabel(self.tr("Note:"), self)
-
-        alignment = Qt.AlignRight | Qt.AlignVCenter
-        styleMapFamilyLabel.setAlignment(alignment)
-        styleMapStyleLabel.setAlignment(alignment)
-        unitsPerEmLabel.setAlignment(alignment)
-        ascenderLabel.setAlignment(alignment)
-        capHeightLabel.setAlignment(alignment)
-        italicAngleLabel.setAlignment(alignment)
-        descenderLabel.setAlignment(alignment)
-        xHeightLabel.setAlignment(alignment)
-        noteLabel.setAlignment(alignment)
+        unitsPerEmLabel = RLabel(self.tr("Units per em:"), self)
+        ascenderLabel = RLabel(self.tr("Ascender:"), self)
+        capHeightLabel = RLabel(self.tr("Cap height:"), self)
+        italicAngleLabel = RLabel(self.tr("Italic angle:"), self)
+        descenderLabel = RLabel(self.tr("Descender:"), self)
+        xHeightLabel = RLabel(self.tr("x-height:"), self)
+        noteLabel = RLabel(self.tr("Note:"), self)
 
         # In the UFO specs these are integer or float, and unitsPerEm is
         # non-negative integer or float
@@ -415,28 +393,17 @@ class OpenTypeTab(TabWidget):
         # nameGroup.setFlat(True)
         nameLayout = QGridLayout(self)
 
-        preferredFamilyNameLabel = QLabel(self.tr("Pref. Family Name:"), self)
-        preferredSubfamilyNameLabel = QLabel(self.tr("Pref. Subfamily Name:"),
+        preferredFamilyNameLabel = RLabel(self.tr("Pref. Family Name:"), self)
+        preferredSubfamilyNameLabel = RLabel(self.tr("Pref. Subfamily Name:"),
                                              self)
-        compatibleFullNameLabel = QLabel(self.tr("Compatible Full Name:"),
+        compatibleFullNameLabel = RLabel(self.tr("Compatible Full Name:"),
                                          self)
-        WWSFamilyNameLabel = QLabel(self.tr("WWS Family Name:"), self)
-        WWSSubfamilyNameLabel = QLabel(self.tr("WWS Subfamily Name:"), self)
-        versionLabel = QLabel(self.tr("Version:"), self)
-        uniqueIDLabel = QLabel(self.tr("Unique ID:"), self)
-        descriptionLabel = QLabel(self.tr("Description:"), self)
-        sampleTextLabel = QLabel(self.tr("Sample text:"), self)
-
-        alignment = Qt.AlignRight | Qt.AlignVCenter
-        preferredFamilyNameLabel.setAlignment(alignment)
-        preferredSubfamilyNameLabel.setAlignment(alignment)
-        compatibleFullNameLabel.setAlignment(alignment)
-        WWSFamilyNameLabel.setAlignment(alignment)
-        WWSSubfamilyNameLabel.setAlignment(alignment)
-        versionLabel.setAlignment(alignment)
-        uniqueIDLabel.setAlignment(alignment)
-        descriptionLabel.setAlignment(alignment)
-        sampleTextLabel.setAlignment(alignment)
+        WWSFamilyNameLabel = RLabel(self.tr("WWS Family Name:"), self)
+        WWSSubfamilyNameLabel = RLabel(self.tr("WWS Subfamily Name:"), self)
+        versionLabel = RLabel(self.tr("Version:"), self)
+        uniqueIDLabel = RLabel(self.tr("Unique ID:"), self)
+        descriptionLabel = RLabel(self.tr("Description:"), self)
+        sampleTextLabel = RLabel(self.tr("Sample text:"), self)
 
         self.loadString(
             font, "openTypeNamePreferredFamilyName", "preferredFamilyName")
@@ -482,19 +449,12 @@ class OpenTypeTab(TabWidget):
         # hheaGroup.setFlat(True)
         hheaLayout = QGridLayout(self)
 
-        ascenderLabel = QLabel(self.tr("Ascender:"), self)
-        descenderLabel = QLabel(self.tr("Descender:"), self)
-        lineGapLabel = QLabel(self.tr("LineGap:"), self)
-        caretSlopeRiseLabel = QLabel(self.tr("caretSlopeRise:"), self)
-        caretSlopeRunLabel = QLabel(self.tr("caretSlopeRun:"), self)
-        caretOffsetLabel = QLabel(self.tr("caretOffset:"), self)
-
-        ascenderLabel.setAlignment(alignment)
-        descenderLabel.setAlignment(alignment)
-        lineGapLabel.setAlignment(alignment)
-        caretSlopeRiseLabel.setAlignment(alignment)
-        caretSlopeRunLabel.setAlignment(alignment)
-        caretOffsetLabel.setAlignment(alignment)
+        ascenderLabel = RLabel(self.tr("Ascender:"), self)
+        descenderLabel = RLabel(self.tr("Descender:"), self)
+        lineGapLabel = RLabel(self.tr("LineGap:"), self)
+        caretSlopeRiseLabel = RLabel(self.tr("caretSlopeRise:"), self)
+        caretSlopeRunLabel = RLabel(self.tr("caretSlopeRun:"), self)
+        caretOffsetLabel = RLabel(self.tr("caretOffset:"), self)
 
         self.loadInteger(font, "openTypeHheaAscender", "ascender")
         self.loadInteger(font, "openTypeHheaDescender", "descender")
@@ -524,19 +484,12 @@ class OpenTypeTab(TabWidget):
         # vheaGroup.setFlat(True)
         vheaLayout = QGridLayout(self)
 
-        vertTypoAscenderLabel = QLabel(self.tr("vertTypoAscender:"), self)
-        vertTypoDescenderLabel = QLabel(self.tr("vertTypoDescender:"), self)
-        vertTypoLineGapLabel = QLabel(self.tr("vertTypoLineGap:"), self)
-        vheaCaretSlopeRiseLabel = QLabel(self.tr("caretSlopeRise:"), self)
-        vheaCaretSlopeRunLabel = QLabel(self.tr("caretSlopeRun:"), self)
-        vheaCaretOffsetLabel = QLabel(self.tr("caretOffset:"), self)
-
-        vertTypoAscenderLabel.setAlignment(alignment)
-        vertTypoDescenderLabel.setAlignment(alignment)
-        vertTypoLineGapLabel.setAlignment(alignment)
-        vheaCaretSlopeRiseLabel.setAlignment(alignment)
-        vheaCaretSlopeRunLabel.setAlignment(alignment)
-        vheaCaretOffsetLabel.setAlignment(alignment)
+        vertTypoAscenderLabel = RLabel(self.tr("vertTypoAscender:"), self)
+        vertTypoDescenderLabel = RLabel(self.tr("vertTypoDescender:"), self)
+        vertTypoLineGapLabel = RLabel(self.tr("vertTypoLineGap:"), self)
+        vheaCaretSlopeRiseLabel = RLabel(self.tr("caretSlopeRise:"), self)
+        vheaCaretSlopeRunLabel = RLabel(self.tr("caretSlopeRun:"), self)
+        vheaCaretOffsetLabel = RLabel(self.tr("caretOffset:"), self)
 
         self.loadInteger(
             font, "openTypeVheaVertTypoAscender", "vertTypoAscender")
@@ -617,7 +570,7 @@ class OS2Tab(TabWidget):
         # OS2Group.setFlat(True)
         OS2Layout = QGridLayout(self)
 
-        usWidthClassLabel = QLabel(self.tr("usWidthClass:"), self)
+        usWidthClassLabel = RLabel(self.tr("usWidthClass:"), self)
         self.usWidthClassDrop = QComboBox(self)
         items = [
             self.tr("None"), self.tr("Ultra-condensed"),
@@ -630,7 +583,7 @@ class OS2Tab(TabWidget):
             self.usWidthClassDrop.setCurrentIndex(
                 font.info.openTypeOS2WidthClass)
 
-        fsSelectionLabel = QLabel(self.tr("fsSelection:"), self)
+        fsSelectionLabel = RLabel(self.tr("fsSelection:"), self)
         fsSelection = font.info.openTypeOS2Selection
         self.fsSelectionList = QListView(self)
         items = [
@@ -651,11 +604,11 @@ class OS2Tab(TabWidget):
             model.setItem(index, item)
         self.fsSelectionList.setModel(model)
 
-        achVendorIDLabel = QLabel(self.tr("achVendorID:"), self)
+        achVendorIDLabel = RLabel(self.tr("achVendorID:"), self)
         self.achVendorIDEdit = QLineEdit(font.info.openTypeOS2VendorID, self)
         self.achVendorIDEdit.setMaxLength(4)
 
-        fsTypeLabel = QLabel(self.tr("fsType:"), self)
+        fsTypeLabel = RLabel(self.tr("fsType:"), self)
         fsType = font.info.openTypeOS2Type
         self.fsTypeDrop = QComboBox(self)
         items = [
@@ -681,46 +634,24 @@ class OS2Tab(TabWidget):
 
         # XXX: ulCodePageRange
 
-        sTypoAscenderLabel = QLabel(self.tr("sTypoAscender:"), self)
-        sTypoDescenderLabel = QLabel(self.tr("sTypoDescender:"), self)
-        sTypoLineGapLabel = QLabel(self.tr("sTypoLineGap:"), self)
-        usWeightClassLabel = QLabel(self.tr("usWeightClass:"), self)
-        usWinAscentLabel = QLabel(self.tr("usWinAscent:"), self)
-        usWinDescentLabel = QLabel(self.tr("usWinDescent:"), self)
-        ySubscriptXSizeLabel = QLabel(self.tr("ySubscriptXSize:"), self)
-        ySubscriptYSizeLabel = QLabel(self.tr("ySubscriptYSize:"), self)
-        ySubscriptXOffsetLabel = QLabel(self.tr("ySubscriptXOffset:"), self)
-        ySubscriptYOffsetLabel = QLabel(self.tr("ySubscriptYOffset:"), self)
-        ySuperscriptXSizeLabel = QLabel(self.tr("ySuperscriptXSize:"), self)
-        ySuperscriptYSizeLabel = QLabel(self.tr("ySuperscriptYSize:"), self)
-        ySuperscriptXOffsetLabel = QLabel(self.tr("ySuperscriptXOffset:"),
+        sTypoAscenderLabel = RLabel(self.tr("sTypoAscender:"), self)
+        sTypoDescenderLabel = RLabel(self.tr("sTypoDescender:"), self)
+        sTypoLineGapLabel = RLabel(self.tr("sTypoLineGap:"), self)
+        usWeightClassLabel = RLabel(self.tr("usWeightClass:"), self)
+        usWinAscentLabel = RLabel(self.tr("usWinAscent:"), self)
+        usWinDescentLabel = RLabel(self.tr("usWinDescent:"), self)
+        ySubscriptXSizeLabel = RLabel(self.tr("ySubscriptXSize:"), self)
+        ySubscriptYSizeLabel = RLabel(self.tr("ySubscriptYSize:"), self)
+        ySubscriptXOffsetLabel = RLabel(self.tr("ySubscriptXOffset:"), self)
+        ySubscriptYOffsetLabel = RLabel(self.tr("ySubscriptYOffset:"), self)
+        ySuperscriptXSizeLabel = RLabel(self.tr("ySuperscriptXSize:"), self)
+        ySuperscriptYSizeLabel = RLabel(self.tr("ySuperscriptYSize:"), self)
+        ySuperscriptXOffsetLabel = RLabel(self.tr("ySuperscriptXOffset:"),
                                           self)
-        ySuperscriptYOffsetLabel = QLabel(self.tr("ySuperscriptYOffset:"),
+        ySuperscriptYOffsetLabel = RLabel(self.tr("ySuperscriptYOffset:"),
                                           self)
-        yStrikeoutSizeLabel = QLabel(self.tr("yStrikeoutSize:"), self)
-        yStrikeoutPositionLabel = QLabel(self.tr("yStrikeoutPosition:"), self)
-
-        alignment = Qt.AlignRight | Qt.AlignVCenter
-        usWidthClassLabel.setAlignment(alignment)
-        fsSelectionLabel.setAlignment(alignment)
-        achVendorIDLabel.setAlignment(alignment)
-        fsTypeLabel.setAlignment(alignment)
-        sTypoAscenderLabel.setAlignment(alignment)
-        sTypoDescenderLabel.setAlignment(alignment)
-        sTypoLineGapLabel.setAlignment(alignment)
-        usWeightClassLabel.setAlignment(alignment)
-        usWinAscentLabel.setAlignment(alignment)
-        usWinDescentLabel.setAlignment(alignment)
-        ySubscriptXSizeLabel.setAlignment(alignment)
-        ySubscriptYSizeLabel.setAlignment(alignment)
-        ySubscriptXOffsetLabel.setAlignment(alignment)
-        ySubscriptYOffsetLabel.setAlignment(alignment)
-        ySuperscriptXSizeLabel.setAlignment(alignment)
-        ySuperscriptYSizeLabel.setAlignment(alignment)
-        ySuperscriptXOffsetLabel.setAlignment(alignment)
-        ySuperscriptYOffsetLabel.setAlignment(alignment)
-        yStrikeoutSizeLabel.setAlignment(alignment)
-        yStrikeoutPositionLabel.setAlignment(alignment)
+        yStrikeoutSizeLabel = RLabel(self.tr("yStrikeoutSize:"), self)
+        yStrikeoutPositionLabel = RLabel(self.tr("yStrikeoutPosition:"), self)
 
         self.loadPositiveInteger(
             font, "openTypeOS2WeightClass", "usWeightClass")
@@ -887,16 +818,10 @@ class PostScriptTab(TabWidget):
         # namingGroup.setFlat(True)
         namingLayout = QGridLayout(self)
 
-        fontNameLabel = QLabel(self.tr("FontName:"), self)
-        fullNameLabel = QLabel(self.tr("FullName:"), self)
-        weightNameLabel = QLabel(self.tr("WeightName:"), self)
-        uniqueIDLabel = QLabel(self.tr("UniqueID:"), self)
-
-        alignment = Qt.AlignRight | Qt.AlignVCenter
-        fontNameLabel.setAlignment(alignment)
-        fullNameLabel.setAlignment(alignment)
-        weightNameLabel.setAlignment(alignment)
-        uniqueIDLabel.setAlignment(alignment)
+        fontNameLabel = RLabel(self.tr("FontName:"), self)
+        fullNameLabel = RLabel(self.tr("FullName:"), self)
+        weightNameLabel = RLabel(self.tr("WeightName:"), self)
+        uniqueIDLabel = RLabel(self.tr("UniqueID:"), self)
 
         self.loadString(font, "postscriptFontName", "fontName")
         self.loadString(font, "postscriptFullName", "fullName")
@@ -924,15 +849,10 @@ class PostScriptTab(TabWidget):
         self.loadIntegerFloatList(font, "postscriptFamilyBlues", "familyBlues")
         self.loadIntegerFloatList(
             font, "postscriptFamilyOtherBlues", "familyOtherBlues")
-        blueValuesLabel = QLabel(self.tr("BlueValues:"), self)
-        otherBluesLabel = QLabel(self.tr("OtherBlues:"), self)
-        familyBluesLabel = QLabel(self.tr("FamilyBlues:"), self)
-        familyOtherBluesLabel = QLabel(self.tr("FamilyOtherBlues:"), self)
-
-        blueValuesLabel.setAlignment(alignment)
-        otherBluesLabel.setAlignment(alignment)
-        familyBluesLabel.setAlignment(alignment)
-        familyOtherBluesLabel.setAlignment(alignment)
+        blueValuesLabel = RLabel(self.tr("BlueValues:"), self)
+        otherBluesLabel = RLabel(self.tr("OtherBlues:"), self)
+        familyBluesLabel = RLabel(self.tr("FamilyBlues:"), self)
+        familyOtherBluesLabel = RLabel(self.tr("FamilyOtherBlues:"), self)
 
         l = 0
         hintingLayout.addWidget(blueValuesLabel, l, 0)
@@ -946,26 +866,19 @@ class PostScriptTab(TabWidget):
         hintingLayout.addWidget(self.familyOtherBluesEdit, l, 4, 1, 2)
         l += 1
 
-        blueFuzzLabel = QLabel(self.tr("BlueFuzz:"), self)
-        stemSnapHLabel = QLabel(self.tr("StemSnapH:"), self)
-        blueScaleLabel = QLabel(self.tr("BlueScale:"), self)
-        stemSnapVLabel = QLabel(self.tr("StemSnapV:"), self)
-        blueShiftLabel = QLabel(self.tr("BlueShift:"), self)
+        blueFuzzLabel = RLabel(self.tr("BlueFuzz:"), self)
+        stemSnapHLabel = RLabel(self.tr("StemSnapH:"), self)
+        blueScaleLabel = RLabel(self.tr("BlueScale:"), self)
+        stemSnapVLabel = RLabel(self.tr("StemSnapV:"), self)
+        blueShiftLabel = RLabel(self.tr("BlueShift:"), self)
         self.loadIntegerFloatList(font, "postscriptStemSnapH", "stemSnapH")
         self.loadIntegerFloatList(font, "postscriptStemSnapV", "stemSnapV")
         self.loadIntegerFloat(font, "postscriptBlueFuzz", "blueFuzz")
         self.loadIntegerFloat(font, "postscriptBlueScale", "blueScale")
         self.loadIntegerFloat(font, "postscriptBlueShift", "blueShift")
 
-        forceBoldLabel = QLabel(self.tr("ForceBold:"), self)
+        forceBoldLabel = RLabel(self.tr("ForceBold:"), self)
         self.loadBoolean(font, "postscriptForceBold", "forceBold")
-
-        blueFuzzLabel.setAlignment(alignment)
-        stemSnapHLabel.setAlignment(alignment)
-        blueScaleLabel.setAlignment(alignment)
-        stemSnapVLabel.setAlignment(alignment)
-        blueShiftLabel.setAlignment(alignment)
-        forceBoldLabel.setAlignment(alignment)
 
         hintingLayout.addWidget(blueFuzzLabel, l, 0)
         hintingLayout.addWidget(self.blueFuzzEdit, l, 1, 1, 2)
@@ -987,11 +900,11 @@ class PostScriptTab(TabWidget):
         # metricsGroup.setFlat(True)
         metricsLayout = QGridLayout(self)
 
-        defaultWidthXLabel = QLabel(self.tr("DefaultWidthX:"), self)
-        underlineThicknessLabel = QLabel(self.tr("UnderlineThickness:"), self)
-        nominalWidthXLabel = QLabel(self.tr("NominalWidthX:"), self)
-        underlinePositionLabel = QLabel(self.tr("UnderlinePosition:"), self)
-        slantAngleLabel = QLabel(self.tr("SlantAngle:"), self)
+        defaultWidthXLabel = RLabel(self.tr("DefaultWidthX:"), self)
+        underlineThicknessLabel = RLabel(self.tr("UnderlineThickness:"), self)
+        nominalWidthXLabel = RLabel(self.tr("NominalWidthX:"), self)
+        underlinePositionLabel = RLabel(self.tr("UnderlinePosition:"), self)
+        slantAngleLabel = RLabel(self.tr("SlantAngle:"), self)
 
         self.loadIntegerFloat(font, "postscriptDefaultWidthX", "defaultWidthX")
         self.loadIntegerFloat(font, "postscriptNominalWidthX", "nominalWidthX")
@@ -1001,15 +914,8 @@ class PostScriptTab(TabWidget):
             font, "postscriptUnderlinePosition", "underlinePosition")
         self.loadIntegerFloat(font, "postscriptSlantAngle", "slantAngle")
 
-        isFixedPitchLabel = QLabel(self.tr("isFixedPitched:"), self)
+        isFixedPitchLabel = RLabel(self.tr("isFixedPitched:"), self)
         self.loadBoolean(font, "postscriptIsFixedPitch", "isFixedPitch")
-
-        defaultWidthXLabel.setAlignment(alignment)
-        underlineThicknessLabel.setAlignment(alignment)
-        nominalWidthXLabel.setAlignment(alignment)
-        underlinePositionLabel.setAlignment(alignment)
-        slantAngleLabel.setAlignment(alignment)
-        isFixedPitchLabel.setAlignment(alignment)
 
         l = 0
         metricsLayout.addWidget(defaultWidthXLabel, l, 0)
@@ -1032,10 +938,10 @@ class PostScriptTab(TabWidget):
         # charactersGroup.setFlat(True)
         charactersLayout = QGridLayout(self)
 
-        defaultCharacterLabel = QLabel(self.tr("Default character:"), self)
+        defaultCharacterLabel = RLabel(self.tr("Default character:"), self)
         self.loadString(font, "postscriptDefaultCharacter", "defaultCharacter")
 
-        windowsCharacterSetLabel = QLabel(self.tr("Windows character set:"),
+        windowsCharacterSetLabel = RLabel(self.tr("Windows character set:"),
                                           self)
         self.windowsCharacterSetDrop = QComboBox(self)
         items = [
@@ -1050,9 +956,6 @@ class PostScriptTab(TabWidget):
         if font.info.postscriptWindowsCharacterSet is not None:
             self.windowsCharacterSetDrop.setCurrentIndex(
                 font.info.postscriptWindowsCharacterSet)
-
-        defaultCharacterLabel.setAlignment(alignment)
-        windowsCharacterSetLabel.setAlignment(alignment)
 
         l = 0
         charactersLayout.addWidget(defaultCharacterLabel, l, 0)
