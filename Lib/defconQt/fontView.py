@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
     QTextEdit, QToolTip, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+from defconQt.util.rlabel import RLabel
 from collections import OrderedDict
 import os
 import pickle
@@ -207,34 +208,34 @@ class InspectorWindow(QWidget):
         glyphLayout = QGridLayout(self)
         columnOneWidth = self.fontMetrics().width('0') * 7
 
-        nameLabel = QLabel(self.tr("Name:"), self)
+        nameLabel = RLabel(self.tr("Name:"), self)
         self.nameEdit = QLineEdit(self)
         self.nameEdit.editingFinished.connect(self.writeGlyphName)
-        unicodesLabel = QLabel(self.tr("Unicode:"), self)
+        unicodesLabel = RLabel(self.tr("Unicode:"), self)
         self.unicodesEdit = QLineEdit(self)
         self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
         unicodesRegExp = QRegularExpression(
             "(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
         unicodesValidator = QRegularExpressionValidator(unicodesRegExp, self)
         self.unicodesEdit.setValidator(unicodesValidator)
-        widthLabel = QLabel(self.tr("Width:"), self)
+        widthLabel = RLabel(self.tr("Width:"), self)
         self.widthEdit = QLineEdit(self)
         self.widthEdit.editingFinished.connect(self.writeWidth)
         self.widthEdit.setMaximumWidth(columnOneWidth)
         self.widthEdit.setValidator(QIntValidator(self))
-        leftSideBearingLabel = QLabel(self.tr("Left:"), self)
+        leftSideBearingLabel = RLabel(self.tr("Left:"), self)
         self.leftSideBearingEdit = QLineEdit(self)
         self.leftSideBearingEdit.editingFinished.connect(
             self.writeLeftSideBearing)
         self.leftSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.leftSideBearingEdit.setValidator(QIntValidator(self))
-        rightSideBearingLabel = QLabel(self.tr("Right:"), self)
+        rightSideBearingLabel = RLabel(self.tr("Right:"), self)
         self.rightSideBearingEdit = QLineEdit(self)
         self.rightSideBearingEdit.editingFinished.connect(
             self.writeRightSideBearing)
         self.rightSideBearingEdit.setMaximumWidth(columnOneWidth)
         self.rightSideBearingEdit.setValidator(QIntValidator(self))
-        markColorLabel = QLabel(self.tr("Flag:"), self)
+        markColorLabel = RLabel(self.tr("Flag:"), self)
         self.markColorWidget = ColorVignette(self)
         self.markColorWidget.colorChanged.connect(
             self.writeMarkColor)
@@ -274,10 +275,10 @@ class InspectorWindow(QWidget):
 
         moveButton = QPushButton(self.tr("Move"), self)
         moveButton.clicked.connect(self.moveGlyph)
-        moveXLabel = QLabel("x:", self)
+        moveXLabel = RLabel("x:", self)
         self.moveXEdit = QLineEdit("0", self)
         self.moveXEdit.setValidator(QIntValidator(self))
-        moveYLabel = QLabel("y:", self)
+        moveYLabel = RLabel("y:", self)
         self.moveYEdit = QLineEdit("0", self)
         self.moveYEdit.setValidator(QIntValidator(self))
         moveXYBox = QCheckBox("x=y", self)
@@ -285,10 +286,10 @@ class InspectorWindow(QWidget):
 
         scaleButton = QPushButton(self.tr("Scale"), self)
         scaleButton.clicked.connect(self.scaleGlyph)
-        scaleXLabel = QLabel("x:", self)
+        scaleXLabel = RLabel("x:", self)
         self.scaleXEdit = QLineEdit("100", self)
         self.scaleXEdit.setValidator(QIntValidator(self))
-        scaleYLabel = QLabel("y:", self)
+        scaleYLabel = RLabel("y:", self)
         self.scaleYEdit = QLineEdit("100", self)
         self.scaleYEdit.setValidator(QIntValidator(self))
         scaleXYBox = QCheckBox("x=y", self)
