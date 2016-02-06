@@ -14,8 +14,6 @@ PyQt5.
 
 ## Dependencies
 
-Dependencies can be fetched with `pip install -r requirements.txt`
-
 - Python 3
 - PyQt5
 - [fontTools]
