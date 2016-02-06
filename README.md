@@ -7,7 +7,7 @@ PyQt5.
 
 ## Getting started
 
-1. Install dependencies with `pip install -r requirements.txt`
+1. Install dependencies with `pip3 install -r requirements.txt`
 
 2. Install using `python setup.py install && trufont` or run under virtualenv:
    `cd Lib && python -m defconQt`
