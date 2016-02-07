@@ -19,22 +19,23 @@ PyQt5.
     - Linux: Follow instructions to compile PyQt5 (and SIP) from source:
         http://pyqt.sourceforge.net/Docs/PyQt5/installation.html
 
-3. Set up a new virtual environment using `pyvenv` (or `virtualenv`), and give
-    it access to the system site-packages to make sure PyQt5 can be imported:
-        `pyvenv --system-site-packages trufont`
-    
-4. Activate the newly created environment:
-    - OS X or Linux: `source trufont/bin/activate`
-    - Windows: `trufont\Scripts\activate.bat`
-    (you do `deactivate` to exit the virtual environment)
+3. Set up a new Python virtual environment using `virtualenv`.
+    - Install or update the virtualenv module with `pip3 install -U virtualenv`.
+    - Create a new virtual environment, and give it access to the system
+        site-packages to make sure PyQt5 can be imported:
+        `python3 -m virtualenv --system-site-packages trufont`
+    - Activate the newly created environment:
+        - OS X or Linux: `source trufont/bin/activate`
+        - Windows: `trufont\Scripts\activate.bat`
+    - Run `deactivate` when you wish to exit the virtual environment.
 
-5. Install dependencies: `pip3 install -r requirements.txt`
+4. Install dependencies: `pip3 install -r requirements.txt`
 
-6. Install TruFont: `pip3 install .`
+5. Install TruFont: `pip3 install .`
     Or if you wish to edit the source code, install in "editable" mode:
     `pip3 install -e .` 
 
-7. Run the app as `trufont`.
+6. Run the app as `trufont`.
 
 ## Dependencies
 
