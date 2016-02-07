@@ -7,10 +7,34 @@ PyQt5.
 
 ## Getting started
 
-1. Install dependencies with `pip3 install -r requirements.txt`
+1. Install Python 3 
+    - OS X: `brew install python3 && brew linkapps python3`
+    - Windows: Download installer from https://www.python.org/downloads/
+    - Linux: It's usually packaged with the OS.
 
-2. Install using `python setup.py install && trufont` or run under virtualenv:
-   `cd Lib && python -m defconQt`
+2. Install PyQt5:
+    - OS X: `brew install pyqt5`
+    - Windows: You can download the binary installers (32 or 64 bit) from:
+        https://riverbankcomputing.com/software/pyqt/download5
+    - Linux: Follow instructions to compile PyQt5 (and SIP) from source:
+        http://pyqt.sourceforge.net/Docs/PyQt5/installation.html
+
+3. Set up a new virtual environment using `pyvenv` (or `virtualenv`), and give
+    it access to the system site-packages to make sure PyQt5 can be imported:
+        `pyvenv --system-site-packages trufont`
+    
+4. Activate the newly created environment:
+    - OS X or Linux: `source trufont/bin/activate`
+    - Windows: `trufont\Scripts\activate.bat`
+    (you do `deactivate` to exit the virtual environment)
+
+5. Install dependencies: `pip3 install -r requirements.txt`
+
+6. Install TruFont: `pip3 install .`
+    Or if you wish to edit the source code, install in "editable" mode:
+    `pip3 install -e .` 
+
+7. Run the app as `trufont`.
 
 ## Dependencies
 
@@ -26,23 +50,10 @@ Optional:
 - [extractor, python3-ufo3 branch]
 - [ufo2fdk, python3-ufo3 branch]
 
-## Install notes
-
-- On OSX, it is highly recommended to install all dependencies with [Homebrew]
-  in order to have a correct Qt namespace (`brew` handles it all by itself).  
-  Finish with `brew linkapps python3` to be able to call `python3` from the
-  Terminal.
-- You can have multiple versions of Python on your system, then you just need to
-  use a version prefix, e.g.:
-  * `python3`
-  * `python3.4`
-  * `python3.5`
-  * …
-
 [fontTools]: https://github.com/behdad/fonttools
 [ufoLib]: https://github.com/unified-font-object/ufoLib
 [defcon, python3-ufo3 branch]: https://github.com/trufont/defcon
 [booleanOperations]: https://github.com/trufont/booleanOperations
 [extractor, python3-ufo3 branch]: https://github.com/trufont/extractor
 [ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
-[Homebrew]: http://brew.sh/
+
