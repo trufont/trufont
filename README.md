@@ -20,7 +20,9 @@ PyQt5.
         http://pyqt.sourceforge.net/Docs/PyQt5/installation.html
 
 3. Set up a new Python virtual environment using `virtualenv`.
-    - Install or update the virtualenv module with `pip3 install -U virtualenv`.
+    - Install or update the virtualenv module with `pip3 install --upgrade virtualenv`.
+       You may require `sudo` access on Linux. Alternatively, you can install it in
+       the Python user directory: `pip3 install --user --upgrade virtualenv`.
     - Create a new virtual environment, and give it access to the system
         site-packages to make sure PyQt5 can be imported:
         `python3 -m virtualenv --system-site-packages trufont`
