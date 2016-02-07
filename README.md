@@ -8,7 +8,7 @@ PyQt5.
 ## Getting started
 
 1. Install Python 3 
-    - OS X: `brew install python3 && brew linkapps python3`
+    - OS X: Install using [Homebrew]: `brew install python3 && brew linkapps python3`
     - Windows: Download installer from https://www.python.org/downloads/
     - Linux: It's usually packaged with the OS.
 
@@ -56,4 +56,4 @@ Optional:
 [booleanOperations]: https://github.com/trufont/booleanOperations
 [extractor, python3-ufo3 branch]: https://github.com/trufont/extractor
 [ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
-
+[Homebrew]: http://brew.sh/
