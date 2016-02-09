@@ -264,17 +264,17 @@ class FileChooser(QWidget):
 
 
 class PythonEditor(CodeEditor):
+    openBlockDelimiter = ":"
     autocomplete = {
-        Qt.Key_ParenLeft: "()",
-        Qt.Key_BracketLeft: "[]",
-        Qt.Key_BraceLeft: "{}",
-        Qt.Key_Apostrophe: "''",
-        Qt.Key_QuoteDbl: '""',
+        Qt.Key_ParenLeft: ")",
+        Qt.Key_BracketLeft: "]",
+        Qt.Key_BraceLeft: "}",
+        Qt.Key_Apostrophe: "",
+        Qt.Key_QuoteDbl: "",
     }
 
     def __init__(self, text=None, parent=None):
         super(PythonEditor, self).__init__(text, parent)
-        self.openBlockDelimiter = ":"
         self.highlighter = PythonHighlighter(self.document())
 
     def write(self, path):
@@ -287,20 +287,38 @@ class PythonEditor(CodeEditor):
         if key in self.autocomplete.keys():
             super(PythonEditor, self).keyPressEvent(event)
             cursor = self.textCursor()
-            ok = cursor.movePosition(QTextCursor.NextCharacter)
-            if not ok:
-                cursor.insertText(self.autocomplete[key][-1])
-                cursor.movePosition(QTextCursor.PreviousCharacter)
-                self.setTextCursor(cursor)
-            event.accept()
+            cursor.insertText(self.autocomplete[key] or chr(key))
+            cursor.movePosition(QTextCursor.PreviousCharacter)
+            self.setTextCursor(cursor)
             return
+        elif key == Qt.Key_Return:
+            cursor = self.textCursor()
+            ok = cursor.movePosition(QTextCursor.NextCharacter)
+            if ok:
+                cursor.movePosition(
+                    QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor, 2)
+                combo = ["{}{}".format(chr(
+                    k), v) for k, v in self.autocomplete.items() if v]
+                if not cursor.selectedText() in combo:
+                    ok = False
+            if ok:
+                for _ in range(2):
+                    super().keyPressEvent(event)
+                cursor = self.textCursor()
+                cursor.movePosition(QTextCursor.Up)
+                cursor.insertText(self.indent)
+                cursor.movePosition(QTextCursor.EndOfLine)
+                self.setTextCursor(cursor)
+                return
         elif key == Qt.Key_Backspace:
             cursor = self.textCursor()
             ok = cursor.movePosition(QTextCursor.PreviousCharacter)
             if ok:
                 ok = cursor.movePosition(
                     QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 2)
-                if ok and cursor.selectedText() in self.autocomplete.values():
+                tags = ["{}{}".format(chr(k), v if v else chr(
+                    k)) for k, v in self.autocomplete.items()]
+                if ok and cursor.selectedText() in tags:
                     cursor.removeSelectedText()
                     event.accept()
                     return
