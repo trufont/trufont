@@ -116,7 +116,7 @@ class Application(QApplication):
 
     def loadGlyphList(self):
         settings = QSettings()
-        glyphListPath = settings.value("settings/glyphListPath", type=str)
+        glyphListPath = settings.value("settings/glyphListPath", "", str)
         if glyphListPath and os.path.exists(glyphListPath):
             from defconQt.util import glyphList
             try:
@@ -169,11 +169,14 @@ class Application(QApplication):
                 return
         try:
             font = TFont(path)
+            data = dict(font=font)
+            self.postNotification("fontWillOpen", data)
             window = MainWindow(font)
         except Exception as e:
             errorReports.showCriticalException(e)
             return
         window.show()
+        self.postNotification("fontOpened", data)
 
     def allFonts(self):
         fonts = []
@@ -958,7 +961,7 @@ class MainWindow(QMainWindow):
         ])
         # TODO: see if OSX works nicely with UFO as files, then switch
         # to directory on platforms that need it
-        dialog = QFileDialog(self, "Save File", None,
+        dialog = QFileDialog(self, self.tr("Save File"), None,
                              ";;".join(fileFormats.keys()))
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         ok = dialog.exec_()
@@ -976,7 +979,7 @@ class MainWindow(QMainWindow):
             errorReports.showCriticalException(e)
             return
 
-        # TODO: systematize this into extractor
+        # TODO: systematize this
         fileFormats = (
             self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
             self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
@@ -989,12 +992,13 @@ class MainWindow(QMainWindow):
 
         path, _ = QFileDialog.getOpenFileName(
             self, self.tr("Import File"), None,
-            ";;".join(fileFormats), fileFormats[4])
+            ";;".join(fileFormats), fileFormats[-2])
 
         if path:
             font = TFont()
+            fileFormat = extractor.extractFormat(path)
             try:
-                extractor.extractUFO(path, font)
+                extractor.extractUFO(path, font, fileFormat)
             except Exception as e:
                 errorReports.showCriticalException(e)
                 return
@@ -1002,7 +1006,7 @@ class MainWindow(QMainWindow):
                 app = QApplication.instance()
                 data = dict(
                     font=font,
-                    # XXX: get format info from extractor
+                    format=fileFormat,
                 )
                 app.postNotification("binaryFontWillOpen", data)
             window = MainWindow(font)
@@ -1127,11 +1131,7 @@ class MainWindow(QMainWindow):
 
     def maybeSaveBeforeExit(self):
         if self.font.dirty:
-            if self.font.path is not None:
-                # TODO: maybe cache this font name in the Font
-                currentFont = os.path.basename(self.font.path.rstrip(os.sep))
-            else:
-                currentFont = self.tr("Untitled.ufo")
+            currentFont = self.windowTitle()[3:]
             body = self.tr("Do you want to save the changes you made "
                            "to “{}”?").format(currentFont)
             closeDialog = QMessageBox(

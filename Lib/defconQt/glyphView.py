@@ -133,7 +133,7 @@ class MainGlyphWindow(QMainWindow):
             if not glyph.name in newLayer:
                 newLayer.newGlyph(glyph.name)
             otherGlyph = newLayer[glyph.name]
-            otherGlyph.disableNotifications()
+            otherGlyph.holdNotifications()
             if action == "Swap":
                 tempGlyph = TGlyph()
                 otherGlyph.drawPoints(tempGlyph.getPointPen())
@@ -142,13 +142,13 @@ class MainGlyphWindow(QMainWindow):
             glyph.drawPoints(otherGlyph.getPointPen())
             otherGlyph.width = glyph.width
             if action != "Copy":
-                glyph.disableNotifications()
+                glyph.holdNotifications()
                 glyph.clearContours()
                 if action == "Swap":
                     tempGlyph.drawPoints(glyph.getPointPen())
                     glyph.width = tempGlyph.width
-                glyph.enableNotifications()
-            otherGlyph.enableNotifications()
+                glyph.releaseHeldNotifications()
+            otherGlyph.releaseHeldNotifications()
 
     def undo(self):
         glyph = self.view.glyph()
@@ -368,8 +368,6 @@ class MainGlyphWindow(QMainWindow):
     # --------------
 
     def setGlyph(self, glyph):
-        app = QApplication.instance()
-        app.postNotification("glyphWindowGlyphWillChange")
         currentGlyph = self.view.glyph()
         self._unsubscribeFromGlyph(currentGlyph)
         self._subscribeToGlyph(glyph)
@@ -378,7 +376,6 @@ class MainGlyphWindow(QMainWindow):
         self._updateUndoRedo()
         self._updateSelection()
         self.setWindowTitle(glyph.name, glyph.font)
-        app.postNotification("glyphWindowGlyphChanged")
 
     def setDrawingAttribute(self, attr, value, layerName=None):
         self.view.setDrawingAttribute(attr, value, layerName)
@@ -581,6 +578,8 @@ class GlyphView(QWidget):
 
     def setGlyph(self, glyph):
         # TODO: disable/enable there makes sense, right?
+        app = QApplication.instance()
+        app.postNotification("glyphViewGlyphWillChange")
         self._currentTool.toolDisabled()
         self._glyph = glyph
         self._font = None
@@ -603,6 +602,7 @@ class GlyphView(QWidget):
             self.adjustSize()
         self._currentTool.toolActivated()
         self.update()
+        app.postNotification("glyphViewGlyphChanged")
 
     # --------------------
     # Notification Support
@@ -728,13 +728,14 @@ class GlyphView(QWidget):
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawFillAndStroke(self, painter, glyph, layerName):
+        drawSelection = self._impliedPointSize > 200
         partialAliasing = self._impliedPointSize > 175
         showFill = self.drawingAttribute("showGlyphFill", layerName)
         showStroke = self.drawingAttribute("showGlyphStroke", layerName)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawFill=showFill, drawStroke=showStroke,
-            partialAliasing=partialAliasing)
+            drawSelection=drawSelection, partialAliasing=partialAliasing)
 
     def drawPoints(self, painter, glyph, layerName):
         drawStartPoints = self.drawingAttribute(
@@ -774,7 +775,7 @@ class GlyphView(QWidget):
         painter.fillRect(rect, Qt.white)
         app = QApplication.instance()
         data = dict(
-            window=self,
+            widget=self,
             painter=painter,
         )
         app.postNotification("glyphViewPaintBackground", data)
@@ -943,7 +944,7 @@ class GlyphView(QWidget):
         y = (pos.y() - self.height()) * (- self._inverseScale) + yOffsetInv
         return QPointF(x, y)
 
-    def mapToWidget(self, pos):
+    def mapFromCanvas(self, pos):
         """
         Map *pos* from canvas to GlyphView widget coordinates.
 

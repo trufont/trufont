@@ -3,6 +3,6 @@ setuptools>=18.0
 -e git+https://github.com/unified-font-object/ufoLib.git#egg=ufoLib
 -e git+https://github.com/trufont/defcon.git@python3-ufo3#egg=defcon
 -e git+https://github.com/typemytype/booleanOperations.git#egg=booleanOperations
--e git+https://github.com/typesupply/extractor.git@ufo3#egg=extractor
+-e git+https://github.com/trufont/extractor.git@ufo3-api#egg=extractor
 -e git+https://github.com/typesupply/featools.git#egg=featools
 -e git+https://github.com/googlei18n/ufo2ft.git#egg=ufo2ft

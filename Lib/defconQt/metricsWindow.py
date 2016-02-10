@@ -568,11 +568,25 @@ class GlyphsCanvas(QWidget):
         event.accept()
 
     def keyPressEvent(self, event):
-        key = event.key()
-        if key in (Qt.Key_Left, Qt.Key_Right):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("metricsViewKeyPress", data)
+        if event.key() in (Qt.Key_Left, Qt.Key_Right):
             self._arrowKeyPressEvent(event)
         else:
             super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("metricsViewKeyRelease", data)
+        super().keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -680,10 +694,18 @@ class GlyphsCanvas(QWidget):
                 halfDescent = self.descender / 2
                 painter.drawLine(0, 0, 0, halfDescent)
                 painter.drawLine(glyph.width, 0, glyph.width, halfDescent)
-            if self._selected is not None and index == self._selected:
+            glyphSelected = self._selected and index == self._selected
+            if glyphSelected:
                 painter.fillRect(0, self.descender, glyph.width,
                                  self.upm, glyphSelectionColor)
             painter.fillPath(glyphPath, Qt.black)
+            app = QApplication.instance()
+            data = dict(
+                widget=self,
+                painter=painter,
+                selected=glyphSelected,
+            )
+            app.postNotification("metricsViewDraw", data)
             painter.restore()
             painter.translate(gWidth, 0)
 

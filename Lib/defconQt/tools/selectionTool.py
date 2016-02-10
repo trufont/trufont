@@ -313,8 +313,8 @@ class SelectionTool(BaseTool):
         # okay, OS-native rubber band does not support painting with
         # floating-point coordinates
         # paint directly on the widget with unscaled context
-        widgetOrigin = widget.mapToWidget(self._rubberBandRect.bottomLeft())
-        widgetMove = widget.mapToWidget(self._rubberBandRect.topRight())
+        widgetOrigin = widget.mapFromCanvas(self._rubberBandRect.bottomLeft())
+        widgetMove = widget.mapFromCanvas(self._rubberBandRect.topRight())
         option = QStyleOptionRubberBand()
         option.initFrom(widget)
         option.opaque = False

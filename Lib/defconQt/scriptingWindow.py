@@ -68,7 +68,7 @@ class MainScriptingWindow(QMainWindow):
             path = self._ioDialog(QFileDialog.AcceptOpen)
             if path is None:
                 return
-            # self.fileChooser.setCurrentFolder(os.path.basename(path))
+            self.fileChooser.setCurrentFolder(os.path.basename(path))
         with open(path, "rt") as inputFile:
             self.editor.setPlainText(inputFile.read())
         self.currentPath = path
@@ -206,6 +206,7 @@ class FileChooser(QWidget):
         layout = QVBoxLayout(self)
         layout.addWidget(self.folderBox)
         layout.addWidget(self.explorerTree)
+        layout.setContentsMargins(5, 5, 0, 5)
 
     def _fileOpened(self, modelIndex):
         path = self.explorerModel.filePath(modelIndex)
