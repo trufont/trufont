@@ -21,6 +21,7 @@ class SelectionTool(BaseTool):
         self._itemTuple = None
         self._oldSelection = set()
         self._rubberBandRect = None
+        self._shouldMove = False
         self._shouldPrepareUndo = False
 
     # helpers
@@ -89,6 +90,32 @@ class SelectionTool(BaseTool):
                 contour.dirty = True
                 return True
         return False
+
+    def _computeLineClick(self, pos, insert=False):
+        for contour in self._glyph:
+            for index, point in enumerate(contour):
+                if point.segmentType == "line":
+                    prev = contour.getPoint(index-1)
+                    dist = bezierMath.lineDistance(
+                        prev.x, prev.y, point.x, point.y, pos.x(), pos.y())
+                    # TODO: somewhat arbitrary
+                    if dist < 5:
+                        if insert:
+                            self._glyph.prepareUndo()
+                            contour.holdNotifications()
+                            for i, t in enumerate((.35, .65)):
+                                xt = prev.x + t * (point.x - prev.x)
+                                yt = prev.y + t * (point.y - prev.y)
+                                contour.insertPoint(
+                                    index+i, point.__class__((xt, yt)))
+                            point.segmentType = "curve"
+                            contour.releaseHeldNotifications()
+                        else:
+                            prev.selected = point.selected = True
+                            contour.postNotification(
+                                notification="Contour.SelectionChanged")
+                            self._shouldMove = self._shouldPrepareUndo = True
+                        return
 
     def _moveForEvent(self, event):
         key = event.key()
@@ -231,12 +258,13 @@ class SelectionTool(BaseTool):
                 for component in self._glyph.components:
                     component.selected = False
                 self._glyph.selected = False
+            self._computeLineClick(event.localPos())
         widget.update()
 
     def mouseMoveEvent(self, event):
         canvasPos = event.localPos()
         widget = self.parent()
-        if self._itemTuple is not None:
+        if self._shouldMove or self._itemTuple is not None:
             if self._shouldPrepareUndo:
                 self._glyph.prepareUndo()
                 self._shouldPrepareUndo = False
@@ -287,6 +315,7 @@ class SelectionTool(BaseTool):
         self._itemTuple = None
         self._oldSelection = set()
         self._rubberBandRect = None
+        self._shouldMove = False
         self.parent().update()
 
     def mouseDoubleClickEvent(self, event):
@@ -303,6 +332,8 @@ class SelectionTool(BaseTool):
                     self._glyph.prepareUndo()
                     point.smooth = not point.smooth
                 contour.dirty = True
+        else:
+            self._computeLineClick(event.localPos(), True)
 
     # custom painting
 
