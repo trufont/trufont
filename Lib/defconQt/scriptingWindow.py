@@ -158,8 +158,8 @@ class FileTreeView(QTreeView):
         self.doubleClickCallback = None
 
     def _showInExplorer(self, path):
-        if os.path.isFile(path):
-            path = os.path.basename(path)
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
         QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 
     def mousePressEvent(self, event):

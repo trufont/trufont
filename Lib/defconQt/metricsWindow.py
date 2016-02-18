@@ -407,7 +407,7 @@ class GlyphsCanvas(QWidget):
             self.ascender = 750
         self.descender = self.font.info.descender
         if self.descender is None:
-            self.descender = 250
+            self.descender = -250
         self.upm = self.font.info.unitsPerEm
         if self.upm is None or not self.upm > 0:
             self.upm = 1000
@@ -694,7 +694,7 @@ class GlyphsCanvas(QWidget):
                 halfDescent = self.descender / 2
                 painter.drawLine(0, 0, 0, halfDescent)
                 painter.drawLine(glyph.width, 0, glyph.width, halfDescent)
-            glyphSelected = self._selected and index == self._selected
+            glyphSelected = index == self._selected
             if glyphSelected:
                 painter.fillRect(0, self.descender, glyph.width,
                                  self.upm, glyphSelectionColor)
