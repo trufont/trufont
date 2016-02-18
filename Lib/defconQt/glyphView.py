@@ -34,12 +34,11 @@ class MainGlyphWindow(QMainWindow):
         self._redoAction = editMenu.addAction(
             self.tr("&Redo"), self.redo, QKeySequence.Redo)
         editMenu.addSeparator()
-        # XXX
-        action = editMenu.addAction(self.tr("C&ut"), self.cutOutlines,
-                                    QKeySequence.Cut)
-        action.setEnabled(False)
-        self._copyAction = editMenu.addAction(
+        cutAction = editMenu.addAction(
+            self.tr("C&ut"), self.cutOutlines, QKeySequence.Cut)
+        copyAction = editMenu.addAction(
             self.tr("&Copy"), self.copyOutlines, QKeySequence.Copy)
+        self._selectActions = (cutAction, copyAction)
         editMenu.addAction(self.tr("&Paste"), self.pasteOutlines,
                            QKeySequence.Paste)
         editMenu.addAction(
@@ -159,7 +158,23 @@ class MainGlyphWindow(QMainWindow):
         glyph.redo()
 
     def cutOutlines(self):
-        pass
+        glyph = self.view.glyph()
+        self.copyOutlines()
+        for anchor in glyph.anchors:
+            anchor.selected = not anchor.selected
+        for component in glyph.components:
+            component.selected = not component.selected
+        for contour in glyph:
+            for point in contour:
+                point.selected = not point.selected
+        cutGlyph = glyph.getRepresentation("defconQt.FilterSelection")
+        glyph.prepareUndo()
+        glyph.holdNotifications()
+        glyph.clear()
+        pen = glyph.getPointPen()
+        cutGlyph.drawPoints(pen)
+        glyph.anchors = cutGlyph.anchors
+        glyph.releaseHeldNotifications()
 
     def copyOutlines(self):
         glyph = self.view.glyph()
@@ -361,7 +376,9 @@ class MainGlyphWindow(QMainWindow):
                 if component.selected:
                     return True
             return False
-        self._copyAction.setEnabled(hasSelection())
+        hasSelection = hasSelection()
+        for action in self._selectActions:
+            action.setEnabled(hasSelection)
 
     # --------------
     # Public Methods
