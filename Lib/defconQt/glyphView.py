@@ -1,5 +1,4 @@
 from defconQt.glyphCollectionView import headerFont
-from defconQt.objects.defcon import TGlyph
 from defconQt.objects.glyphDialogs import (
     GotoDialog, AddLayerDialog, LayerActionsDialog)
 # TODO: make stdTools reexport?
@@ -134,7 +133,7 @@ class MainGlyphWindow(QMainWindow):
             otherGlyph = newLayer[glyph.name]
             otherGlyph.holdNotifications()
             if action == "Swap":
-                tempGlyph = TGlyph()
+                tempGlyph = glyph.__class__()
                 otherGlyph.drawPoints(tempGlyph.getPointPen())
                 tempGlyph.width = otherGlyph.width
                 otherGlyph.clearContours()
@@ -196,7 +195,7 @@ class MainGlyphWindow(QMainWindow):
                 "application/x-defconQt-glyph-data"))
             if len(data) == 1:
                 pen = glyph.getPointPen()
-                pasteGlyph = TGlyph()
+                pasteGlyph = glyph.__class__()
                 pasteGlyph.deserialize(data[0])
                 # TODO: if we serialize selected state, we don't need to do
                 # this

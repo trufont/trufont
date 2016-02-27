@@ -391,7 +391,6 @@ class GlyphsCanvas(QWidget):
         if self._wrapLines == wrapLines:
             return
         self._wrapLines = wrapLines
-        self.adjustSize()
         if self._wrapLines:
             self._scrollArea.setHorizontalScrollBarPolicy(
                 Qt.ScrollBarAlwaysOff)
@@ -399,7 +398,7 @@ class GlyphsCanvas(QWidget):
         else:
             self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.update()
+        self.adjustSize()
 
     def fetchFontMetrics(self):
         self.ascender = self.font.info.ascender

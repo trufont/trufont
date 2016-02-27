@@ -292,7 +292,7 @@ def OutlineInformationFactory(glyph):
 def QPixmapFactory(image):
     font = image.font
     if font is None:
-        return
+        return None
     layer = image.layer
     images = font.images
     if image.fileName not in images:
@@ -301,11 +301,12 @@ def QPixmapFactory(image):
     if imageColor is None:
         imageColor = layer.color
     data = images[image.fileName]
-    data = QPixmap.loadFromData(data, len(data))
+    pixmap = QPixmap()
+    pixmap.loadFromData(data)
     if imageColor is None:
-        return data
+        return pixmap
     # XXX: color filter left unimplemented
-    return data
+    return pixmap
     """
     # make the input image
     inputImage = CIImage.imageWithData_(data)
