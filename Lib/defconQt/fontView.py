@@ -573,6 +573,8 @@ class AddGlyphsDialog(QDialog):
         self.currentGlyphNames = [glyph.name for glyph in currentGlyphs]
 
         layout = QGridLayout(self)
+        self.markColorWidget = ColorVignette(self)
+        self.markColorWidget.setFixedWidth(56)
         self.importCharDrop = QComboBox(self)
         self.importCharDrop.addItem(self.tr("Import glyphnames…"))
         glyphSets = readGlyphSets()
@@ -594,6 +596,7 @@ class AddGlyphsDialog(QDialog):
         buttonBox.rejected.connect(self.reject)
 
         l = 0
+        layout.addWidget(self.markColorWidget, l, 0)
         layout.addWidget(self.importCharDrop, l, 3, 1, 2)
         l += 1
         layout.addWidget(self.addGlyphsEdit, l, 0, 1, 5)
@@ -609,9 +612,13 @@ class AddGlyphsDialog(QDialog):
     def getNewGlyphNames(cls, parent, currentGlyphs=None):
         dialog = cls(currentGlyphs, parent)
         result = dialog.exec_()
+        markColor = dialog.markColorWidget.color()
+        if markColor is not None:
+            markColor = markColor.getRgbF()
         params = dict(
             addUnicode=dialog.addUnicodeBox.isChecked(),
             asTemplate=dialog.addAsTemplateBox.isChecked(),
+            markColor=markColor,
             override=dialog.overrideBox.isChecked(),
             sortFont=dialog.sortFontBox.isChecked(),
         )
