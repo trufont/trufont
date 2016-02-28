@@ -544,6 +544,10 @@ class GlyphView(QWidget):
         self._scrollArea.resizeEvent = self.resizeEvent
         self._scrollArea.setWidget(self)
 
+        # inbound notification
+        app = QApplication.instance()
+        app.dispatcher.addObserver(self, "_needsUpdate", "glyphViewUpdate")
+
     # --------------
     # Custom Methods
     # --------------
@@ -575,6 +579,9 @@ class GlyphView(QWidget):
         glyphHeight = top - bottom
         glyphHeight += self._noPointSizePadding * 2
         self.setScale(fitHeight / glyphHeight)
+
+    def drawingRect(self):
+        return self._drawingRect
 
     def inverseScale(self):
         return self._inverseScale
@@ -629,6 +636,9 @@ class GlyphView(QWidget):
 
     def fontInfoChanged(self):
         self.setGlyph(self._glyph)
+
+    def _needsUpdate(self, notification):
+        self.update()
 
     # ---------------
     # Display Control
@@ -789,12 +799,6 @@ class GlyphView(QWidget):
 
         # draw the background
         painter.fillRect(rect, Qt.white)
-        app = QApplication.instance()
-        data = dict(
-            widget=self,
-            painter=painter,
-        )
-        app.postNotification("glyphViewPaintBackground", data)
         if self._glyph is None:
             return
 
@@ -836,6 +840,13 @@ class GlyphView(QWidget):
                 if glyph == self._glyph:
                     layerName = None
                 layers.append((glyph, layerName))
+
+        app = QApplication.instance()
+        data = dict(
+            widget=self,
+            painter=painter,
+        )
+        app.postNotification("glyphViewPaintBackground", data)
 
         for glyph, layerName in layers:
             # draw the image

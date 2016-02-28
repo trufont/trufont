@@ -17,7 +17,7 @@ class MainScriptingWindow(QMainWindow):
         super(MainScriptingWindow, self).__init__()
 
         self.editor = PythonEditor(parent=self)
-        self.resize(600, 500)
+        self.resize(650, 500)
 
         fileMenu = QMenu(self.tr("&File"), self)
         fileMenu.addAction(self.tr("&New…"), self.newFile, QKeySequence.New)
@@ -169,7 +169,7 @@ class FileTreeView(QTreeView):
                 path = self.model().filePath(modelIndex)
                 menu = QMenu(self)
                 menu.addAction(
-                    self.tr("Open in explorer"),  # TODO: better text
+                    self.tr("Open In Explorer"),
                     lambda: self._showInExplorer(path))
                 menu.exec_(event.globalPos())
         else:
