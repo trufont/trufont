@@ -253,13 +253,25 @@ def _drawBlues(painter, blues, rect, color):
 # Image
 
 
-def drawGlyphImage(painter, glyph, scale, rect):
-    if glyph.image.fileName is None:
+def drawGlyphImage(painter, glyph, scale, rect, selectionColor=None):
+    image = glyph.image
+    pixmap = image.getRepresentation("defconQt.QPixmap")
+    if pixmap is None:
         return
+    if selectionColor is None:
+        selectionColor = defaultColor("glyphSelection")
     painter.save()
-    painter.setTransform(QTransform(*glyph.image.transformation), True)
-    image = glyph.image.getRepresentation("defconQt.QPixmap")
-    painter.drawPixmap(0, 0, image)
+    painter.setTransform(QTransform(*image.transformation), True)
+    painter.save()
+    painter.translate(0, pixmap.height())
+    painter.scale(1, -1)
+    painter.drawPixmap(0, 0, pixmap)
+    painter.restore()
+    if image.selected:
+        pen = QPen(selectionColor)
+        pen.setWidthF(5.0 * scale)
+        painter.setPen(pen)
+        painter.drawRect(pixmap.rect())
     painter.restore()
 
 # Margins

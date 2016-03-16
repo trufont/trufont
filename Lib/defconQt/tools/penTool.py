@@ -119,7 +119,7 @@ class PenTool(BaseTool):
         if pt.segmentType:
             pt.selected = False
             pt.smooth = not event.modifiers() & Qt.AltModifier
-            contour.disableNotifications()
+            contour.holdNotifications()
             # TODO: defer this if Alt is pressed
             if pt.segmentType == "line":
                 # remove the onCurve
@@ -136,7 +136,7 @@ class PenTool(BaseTool):
                 contour.insertPoint(len(self._targetContour), pt)
             contour.addPoint((pos.x(), pos.y()))
             contour[-1].selected = True
-            contour.enableNotifications()
+            contour.releaseHeldNotifications()
         else:
             if contour.open:
                 onCurve = contour[-2]

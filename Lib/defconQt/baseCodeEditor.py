@@ -19,6 +19,7 @@ class LineNumberArea(QWidget):
 
 
 class CodeEditor(QPlainTextEdit):
+    openBlockDelimiter = None
 
     def __init__(self, text=None, parent=None):
         super(CodeEditor, self).__init__(parent)
@@ -28,7 +29,6 @@ class CodeEditor(QPlainTextEdit):
         self.setFont(font)
 
         self.indent = "    "
-        self.openBlockDelimiter = None
         self.lineNumbers = LineNumberArea(self)
         self.setPlainText(text)
         # kick-in geometry update before arming signals bc blockCountChanged

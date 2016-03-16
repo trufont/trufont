@@ -1,5 +1,4 @@
 from defconQt.glyphCollectionView import headerFont
-from defconQt.objects.defcon import TGlyph
 from defconQt.objects.glyphDialogs import (
     GotoDialog, AddLayerDialog, LayerActionsDialog)
 # TODO: make stdTools reexport?
@@ -26,7 +25,7 @@ class MainGlyphWindow(QMainWindow):
 
         menuBar = self.menuBar()
         fileMenu = QMenu(self.tr("&File"), self)
-        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Close)
         menuBar.addMenu(fileMenu)
         editMenu = QMenu(self.tr("&Edit"), self)
         self._undoAction = editMenu.addAction(
@@ -34,12 +33,11 @@ class MainGlyphWindow(QMainWindow):
         self._redoAction = editMenu.addAction(
             self.tr("&Redo"), self.redo, QKeySequence.Redo)
         editMenu.addSeparator()
-        # XXX
-        action = editMenu.addAction(self.tr("C&ut"), self.cutOutlines,
-                                    QKeySequence.Cut)
-        action.setEnabled(False)
-        self._copyAction = editMenu.addAction(
+        cutAction = editMenu.addAction(
+            self.tr("C&ut"), self.cutOutlines, QKeySequence.Cut)
+        copyAction = editMenu.addAction(
             self.tr("&Copy"), self.copyOutlines, QKeySequence.Copy)
+        self._selectActions = (cutAction, copyAction)
         editMenu.addAction(self.tr("&Paste"), self.pasteOutlines,
                            QKeySequence.Paste)
         editMenu.addAction(
@@ -133,22 +131,22 @@ class MainGlyphWindow(QMainWindow):
             if not glyph.name in newLayer:
                 newLayer.newGlyph(glyph.name)
             otherGlyph = newLayer[glyph.name]
-            otherGlyph.disableNotifications()
+            otherGlyph.holdNotifications()
             if action == "Swap":
-                tempGlyph = TGlyph()
+                tempGlyph = glyph.__class__()
                 otherGlyph.drawPoints(tempGlyph.getPointPen())
                 tempGlyph.width = otherGlyph.width
                 otherGlyph.clearContours()
             glyph.drawPoints(otherGlyph.getPointPen())
             otherGlyph.width = glyph.width
             if action != "Copy":
-                glyph.disableNotifications()
+                glyph.holdNotifications()
                 glyph.clearContours()
                 if action == "Swap":
                     tempGlyph.drawPoints(glyph.getPointPen())
                     glyph.width = tempGlyph.width
-                glyph.enableNotifications()
-            otherGlyph.enableNotifications()
+                glyph.releaseHeldNotifications()
+            otherGlyph.releaseHeldNotifications()
 
     def undo(self):
         glyph = self.view.glyph()
@@ -159,7 +157,23 @@ class MainGlyphWindow(QMainWindow):
         glyph.redo()
 
     def cutOutlines(self):
-        pass
+        glyph = self.view.glyph()
+        self.copyOutlines()
+        for anchor in glyph.anchors:
+            anchor.selected = not anchor.selected
+        for component in glyph.components:
+            component.selected = not component.selected
+        for contour in glyph:
+            for point in contour:
+                point.selected = not point.selected
+        cutGlyph = glyph.getRepresentation("defconQt.FilterSelection")
+        glyph.prepareUndo()
+        glyph.holdNotifications()
+        glyph.clear()
+        pen = glyph.getPointPen()
+        cutGlyph.drawPoints(pen)
+        glyph.anchors = cutGlyph.anchors
+        glyph.releaseHeldNotifications()
 
     def copyOutlines(self):
         glyph = self.view.glyph()
@@ -181,7 +195,7 @@ class MainGlyphWindow(QMainWindow):
                 "application/x-defconQt-glyph-data"))
             if len(data) == 1:
                 pen = glyph.getPointPen()
-                pasteGlyph = TGlyph()
+                pasteGlyph = glyph.__class__()
                 pasteGlyph.deserialize(data[0])
                 # TODO: if we serialize selected state, we don't need to do
                 # this
@@ -361,7 +375,9 @@ class MainGlyphWindow(QMainWindow):
                 if component.selected:
                     return True
             return False
-        self._copyAction.setEnabled(hasSelection())
+        hasSelection = hasSelection()
+        for action in self._selectActions:
+            action.setEnabled(hasSelection)
 
     # --------------
     # Public Methods
@@ -456,7 +472,17 @@ class MainGlyphWindow(QMainWindow):
             app.setCurrentGlyph(self.view.glyph())
         return super().event(event)
 
+    def showEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("glyphWindowWillOpen", data)
+        super().showEvent(event)
+        app.postNotification("glyphWindowOpened", data)
+
     def closeEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("glyphWindowWillClose", data)
         glyph = self.view.glyph()
         self._unsubscribeFromGlyph(glyph)
         event.accept()
@@ -518,6 +544,10 @@ class GlyphView(QWidget):
         self._scrollArea.resizeEvent = self.resizeEvent
         self._scrollArea.setWidget(self)
 
+        # inbound notification
+        app = QApplication.instance()
+        app.dispatcher.addObserver(self, "_needsUpdate", "glyphViewUpdate")
+
     # --------------
     # Custom Methods
     # --------------
@@ -550,6 +580,9 @@ class GlyphView(QWidget):
         glyphHeight += self._noPointSizePadding * 2
         self.setScale(fitHeight / glyphHeight)
 
+    def drawingRect(self):
+        return self._drawingRect
+
     def inverseScale(self):
         return self._inverseScale
 
@@ -568,6 +601,8 @@ class GlyphView(QWidget):
 
     def setGlyph(self, glyph):
         # TODO: disable/enable there makes sense, right?
+        app = QApplication.instance()
+        app.postNotification("glyphViewGlyphWillChange")
         self._currentTool.toolDisabled()
         self._glyph = glyph
         self._font = None
@@ -590,6 +625,7 @@ class GlyphView(QWidget):
             self.adjustSize()
         self._currentTool.toolActivated()
         self.update()
+        app.postNotification("glyphViewGlyphChanged")
 
     # --------------------
     # Notification Support
@@ -600,6 +636,9 @@ class GlyphView(QWidget):
 
     def fontInfoChanged(self):
         self.setGlyph(self._glyph)
+
+    def _needsUpdate(self, notification):
+        self.update()
 
     # ---------------
     # Display Control
@@ -715,13 +754,14 @@ class GlyphView(QWidget):
             painter, glyph, self._inverseScale, self._drawingRect)
 
     def drawFillAndStroke(self, painter, glyph, layerName):
+        drawSelection = self._impliedPointSize > 200
         partialAliasing = self._impliedPointSize > 175
         showFill = self.drawingAttribute("showGlyphFill", layerName)
         showStroke = self.drawingAttribute("showGlyphStroke", layerName)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale, self._drawingRect,
             drawFill=showFill, drawStroke=showStroke,
-            partialAliasing=partialAliasing)
+            drawSelection=drawSelection, partialAliasing=partialAliasing)
 
     def drawPoints(self, painter, glyph, layerName):
         drawStartPoints = self.drawingAttribute(
@@ -801,6 +841,13 @@ class GlyphView(QWidget):
                     layerName = None
                 layers.append((glyph, layerName))
 
+        app = QApplication.instance()
+        data = dict(
+            widget=self,
+            painter=painter,
+        )
+        app.postNotification("glyphViewPaintBackground", data)
+
         for glyph, layerName in layers:
             # draw the image
             if self.drawingAttribute("showGlyphImage", layerName):
@@ -829,6 +876,7 @@ class GlyphView(QWidget):
                 self.drawPoints(painter, glyph, layerName)
             if self.drawingAttribute("showGlyphAnchors", layerName):
                 self.drawAnchors(painter, glyph, layerName)
+        app.postNotification("glyphViewPaint", data)
         self._currentTool.paint(painter)
         painter.restore()
 
@@ -870,11 +918,13 @@ class GlyphView(QWidget):
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
             factor = pow(1.2, event.angleDelta().y() / 120.0)
-            pos = event.pos()
             # compute new scrollbar position
             # http://stackoverflow.com/a/32269574/2037879
             oldScale = self._scale
             newScale = self._scale * factor
+            if newScale < .01 or newScale > 1000:
+                return
+            pos = event.pos()
             hSB = self._scrollArea.horizontalScrollBar()
             vSB = self._scrollArea.verticalScrollBar()
             scrollBarPos = QPointF(hSB.value(), vSB.value())
@@ -923,7 +973,7 @@ class GlyphView(QWidget):
         y = (pos.y() - self.height()) * (- self._inverseScale) + yOffsetInv
         return QPointF(x, y)
 
-    def mapToWidget(self, pos):
+    def mapFromCanvas(self, pos):
         """
         Map *pos* from canvas to GlyphView widget coordinates.
 
@@ -952,23 +1002,59 @@ class GlyphView(QWidget):
         callback(event)
 
     def keyPressEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewKeyPress", data)
         self._redirectEvent(event, self._currentTool.keyPressEvent)
 
     def keyReleaseEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewKeyRelease", data)
         self._redirectEvent(event, self._currentTool.keyReleaseEvent)
 
     def mousePressEvent(self, event):
         self._mouseDown = True
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMousePress", data)
         self._redirectEvent(event, self._currentTool.mousePressEvent, True)
 
     def mouseMoveEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMouseMove", data)
         self._redirectEvent(event, self._currentTool.mouseMoveEvent, True)
 
     def mouseReleaseEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMouseRelease", data)
         self._redirectEvent(event, self._currentTool.mouseReleaseEvent, True)
         self._mouseDown = False
 
     def mouseDoubleClickEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMouseDoubleClick", data)
         self._redirectEvent(
             event, self._currentTool.mouseDoubleClickEvent, True)
 

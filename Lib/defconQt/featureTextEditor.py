@@ -21,7 +21,7 @@ class MainEditWindow(QMainWindow):
         fileMenu.addAction(self.tr("&Save…"), self.save, QKeySequence.Save)
         fileMenu.addSeparator()
         fileMenu.addAction(self.tr("&Reload From Disk"), self.reload)
-        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Close)
         self.menuBar().addMenu(fileMenu)
 
         self.setCentralWidget(self.editor)
@@ -70,10 +70,10 @@ class MainEditWindow(QMainWindow):
 
 
 class FeatureTextEditor(CodeEditor):
+    openBlockDelimiter = '{'
 
     def __init__(self, text=None, parent=None):
         super(FeatureTextEditor, self).__init__(text, parent)
-        self.openBlockDelimiter = '{'
         self.highlighter = FeatureTextHighlighter(self.document())
 
     def write(self, features):

@@ -1,3 +1,4 @@
+from defcon.tools.notifications import NotificationCenter
 from defconQt import __version__
 from defconQt.featureTextEditor import MainEditWindow
 from defconQt.fontInfo import TabDialog
@@ -74,6 +75,7 @@ except:
 
 
 class Application(QApplication):
+    # TODO: maybe remove this redundancy
     currentFontChanged = pyqtSignal()
     currentGlyphChanged = pyqtSignal()
 
@@ -81,20 +83,41 @@ class Application(QApplication):
         super(Application, self).__init__(*args, **kwargs)
         self._currentGlyph = None
         self._currentMainWindow = None
+        self._launched = False
+        self.dispatcher = NotificationCenter()
+        self.focusChanged.connect(lambda: self.updateCurrentMainWindow())
         self.GL2UV = None
 
     def event(self, event):
+        eventType = event.type()
         # respond to OSX open events
-        if event.type() == QEvent.FileOpen:
+        if eventType == QEvent.FileOpen:
             filePath = event.file()
             self.openFile(filePath)
             return True
-        else:
-            return super().event(event)
+        elif eventType == QEvent.ApplicationStateChange:
+            applicationState = self.applicationState()
+            if applicationState == Qt.ApplicationActive:
+                if not self._launched:
+                    notification = "applicationLaunched"
+                    self.loadGlyphList()
+                    self._launched = True
+                else:
+                    notification = "applicationActivated"
+                self.postNotification(notification)
+                self.updateCurrentMainWindow()
+            elif applicationState == Qt.ApplicationInactive:
+                self.postNotification("applicationWillIdle")
+        return super().event(event)
+
+    def postNotification(self, notification, data=None):
+        dispatcher = self.dispatcher
+        dispatcher.postNotification(
+            notification=notification, observable=self, data=data)
 
     def loadGlyphList(self):
         settings = QSettings()
-        glyphListPath = settings.value("settings/glyphListPath", type=str)
+        glyphListPath = settings.value("settings/glyphListPath", "", str)
         if glyphListPath and os.path.exists(glyphListPath):
             from defconQt.util import glyphList
             try:
@@ -130,8 +153,11 @@ class Application(QApplication):
                     font.newStandardGlyph(name, asTemplate=True)
         font.dirty = False
 
+        data = dict(font=font)
+        self.postNotification("newFontWillOpen", data)
         window = MainWindow(font)
         window.show()
+        self.postNotification("newFontOpened", data)
 
     def openFile(self, path):
         if ".plist" in path:
@@ -144,11 +170,14 @@ class Application(QApplication):
                 return
         try:
             font = TFont(path)
+            data = dict(font=font)
+            self.postNotification("fontWillOpen", data)
             window = MainWindow(font)
         except Exception as e:
             errorReports.showCriticalException(e)
             return
         window.show()
+        self.postNotification("fontOpened", data)
 
     def allFonts(self):
         fonts = []
@@ -168,20 +197,7 @@ class Application(QApplication):
             return
         self._currentGlyph = glyph
         self.currentGlyphChanged.emit()
-        if self._currentGlyph is None:
-            return
-        # update currentMainWindow if we need to.
-        # XXX: find a way to update currentMainWindow when we switch to any
-        # child of a MainWindow instead of the MainWindow itself.
-        # Currently, what's below serves for the glyphView but should probably
-        # be expanded.
-        font = glyph.getParent()
-        if font != self.currentFont():
-            for window in QApplication.topLevelWidgets():
-                if isinstance(window, MainWindow):
-                    if window._font == font:
-                        self.setCurrentMainWindow(window)
-                        break
+        self.postNotification("currentGlyphChanged")
 
     def currentMainWindow(self):
         return self._currentMainWindow
@@ -191,6 +207,19 @@ class Application(QApplication):
             return
         self._currentMainWindow = mainWindow
         self.currentFontChanged.emit()
+        self.postNotification("currentFontChanged")
+
+    def updateCurrentMainWindow(self):
+        window = self.activeWindow()
+        if window is None:
+            return
+        while True:
+            parent = window.parent()
+            if parent is None:
+                break
+            window = parent
+        if isinstance(window, MainWindow):
+            self.setCurrentMainWindow(window)
 
 MAX_RECENT_FILES = 6
 
@@ -545,6 +574,8 @@ class AddGlyphsDialog(QDialog):
         self.currentGlyphNames = [glyph.name for glyph in currentGlyphs]
 
         layout = QGridLayout(self)
+        self.markColorWidget = ColorVignette(self)
+        self.markColorWidget.setFixedWidth(56)
         self.importCharDrop = QComboBox(self)
         self.importCharDrop.addItem(self.tr("Import glyphnames…"))
         glyphSets = readGlyphSets()
@@ -566,6 +597,7 @@ class AddGlyphsDialog(QDialog):
         buttonBox.rejected.connect(self.reject)
 
         l = 0
+        layout.addWidget(self.markColorWidget, l, 0)
         layout.addWidget(self.importCharDrop, l, 3, 1, 2)
         l += 1
         layout.addWidget(self.addGlyphsEdit, l, 0, 1, 5)
@@ -581,9 +613,13 @@ class AddGlyphsDialog(QDialog):
     def getNewGlyphNames(cls, parent, currentGlyphs=None):
         dialog = cls(currentGlyphs, parent)
         result = dialog.exec_()
+        markColor = dialog.markColorWidget.color()
+        if markColor is not None:
+            markColor = markColor.getRgbF()
         params = dict(
             addUnicode=dialog.addUnicodeBox.isChecked(),
             asTemplate=dialog.addAsTemplateBox.isChecked(),
+            markColor=markColor,
             override=dialog.overrideBox.isChecked(),
             sortFont=dialog.sortFontBox.isChecked(),
         )
@@ -906,6 +942,12 @@ class MainWindow(QMainWindow):
         else:
             if path is None:
                 path = self.font.path
+            app = QApplication.instance()
+            data = dict(
+                font=self.font,
+                path=path,
+            )
+            app.postNotification("fontWillSave", data)
             glyphs = self.collectionWidget.glyphs
             # TODO: save sortDescriptor somewhere in lib as well
             glyphNames = []
@@ -918,6 +960,7 @@ class MainWindow(QMainWindow):
             self.font.dirty = False
             self.setCurrentFile(path)
             self.setWindowModified(False)
+            app.postNotification("fontSaved", data)
 
     def saveFileAs(self):
         fileFormats = OrderedDict([
@@ -926,7 +969,7 @@ class MainWindow(QMainWindow):
         ])
         # TODO: see if OSX works nicely with UFO as files, then switch
         # to directory on platforms that need it
-        dialog = QFileDialog(self, "Save File", None,
+        dialog = QFileDialog(self, self.tr("Save File"), None,
                              ";;".join(fileFormats.keys()))
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         ok = dialog.exec_()
@@ -944,7 +987,7 @@ class MainWindow(QMainWindow):
             errorReports.showCriticalException(e)
             return
 
-        # TODO: systematize this into extractor
+        # TODO: systematize this
         fileFormats = (
             self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
             self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
@@ -957,15 +1000,23 @@ class MainWindow(QMainWindow):
 
         path, _ = QFileDialog.getOpenFileName(
             self, self.tr("Import File"), None,
-            ";;".join(fileFormats), fileFormats[4])
+            ";;".join(fileFormats), fileFormats[-2])
 
         if path:
             font = TFont()
+            fileFormat = extractor.extractFormat(path)
             try:
-                extractor.extractUFO(path, font)
+                extractor.extractUFO(path, font, fileFormat)
             except Exception as e:
                 errorReports.showCriticalException(e)
                 return
+            else:
+                app = QApplication.instance()
+                data = dict(
+                    font=font,
+                    format=fileFormat,
+                )
+                app.postNotification("binaryFontWillOpen", data)
             window = MainWindow(font)
             window.show()
 
@@ -986,12 +1037,20 @@ class MainWindow(QMainWindow):
             self, self.tr("Export File"), None,
             self.tr("OpenType PS font {}").format("(*.otf)"))
         if path:
+            app = QApplication.instance()
+            data = dict(
+                font=self.font,
+                format="otf",
+                path=path,
+            )
+            app.postNotification("fontWillGenerate", data)
             try:
                 otf = self.font.getRepresentation("defconQt.TTFont")
             except Exception as e:
                 errorReports.showCriticalException(e)
                 return
             otf.save(path)
+            app.postNotification("fontGenerated", data)
 
     def undo(self):
         glyph = self.collectionWidget.lastSelectedGlyph()
@@ -1070,6 +1129,9 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         ok = self.maybeSaveBeforeExit()
         if ok:
+            app = QApplication.instance()
+            data = dict(font=self.font)
+            app.postNotification("fontWillClose", data)
             self.font.removeObserver(self, "Font.Changed")
             event.accept()
         else:
@@ -1077,11 +1139,7 @@ class MainWindow(QMainWindow):
 
     def maybeSaveBeforeExit(self):
         if self.font.dirty:
-            if self.font.path is not None:
-                # TODO: maybe cache this font name in the Font
-                currentFont = os.path.basename(self.font.path.rstrip(os.sep))
-            else:
-                currentFont = self.tr("Untitled.ufo")
+            currentFont = self.windowTitle()[3:]
             body = self.tr("Do you want to save the changes you made "
                            "to “{}”?").format(currentFont)
             closeDialog = QMessageBox(
@@ -1432,6 +1490,9 @@ class SettingsDialog(QDialog):
         for i in range(self.tabWidget.count()):
             self.tabWidget.widget(i).writeValues()
         app = QApplication.instance()
+        app.postNotification("preferencesChanged")
+        # TODO: cleanup this in favor of notification subscribe
+        # and implement subscription in the widgets
         for window in app.topLevelWidgets():
             if isinstance(window, MainWindow):
                 window.updateMarkColors()
@@ -1515,7 +1576,12 @@ class GlyphSetTab(QWidget):
         self.glyphListButton = QPushButton(self.tr("Browse…"), self)
         self.glyphListButton.setEnabled(bool(glyphListPath))
         self.glyphListButton.clicked.connect(self.getGlyphList)
-        self.glyphListButton.setFixedWidth(72)
+        # TODO: find correct solution for this and maybe make a widget w
+        # setSizesToText()
+        # http://stackoverflow.com/a/19502467/2037879
+        textWidth = self.glyphListButton.fontMetrics().boundingRect(
+            self.glyphListButton.text()).width() + 16
+        self.glyphListButton.setMaximumWidth(textWidth)
         self.glyphListBox.toggled.connect(self.glyphListEdit.setEnabled)
         self.glyphListBox.toggled.connect(self.glyphListButton.setEnabled)
 
@@ -1629,9 +1695,14 @@ class GlyphSetTab(QWidget):
             defaultGlyphSet = self.defaultGlyphSetDrop.currentText()
             if defaultGlyphSet != latinDefault.name:
                 settings.setValue("settings/defaultGlyphSet", defaultGlyphSet)
-        glyphListPath = self.glyphListEdit.text()
-        if glyphListPath:
-            settings.setValue("settings/glyphListPath", glyphListPath)
+        if not self.glyphListBox.isChecked():
+            settings.setValue("settings/glyphListPath", "")
+        else:
+            glyphListPath = self.glyphListEdit.text()
+            if glyphListPath:
+                settings.setValue("settings/glyphListPath", glyphListPath)
+                app = QApplication.instance()
+                app.loadGlyphList()
 
 
 class MetricsWindowTab(QWidget):

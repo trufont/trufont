@@ -1,5 +1,4 @@
 from defconQt import icons_db  # noqa
-from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGlyphWindow
 from defconQt.objects.defcon import TGlyph
 from getpass import getuser
@@ -21,8 +20,6 @@ comboBoxItems = [
 ]
 
 defaultPointSize = 150
-glyphSelectionColor = QColor(cellSelectionColor)
-glyphSelectionColor.setAlphaF(.09)
 
 escapeRep = {
     "//": "/slash ",
@@ -82,7 +79,17 @@ class MainMetricsWindow(QWidget):
                 title, font.info.familyName, font.info.styleName)
         super().setWindowTitle(title)
 
+    def showEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("metricsWindowWillOpen", data)
+        super().showEvent(event)
+        app.postNotification("metricsWindowOpened", data)
+
     def closeEvent(self, event):
+        app = QApplication.instance()
+        data = dict(window=self)
+        app.postNotification("metricsWindowWillClose", data)
         self.font.info.removeObserver(self, "Info.Changed")
         self._unsubscribeFromGlyphs()
 
@@ -381,7 +388,6 @@ class GlyphsCanvas(QWidget):
         if self._wrapLines == wrapLines:
             return
         self._wrapLines = wrapLines
-        self.adjustSize()
         if self._wrapLines:
             self._scrollArea.setHorizontalScrollBarPolicy(
                 Qt.ScrollBarAlwaysOff)
@@ -389,7 +395,7 @@ class GlyphsCanvas(QWidget):
         else:
             self._scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
             self._scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.update()
+        self.adjustSize()
 
     def fetchFontMetrics(self):
         self.ascender = self.font.info.ascender
@@ -397,7 +403,7 @@ class GlyphsCanvas(QWidget):
             self.ascender = 750
         self.descender = self.font.info.descender
         if self.descender is None:
-            self.descender = 250
+            self.descender = -250
         self.upm = self.font.info.unitsPerEm
         if self.upm is None or not self.upm > 0:
             self.upm = 1000
@@ -558,11 +564,25 @@ class GlyphsCanvas(QWidget):
         event.accept()
 
     def keyPressEvent(self, event):
-        key = event.key()
-        if key in (Qt.Key_Left, Qt.Key_Right):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("metricsViewKeyPress", data)
+        if event.key() in (Qt.Key_Left, Qt.Key_Right):
             self._arrowKeyPressEvent(event)
         else:
             super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("metricsViewKeyRelease", data)
+        super().keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -670,10 +690,21 @@ class GlyphsCanvas(QWidget):
                 halfDescent = self.descender / 2
                 painter.drawLine(0, 0, 0, halfDescent)
                 painter.drawLine(glyph.width, 0, glyph.width, halfDescent)
-            if self._selected is not None and index == self._selected:
+            glyphSelected = index == self._selected
+            if glyphSelected:
+                palette = self.palette()
+                selectionColor = palette.color(QPalette.Highlight)
+                selectionColor.setAlphaF(.15 if self.hasFocus() else .8)
                 painter.fillRect(0, self.descender, glyph.width,
-                                 self.upm, glyphSelectionColor)
+                                 self.upm, selectionColor)
             painter.fillPath(glyphPath, Qt.black)
+            app = QApplication.instance()
+            data = dict(
+                widget=self,
+                painter=painter,
+                selected=glyphSelected,
+            )
+            app.postNotification("metricsViewDraw", data)
             painter.restore()
             painter.translate(gWidth, 0)
 

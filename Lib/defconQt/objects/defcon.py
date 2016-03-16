@@ -23,8 +23,9 @@ class TFont(Font):
                 kwargs[attr] = defaultClass
         super().__init__(*args, **kwargs)
 
+    # TODO: maybe take this out of the class
     def newStandardGlyph(self, name, override=False, addUnicode=True,
-                         asTemplate=False, width=500):
+                         asTemplate=False, markColor=None, width=500):
         if not override:
             if name in self:
                 return None
@@ -33,6 +34,7 @@ class TFont(Font):
         if addUnicode:
             glyph.autoUnicodes()
         glyph.template = asTemplate
+        glyph.markColor = markColor
         return glyph
 
 
