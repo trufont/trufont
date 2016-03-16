@@ -25,7 +25,7 @@ class MainGlyphWindow(QMainWindow):
 
         menuBar = self.menuBar()
         fileMenu = QMenu(self.tr("&File"), self)
-        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Close)
         menuBar.addMenu(fileMenu)
         editMenu = QMenu(self.tr("&Edit"), self)
         self._undoAction = editMenu.addAction(
@@ -918,11 +918,13 @@ class GlyphView(QWidget):
     def wheelEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
             factor = pow(1.2, event.angleDelta().y() / 120.0)
-            pos = event.pos()
             # compute new scrollbar position
             # http://stackoverflow.com/a/32269574/2037879
             oldScale = self._scale
             newScale = self._scale * factor
+            if newScale < .01 or newScale > 1000:
+                return
+            pos = event.pos()
             hSB = self._scrollArea.horizontalScrollBar()
             vSB = self._scrollArea.verticalScrollBar()
             scrollBarPos = QPointF(hSB.value(), vSB.value())

@@ -1,7 +1,8 @@
 from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QColorDialog, QStyle, QStyleOptionFrame, QStylePainter, QWidget)
+    QColorDialog, QSizePolicy, QStyle, QStyleOptionFrame, QStylePainter,
+    QWidget)
 
 strikeColor = QColor(170, 0, 0)
 
@@ -22,6 +23,7 @@ class ColorVignette(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFocusPolicy(Qt.StrongFocus)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._color = None
         self._margins = (0, 2, 0, -2)
         self._mayClearColor = True

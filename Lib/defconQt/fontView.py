@@ -1489,6 +1489,8 @@ class SettingsDialog(QDialog):
         for i in range(self.tabWidget.count()):
             self.tabWidget.widget(i).writeValues()
         app = QApplication.instance()
+        app.postNotification("preferencesChanged")
+        # TODO: cleanup this in favor of notification subscribe
         for window in app.topLevelWidgets():
             if isinstance(window, MainWindow):
                 window.updateMarkColors()
@@ -1572,7 +1574,11 @@ class GlyphSetTab(QWidget):
         self.glyphListButton = QPushButton(self.tr("Browse…"), self)
         self.glyphListButton.setEnabled(bool(glyphListPath))
         self.glyphListButton.clicked.connect(self.getGlyphList)
-        self.glyphListButton.setFixedWidth(72)
+        # TODO: find correct solution for this and maybe make a widget w setSizesToText()
+        # http://stackoverflow.com/a/19502467/2037879
+        textWidth = self.glyphListButton.fontMetrics().boundingRect(
+            self.glyphListButton.text()).width() + 16
+        self.glyphListButton.setMaximumWidth(textWidth)
         self.glyphListBox.toggled.connect(self.glyphListEdit.setEnabled)
         self.glyphListBox.toggled.connect(self.glyphListButton.setEnabled)
 
@@ -1686,9 +1692,13 @@ class GlyphSetTab(QWidget):
             defaultGlyphSet = self.defaultGlyphSetDrop.currentText()
             if defaultGlyphSet != latinDefault.name:
                 settings.setValue("settings/defaultGlyphSet", defaultGlyphSet)
-        glyphListPath = self.glyphListEdit.text()
-        if glyphListPath:
-            settings.setValue("settings/glyphListPath", glyphListPath)
+        if not self.glyphListBox.isChecked():
+            settings.setValue("settings/glyphListPath", "")
+        else:
+            glyphListPath = self.glyphListEdit.text()
+            if glyphListPath:
+                settings.setValue("settings/glyphListPath", glyphListPath)
+                app.loadGlyphList()
 
 
 class MetricsWindowTab(QWidget):

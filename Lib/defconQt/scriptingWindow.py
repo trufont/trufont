@@ -29,7 +29,7 @@ class MainScriptingWindow(QMainWindow):
         fileMenu.addSeparator()
         fileMenu.addAction(self.tr("&Run…"), self.runScript, "Ctrl+R")
         fileMenu.addSeparator()
-        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Close)
         self.menuBar().addMenu(fileMenu)
 
         self.fileChooser = FileChooser(self)

@@ -29,7 +29,7 @@ setup(
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
     url="http://trufont.github.io",
-    license="GNU LGPL 2.1/GNU GPL v3",
+    license="GNU LGPL v3/GNU GPL v3",
     packages=[
         "defconQt",
         "defconQt.objects",

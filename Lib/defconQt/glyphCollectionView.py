@@ -2,7 +2,7 @@ from defconQt.util import platformSpecific
 from PyQt5.QtCore import QMimeData, QRectF, QSize, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QCursor, QDrag, QFont, QFontMetrics, QKeySequence,
-    QLinearGradient, QPainter, QPen)
+    QLinearGradient, QPainter, QPalette, QPen)
 from PyQt5.QtWidgets import QApplication, QMessageBox, QScrollArea, QWidget
 import math
 import time
@@ -12,7 +12,6 @@ cellGridColor = QColor(130, 130, 130)
 cellHeaderBaseColor = QColor(230, 230, 230)
 cellHeaderLineColor = QColor(220, 220, 220)
 cellHeaderHighlightLineColor = QColor(240, 240, 240)
-cellSelectionColor = QColor.fromRgbF(.2, .3, .7, .15)
 
 GlyphCellBufferHeight = .2
 GlyphCellHeaderHeight = 14
@@ -585,6 +584,9 @@ class GlyphCollectionWidget(QWidget):
 
                 # selection code
                 if key in self._selection:
+                    palette = self.palette()
+                    cellSelectionColor = palette.color(QPalette.Highlight)
+                    cellSelectionColor.setAlphaF(.2 if self.hasFocus() else .6)
                     painter.setRenderHint(QPainter.Antialiasing, False)
                     painter.fillRect(column * self.squareSize + 1,
                                      row * self.squareSize + 1,

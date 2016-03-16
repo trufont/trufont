@@ -21,7 +21,7 @@ class MainEditWindow(QMainWindow):
         fileMenu.addAction(self.tr("&Save…"), self.save, QKeySequence.Save)
         fileMenu.addSeparator()
         fileMenu.addAction(self.tr("&Reload From Disk"), self.reload)
-        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Quit)
+        fileMenu.addAction(self.tr("&Close"), self.close, QKeySequence.Close)
         self.menuBar().addMenu(fileMenu)
 
         self.setCentralWidget(self.editor)

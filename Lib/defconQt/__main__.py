@@ -11,6 +11,7 @@ import sys
 
 
 def main():
+    global app
     # register representation factories
     representationFactories.registerAllFactories()
     # initialize the app

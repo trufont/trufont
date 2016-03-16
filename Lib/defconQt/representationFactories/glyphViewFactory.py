@@ -1,4 +1,3 @@
-from defconQt.objects.defcon import TGlyph
 from fontTools.pens.basePen import BasePen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
@@ -67,7 +66,7 @@ class OnlyComponentsQtPen(BasePen):
 
 
 def FilterSelectionFactory(glyph):
-    copyGlyph = TGlyph()
+    copyGlyph = glyph.__class__()
     pen = copyGlyph.getPointPen()
     for anchor in glyph.anchors:
         if anchor.selected:
