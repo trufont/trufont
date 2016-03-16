@@ -1491,6 +1491,7 @@ class SettingsDialog(QDialog):
         app = QApplication.instance()
         app.postNotification("preferencesChanged")
         # TODO: cleanup this in favor of notification subscribe
+        # and implement subscription in the widgets
         for window in app.topLevelWidgets():
             if isinstance(window, MainWindow):
                 window.updateMarkColors()
@@ -1574,7 +1575,8 @@ class GlyphSetTab(QWidget):
         self.glyphListButton = QPushButton(self.tr("Browse…"), self)
         self.glyphListButton.setEnabled(bool(glyphListPath))
         self.glyphListButton.clicked.connect(self.getGlyphList)
-        # TODO: find correct solution for this and maybe make a widget w setSizesToText()
+        # TODO: find correct solution for this and maybe make a widget w
+        # setSizesToText()
         # http://stackoverflow.com/a/19502467/2037879
         textWidth = self.glyphListButton.fontMetrics().boundingRect(
             self.glyphListButton.text()).width() + 16
@@ -1698,6 +1700,7 @@ class GlyphSetTab(QWidget):
             glyphListPath = self.glyphListEdit.text()
             if glyphListPath:
                 settings.setValue("settings/glyphListPath", glyphListPath)
+                app = QApplication.instance()
                 app.loadGlyphList()
 
 

@@ -1002,23 +1002,59 @@ class GlyphView(QWidget):
         callback(event)
 
     def keyPressEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewKeyPress", data)
         self._redirectEvent(event, self._currentTool.keyPressEvent)
 
     def keyReleaseEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewKeyRelease", data)
         self._redirectEvent(event, self._currentTool.keyReleaseEvent)
 
     def mousePressEvent(self, event):
         self._mouseDown = True
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMousePress", data)
         self._redirectEvent(event, self._currentTool.mousePressEvent, True)
 
     def mouseMoveEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMouseMove", data)
         self._redirectEvent(event, self._currentTool.mouseMoveEvent, True)
 
     def mouseReleaseEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMouseRelease", data)
         self._redirectEvent(event, self._currentTool.mouseReleaseEvent, True)
         self._mouseDown = False
 
     def mouseDoubleClickEvent(self, event):
+        app = QApplication.instance()
+        data = dict(
+            event=event,
+            widget=self,
+        )
+        app.postNotification("glyphViewMouseDoubleClick", data)
         self._redirectEvent(
             event, self._currentTool.mouseDoubleClickEvent, True)
 

@@ -1,5 +1,4 @@
 from defconQt import icons_db  # noqa
-from defconQt.glyphCollectionView import cellSelectionColor
 from defconQt.glyphView import MainGlyphWindow
 from defconQt.objects.defcon import TGlyph
 from getpass import getuser
@@ -21,8 +20,6 @@ comboBoxItems = [
 ]
 
 defaultPointSize = 150
-glyphSelectionColor = QColor(cellSelectionColor)
-glyphSelectionColor.setAlphaF(.09)
 
 escapeRep = {
     "//": "/slash ",
@@ -695,8 +692,11 @@ class GlyphsCanvas(QWidget):
                 painter.drawLine(glyph.width, 0, glyph.width, halfDescent)
             glyphSelected = index == self._selected
             if glyphSelected:
+                palette = self.palette()
+                selectionColor = palette.color(QPalette.Highlight)
+                selectionColor.setAlphaF(.15 if self.hasFocus() else .8)
                 painter.fillRect(0, self.descender, glyph.width,
-                                 self.upm, glyphSelectionColor)
+                                 self.upm, selectionColor)
             painter.fillPath(glyphPath, Qt.black)
             app = QApplication.instance()
             data = dict(
