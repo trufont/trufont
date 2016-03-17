@@ -1,7 +1,6 @@
 import unittest
 import sys
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QDoubleValidator, QIntValidator
 from PyQt5.QtWidgets import QWidget
 from defconQt.fontView import Application, MainWindow
 from defconQt.fontInfo import InfoTabWidget
@@ -58,240 +57,274 @@ class TabTestCase(unittest.TestCase):
         self.font = self.mainWindow.font
         self.fontInfo = self.mainWindow.fontInfoWindow
         self.generalTab = self.fontInfo.tabWidget.widget(0)
-        self.metricsTab = self.fontInfo.tabWidget.widget(1)
+        self.legalTab = self.fontInfo.tabWidget.widget(1)
         self.openTypeTab = self.fontInfo.tabWidget.widget(2)
-        self.OS2Tab = self.fontInfo.tabWidget.widget(3)
-        self.postScriptTab = self.fontInfo.tabWidget.widget(4)
+        self.postScriptTab = self.fontInfo.tabWidget.widget(3)
         self.fontInfo.show()
 
     def tearDown(self):
         self.fontInfo.close()
 
-    def checkString(self, attr, attrName):
-        attrEdit = getattr(self.tab, attr + "Edit")
+    def checkString(self, attrName):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
+
         self.assertIsNone(getattr(self.font.info, attrName))
         self.assertEqual(attrEdit.text(), "")
 
-        attrEdit.setText("Typeface " + attr)
+        attrEdit.setText("Typeface " + attrName)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), "Typeface " + attr)
+        self.assertEqual(getattr(self.font.info, attrName),
+                         "Typeface " + attrName)
 
-        attrEdit.setText("")
+        attrEdit.setEnabled(False)
         self.fontInfo.accept()
         self.assertIsNone(getattr(self.font.info, attrName))
 
-    def checkMultilineString(self, attr, attrName):
-        attrEdit = getattr(self.tab, attr + "Edit")
+    def checkMultilineString(self, attrName):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
+
         self.assertIsNone(getattr(self.font.info, attrName))
         self.assertEqual(attrEdit.toPlainText(), "")
 
-        attrEdit.setPlainText("Typeface " + attr)
+        attrEdit.setPlainText("Typeface \n" + attrName)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), "Typeface " + attr)
+        self.assertEqual(getattr(self.font.info, attrName),
+                         "Typeface \n" + attrName)
 
-        attrEdit.setPlainText("")
+        attrEdit.setEnabled(False)
         self.fontInfo.accept()
         self.assertIsNone(getattr(self.font.info, attrName))
 
-    def checkInteger(self, attr, attrName, value=0):
-        attrEdit = getattr(self.tab, attr + "Edit")
+    def checkInteger(self, attrName, value=0):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
+
         if value == 0:
             self.assertIsNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), "")
+            self.assertEqual(attrEdit.value(), 0)
         else:
             self.assertIsNotNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), str(value))
+            self.assertEqual(attrEdit.value(), value)
 
-        attrEdit.setText("123")
+        attrEdit.setValue(123)
         self.fontInfo.accept()
         self.assertEqual(getattr(self.font.info, attrName), 123)
 
-        attrEdit.setText("0")
+        attrEdit.setValue(0)
         self.fontInfo.accept()
         self.assertEqual(getattr(self.font.info, attrName), 0)
 
-        attrEdit.setText("-123")
+        attrEdit.setValue(-123)
         self.fontInfo.accept()
         self.assertEqual(getattr(self.font.info, attrName), -123)
 
-        attrEdit.setText("")
+        attrEdit.setEnabled(False)
         self.fontInfo.accept()
         self.assertIsNone(getattr(self.font.info, attrName))
 
-        validator = attrEdit.validator()
-        self.assertIsInstance(validator, QIntValidator)
-        self.assertEqual(validator.bottom(), QIntValidator().bottom())
-        self.assertEqual(validator.top(), QIntValidator().top())
+        self.assertEqual(attrEdit.minimum(), -2147483648)
+        self.assertEqual(attrEdit.maximum(), 2147483647)
 
-    def checkPositiveInteger(self, attr, attrName, value=0):
-        attrEdit = getattr(self.tab, attr + "Edit")
+    def checkPositiveInteger(self, attrName, value=0):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
+
         if value == 0:
             self.assertIsNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), "")
+            self.assertEqual(attrEdit.value(), 0)
         else:
             self.assertIsNotNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), str(value))
+            self.assertEqual(attrEdit.value(), value)
 
-        attrEdit.setText("123")
+        attrEdit.setValue(123)
         self.fontInfo.accept()
         self.assertEqual(getattr(self.font.info, attrName), 123)
 
-        attrEdit.setText("0")
+        attrEdit.setValue(0)
         self.fontInfo.accept()
         self.assertEqual(getattr(self.font.info, attrName), 0)
 
-        attrEdit.setText("")
+        attrEdit.setEnabled(False)
         self.fontInfo.accept()
         self.assertIsNone(getattr(self.font.info, attrName))
 
-        validator = attrEdit.validator()
-        self.assertIsInstance(validator, QIntValidator)
-        self.assertEqual(validator.bottom(), 0)
-        self.assertEqual(validator.top(), QIntValidator().top())
+        self.assertEqual(attrEdit.minimum(), 0)
+        self.assertEqual(attrEdit.maximum(), 2147483647)
 
-    def checkNegativeInteger(self, attr, attrName, value=0):
-        attrEdit = getattr(self.tab, attr + "Edit")
+    def checkIntegerFloat(self, attrName, value=0):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
+
         if value == 0:
             self.assertIsNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), "")
+            self.assertEqual(attrEdit.value(), 0)
         else:
             self.assertIsNotNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), str(value))
+            self.assertEqual(attrEdit.value(), value)
 
-        attrEdit.setText("-123")
+        attrEdit.setValue(123)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), -123)
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 123)
 
-        attrEdit.setText("0")
+        attrEdit.setValue(123.000)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 0)
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 123)
 
-        attrEdit.setText("")
+        attrEdit.setValue(123.456)
+        self.fontInfo.accept()
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, float))
+        self.assertEqual(attr, 123.456)
+
+        attrEdit.setValue(0)
+        self.fontInfo.accept()
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 0)
+
+        attrEdit.setValue(0.0)
+        self.fontInfo.accept()
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 0)
+
+        attrEdit.setValue(-123)
+        self.fontInfo.accept()
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, -123)
+
+        attrEdit.setValue(-123.000)
+        self.fontInfo.accept()
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, -123)
+
+        attrEdit.setValue(-123.456)
+        self.fontInfo.accept()
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, float))
+        self.assertEqual(attr, -123.456)
+
+        attrEdit.setEnabled(False)
         self.fontInfo.accept()
         self.assertIsNone(getattr(self.font.info, attrName))
 
-        validator = attrEdit.validator()
-        self.assertIsInstance(validator, QIntValidator)
-        self.assertEqual(validator.top(), 0)
-        self.assertEqual(validator.bottom(), QIntValidator().bottom())
+        self.assertEqual(attrEdit.minimum(), -2147483648)
+        self.assertEqual(attrEdit.maximum(), 2147483647)
 
-    def checkIntegerFloat(self, attr, attrName, value=0):
-        attrEdit = getattr(self.tab, attr + "Edit")
+    def checkPositiveIntegerFloat(self, attrName, value=0):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
+
         if value == 0:
             self.assertIsNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), "")
+            self.assertEqual(attrEdit.value(), 0)
         else:
             self.assertIsNotNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), str(value))
+            self.assertEqual(attrEdit.value(), value)
 
-        attrEdit.setText("123")
+        attrEdit.setValue(123)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 123)
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 123)
 
-        attrEdit.setText("123.456")
+        attrEdit.setValue(123.000)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 123.456)
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 123)
 
-        attrEdit.setText("0")
+        attrEdit.setValue(123.456)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 0)
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, float))
+        self.assertEqual(attr, 123.456)
 
-        attrEdit.setText("0.0")
+        attrEdit.setValue(0)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 0.0)
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 0)
 
-        attrEdit.setText("-123")
+        attrEdit.setValue(0.0)
         self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), -123)
+        attr = getattr(self.font.info, attrName)
+        self.assertTrue(isinstance(attr, int))
+        self.assertEqual(attr, 0)
 
-        attrEdit.setText("-123.456")
-        self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), -123.456)
-
-        attrEdit.setText("")
+        attrEdit.setEnabled(False)
         self.fontInfo.accept()
         self.assertIsNone(getattr(self.font.info, attrName))
 
-        validator = attrEdit.validator()
-        self.assertIsInstance(validator, QDoubleValidator)
-        self.assertEqual(validator.bottom(), QDoubleValidator().bottom())
-        self.assertEqual(validator.top(), QDoubleValidator().top())
+        self.assertEqual(attrEdit.minimum(), 0)
+        self.assertEqual(attrEdit.maximum(), 2147483647)
 
-    def checkPositiveIntegerFloat(self, attr, attrName, value=0):
-        attrEdit = getattr(self.tab, attr + "Edit")
-        if value == 0:
-            self.assertIsNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), "")
-        else:
-            self.assertIsNotNone(getattr(self.font.info, attrName))
-            self.assertEqual(attrEdit.text(), str(value))
-
-        attrEdit.setText("123")
-        self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 123)
-
-        attrEdit.setText("123.456")
-        self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 123.456)
-
-        attrEdit.setText("0")
-        self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 0)
-
-        attrEdit.setText("0.0")
-        self.fontInfo.accept()
-        self.assertEqual(getattr(self.font.info, attrName), 0.0)
+    # XXX: Implement maxLen, evenLen?
+    def checkIntegerFloatList(self, attrName, maxLen=None, evenLen=None):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
 
         attrEdit.setText("")
         self.fontInfo.accept()
-        self.assertIsNone(getattr(self.font.info, attrName))
-
-        validator = attrEdit.validator()
-        self.assertIsInstance(validator, QDoubleValidator)
-        self.assertEqual(validator.bottom(), 0)
-        self.assertEqual(validator.top(), QDoubleValidator().top())
-
-    def checkIntegerFloatList(self, attr, attrName, maxLen=None, evenLen=None):
-        attrEdit = getattr(self.tab, attr + "Edit")
-        values = attrEdit.text()
-        if values is "":
-            self.assertEqual(getattr(self.font.info, attrName), [])
-        else:
-            attrEdit.setText("123 456 789 0")
-            self.fontInfo.accept()
-            self.assertIsNotNone(getattr(self.font.info, attrName))
-
-        values = attrEdit.text().split(" ")
-        for i, val in enumerate(values):
-            if val != "":
-                self.assertEqual(
-                    int(val), getattr(self.font.info, attrName)[i])
+        self.assertEqual(getattr(self.font.info, attrName), [])
 
         attrEdit.setText("123 456 789 0")
         self.fontInfo.accept()
-        self.assertIsNotNone(getattr(self.font.info, attrName))
+        attr = getattr(self.font.info, attrName)
+        self.assertEqual(attr, [123, 456, 789, 0])
 
-        # TODO: test validation
-
-    def checkBoolean(self, attr, attrName):
-        attrBox = getattr(self.tab, attr + "Box")
-        self.assertTrue(attrBox.isTristate())
-
-        value = attrBox.checkState()
-        self.assertEqual(value, Qt.PartiallyChecked)
-        self.assertEqual(getattr(self.font.info, attrName), None)
-
-        attrBox.setCheckState(Qt.Checked)
+        attrEdit.setText("123,0 456,1 789.11111112 789,11111113 790 791")
         self.fontInfo.accept()
-        value = attrBox.checkState()
+        attr = getattr(self.font.info, attrName)
+        self.assertEqual(attr,
+                         [123, 456.1, 789.11111112, 789.11111113, 790, 791])
+
+        attrEdit.setEnabled(False)
+        self.fontInfo.accept()
+        attr = getattr(self.font.info, attrName)
+        # These are apparently always [], never None.
+        if attrName in ["postscriptBlueValues", "postscriptOtherBlues",
+                        "postscriptFamilyBlues",
+                        "postscriptFamilyOtherBlues",
+                        "postscriptStemSnapH", "postscriptStemSnapV"]:
+            self.assertEqual(attr, [])
+        else:
+            self.assertIsNone(attr)
+
+    def checkBoolean(self, attrName):
+        attrEdit = getattr(self.tab, attrName + "Edit")
+        attrEdit.setEnabled(True)
+
+        # Most checkboxes are governed by a parent checkbox for the field (see
+        # Postscript tab for examples), meaning that if the field is unchecked,
+        # it is assumed that the user doesn't want to set an explicit value. If
+        # the field is checked, the actual checkbox can be either checked or
+        # not.
+        self.assertFalse(attrEdit.isTristate())
+
+        attrEdit.setCheckState(Qt.Checked)
+        self.fontInfo.accept()
+        value = attrEdit.checkState()
         self.assertEqual(value, Qt.Checked)
         self.assertEqual(getattr(self.font.info, attrName), True)
 
-        attrBox.setCheckState(Qt.Unchecked)
+        attrEdit.setCheckState(Qt.Unchecked)
         self.fontInfo.accept()
-        value = attrBox.checkState()
+        value = attrEdit.checkState()
         self.assertEqual(value, Qt.Unchecked)
         self.assertEqual(getattr(self.font.info, attrName), False)
+
+        attrEdit.setEnabled(False)
+        self.fontInfo.accept()
+        self.assertIsNone(getattr(self.font.info, attrName))
 
 
 class GeneralTabTest(TabTestCase):
@@ -307,77 +340,76 @@ class GeneralTabTest(TabTestCase):
         self.assertEqual(self.tab.name, "General")
 
     def test_familyName(self):
-        self.checkString("familyName", "familyName")
+        self.checkString("familyName")
 
     def test_styleName(self):
-        self.checkString("styleName", "styleName")
+        self.checkString("styleName")
 
-    def test_copyright(self):
-        self.checkMultilineString("copyright", "copyright")
-
-    def test_trademark(self):
-        self.checkString("trademark", "trademark")
-
-    def test_designer(self):
-        self.checkString("designer", "openTypeNameDesigner")
-
-    def test_designerURL(self):
-        self.checkString("designerURL", "openTypeNameDesignerURL")
-
-    def test_manufacturer(self):
-        self.checkString("manufacturer", "openTypeNameManufacturer")
-
-    def test_manufacturerURL(self):
-        self.checkString("manufacturerURL", "openTypeNameManufacturerURL")
-
-    def test_license(self):
-        self.checkMultilineString("license", "openTypeNameLicense")
-
-    def test_licenseURL(self):
-        self.checkString("licenseURL", "openTypeNameLicenseURL")
+    # TODO styleMapFamilyName, ...DateCreated
 
     def test_versionMajor(self):
-        self.checkInteger("versionMajor", "versionMajor")
+        self.checkInteger("versionMajor")
 
     def test_versionMinor(self):
-        self.checkPositiveInteger("versionMinor", "versionMinor")
+        self.checkPositiveInteger("versionMinor")
+
+    def test_unitsPerEm(self):
+        self.checkPositiveIntegerFloat("unitsPerEm", value=1000)
+
+    def test_italicAngle(self):
+        self.checkIntegerFloat("italicAngle")
+
+    def test_ascender(self):
+        self.checkIntegerFloat("ascender", 750)
+
+    def test_descender(self):
+        self.checkIntegerFloat("descender", -250)
+
+    def test_capHeight(self):
+        self.checkIntegerFloat("capHeight", 750)
+
+    def test_xHeight(self):
+        self.checkIntegerFloat("xHeight", 500)
+
+    def test_noteEdit(self):
+        self.checkMultilineString("note")
 
 
-class MetricsTabTest(TabTestCase):
+class LegalTabTest(TabTestCase):
 
     def __init__(self, methodName):
         super().__init__(methodName)
 
     def setUp(self):
         super().setUp()
-        self.tab = self.metricsTab
+        self.tab = self.legalTab
 
     def test_MetricsTab_name(self):
-        self.assertEqual(self.tab.name, "Metrics")
+        self.assertEqual(self.tab.name, "Legal")
 
-    # TODO styleMapFamilyName
+    def test_designer(self):
+        self.checkString("openTypeNameDesigner")
 
-    def test_unitsPerEm(self):
-        self.checkPositiveIntegerFloat(
-            "unitsPerEm", "unitsPerEm", value="1000")
+    def test_designerURL(self):
+        self.checkString("openTypeNameDesignerURL")
 
-    def test_italicAngle(self):
-        self.checkIntegerFloat("italicAngle", "italicAngle")
+    def test_manufacturer(self):
+        self.checkString("openTypeNameManufacturer")
 
-    def test_ascender(self):
-        self.checkIntegerFloat("ascender", "ascender", 750)
+    def test_manufacturerURL(self):
+        self.checkString("openTypeNameManufacturerURL")
 
-    def test_descender(self):
-        self.checkIntegerFloat("descender", "descender", -250)
+    def test_copyright(self):
+        self.checkMultilineString("copyright")
 
-    def test_capHeight(self):
-        self.checkIntegerFloat("capHeight", "capHeight", 750)
+    def test_license(self):
+        self.checkMultilineString("openTypeNameLicense")
 
-    def test_xHeight(self):
-        self.checkIntegerFloat("xHeight", "xHeight", 500)
+    def test_licenseURL(self):
+        self.checkString("openTypeNameLicenseURL")
 
-    def test_noteEdit(self):
-        self.checkMultilineString("note", "note")
+    def test_trademark(self):
+        self.checkString("trademark")
 
 
 class OpenTypeTabTest(TabTestCase):
@@ -392,146 +424,132 @@ class OpenTypeTabTest(TabTestCase):
     def test_OpenTypeTab_name(self):
         self.assertEqual(self.tab.name, "OpenType")
 
+    def test_lowestRecPPEM(self):
+        self.checkPositiveInteger("openTypeHeadLowestRecPPEM")
+
+    # TODO: head flags
+
     def test_preferredFamilyName(self):
-        self.checkString(
-            "preferredFamilyName", "openTypeNamePreferredFamilyName")
+        self.checkString("openTypeNamePreferredFamilyName")
 
     def test_preferredSubfamilyName(self):
-        self.checkString(
-            "preferredSubfamilyName", "openTypeNamePreferredSubfamilyName")
+        self.checkString("openTypeNamePreferredSubfamilyName")
 
     def test_compatibleFullName(self):
-        self.checkString(
-            "compatibleFullName", "openTypeNameCompatibleFullName")
+        self.checkString("openTypeNameCompatibleFullName")
 
     def test_WWSFamilyName(self):
-        self.checkString("WWSFamilyName", "openTypeNameWWSFamilyName")
+        self.checkString("openTypeNameWWSFamilyName")
 
     def test_WWSSubfamilyName(self):
-        self.checkString("WWSSubfamilyName", "openTypeNameWWSSubfamilyName")
+        self.checkString("openTypeNameWWSSubfamilyName")
 
     def test_version(self):
-        self.checkString("version", "openTypeNameVersion")
+        self.checkString("openTypeNameVersion")
 
     def test_uniqueID(self):
-        self.checkString("uniqueID", "openTypeNameUniqueID")
+        self.checkString("openTypeNameUniqueID")
 
     def test_description(self):
-        self.checkString("description", "openTypeNameDescription")
+        self.checkString("openTypeNameDescription")
 
     def test_sampleText(self):
-        self.checkString("sampleText", "openTypeNameSampleText")
+        self.checkString("openTypeNameSampleText")
+
+    # TODO: name records table
 
     def test_ascender(self):
-        self.checkInteger("ascender", "openTypeHheaAscender")
+        self.checkInteger("openTypeHheaAscender")
 
     def test_descender(self):
-        self.checkInteger("descender", "openTypeHheaDescender")
+        self.checkInteger("openTypeHheaDescender")
 
     def test_lineGap(self):
-        self.checkInteger("lineGap", "openTypeHheaLineGap")
+        self.checkInteger("openTypeHheaLineGap")
 
     def test_caretSlopeRise(self):
-        self.checkInteger("caretSlopeRise", "openTypeHheaCaretSlopeRise")
+        self.checkInteger("openTypeHheaCaretSlopeRise")
 
     def test_caretSlopeRun(self):
-        self.checkInteger("caretSlopeRun", "openTypeHheaCaretSlopeRun")
+        self.checkInteger("openTypeHheaCaretSlopeRun")
 
     def test_caretOffset(self):
-        self.checkInteger("caretOffset", "openTypeHheaCaretOffset")
+        self.checkInteger("openTypeHheaCaretOffset")
 
     def test_vertTypoAscender(self):
-        self.checkInteger("vertTypoAscender", "openTypeVheaVertTypoAscender")
+        self.checkInteger("openTypeVheaVertTypoAscender")
 
     def test_vertTypoDescender(self):
-        self.checkInteger("vertTypoDescender", "openTypeVheaVertTypoDescender")
+        self.checkInteger("openTypeVheaVertTypoDescender")
 
     def test_vertTypoLineGap(self):
-        self.checkInteger("vertTypoLineGap", "openTypeVheaVertTypoLineGap")
+        self.checkInteger("openTypeVheaVertTypoLineGap")
 
     def test_vheaCaretSlopeRise(self):
-        self.checkInteger("vheaCaretSlopeRise", "openTypeVheaCaretSlopeRise")
+        self.checkInteger("openTypeVheaCaretSlopeRise")
 
     def test_vheaCaretSlopeRun(self):
-        self.checkInteger("vheaCaretSlopeRun", "openTypeVheaCaretSlopeRun")
+        self.checkInteger("openTypeVheaCaretSlopeRun")
 
     def test_vheaCaretOffset(self):
-        self.checkInteger("vheaCaretOffset", "openTypeVheaCaretOffset")
-
-
-class OS2TabTest(TabTestCase):
-
-    def __init__(self, methodName):
-        super().__init__(methodName)
-
-    def setUp(self):
-        super().setUp()
-        self.tab = self.OS2Tab
-
-    def test_OS2Tab_name(self):
-        self.assertEqual(self.tab.name, "OS/2")
-
-    # TODO: test_usWidthClassLabel()
-
-    # TODO: test_fsSelection()
+        self.checkInteger("openTypeVheaCaretOffset")
 
     # TODO: test_achVendorID()
 
+    # TODO: test_usWidthClass(), test_usWeightClass()
+
+    # TODO: test_fsSelection()
+
     # TODO: fsType
 
-    # XXX: ulUnicodeRange, ulCodePageRange are not implemented yet
+    # TODO: Panose
 
-    def test_usWeightClass(self):
-        self.checkPositiveInteger("usWeightClass", "openTypeOS2WeightClass")
+    # TODO: ulUnicodeRange, ulCodePageRange
 
     def test_sTypoAscender(self):
-        self.checkInteger("sTypoAscender", "openTypeOS2TypoAscender")
+        self.checkInteger("openTypeOS2TypoAscender")
 
     def test_sTypoDescender(self):
-        self.checkInteger("sTypoDescender", "openTypeOS2TypoDescender")
+        self.checkInteger("openTypeOS2TypoDescender")
 
     def test_sTypoLineGap(self):
-        self.checkInteger("sTypoLineGap", "openTypeOS2TypoLineGap")
+        self.checkInteger("openTypeOS2TypoLineGap")
 
     def test_usWinAscent(self):
-        self.checkPositiveInteger("usWinAscent", "openTypeOS2WinAscent")
+        self.checkPositiveInteger("openTypeOS2WinAscent")
 
     def test_usWinDescent(self):
-        self.checkPositiveInteger("usWinDescent", "openTypeOS2WinDescent")
+        self.checkPositiveInteger("openTypeOS2WinDescent")
 
     def test_ySubscriptXSize(self):
-        self.checkInteger("ySubscriptXSize", "openTypeOS2SubscriptXSize")
+        self.checkInteger("openTypeOS2SubscriptXSize")
 
     def test_ySubscriptYSize(self):
-        self.checkInteger("ySubscriptYSize", "openTypeOS2SubscriptYSize")
+        self.checkInteger("openTypeOS2SubscriptYSize")
 
     def test_ySubscriptXOffset(self):
-        self.checkInteger("ySubscriptXOffset", "openTypeOS2SubscriptXOffset")
+        self.checkInteger("openTypeOS2SubscriptXOffset")
 
     def test_ySubscriptYOffset(self):
-        self.checkInteger("ySubscriptYOffset", "openTypeOS2SubscriptYOffset")
+        self.checkInteger("openTypeOS2SubscriptYOffset")
 
     def test_ySuperscriptXSize(self):
-        self.checkInteger("ySuperscriptXSize", "openTypeOS2SuperscriptXSize")
+        self.checkInteger("openTypeOS2SuperscriptXSize")
 
     def test_ySuperscriptYSize(self):
-        self.checkInteger("ySuperscriptYSize", "openTypeOS2SuperscriptYSize")
+        self.checkInteger("openTypeOS2SuperscriptYSize")
 
     def test_ySuperscriptXOffset(self):
-        self.checkInteger(
-            "ySuperscriptXOffset", "openTypeOS2SuperscriptXOffset")
+        self.checkInteger("openTypeOS2SuperscriptXOffset")
 
     def test_ySuperscriptYOffset(self):
-        self.checkInteger(
-            "ySuperscriptYOffset", "openTypeOS2SuperscriptYOffset")
+        self.checkInteger("openTypeOS2SuperscriptYOffset")
 
     def test_yStrikeoutSize(self):
-        self.checkInteger("yStrikeoutSize", "openTypeOS2StrikeoutSize")
+        self.checkInteger("openTypeOS2StrikeoutSize")
 
     def test_yStrikeoutPosition(self):
-        self.checkInteger("yStrikeoutPosition", "openTypeOS2StrikeoutPosition")
-
-    # XXX: Panose is not implemented yet
+        self.checkInteger("openTypeOS2StrikeoutPosition")
 
 
 class PostScriptTabTest(TabTestCase):
@@ -547,70 +565,68 @@ class PostScriptTabTest(TabTestCase):
         self.assertEqual(self.tab.name, "PostScript")
 
     def test_fontName(self):
-        self.checkString("fontName", "postscriptFontName")
+        self.checkString("postscriptFontName")
 
     def test_fullName(self):
-        self.checkString("fullName", "postscriptFullName")
+        self.checkString("postscriptFullName")
 
     def test_weightName(self):
-        self.checkString("weightName", "postscriptWeightName")
+        self.checkString("postscriptWeightName")
 
     def test_uniqueID(self):
-        self.checkInteger("uniqueID", "postscriptUniqueID")
+        # XXX: Range?
+        self.checkInteger("postscriptUniqueID")
 
     def test_blueValues(self):
-        self.checkIntegerFloatList("blueValues", "postscriptBlueValues")
+        self.checkIntegerFloatList("postscriptBlueValues")
 
     def test_otherBlues(self):
-        self.checkIntegerFloatList("otherBlues", "postscriptOtherBlues")
+        self.checkIntegerFloatList("postscriptOtherBlues")
 
     def test_familyBlues(self):
-        self.checkIntegerFloatList("familyBlues", "postscriptFamilyBlues")
+        self.checkIntegerFloatList("postscriptFamilyBlues")
 
     def test_familyOtherBlues(self):
-        self.checkIntegerFloatList(
-            "familyOtherBlues", "postscriptFamilyOtherBlues")
+        self.checkIntegerFloatList("postscriptFamilyOtherBlues")
 
     def test_stemSnapH(self):
-        self.checkIntegerFloatList("stemSnapH", "postscriptStemSnapH")
+        self.checkIntegerFloatList("postscriptStemSnapH")
 
     def test_stemSnapV(self):
-        self.checkIntegerFloatList("stemSnapV", "postscriptStemSnapV")
+        self.checkIntegerFloatList("postscriptStemSnapV")
 
     def test_blueFuzz(self):
-        self.checkIntegerFloat("blueFuzz", "postscriptBlueFuzz")
+        self.checkIntegerFloat("postscriptBlueFuzz")
 
     def test_blueScale(self):
-        self.checkIntegerFloat("blueScale", "postscriptBlueScale")
-
-    def test_forceBold(self):
-        self.checkBoolean("forceBold", "postscriptForceBold")
+        self.checkIntegerFloat("postscriptBlueScale")
 
     def test_blueShift(self):
-        self.checkIntegerFloat("blueShift", "postscriptBlueShift")
+        self.checkIntegerFloat("postscriptBlueShift")
+
+    def test_forceBold(self):
+        self.checkBoolean("postscriptForceBold")
 
     def test_defaultWidthX(self):
-        self.checkIntegerFloat("defaultWidthX", "postscriptDefaultWidthX")
+        self.checkIntegerFloat("postscriptDefaultWidthX")
 
     def test_nominalWidthX(self):
-        self.checkIntegerFloat("nominalWidthX", "postscriptNominalWidthX")
+        self.checkIntegerFloat("postscriptNominalWidthX")
 
     def test_underlineThickness(self):
-        self.checkIntegerFloat(
-            "underlineThickness", "postscriptUnderlineThickness")
+        self.checkIntegerFloat("postscriptUnderlineThickness")
 
     def test_underlinePosition(self):
-        self.checkIntegerFloat(
-            "underlinePosition", "postscriptUnderlinePosition")
+        self.checkIntegerFloat("postscriptUnderlinePosition")
 
     def test_slantAngle(self):
-        self.checkIntegerFloat("slantAngle", "postscriptSlantAngle")
+        self.checkIntegerFloat("postscriptSlantAngle")
 
     def test_isFixedPitch(self):
-        self.checkBoolean("isFixedPitch", "postscriptIsFixedPitch")
+        self.checkBoolean("postscriptIsFixedPitch")
 
     def test_defaultCharacter(self):
-        self.checkString("defaultCharacter", "postscriptDefaultCharacter")
+        self.checkString("postscriptDefaultCharacter")
 
     # TODO: test_windowsCharacterSet
 
