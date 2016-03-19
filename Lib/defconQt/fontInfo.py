@@ -12,6 +12,14 @@ from defconQt.util.bitlistview import BitListView
 from defconQt.util.floatspinbox import FloatSpinBox
 
 
+def TransparentScrollArea(parent=None):
+    scrollArea = QScrollArea(parent)
+    scrollArea.setStyleSheet(".QScrollArea { background: transparent; }")
+    scrollArea.viewport().setStyleSheet(
+        ".QWidget { background: transparent; }")
+    return scrollArea
+
+
 class InfoTabWidget(QTabWidget):
 
     def addNamedTab(self, tab):
@@ -250,11 +258,6 @@ class GeneralTab(TabWidget):
         super().__init__(font, parent)
         self.name = self.tr("General")
 
-        # TODO: give visual feedback of input data validity using QLineEdit
-        # lose focus event
-        # http://snorf.net/blog/2014/08/09/using-qvalidator-in-pyqt4-to-validate-user-input/ # noqa
-        # XXX: instead of crashing
-
         mainLayout = QVBoxLayout(self)
 
         # General metadata
@@ -274,7 +277,6 @@ class GeneralTab(TabWidget):
         g1FormLayout.addRow(styleNameLabel, edit)
 
         styleMapLabel = RCheckBox(self.tr("Style map:"), self)
-        styleMapLabel.setLayoutDirection(Qt.RightToLeft)
         styleMapLayout = QHBoxLayout()
         self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName, self)
         self.styleMapStyleDrop = QComboBox(self)
@@ -340,13 +342,13 @@ class GeneralTab(TabWidget):
         edit = self.load("unitsPerEm", "pif")
         g2FormLayout.addRow(unitsPerEmLabel, edit)
 
-        italicAngleLabel = QLabel(self.tr("Italic angle:"), self)
-        edit = self.load("italicAngle", "if")
-        g2FormLayout.addRow(italicAngleLabel, edit)
-
         ascenderLabel = QLabel(self.tr("Ascender:"), self)
         edit = self.load("ascender", "if")
         g2FormLayout.addRow(ascenderLabel, edit)
+
+        descenderLabel = QLabel(self.tr("Descender:"), self)
+        edit = self.load("descender", "if")
+        g2FormLayout.addRow(descenderLabel, edit)
 
         capHeightLabel = QLabel(self.tr("Cap height:"), self)
         edit = self.load("capHeight", "if")
@@ -356,9 +358,9 @@ class GeneralTab(TabWidget):
         edit = self.load("xHeight", "if")
         g2FormLayout.addRow(xHeightLabel, edit)
 
-        descenderLabel = QLabel(self.tr("Descender:"), self)
-        edit = self.load("descender", "if")
-        g2FormLayout.addRow(descenderLabel, edit)
+        italicAngleLabel = QLabel(self.tr("Italic angle:"), self)
+        edit = self.load("italicAngle", "if")
+        g2FormLayout.addRow(italicAngleLabel, edit)
 
         generalLayout.addLayout(g2FormLayout)
 
@@ -476,15 +478,9 @@ class OpenTypeTab(TabWidget):
         self.name = self.tr("OpenType")
 
         mainLayout = QVBoxLayout(self)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        checkFieldMessage = QLabel(self.tr(
-            "Check fields to use custom values. Unchecked fields will use a "
-            "default value at compile-time that may be empty. The gasp and "
-            "name records table will be implemented later."))
-        checkFieldMessage.setWordWrap(True)
-        mainLayout.addWidget(checkFieldMessage)
-
-        tableScrollArea = QScrollArea(self)
+        tableScrollArea = TransparentScrollArea(self)
         tableScrollArea.setWidgetResizable(True)
         tableArea = QWidget(tableScrollArea)
         tableScrollArea.setWidget(tableArea)
@@ -505,14 +501,6 @@ class OpenTypeTab(TabWidget):
     def setupHeadGroup(self):
         headGroup = QGroupBox(self.tr("head table"))
         headLayout = QVBoxLayout(headGroup)
-
-        headHeader = QLabel(self.tr(
-            "<html><head/><body><p><a href=\""
-            "http://www.microsoft.com/typography/otspec/head.htm\"><span "
-            "style=\" text-decoration: underline; color:#0000ff;\">The "
-            "OpenType head table specification</span></a>. Missing attributes "
-            "are derived.</p></body></html>"))
-        headLayout.addWidget(headHeader)
 
         headAttributesLayout = QFormLayout()
         headAttributesLayout.setLabelAlignment(
@@ -565,14 +553,6 @@ class OpenTypeTab(TabWidget):
         nameGroup = QGroupBox(self.tr("name table"))
         nameLayout = QVBoxLayout(nameGroup)
 
-        nameHeader = QLabel(self.tr(
-            "<html><head/><body><p><a href=\""
-            "http://www.microsoft.com/typography/otspec/name.htm\"><span "
-            "style=\" text-decoration: underline; color:#0000ff;\">The "
-            "OpenType name table specification</span></a>. Missing attributes "
-            "are derived.</p></body></html>"))
-        nameLayout.addWidget(nameHeader)
-
         nameAttributesLayout = QFormLayout()
         nameAttributesLayout.setLabelAlignment(
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
@@ -613,14 +593,6 @@ class OpenTypeTab(TabWidget):
         hheaGroup = QGroupBox(self.tr("hhea table"))
         hheaLayout = QVBoxLayout(hheaGroup)
 
-        hheaHeader = QLabel(self.tr(
-            "<html><head/><body><p><a href=\""
-            "http://www.microsoft.com/typography/otspec/hhea.htm\"><span "
-            "style=\" text-decoration: underline; color:#0000ff;\">The "
-            "OpenType hhea table specification</span></a>."
-            "</p></body></html>"))
-        hheaLayout.addWidget(hheaHeader)
-
         hheaAttributesLayout = QFormLayout()
         hheaAttributesLayout.setLabelAlignment(
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
@@ -652,23 +624,15 @@ class OpenTypeTab(TabWidget):
         vheaGroup = QGroupBox(self.tr("vhea table"))
         vheaLayout = QVBoxLayout(vheaGroup)
 
-        vheaHeader = QLabel(self.tr(
-            "<html><head/><body><p><a href=\""
-            "http://www.microsoft.com/typography/otspec/vhea.htm\"><span "
-            "style=\" text-decoration: underline; color:#0000ff;\">The "
-            "OpenType vhea table specification</span></a>."
-            "</p></body></html>"))
-        vheaLayout.addWidget(vheaHeader)
-
         vheaAttributesLayout = QFormLayout()
         vheaAttributesLayout.setLabelAlignment(
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
 
         self.loadCustomIntoForm("openTypeVheaVertTypoAscender", "i",
-                                self.tr("V. ascender:"),
+                                self.tr("V. Ascender:"),
                                 vheaAttributesLayout)
         self.loadCustomIntoForm("openTypeVheaVertTypoDescender", "i",
-                                self.tr("V. descender:"),
+                                self.tr("V. Descender:"),
                                 vheaAttributesLayout)
         self.loadCustomIntoForm("openTypeVheaVertTypoLineGap", "i",
                                 self.tr("V. LineGap:"),
@@ -691,14 +655,6 @@ class OpenTypeTab(TabWidget):
         font = self.font
         os2Group = QGroupBox(self.tr("os2 table"))
         os2Layout = QVBoxLayout(os2Group)
-
-        os2Header = QLabel(self.tr(
-            "<html><head/><body><p><a href=\""
-            "http://www.microsoft.com/typography/otspec/os2.htm\"><span "
-            "style=\" text-decoration: underline; color:#0000ff;\">The "
-            "OpenType os2 table specification</span></a>."
-            "</p></body></html>"))
-        os2Layout.addWidget(os2Header)
 
         os2AttributesLayout = QFormLayout()
         os2AttributesLayout.setLabelAlignment(
@@ -1412,26 +1368,9 @@ class PostScriptTab(TabWidget):
         self.name = self.tr("PostScript")
 
         mainLayout = QVBoxLayout(self)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        checkFieldMessage = QLabel(self.tr(
-            '<html><head/><body><p>Check fields to use custom values. '
-            'Unchecked fields will use a default value that may be '
-            'empty. </p><p><a href="http://www.microsoft.com/'
-            'typography/otspec/post.htm"><span style=" text-'
-            'decoration: underline; color:#0000ff;">The OpenType '
-            'post table specification</span></a>. <a href="'
-            'http://partners.adobe.com/public/developer/en/font/'
-            'T1_SPEC.PDF"><span style=" text-decoration: underline; '
-            'color:#0000ff;">The Postscript Type 1 specification'
-            '</span></a>. <a href="http://www.adobe.com/devnet/font'
-            '/pdfs/5176.CFF.pdf"><span style=" text-decoration: '
-            'underline; color:#0000ff;">The CFF specification</span>'
-            '</a>. Missing attributes will be derived.</p></body>'
-            '</html>'))
-        checkFieldMessage.setWordWrap(True)
-        mainLayout.addWidget(checkFieldMessage)
-
-        tableScrollArea = QScrollArea(self)
+        tableScrollArea = TransparentScrollArea(self)
         tableScrollArea.setWidgetResizable(True)
         tableArea = QWidget(tableScrollArea)
         tableScrollArea.setWidget(tableArea)
@@ -1446,16 +1385,16 @@ class PostScriptTab(TabWidget):
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
 
         self.loadCustomIntoForm("postscriptFontName", "s",
-                                self.tr("fontName:"),
+                                self.tr("FontName:"),
                                 namingLayout)
         self.loadCustomIntoForm("postscriptFullName", "s",
-                                self.tr("fullName:"),
+                                self.tr("FullName:"),
                                 namingLayout)
         self.loadCustomIntoForm("postscriptWeightName", "s",
-                                self.tr("weightName:"),
+                                self.tr("WeightName:"),
                                 namingLayout)
         self.loadCustomIntoForm("postscriptUniqueID", "i",
-                                self.tr("uniqueID:"),
+                                self.tr("UniqueID:"),
                                 namingLayout)
 
         tableLayout.addWidget(namingGroup)
@@ -1467,37 +1406,37 @@ class PostScriptTab(TabWidget):
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
 
         self.loadCustomIntoForm("postscriptBlueValues", "if+",
-                                self.tr("blueValues:"),
+                                self.tr("BlueValues:"),
                                 hintsLayout)
         self.loadCustomIntoForm("postscriptOtherBlues", "if+",
-                                self.tr("otherBlues:"),
+                                self.tr("OtherBlues:"),
                                 hintsLayout)
         self.loadCustomIntoForm("postscriptFamilyBlues", "if+",
-                                self.tr("familyBlues:"),
+                                self.tr("FamilyBlues:"),
                                 hintsLayout)
         self.loadCustomIntoForm("postscriptFamilyOtherBlues", "if+",
-                                self.tr("familyOtherBlues:"),
+                                self.tr("FamilyOtherBlues:"),
                                 hintsLayout)
 
         self.loadCustomIntoForm("postscriptBlueFuzz", "if",
-                                self.tr("blueFuzz:"),
+                                self.tr("BlueFuzz:"),
                                 hintsLayout)
         self.loadCustomIntoForm("postscriptBlueScale", "if",
-                                self.tr("blueScale:"),
+                                self.tr("BlueScale:"),
                                 hintsLayout)
         self.loadCustomIntoForm("postscriptBlueShift", "if",
-                                self.tr("blueShift:"),
+                                self.tr("BlueShift:"),
                                 hintsLayout)
 
         self.loadCustomIntoForm("postscriptStemSnapH", "if+",
-                                self.tr("stemSnapH:"),
+                                self.tr("StemSnapH:"),
                                 hintsLayout)
         self.loadCustomIntoForm("postscriptStemSnapV", "if+",
-                                self.tr("stemSnapV:"),
+                                self.tr("StemSnapV:"),
                                 hintsLayout)
 
         self.loadCustomIntoForm("postscriptForceBold", "b",
-                                self.tr("forceBold:"),
+                                self.tr("ForceBold:"),
                                 hintsLayout)
 
         tableLayout.addWidget(hintsGroup)
@@ -1509,19 +1448,19 @@ class PostScriptTab(TabWidget):
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
 
         self.loadCustomIntoForm("postscriptDefaultWidthX", "if",
-                                self.tr("defaultWidthX:"),
+                                self.tr("DefaultWidthX:"),
                                 metricsLayout)
         self.loadCustomIntoForm("postscriptNominalWidthX", "if",
-                                self.tr("nominalWidthX:"),
+                                self.tr("NominalWidthX:"),
                                 metricsLayout)
         self.loadCustomIntoForm("postscriptUnderlineThickness", "if",
-                                self.tr("underlineThickness:"),
+                                self.tr("UnderlineThickness:"),
                                 metricsLayout)
         self.loadCustomIntoForm("postscriptUnderlinePosition", "if",
-                                self.tr("underlinePosition:"),
+                                self.tr("UnderlinePosition:"),
                                 metricsLayout)
         self.loadCustomIntoForm("postscriptSlantAngle", "if",
-                                self.tr("slantAngle:"),
+                                self.tr("SlantAngle:"),
                                 metricsLayout)
         self.loadCustomIntoForm("postscriptIsFixedPitch", "b",
                                 self.tr("isFixedPitch:"),
@@ -1536,7 +1475,7 @@ class PostScriptTab(TabWidget):
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
 
         self.loadCustomIntoForm("postscriptDefaultCharacter", "s",
-                                self.tr("defaultCharacter:"),
+                                self.tr("Default character:"),
                                 charactersLayout)
 
         windowsCharacterSetLabel = RCheckBox(self.tr("Windows character set:"))
