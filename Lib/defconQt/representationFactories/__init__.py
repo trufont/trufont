@@ -1,44 +1,44 @@
 from defcon import Font, Glyph, Component, Image, registerRepresentationFactory
-from defconQt.representationFactories.qPainterPathFactory import (
+from trufont.representationFactories.qPainterPathFactory import (
     QPainterPathFactory)
-from defconQt.representationFactories.glyphViewFactory import (
+from trufont.representationFactories.glyphViewFactory import (
     NoComponentsQPainterPathFactory, OnlyComponentsQPainterPathFactory,
     SplitLinesQPainterPathFactory, ComponentQPainterPathFactory,
     FilterSelectionFactory, FilterSelectionQPainterPathFactory,
     OutlineInformationFactory, QPixmapFactory)
-from defconQt.representationFactories.openTypeFactory import (
+from trufont.representationFactories.openTypeFactory import (
     TTFontFactory, QuadraticTTFontFactory)
 
 _fontFactories = {
-    "defconQt.TTFont": (TTFontFactory, None),
-    "defconQt.QuadraticTTFont": (QuadraticTTFontFactory, None),
+    "trufont.TTFont": (TTFontFactory, None),
+    "trufont.QuadraticTTFont": (QuadraticTTFontFactory, None),
 }
 # TODO: add a glyph pixmap factory parametrized on glyph size
 # TODO: fine-tune the destructive notifications
 _glyphFactories = {
-    "defconQt.QPainterPath": (QPainterPathFactory, None),
-    "defconQt.OnlyComponentsQPainterPath": (
+    "trufont.QPainterPath": (QPainterPathFactory, None),
+    "trufont.OnlyComponentsQPainterPath": (
         OnlyComponentsQPainterPathFactory, None),
-    "defconQt.NoComponentsQPainterPath": (
+    "trufont.NoComponentsQPainterPath": (
         NoComponentsQPainterPathFactory, None),
-    "defconQt.SplitLinesQPainterPath": (
+    "trufont.SplitLinesQPainterPath": (
         SplitLinesQPainterPathFactory, None),
-    "defconQt.FilterSelection": (
+    "trufont.FilterSelection": (
         FilterSelectionFactory, ("Glyph.Changed", "Glyph.SelectionChanged")),
-    "defconQt.FilterSelectionQPainterPath": (
+    "trufont.FilterSelectionQPainterPath": (
         FilterSelectionQPainterPathFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged")),
-    "defconQt.OutlineInformation": (
+    "trufont.OutlineInformation": (
         OutlineInformationFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged")),
 }
 _componentFactories = {
-    "defconQt.QPainterPath": (
+    "trufont.QPainterPath": (
         ComponentQPainterPathFactory, ("Component.Changed",
                                        "Component.BaseGlyphDataChanged")),
 }
 _imageFactories = {
-    "defconQt.QPixmap": (
+    "trufont.QPixmap": (
         QPixmapFactory, ("Image.FileNameChanged", "Image.ColorChanged",
                          "Image.ImageDataChanged"))
 }

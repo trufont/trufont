@@ -16,5 +16,5 @@ before_script:
   - sleep 3 # give xvfb some time to start
 # commands to run tests
 script:
-  - flake8 --config=setup.cfg Lib/defconQt
+  - flake8 --config=setup.cfg Lib/trufont
   - $PYTHONCMD setup.py test

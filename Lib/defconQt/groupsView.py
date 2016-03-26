@@ -1,5 +1,5 @@
-from defconQt.glyphCollectionView import GlyphCollectionWidget
-from defconQt.util import platformSpecific
+from trufont.glyphCollectionView import GlyphCollectionWidget
+from trufont.util import platformSpecific
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor, QPainter
 from PyQt5.QtWidgets import (
@@ -87,7 +87,7 @@ class GroupStackWidget(QWidget):
                 dist = self.maxWidth - glyph.width
             else:
                 dist = 0
-            glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
+            glyphPath = glyph.getRepresentation("trufont.QPainterPath")
             painter.save()
             painter.translate(x_offset + dist, 0)
             painter.fillPath(glyphPath, col)

@@ -1,6 +1,6 @@
-from defconQt import icons_db  # noqa
-from defconQt.glyphView import MainGlyphWindow
-from defconQt.objects.defcon import TGlyph
+from trufont import icons_db  # noqa
+from trufont.glyphView import MainGlyphWindow
+from trufont.objects.defcon import TGlyph
 from getpass import getuser
 from PyQt5.QtCore import QEvent, QSettings, QSize, Qt
 from PyQt5.QtGui import (
@@ -683,7 +683,7 @@ class GlyphsCanvas(QWidget):
                 if doKern:
                     painter.translate(kern, 0)
                 cur_width += gWidth + kern
-            glyphPath = glyph.getRepresentation("defconQt.QPainterPath")
+            glyphPath = glyph.getRepresentation("trufont.QPainterPath")
             painter.save()
             painter.scale(self.scale, yDirection * self.scale)
             if self._showMetrics:

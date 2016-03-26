@@ -22,7 +22,7 @@ except:
     print("    https://github.com/trufont/defcon")
 
 setup(
-    name="defconQt",
+    name="trufont",
     version="0.3.0",
     description="TruFont, a cross-platform font editor. Includes a set of Qt "
                 "objects for working with font data.",
@@ -31,15 +31,15 @@ setup(
     url="http://trufont.github.io",
     license="GNU LGPL v3/GNU GPL v3",
     packages=[
-        "defconQt",
-        "defconQt.objects",
-        "defconQt.representationFactories",
-        "defconQt.tools",
-        "defconQt.util",
+        "trufont",
+        "trufont.objects",
+        "trufont.representationFactories",
+        "trufont.tools",
+        "trufont.util",
     ],
     entry_points={
         "gui_scripts": [
-            "trufont =  defconQt.__main__:main"
+            "trufont =  trufont.__main__:main"
         ]
     },
     package_dir={"": "Lib"},

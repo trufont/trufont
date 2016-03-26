@@ -1,6 +1,6 @@
-from defconQt.objects.defcon import TContour
-from defconQt.tools.baseTool import BaseTool
-from defconQt.util.uiMethods import moveUIPoint
+from trufont.objects.defcon import TContour
+from trufont.tools.baseTool import BaseTool
+from trufont.util.uiMethods import moveUIPoint
 from PyQt5.QtCore import QPointF, Qt
 from PyQt5.QtWidgets import QApplication
 

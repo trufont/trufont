@@ -106,7 +106,7 @@ def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
 
 def drawGlyphWithAliasedLines(painter, glyph):
     curvePath, lines = glyph.getRepresentation(
-        "defconQt.SplitLinesQPainterPath")
+        "trufont.SplitLinesQPainterPath")
     painter.drawPath(curvePath)
     painter.save()
     # antialiased drawing blend a little in color with the background
@@ -255,7 +255,7 @@ def _drawBlues(painter, blues, rect, color):
 
 def drawGlyphImage(painter, glyph, scale, rect, selectionColor=None):
     image = glyph.image
-    pixmap = image.getRepresentation("defconQt.QPixmap")
+    pixmap = image.getRepresentation("trufont.QPixmap")
     if pixmap is None:
         return
     if selectionColor is None:
@@ -312,12 +312,12 @@ def drawGlyphFillAndStroke(
     if selectionColor is None:
         selectionColor = defaultColor("glyphSelection")
     # get the paths
-    contourPath = glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
+    contourPath = glyph.getRepresentation("trufont.NoComponentsQPainterPath")
     componentPath = glyph.getRepresentation(
-        "defconQt.OnlyComponentsQPainterPath")
+        "trufont.OnlyComponentsQPainterPath")
     try:
         selectionPath = glyph.getRepresentation(
-            "defconQt.FilterSelectionQPainterPath")
+            "trufont.FilterSelectionQPainterPath")
     except:
         traceback.print_exc()
         selectionPath = QPainterPath()
@@ -379,7 +379,7 @@ def drawGlyphPoints(
     if backgroundColor is None:
         backgroundColor = defaultColor("background")
     # get the outline data
-    outlineData = glyph.getRepresentation("defconQt.OutlineInformation")
+    outlineData = glyph.getRepresentation("trufont.OutlineInformation")
     points = []
     # start points
     if drawStartPoints and outlineData["startPoints"]:

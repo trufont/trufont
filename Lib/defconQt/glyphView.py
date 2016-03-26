@@ -1,14 +1,14 @@
-from defconQt.glyphCollectionView import headerFont
-from defconQt.objects.glyphDialogs import (
+from trufont.glyphCollectionView import headerFont
+from trufont.objects.glyphDialogs import (
     GotoDialog, AddLayerDialog, LayerActionsDialog)
 # TODO: make stdTools reexport?
-from defconQt.tools.baseTool import BaseTool
-from defconQt.tools.selectionTool import SelectionTool
-from defconQt.tools.penTool import PenTool
-from defconQt.tools.rulerTool import RulerTool
-from defconQt.tools.knifeTool import KnifeTool
-from defconQt.tools.removeOverlapButton import RemoveOverlapButton
-from defconQt.util import drawing
+from trufont.tools.baseTool import BaseTool
+from trufont.tools.selectionTool import SelectionTool
+from trufont.tools.penTool import PenTool
+from trufont.tools.rulerTool import RulerTool
+from trufont.tools.knifeTool import KnifeTool
+from trufont.tools.removeOverlapButton import RemoveOverlapButton
+from trufont.util import drawing
 from PyQt5.QtCore import QEvent, QMimeData, QPointF, QSize, Qt
 from PyQt5.QtGui import (
     QIcon, QKeySequence, QMouseEvent, QPainter, QPainterPath)
@@ -166,7 +166,7 @@ class MainGlyphWindow(QMainWindow):
         for contour in glyph:
             for point in contour:
                 point.selected = not point.selected
-        cutGlyph = glyph.getRepresentation("defconQt.FilterSelection")
+        cutGlyph = glyph.getRepresentation("trufont.FilterSelection")
         glyph.prepareUndo()
         glyph.holdNotifications()
         glyph.clear()
@@ -179,8 +179,8 @@ class MainGlyphWindow(QMainWindow):
         glyph = self.view.glyph()
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
-        copyGlyph = glyph.getRepresentation("defconQt.FilterSelection")
-        mimeData.setData("application/x-defconQt-glyph-data",
+        copyGlyph = glyph.getRepresentation("trufont.FilterSelection")
+        mimeData.setData("application/x-trufont-glyph-data",
                          pickle.dumps([copyGlyph.serialize(
                              blacklist=("name", "unicode")
                          )]))
@@ -190,9 +190,9 @@ class MainGlyphWindow(QMainWindow):
         glyph = self.view.glyph()
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
-        if mimeData.hasFormat("application/x-defconQt-glyph-data"):
+        if mimeData.hasFormat("application/x-trufont-glyph-data"):
             data = pickle.loads(mimeData.data(
-                "application/x-defconQt-glyph-data"))
+                "application/x-trufont-glyph-data"))
             if len(data) == 1:
                 pen = glyph.getPointPen()
                 pasteGlyph = glyph.__class__()
@@ -1130,7 +1130,7 @@ class GlyphView(QWidget):
                     ret["contours"].append(contour)
                     ret["points"].append(point)
         for component in reversed(self._glyph.components):
-            path = component.getRepresentation("defconQt.QPainterPath")
+            path = component.getRepresentation("trufont.QPainterPath")
             if func(path, obj):
                 if justOne:
                     return (component, None)

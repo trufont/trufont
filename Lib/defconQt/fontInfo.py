@@ -7,9 +7,9 @@ from PyQt5.QtWidgets import (
     QLabel, QLineEdit, QListView, QPlainTextEdit, QTabWidget, QVBoxLayout,
     QHBoxLayout, QFormLayout, QWidget, QScrollArea, QSpacerItem, QSizePolicy,
     QSpinBox)
-from defconQt.util.rcheckbox import RCheckBox
-from defconQt.util.bitlistview import BitListView
-from defconQt.util.floatspinbox import FloatSpinBox
+from trufont.util.rcheckbox import RCheckBox
+from trufont.util.bitlistview import BitListView
+from trufont.util.floatspinbox import FloatSpinBox
 
 
 def TransparentScrollArea(parent=None):

@@ -1,5 +1,5 @@
-from defconQt.tools.baseTool import BaseTool
-from defconQt.util import drawing
+from trufont.tools.baseTool import BaseTool
+from trufont.util import drawing
 from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QApplication

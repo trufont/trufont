@@ -1,4 +1,4 @@
-from defconQt.baseCodeEditor import CodeEditor, CodeHighlighter
+from trufont.baseCodeEditor import CodeEditor, CodeHighlighter
 from keyword import kwlist
 from PyQt5.QtCore import pyqtSignal, QDir, QSettings, QStandardPaths, Qt, QUrl
 from PyQt5.QtGui import (

@@ -1,6 +1,6 @@
-from defconQt import __version__, representationFactories
-from defconQt import icons_db  # noqa
-from defconQt.fontView import Application
+from trufont import __version__, representationFactories
+from trufont import icons_db  # noqa
+from trufont.fontView import Application
 from PyQt5.QtCore import (
     QCommandLineParser, QSettings, QTranslator, QLocale,
     QLibraryInfo)

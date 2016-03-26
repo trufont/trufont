@@ -2,9 +2,9 @@ import unittest
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget
-from defconQt.fontView import Application, MainWindow
-from defconQt.fontInfo import InfoTabWidget
-from defconQt.objects.defcon import TFont
+from trufont.fontView import Application, MainWindow
+from trufont.fontInfo import InfoTabWidget
+from trufont.objects.defcon import TFont
 
 
 class InfoTabWidgetTest(unittest.TestCase):

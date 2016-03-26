@@ -1,17 +1,17 @@
 from defcon.tools.notifications import NotificationCenter
-from defconQt import __version__
-from defconQt.featureTextEditor import MainEditWindow
-from defconQt.fontInfo import TabDialog
-from defconQt.glyphCollectionView import GlyphCollectionWidget
-from defconQt.glyphView import MainGlyphWindow
-from defconQt.groupsView import GroupsWindow
-from defconQt.scriptingWindow import MainScriptingWindow
-from defconQt.objects import errorReports
-from defconQt.objects.colorWidgets import ColorVignette
-from defconQt.objects.defcon import GlyphSet, TComponent, TFont, TGlyph
-from defconQt.util import platformSpecific
 from defcon import Color
-from defconQt.metricsWindow import MainMetricsWindow, comboBoxItems
+from trufont import __version__
+from trufont.featureTextEditor import MainEditWindow
+from trufont.fontInfo import TabDialog
+from trufont.glyphCollectionView import GlyphCollectionWidget
+from trufont.glyphView import MainGlyphWindow
+from trufont.groupsView import GroupsWindow
+from trufont.scriptingWindow import MainScriptingWindow
+from trufont.objects import errorReports
+from trufont.objects.colorWidgets import ColorVignette
+from trufont.objects.defcon import GlyphSet, TComponent, TFont, TGlyph
+from trufont.util import platformSpecific
+from trufont.metricsWindow import MainMetricsWindow, comboBoxItems
 from PyQt5.QtCore import (
     pyqtSignal, QEvent, QMimeData, QRegularExpression, QSettings, Qt)
 from PyQt5.QtGui import (
@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QPushButton, QRadioButton, QSlider, QSplitter, QTabWidget,
     QTextEdit, QToolTip, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
-from defconQt.util.rlabel import RLabel
+from trufont.util.rlabel import RLabel
 from collections import OrderedDict
 import os
 import pickle
@@ -1045,7 +1045,7 @@ class MainWindow(QMainWindow):
             )
             app.postNotification("fontWillGenerate", data)
             try:
-                otf = self.font.getRepresentation("defconQt.TTFont")
+                otf = self.font.getRepresentation("trufont.TTFont")
             except Exception as e:
                 errorReports.showCriticalException(e)
                 return
@@ -1232,7 +1232,7 @@ class MainWindow(QMainWindow):
             ))
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
-        mimeData.setData("application/x-defconQt-glyph-data",
+        mimeData.setData("application/x-trufont-glyph-data",
                          pickle.dumps(pickled))
         clipboard.setMimeData(mimeData)
 
@@ -1249,16 +1249,16 @@ class MainWindow(QMainWindow):
             pickled.append(componentGlyph.serialize())
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
-        mimeData.setData("application/x-defconQt-glyph-data",
+        mimeData.setData("application/x-trufont-glyph-data",
                          pickle.dumps(pickled))
         clipboard.setMimeData(mimeData)
 
     def paste(self):
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
-        if mimeData.hasFormat("application/x-defconQt-glyph-data"):
+        if mimeData.hasFormat("application/x-trufont-glyph-data"):
             data = pickle.loads(mimeData.data(
-                "application/x-defconQt-glyph-data"))
+                "application/x-trufont-glyph-data"))
             glyphs = self.collectionWidget.getSelectedGlyphs()
             if len(data) == len(glyphs):
                 for pickled, glyph in zip(data, glyphs):

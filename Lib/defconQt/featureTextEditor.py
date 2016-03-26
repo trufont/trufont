@@ -1,4 +1,4 @@
-from defconQt.baseCodeEditor import CodeEditor, CodeHighlighter
+from trufont.baseCodeEditor import CodeEditor, CodeHighlighter
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (QColor, QFont, QKeySequence, QTextCharFormat,
                          QTextCursor)

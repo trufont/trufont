@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication
-from defconQt.tools.baseButton import BaseButton
+from trufont.tools.baseButton import BaseButton
 
 
 def removeSelectionOverlap(glyph):

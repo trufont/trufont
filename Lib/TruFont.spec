@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['defconQt/__main__.py'],
+a = Analysis(['trufont/__main__.py'],
              binaries=None,
              datas=None,
              hiddenimports=[],
@@ -25,10 +25,10 @@ exe = EXE(pyz,
           strip=None,
           upx=True,
           console=False,
-          icon='defconQt/resources/app.ico')
+          icon='trufont/resources/app.ico')
 app = BUNDLE(exe,
              name='TruFont.app',
-             icon='defconQt/resources/app.icns',
+             icon='trufont/resources/app.icns',
              bundle_identifier='io.github.trufont',
              info_plist={
                'NSHighResolutionCapable': 'True',

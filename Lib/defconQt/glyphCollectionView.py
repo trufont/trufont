@@ -1,4 +1,4 @@
-from defconQt.util import platformSpecific
+from trufont.util import platformSpecific
 from PyQt5.QtCore import QMimeData, QRectF, QSize, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QCursor, QDrag, QFont, QFontMetrics, QKeySequence,
@@ -597,7 +597,7 @@ class GlyphCollectionWidget(QWidget):
 
                 if not glyph.template:
                     font = glyph.getParent()
-                    outline = glyph.getRepresentation("defconQt.QPainterPath")
+                    outline = glyph.getRepresentation("trufont.QPainterPath")
                     uPM = font.info.unitsPerEm
                     if uPM is None or not uPM > 0:
                         uPM = 1000

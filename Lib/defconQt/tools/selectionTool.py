@@ -1,8 +1,8 @@
-from defconQt.objects.defcon import TAnchor, TComponent
-from defconQt.objects.glyphDialogs import AddAnchorDialog, AddComponentDialog
-from defconQt.tools.baseTool import BaseTool
-from defconQt.util import bezierMath, platformSpecific
-from defconQt.util.uiMethods import moveUISelection, removeUISelection
+from trufont.objects.defcon import TAnchor, TComponent
+from trufont.objects.glyphDialogs import AddAnchorDialog, AddComponentDialog
+from trufont.tools.baseTool import BaseTool
+from trufont.util import bezierMath, platformSpecific
+from trufont.util.uiMethods import moveUISelection, removeUISelection
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPainter, QTransform
 from PyQt5.QtWidgets import (
