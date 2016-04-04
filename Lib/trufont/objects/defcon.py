@@ -1,8 +1,10 @@
 from booleanOperations.booleanGlyph import BooleanGlyph
-from defcon import Font, Contour, Glyph, Layer, Anchor, Component, Point
+from defcon import Font, Contour, Glyph, Layer, Anchor, Component, Point, Image
 from defcon.objects.base import BaseObject
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
+from trufont.objects import settings
+import extractor
 import fontTools
 
 
@@ -16,12 +18,39 @@ class TFont(Font):
             ("glyphClass", TGlyph),
             ("glyphContourClass", TContour),
             ("glyphPointClass", TPoint),
-            ("layerClass", TLayer)
+            ("glyphImageClass", TImage),
+            ("layerClass", TLayer),
         )
         for attr, defaultClass in attrs:
             if attr not in kwargs:
                 kwargs[attr] = defaultClass
         super().__init__(*args, **kwargs)
+
+    @classmethod
+    def newStandardFont(cls):
+        font = cls()
+        font.info.unitsPerEm = 1000
+        font.info.ascender = 750
+        font.info.descender = -250
+        font.info.capHeight = 750
+        font.info.xHeight = 500
+
+        defaultGlyphSet = settings.defaultGlyphSet()
+        if defaultGlyphSet:
+            glyphNames = None
+            glyphSets = settings.readGlyphSets()
+            if defaultGlyphSet in glyphSets:
+                glyphNames = glyphSets[defaultGlyphSet]
+            if glyphNames is not None:
+                for name in glyphNames:
+                    font.newStandardGlyph(name, asTemplate=True)
+        font.dirty = False
+
+        app = QApplication.instance()
+        data = dict(font=font)
+        app.postNotification("newFontCreated", data)
+
+        return font
 
     # TODO: maybe take this out of the class
     def newStandardGlyph(self, name, override=False, addUnicode=True,
@@ -30,12 +59,95 @@ class TFont(Font):
             if name in self:
                 return None
         glyph = self.newGlyph(name)
+        if asTemplate:
+            glyph.disableNotifications()
         glyph.width = width
         if addUnicode:
             glyph.autoUnicodes()
+        if asTemplate:
+            glyph.enableNotifications()
         glyph.template = asTemplate
         glyph.markColor = markColor
+
+        app = QApplication.instance()
+        data = dict(glyph=glyph)
+        app.postNotification("newGlyphCreated", data)
+
         return glyph
+
+    def extract(self, path):
+        fileFormat = extractor.extractFormat(path)
+        app = QApplication.instance()
+        data = dict(
+            font=self,
+            format=fileFormat,
+        )
+        app.postNotification("fontWillExtract", data)
+        extractor.extractUFO(path, self, fileFormat)
+
+    def save(self, path=None, formatVersion=None,
+             removeUnreferencedImages=False, progressBar=None):
+        app = QApplication.instance()
+        data = dict(
+            font=self,
+            path=path or self.path,
+        )
+        app.postNotification("fontWillSave", data)
+        super().save(
+            path, formatVersion, removeUnreferencedImages, progressBar)
+        for glyph in self:
+            glyph.dirty = False
+        self.dirty = False
+        app.postNotification("fontSaved", data)
+
+    def export(self, path, format="otf"):
+        if format != "otf":
+            raise ValueError("unknown format: %s")
+        missingAttrs = []
+        for attr in ("familyName", "styleName", "unitsPerEm", "ascender",
+                     "descender", "xHeight", "capHeight"):
+            if getattr(self.info, attr) is None:
+                missingAttrs.append(attr)
+        if missingAttrs:
+            raise ValueError("font info attributes required for export are "
+                             "missing: {}".format(" ".join(missingAttrs)))
+        # go ahead
+        app = QApplication.instance()
+        data = dict(
+            font=self,
+            format=format,
+            path=path,
+        )
+        app.postNotification("fontWillExport", data)
+        otf = self.getRepresentation("TruFont.TTFont")
+        otf.save(path)
+        app.postNotification("fontExported", data)
+
+    # sort descriptor
+
+    def _get_sortDescriptor(self):
+        # TODO: I'd use defcon sortDescriptor but there is no hard
+        # standard for glyphList
+        value = self.lib.get("com.trufont.sortDescriptor", None)
+        if value is not None:
+            value = list(value)
+        return value
+
+    def _set_sortDescriptor(self, value):
+        oldValue = self.lib.get("com.trufont.sortDescriptor")
+        if oldValue == value:
+            return
+        if value is None or len(value) == 0:
+            value = None
+            if "com.trufont.sortDescriptor" in self.lib:
+                del self.lib["com.trufont.sortDescriptor"]
+        else:
+            self.lib["com.trufont.sortDescriptor"] = value
+        self.postNotification("Font.SortDescriptorChanged",
+                              data=dict(oldValue=oldValue, newValue=value))
+
+    sortDescriptor = property(_get_sortDescriptor, _set_sortDescriptor,
+                              doc="The defcon sort descriptor.")
 
 
 class TLayer(Layer):
@@ -48,7 +160,7 @@ class TLayer(Layer):
 class TGlyph(Glyph):
 
     def __init__(self, *args, **kwargs):
-        super(TGlyph, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._template = False
         self._undoManager = UndoManager(self)
 
@@ -205,11 +317,33 @@ class TGlyph(Glyph):
 
         self.dirty = True
 
+    def scale(self, pt, center=(0, 0)):
+        for contour in self:
+            contour.scale(pt, center=center)
+        for component in self.components:
+            component.scale(pt, center=center)
+        for anchor in self.anchors:
+            anchor.scale(pt, center=center)
+
+    # TODO: transform
+
+    # TODO: rotate
+
+    # TODO: skew
+
+    def snap(self, base):
+        for contour in self:
+            contour.snap(base)
+        for component in self.components:
+            component.snap(base)
+        for anchor in self.anchors:
+            anchor.snap(base)
+
 
 class TContour(Contour):
 
     def __init__(self, *args, **kwargs):
-        if not "pointClass" in kwargs:
+        if "pointClass" not in kwargs:
             kwargs["pointClass"] = TPoint
         super().__init__(*args, **kwargs)
 
@@ -260,11 +394,23 @@ class TContour(Contour):
     def getPoint(self, index):
         return self[index % len(self)]
 
+    def scale(self, pt, center=(0, 0)):
+        for point in self:
+            point.x, point.y = _scalePointFromCenter(
+                (point.x, point.y), pt, center)
+        self.dirty = True
+
+    def snap(self, base):
+        for point in self:
+            point.x = _snap(point.x, base)
+            point.y = _snap(point.y, base)
+        self.dirty = True
+
 
 class TAnchor(Anchor):
     def __init__(self, *args, **kwargs):
         self._selected = False
-        super(TAnchor, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if "anchorDict" in kwargs:
             anchorDict = kwargs["anchorDict"]
         else:
@@ -286,11 +432,19 @@ class TAnchor(Anchor):
         _get_selected, _set_selected,
         doc="A boolean indicating the selected state of the anchor.")
 
+    def scale(self, pt, center=(0, 0)):
+        self.x, self.y = _scalePointFromCenter(
+            (self.x, self.y), pt, center)
+
+    def snap(self, base):
+        self.x = _snap(self.x, base)
+        self.y = _snap(self.y, base)
+
 
 class TComponent(Component):
     def __init__(self, *args, **kwargs):
         self._selected = False
-        super(TComponent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _get_selected(self):
         return self._selected
@@ -301,17 +455,35 @@ class TComponent(Component):
         self._selected = value
         self.postNotification(notification="Component.SelectionChanged")
 
-    # TODO: add to repr
     selected = property(
         _get_selected, _set_selected,
         doc="A boolean indicating the selected state of the component.")
+
+    def scale(self, pt, center=(0, 0)):
+        x, y = pt
+        xScale, xyScale, yxScale, yScale, xOffset, yOffset = \
+            self._transformation
+        xOffset, yOffset = _scalePointFromCenter(
+            (xOffset, yOffset), pt, center)
+        xScale, yScale = xScale * x, yScale * y
+        self.transformation = (
+            xScale, xyScale, yxScale, yScale, xOffset, yOffset)
+
+    def snap(self, base):
+        xScale, xyScale, yxScale, yScale, xOffset, yOffset = \
+            self._transformation
+        xOffset = _snap(xOffset, base)
+        yOffset = _snap(yOffset, base)
+        # TODO: should scale be snapped too?
+        self.transformation = (
+            xScale, xyScale, yxScale, yScale, xOffset, yOffset)
 
 
 class TPoint(Point):
     __slots__ = ["_selected"]
 
     def __init__(self, pt, selected=False, **kwargs):
-        super(TPoint, self).__init__(pt, **kwargs)
+        super().__init__(pt, **kwargs)
         self._selected = selected
 
     def _get_selected(self):
@@ -320,35 +492,34 @@ class TPoint(Point):
     def _set_selected(self, value):
         self._selected = value
 
-    # TODO: add to repr
     selected = property(
         _get_selected, _set_selected,
         doc="A boolean indicating the selected state of the point.")
 
 
-class GlyphSet(object):
-    __slots__ = ["_name", "_glyphNames"]
+class TImage(Image):
+    def __init__(self, *args, **kwargs):
+        self._selected = False
+        super().__init__(*args, **kwargs)
+        if "imageDict" in kwargs:
+            imageDict = kwargs["imageDict"]
+        else:
+            imageDict = None
+        if imageDict is not None:
+            self._selected = imageDict.get("selected")
 
-    def __init__(self, glyphNames, name):
-        self._name = str(name)
-        self._glyphNames = glyphNames
+    def _get_selected(self):
+        return self._selected
 
-    def _get_name(self):
-        return self._name
+    def _set_selected(self, value):
+        if value == self._selected:
+            return
+        self._selected = value
+        self.postNotification(notification="Image.SelectionChanged")
 
-    def _set_name(self, name):
-        self._name = name
-
-    name = property(_get_name, _set_name, doc="Glyph set name.")
-
-    def _get_glyphNames(self):
-        return self._glyphNames
-
-    def _set_glyphNames(self, glyphNames):
-        self._glyphNames = glyphNames
-
-    glyphNames = property(_get_glyphNames, _set_glyphNames,
-                          doc="List of glyph names.")
+    selected = property(
+        _get_selected, _set_selected,
+        doc="A boolean indicating the selected state of the anchor.")
 
 
 class UndoManager(QObject):
@@ -418,3 +589,19 @@ class UndoManager(QObject):
             self.canUndoChanged.emit(True)
         if not self.canRedo():
             self.canRedoChanged.emit(False)
+
+
+def _scalePointFromCenter(point, scale, center):
+    pointX, pointY = point
+    scaleX, scaleY = scale
+    centerX, centerY = center
+    ogCenter = (centerX, centerY)
+    scaledCenter = (centerX * scaleX, centerY * scaleY)
+    shiftVal = (scaledCenter[0] - ogCenter[0], scaledCenter[1] - ogCenter[1])
+    scaledPointX = (pointX * scaleX) - shiftVal[0]
+    scaledPointY = (pointY * scaleY) - shiftVal[1]
+    return (scaledPointX, scaledPointY)
+
+
+def _snap(x, base=5):
+    return base * round(x / base)

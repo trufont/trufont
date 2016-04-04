@@ -1,18 +1,22 @@
+from defconQt import representationFactories as baseRepresentationFactories
 from trufont import __version__, representationFactories
-from trufont import icons_db  # noqa
-from trufont.fontView import Application
+from trufont.objects.application import Application
+from trufont.resources import icons_db  # noqa
 from PyQt5.QtCore import (
-    QCommandLineParser, QSettings, QTranslator, QLocale,
-    QLibraryInfo)
+    QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 import os
 import sys
+import traceback
+
+_showMessages = True
 
 
 def main():
     global app
     # register representation factories
+    baseRepresentationFactories.registerAllFactories()
     representationFactories.registerAllFactories()
     # initialize the app
     app = Application(sys.argv)
@@ -20,7 +24,10 @@ def main():
     app.setOrganizationDomain("trufont.github.io")
     app.setApplicationName("TruFont")
     app.setApplicationVersion(__version__)
-    app.setWindowIcon(QIcon(":/resources/app.png"))
+    app.setWindowIcon(QIcon(":app.png"))
+
+    # Exception handling
+    sys.excepthook = exceptionCallback
 
     # Qt's translation for itself. May not be installed.
     qtTranslator = QTranslator()
@@ -45,7 +52,7 @@ def main():
         "Command-line parser", "The UFO files to open."))
     parser.process(app)
     args = parser.positionalArguments()
-    if not len(args):
+    if not args:
         fontPath = None
         # maybe load recent file
         settings = QSettings()
@@ -62,6 +69,26 @@ def main():
         for fontPath in args:
             app.openFile(fontPath)
     sys.exit(app.exec_())
+
+
+def exceptionCallback(etype, value, tb):
+    global _showMessages
+    text = "TruFont has encountered a problem and must shutdown."
+    exc = traceback.format_exception(etype, value, tb)
+    exc_text = "".join(exc)
+    print(exc_text)
+
+    if _showMessages:
+        messageBox = QMessageBox(QMessageBox.Critical, ":(", text)
+        messageBox.setStandardButtons(
+            QMessageBox.Ok | QMessageBox.Close | QMessageBox.Ignore)
+        messageBox.setDetailedText(exc_text)
+        messageBox.setInformativeText(str(value))
+        result = messageBox.exec_()
+        if result == QMessageBox.Close:
+            sys.exit(1)
+        elif result == QMessageBox.Ignore:
+            _showMessages = False
 
 if __name__ == "__main__":
     main()

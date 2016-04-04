@@ -1,46 +1,32 @@
-from defcon import Font, Glyph, Component, Image, registerRepresentationFactory
-from trufont.representationFactories.qPainterPathFactory import (
-    QPainterPathFactory)
+from defcon import Font, Glyph, Component, registerRepresentationFactory
+from trufont.representationFactories.glyphCellFactory import (
+    TFGlyphCellFactory)
 from trufont.representationFactories.glyphViewFactory import (
-    NoComponentsQPainterPathFactory, OnlyComponentsQPainterPathFactory,
-    SplitLinesQPainterPathFactory, ComponentQPainterPathFactory,
-    FilterSelectionFactory, FilterSelectionQPainterPathFactory,
-    OutlineInformationFactory, QPixmapFactory)
+    ComponentQPainterPathFactory, FilterSelectionFactory,
+    FilterSelectionQPainterPathFactory, SplitLinesQPainterPathFactory)
 from trufont.representationFactories.openTypeFactory import (
     TTFontFactory, QuadraticTTFontFactory)
 
 _fontFactories = {
-    "trufont.TTFont": (TTFontFactory, None),
-    "trufont.QuadraticTTFont": (QuadraticTTFontFactory, None),
+    "TruFont.TTFont": (TTFontFactory, None),
+    "TruFont.QuadraticTTFont": (QuadraticTTFontFactory, None),
 }
-# TODO: add a glyph pixmap factory parametrized on glyph size
 # TODO: fine-tune the destructive notifications
 _glyphFactories = {
-    "trufont.QPainterPath": (QPainterPathFactory, None),
-    "trufont.OnlyComponentsQPainterPath": (
-        OnlyComponentsQPainterPathFactory, None),
-    "trufont.NoComponentsQPainterPath": (
-        NoComponentsQPainterPathFactory, None),
-    "trufont.SplitLinesQPainterPath": (
+    "TruFont.SplitLinesQPainterPath": (
         SplitLinesQPainterPathFactory, None),
-    "trufont.FilterSelection": (
+    "TruFont.FilterSelection": (
         FilterSelectionFactory, ("Glyph.Changed", "Glyph.SelectionChanged")),
-    "trufont.FilterSelectionQPainterPath": (
+    "TruFont.FilterSelectionQPainterPath": (
         FilterSelectionQPainterPathFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged")),
-    "trufont.OutlineInformation": (
-        OutlineInformationFactory,
-        ("Glyph.Changed", "Glyph.SelectionChanged")),
+    "TruFont.GlyphCell": (
+        TFGlyphCellFactory, None),
 }
 _componentFactories = {
-    "trufont.QPainterPath": (
-        ComponentQPainterPathFactory, ("Component.Changed",
-                                       "Component.BaseGlyphDataChanged")),
-}
-_imageFactories = {
-    "trufont.QPixmap": (
-        QPixmapFactory, ("Image.FileNameChanged", "Image.ColorChanged",
-                         "Image.ImageDataChanged"))
+    "TruFont.QPainterPath": (
+        ComponentQPainterPathFactory, (
+            "Component.Changed", "Component.BaseGlyphDataChanged")),
 }
 
 
@@ -57,8 +43,4 @@ def registerAllFactories():
             _componentFactories.items():
         registerRepresentationFactory(
             Component, name, factory,
-            destructiveNotifications=destructiveNotifications)
-    for name, (factory, destructiveNotifications) in _imageFactories.items():
-        registerRepresentationFactory(
-            Image, name, factory,
             destructiveNotifications=destructiveNotifications)
