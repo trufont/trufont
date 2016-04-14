@@ -27,7 +27,7 @@ class GlyphWindow(BaseMainWindow):
         menuBar = self.menuBar()
         fileMenu = QMenu(self.tr("&File"), self)
         fileMenu.addAction(
-            self.tr("&Save"), self.parent().saveFile, QKeySequence.Save)
+            self.tr("&Save"), self.saveFile, QKeySequence.Save)
         action = fileMenu.addAction(
             self.tr("&Close"), self.close, platformSpecific.closeKeySequence())
         menuBar.addMenu(fileMenu)
