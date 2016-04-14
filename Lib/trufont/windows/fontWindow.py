@@ -315,7 +315,7 @@ class FontWindow(BaseMainWindow):
     def openFile(self):
         path, _ = QFileDialog.getOpenFileName(
             self, self.tr("Open File"), '',
-            platformSpecific.fileFormats
+            platformSpecific.fileFormat
         )
         if path:
             QApplication.instance().openFile(path)
