@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# import sys
 from setuptools import setup
 
 try:
@@ -22,24 +21,26 @@ except:
     print("    https://github.com/trufont/defcon")
 
 setup(
-    name="defconQt",
-    version="0.3.0",
-    description="TruFont, a cross-platform font editor. Includes a set of Qt "
-                "objects for working with font data.",
+    name="trufont",
+    version="0.4.0",
+    description="TruFont, a modular and cross-platform font editor.",
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
     url="http://trufont.github.io",
     license="GNU LGPL v3/GNU GPL v3",
     packages=[
-        "defconQt",
-        "defconQt.objects",
-        "defconQt.representationFactories",
-        "defconQt.tools",
-        "defconQt.util",
+        "trufont",
+        "trufont.controls",
+        "trufont.drawingTools",
+        "trufont.objects",
+        "trufont.representationFactories",
+        "trufont.resources",
+        "trufont.tools",
+        "trufont.windows",
     ],
     entry_points={
         "gui_scripts": [
-            "trufont =  defconQt.__main__:main"
+            "trufont =  trufont.__main__:main"
         ]
     },
     package_dir={"": "Lib"},

@@ -34,12 +34,12 @@ To install and run,
     git clone --depth=1 https://github.com/trufont/trufont ;
     cd trufont ;
     sudo python3 setup.py install --record installed-files.txt ;
-    python3 -m defconQt ;
+    python3 -m trufont ;
 
 Or to then run from source,
 
     cd Lib/ ; 
-    python3 -m defconQt ;
+    python3 -m trufont ;
 
 To build installation packages,
 
@@ -78,12 +78,12 @@ To install and run,
     git clone --depth=1 https://github.com/trufont/trufont ;
     cd trufront ;
     sudo python3 setup.py install --record installed-files.txt ;
-    python3 -m defconQt ;
+    python3 -m trufont ;
 
 Or to then run from source,
 
     cd Lib/ ; 
-    python3 -m defconQt ;
+    python3 -m trufont ;
 
 ## Uninstall
 
