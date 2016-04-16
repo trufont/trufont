@@ -519,6 +519,7 @@ class GlyphCanvasWidget(GlyphWidget):
         self.setAcceptDrops(True)
         self._currentTool = BaseTool()
         self._mouseDown = False
+        self._preview = False
 
         # inbound notification
         app = QApplication.instance()
@@ -562,12 +563,28 @@ class GlyphCanvasWidget(GlyphWidget):
         )
         app.postNotification("glyphViewDrawBackground", data)
 
+    def drawGlyphLayer(self, painter, glyph, layerName):
+        if self._preview:
+            if layerName is None:
+                self.drawFillAndStroke(painter, glyph, layerName)
+        else:
+            super().drawGlyphLayer(painter, glyph, layerName)
+
     def drawFillAndStroke(self, painter, glyph, layerName):
-        showFill = self.drawingAttribute("showGlyphFill", layerName)
-        showStroke = self.drawingAttribute("showGlyphStroke", layerName)
+        if self._preview:
+            contourFillColor = Qt.black
+            drawSelection = False
+            showFill = True
+            showStroke = False
+        else:
+            contourFillColor = None
+            drawSelection = True
+            showFill = self.drawingAttribute("showGlyphFill", layerName)
+            showStroke = self.drawingAttribute("showGlyphStroke", layerName)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale, self._drawingRect,
-            drawFill=showFill, drawStroke=showStroke)
+            contourFillColor=contourFillColor, drawFill=showFill,
+            drawSelection=drawSelection, drawStroke=showStroke)
 
     def drawPoints(self, painter, glyph, layerName):
         if not self._impliedPointSize > GlyphViewMinSizeForDetails:
@@ -656,6 +673,10 @@ class GlyphCanvasWidget(GlyphWidget):
             super().dropEvent(event)
 
     def keyPressEvent(self, event):
+        if not event.isAutoRepeat() and event.key() == Qt.Key_Space:
+            if not self._mouseDown:
+                self._preview = True
+                self.update()
         self._redirectEvent(event, self._currentTool.keyPressEvent)
         app = QApplication.instance()
         data = dict(
@@ -665,6 +686,9 @@ class GlyphCanvasWidget(GlyphWidget):
         app.postNotification("glyphViewKeyPress", data)
 
     def keyReleaseEvent(self, event):
+        if not event.isAutoRepeat() and event.key() == Qt.Key_Space:
+            self._preview = False
+            self.update()
         self._redirectEvent(event, self._currentTool.keyReleaseEvent)
         app = QApplication.instance()
         data = dict(
@@ -730,6 +754,8 @@ class GlyphCanvasWidget(GlyphWidget):
         return True
 
     def _redirectEvent(self, event, callback, transmuteMouseEvent=False):
+        if self._preview:
+            return
         if transmuteMouseEvent:
             # construct a new event with pos in canvas coordinates
             canvasPos = self.mapToCanvas(event.localPos())
