@@ -4,12 +4,22 @@ dist: trusty
 language: python
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python3-pyqt5 python3-pip python3-flake8
-  - sudo pip3 install --upgrade setuptools
-  - sudo pip3 install -r requirements.txt
+  - sudo apt-get install -qq -y python3-pyqt5
   - export PYTHONCMD=/usr/bin/python3
+  - curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | sudo $PYTHONCMD
+  - sudo $PYTHONCMD -m pip install --upgrade virtualenv
+  - $PYTHONCMD -m virtualenv --system-site-packages .env
+  - LIBDIR="$(pwd)/.env/lib/python3.4/site-packages"
+  - cp -r /usr/lib/python3/dist-packages/PyQt5 "$LIBDIR/PyQt5"
+  - cp /usr/lib/python3/dist-packages/sip.cpython-*.so "$LIBDIR/"
+  - source .env/bin/activate
+  - python --version
+  - python -c "import sip; print('sip version:', sip.SIP_VERSION_STR)"
+  - python -c "from PyQt5 import Qt; print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
+  - pip install flake8 pytest
+  - pip install -r requirements.txt
 install:
-  - $PYTHONCMD setup.py install --user
+  - pip install -v .
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
@@ -17,4 +27,4 @@ before_script:
 # commands to run tests
 script:
   - flake8 --config=setup.cfg Lib/trufont
-  - $PYTHONCMD setup.py test
+  - py.test -v -r a tests/
