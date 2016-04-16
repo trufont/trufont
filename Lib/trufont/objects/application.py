@@ -6,7 +6,6 @@ from trufont.drawingTools.penTool import PenTool
 from trufont.drawingTools.rulerTool import RulerTool
 from trufont.drawingTools.knifeTool import KnifeTool
 from trufont.windows.fontWindow import FontWindow
-from trufont.windows.outputWindow import OutputWindow
 from trufont.objects import settings
 from trufont.objects.defcon import TFont
 from trufont.tools import errorReports, glyphList
@@ -25,7 +24,7 @@ class Application(QApplication):
         self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")
         self.focusChanged.connect(self.updateCurrentMainWindow)
         self.GL2UV = None
-        self.outputWindow = OutputWindow()
+        self.outputWindow = None
 
     def event(self, event):
         eventType = event.type()

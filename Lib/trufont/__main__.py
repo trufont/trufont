@@ -2,6 +2,7 @@ from defconQt import representationFactories as baseRepresentationFactories
 from trufont import __version__, representationFactories
 from trufont.objects.application import Application
 from trufont.resources import icons_db  # noqa
+from trufont.windows.outputWindow import OutputWindow
 from PyQt5.QtCore import (
     QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
 from PyQt5.QtGui import QIcon
@@ -26,6 +27,8 @@ def main():
     app.setApplicationVersion(__version__)
     app.setWindowIcon(QIcon(":app.png"))
 
+    # Install stream redirection
+    app.outputWindow = OutputWindow()
     # Exception handling
     sys.excepthook = exceptionCallback
 
