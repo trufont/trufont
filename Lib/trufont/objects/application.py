@@ -1,5 +1,5 @@
 from defcon.tools.notifications import NotificationCenter
-from PyQt5.QtCore import QEvent, QSettings, Qt
+from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.selectionTool import SelectionTool
 from trufont.drawingTools.penTool import PenTool
@@ -7,6 +7,7 @@ from trufont.drawingTools.rulerTool import RulerTool
 from trufont.drawingTools.knifeTool import KnifeTool
 from trufont.windows.fontWindow import FontWindow
 from trufont.windows.outputWindow import OutputWindow
+from trufont.objects import settings
 from trufont.objects.defcon import TFont
 from trufont.tools import errorReports, glyphList
 import os
@@ -56,8 +57,7 @@ class Application(QApplication):
             notification=notification, observable=self, data=data)
 
     def loadGlyphList(self):
-        settings = QSettings()
-        glyphListPath = settings.value("settings/glyphListPath", "", str)
+        glyphListPath = settings.glyphListPath()
         if glyphListPath and os.path.exists(glyphListPath):
             try:
                 glyphList_ = glyphList.parseGlyphList(glyphListPath)
@@ -66,7 +66,7 @@ class Application(QApplication):
                     "The glyph list at {0} cannot "
                     "be parsed and will be dropped.").format(glyphListPath)
                 errorReports.showWarningException(e, msg)
-                settings.remove("settings/glyphListPath")
+                settings.removeGlyphListPath()
             else:
                 self.GL2UV = glyphList_
 

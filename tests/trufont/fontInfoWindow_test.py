@@ -46,9 +46,9 @@ class TabTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, methodName)
 
     def setUp(self):
-        self.font = TFont.makeStandardFont()
+        self.font = TFont.newStandardFont()
 
-        self.mainWindow = FontWindow(font)
+        self.mainWindow = FontWindow(self.font)
         self.mainWindow.fontInfo()
         self.fontInfo = self.mainWindow._infoWindow
         self.generalTab = self.fontInfo.tabWidget.widget(0)

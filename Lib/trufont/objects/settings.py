@@ -102,6 +102,11 @@ def setGlyphListPath(path):
     setValue("settings/glyphListPath", path)
 
 
+def removeGlyphListPath(path):
+    settings = QSettings()
+    settings.remove("settings/glyphListPath")
+
+
 def metricsWindowComboBoxItems():
     return value("metricsWindow/comboBoxItems")
 
