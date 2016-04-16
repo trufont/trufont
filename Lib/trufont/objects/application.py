@@ -8,7 +8,7 @@ from trufont.drawingTools.knifeTool import KnifeTool
 from trufont.windows.fontWindow import FontWindow
 from trufont.windows.outputWindow import OutputWindow
 from trufont.objects.defcon import TFont
-from trufont.tools import errorReports
+from trufont.tools import errorReports, glyphList
 import os
 
 
@@ -59,9 +59,8 @@ class Application(QApplication):
         settings = QSettings()
         glyphListPath = settings.value("settings/glyphListPath", "", str)
         if glyphListPath and os.path.exists(glyphListPath):
-            from trufont.util import glyphList
             try:
-                glyphList = glyphList.parseGlyphList(glyphListPath)
+                glyphList_ = glyphList.parseGlyphList(glyphListPath)
             except Exception as e:
                 msg = self.tr(
                     "The glyph list at {0} cannot "
@@ -69,7 +68,7 @@ class Application(QApplication):
                 errorReports.showWarningException(e, msg)
                 settings.remove("settings/glyphListPath")
             else:
-                self.GL2UV = glyphList
+                self.GL2UV = glyphList_
 
     def lookupExternalChanges(self):
         for font in self.allFonts():
