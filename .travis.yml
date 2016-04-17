@@ -1,20 +1,22 @@
-# use Ubuntu 14.04LTS trusty
-sudo: required
-dist: trusty
-language: python
+sudo: false
+language: generic
+os: osx
 before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python3-pyqt5 python3-pip python3-flake8
-  - sudo pip3 install --upgrade setuptools
-  - sudo pip3 install -r requirements.txt
-  - export PYTHONCMD=/usr/bin/python3
+  # use homebrew to install python 3.5.1
+  - brew update || brew update
+  - if test $(brew list | grep -q 'python3'); then brew upgrade python3; else brew install python3; fi
+  - python3.5 -m pip install --user --upgrade pip virtualenv
+  # create virtual environment
+  - python3.5 -m virtualenv .env
+  - source .env/bin/activate
+  - python --version
+  # install requirements
+  - pip install pyqt5 cython flake8 pytest
+  - python -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
+  - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
+  - pip install -r requirements.txt
 install:
-  - $PYTHONCMD setup.py install --user
-before_script:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # give xvfb some time to start
-# commands to run tests
+  - pip install -v .
 script:
   - flake8 --config=setup.cfg Lib/trufont
-  - $PYTHONCMD setup.py test
+  - py.test -v -r a tests/
