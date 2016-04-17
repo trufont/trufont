@@ -11,7 +11,7 @@ before_install:
   - source .env/bin/activate
   - python --version
   # install requirements
-  - pip install pyqt5 flake8 pytest
+  - pip install pyqt5 cython flake8 pytest
   - python -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
   - pip install -r requirements.txt
