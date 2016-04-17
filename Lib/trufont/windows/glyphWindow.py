@@ -498,11 +498,12 @@ class GlyphWindow(BaseMainWindow):
         super().closeEvent(event)
         if event.isAccepted():
             app = QApplication.instance()
+            app.dispatcher.removeObserver(self, "drawingToolInstalled")
             data = dict(window=self)
             app.postNotification("glyphWindowWillClose", data)
             glyph = self.view.glyph()
             self._unsubscribeFromGlyph(glyph)
-            app.dispatcher.removeObserver(self, "drawingToolInstalled")
+            self.view.closeEvent(event)
 
     def setWindowTitle(self, title, font=None):
         if font is not None:
@@ -931,3 +932,7 @@ class GlyphCanvasView(GlyphView):
 
     def items(self, rect):
         return self._glyphWidget.items(rect)
+
+    def setFocus(self, value):
+        super().setFocus(value)
+        self._glyphWidget.setFocus(value)

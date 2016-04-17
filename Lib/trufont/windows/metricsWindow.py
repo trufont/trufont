@@ -122,6 +122,8 @@ class MetricsWindow(BaseWindow):
             data = dict(window=self)
             app.postNotification("metricsWindowWillClose", data)
             self.font.info.removeObserver(self, "Info.Changed")
+            self.toolbar.closeEvent(event)
+            self.lineView.closeEvent(event)
 
 # -------------------
 # Text to glyph names
@@ -463,6 +465,10 @@ class MetricsLineView(GlyphLineView):
         self.setDrawMetrics(settings["showMetrics"])
         self.setVerticalFlip(settings["verticalFlip"])
         self.setWrapLines(settings["wrapLines"])
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self._glyphLineWidget.closeEvent(event)
 
 
 class MetricsTableItem(QTableWidgetItem):
