@@ -4,14 +4,13 @@ os: osx
 before_install:
   - brew update || brew update
   - if test $(brew list | grep -q 'python3'); then brew upgrade python3; else brew install python3; fi
-  - if test $(brew list | grep -q 'pyqt5'); then brew upgrade pyqt5; else brew install pyqt5; fi
   - python3.5 -m pip install --user --upgrade pip virtualenv
-  - python3.5 -m virtualenv --system-site-packages .env
+  - python3.5 -m virtualenv .env
   - source .env/bin/activate
   - python --version
+  - pip install pyqt5 flake8 pytest
   - python -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
-  - pip install flake8 pytest
   - pip install -r requirements.txt
 install:
   - pip install -v .
