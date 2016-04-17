@@ -111,7 +111,6 @@ class GlyphWindow(BaseMainWindow):
         app.dispatcher.addObserver(
             self, "_drawingToolInstalled", "drawingToolInstalled")
         self.installButton(RemoveOverlapButton)
-        self.view.setFocus()
 
         self.setCentralWidget(self.view)
         self.resize(900, 700)
