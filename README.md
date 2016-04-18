@@ -2,7 +2,7 @@
 
 ![fontView Window](misc/fontView.png)
 
-TruFont is a font-editing application written with Python3, ufoLib, defcon and
+[TruFont] is a font-editing application written with Python3, ufoLib, defcon and
 PyQt5.
 
 ## Getting started
@@ -39,24 +39,5 @@ PyQt5.
 
 6. Run the app as `trufont`.
 
-## Dependencies
-
-- Python 3
-- PyQt5
-- [fontTools]
-- [ufoLib]
-- [defcon, python3-ufo3 branch]
-- cython & [booleanOperations]
-
-Optional:
-
-- [extractor, python3-ufo3 branch]
-- [ufo2fdk, python3-ufo3 branch]
-
-[fontTools]: https://github.com/behdad/fonttools
-[ufoLib]: https://github.com/unified-font-object/ufoLib
-[defcon, python3-ufo3 branch]: https://github.com/trufont/defcon
-[booleanOperations]: https://github.com/trufont/booleanOperations
-[extractor, python3-ufo3 branch]: https://github.com/trufont/extractor
-[ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
 [Homebrew]: http://brew.sh/
+[TruFont]: https://trufont.github.io
