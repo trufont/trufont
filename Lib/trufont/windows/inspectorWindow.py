@@ -433,7 +433,6 @@ class InspectorWindow(QWidget):
         glyph.scale((sX, sY))
 
     def snapGlyph(self):
-        print("here!")
         glyph = self._glyph
         if glyph is None:
             return
@@ -441,7 +440,6 @@ class InspectorWindow(QWidget):
         # TODO: should we fallback to no-op?
         base = int(base) if base != "" else 1
         glyph.snap(base)
-        print("snap!")
 
     # ----------
     # Qt methods

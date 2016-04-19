@@ -1,11 +1,12 @@
 from defconQt.tools import platformSpecific
-from PyQt5.QtCore import pyqtSignal, QObject, Qt
+from PyQt5.QtCore import pyqtSignal, QObject, QSize, Qt
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QTextEdit
 import sys
 
 
 class OutputWindow(QMainWindow):
+
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Tool)
         self.outputEdit = QTextEdit(self)
@@ -29,9 +30,13 @@ class OutputWindow(QMainWindow):
             stream = OutputStream(channel, self)
             stream.messagePassed.connect(self.write)
 
+    def sizeHint(self):
+        return QSize(360, 320)
+
     def write(self, message, stream=None):
         self.outputEdit.setTextColor(
             Qt.red if stream == "stderr" else Qt.white)
+        self.outputEdit.moveCursor(QTextCursor.End)
         self.outputEdit.insertPlainText(message)
 
 

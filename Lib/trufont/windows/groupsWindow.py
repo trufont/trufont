@@ -86,7 +86,6 @@ class GroupsWindow(QWidget):
                 name] if gName in self._font]
         else:
             glyphs = []
-        print(groupIsValid)
         self.groupCellView.setAcceptDrops(groupIsValid)
         self.stackWidget.setGlyphs(list(glyphs))
         self.groupCellView.setGlyphs(list(glyphs))
