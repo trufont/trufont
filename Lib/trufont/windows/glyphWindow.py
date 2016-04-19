@@ -11,7 +11,7 @@ from PyQt5.QtCore import (
     Qt)
 from PyQt5.QtGui import (
     QIcon, QImage, QImageReader, QKeySequence, QMouseEvent, QPainterPath,
-    QTransform)
+    QPainterPathStroker, QTransform)
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QMenu, QSizePolicy, QToolBar, QWidget)
 import os
@@ -798,13 +798,15 @@ class GlyphCanvasWidget(GlyphWidget):
         anchorHalfSize = anchorSize / 2
         # offCurve
         offWidth = 5 * scale
-        offHalf = offWidth / 2.0
+        offHalf = offWidth / 2
+        offStrokeWidth = 3 * scale
         # onCurve
         onWidth = 7 * scale
-        onHalf = onWidth / 2.0
+        onHalf = onWidth / 2
+        onStrokeWidth = 1.5 * scale
         # onCurve smooth
         smoothWidth = 8 * scale
-        smoothHalf = smoothWidth / 2.0
+        smoothHalf = smoothWidth / 2
 
         if not justOne:
             ret = dict(
@@ -831,14 +833,18 @@ class GlyphCanvasWidget(GlyphWidget):
                     x = point.x - offHalf
                     y = point.y - offHalf
                     path.addEllipse(x, y, offWidth, offWidth)
-                elif point.smooth:
-                    x = point.x - smoothHalf
-                    y = point.y - smoothHalf
-                    path.addEllipse(x, y, smoothWidth, smoothWidth)
+                    strokeWidth = offStrokeWidth
                 else:
-                    x = point.x - onHalf
-                    y = point.y - onHalf
-                    path.addRect(x, y, onWidth, onWidth)
+                    if point.smooth:
+                        x = point.x - smoothHalf
+                        y = point.y - smoothHalf
+                        path.addEllipse(x, y, smoothWidth, smoothWidth)
+                    else:
+                        x = point.x - onHalf
+                        y = point.y - onHalf
+                        path.addRect(x, y, onWidth, onWidth)
+                    strokeWidth = onStrokeWidth
+                path = _shapeFromPath(path, strokeWidth)
                 if func(path, obj):
                     if justOne:
                         return (point, contour)
@@ -935,3 +941,13 @@ class GlyphCanvasView(GlyphView):
     def setFocus(self, value):
         super().setFocus(value)
         self._glyphWidget.setFocus(value)
+
+
+def _shapeFromPath(path, width):
+    if path.isEmpty():
+        return path
+    ps = QPainterPathStroker()
+    ps.setWidth(width)
+    p = ps.createStroke(path)
+    p.addPath(path)
+    return p
