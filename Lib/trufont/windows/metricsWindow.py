@@ -210,6 +210,7 @@ class MetricsToolBar(QToolBar):
 
         self.comboBox = QComboBox(self)
         self.comboBox.setEditable(True)
+        self.comboBox.setCompleter(None)
         self.comboBox.setValidator(QIntValidator(self))
         for p in pointSizes:
             self.comboBox.addItem(str(p))

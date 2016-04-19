@@ -1,6 +1,6 @@
 from defconQt.tools import platformSpecific
 from PyQt5.QtCore import pyqtSignal, QObject, QSize, Qt
-from PyQt5.QtGui import QPalette
+from PyQt5.QtGui import QPalette, QTextCursor
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QTextEdit
 import sys
 
@@ -36,8 +36,8 @@ class OutputWindow(QMainWindow):
     def write(self, message, stream=None):
         self.outputEdit.setTextColor(
             Qt.red if stream == "stderr" else Qt.white)
-        self.outputEdit.moveCursor(QTextCursor.End)
         self.outputEdit.insertPlainText(message)
+        self.outputEdit.moveCursor(QTextCursor.End)
 
 
 class OutputStream(QObject):
