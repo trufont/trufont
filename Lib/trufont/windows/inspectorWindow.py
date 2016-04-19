@@ -149,15 +149,13 @@ class InspectorWindow(QWidget):
         scaleXYBox.clicked.connect(self.lockScale)
 
         rotateButton = QPushButton(self.tr("Rotate"), self)
-        # rotateButton.clicked.connect(self.rotateGlyph)
-        rotateButton.setEnabled(False)
-        rotateXLabel = RLabel("α:", self)
-        self.rotateXEdit = QLineEdit("100", self)
-        self.rotateXEdit.setValidator(QIntValidator(self))
+        rotateButton.clicked.connect(self.rotateGlyph)
+        rotateLabel = RLabel("α:", self)
+        self.rotateEdit = QLineEdit("100", self)
+        self.rotateEdit.setValidator(QIntValidator(self))
 
         skewButton = QPushButton(self.tr("Skew"), self)
-        # skewButton.clicked.connect(self.skewGlyph)
-        skewButton.setEnabled(False)
+        skewButton.clicked.connect(self.skewGlyph)
         skewXLabel = RLabel("α:", self)
         self.skewXEdit = QLineEdit("0", self)
         self.skewXEdit.setValidator(QIntValidator(self))
@@ -165,7 +163,7 @@ class InspectorWindow(QWidget):
         self.skewYEdit = QLineEdit("0", self)
         self.skewYEdit.setValidator(QIntValidator(self))
         skewXYBox = QCheckBox("α=β", self)
-        # skewXYBox.clicked.connect(self.lockSkew)
+        skewXYBox.clicked.connect(self.lockSkew)
 
         snapButton = QPushButton(self.tr("Snap"), self)
         self.snapEdit = QLineEdit("1", self)
@@ -191,8 +189,8 @@ class InspectorWindow(QWidget):
         transformGroup.setLayout(transformLayout)
         l += 1
         transformLayout.addWidget(rotateButton, l, 0)
-        transformLayout.addWidget(rotateXLabel, l, 1)
-        transformLayout.addWidget(self.rotateXEdit, l, 2)
+        transformLayout.addWidget(rotateLabel, l, 1)
+        transformLayout.addWidget(self.rotateEdit, l, 2)
         transformGroup.setLayout(transformLayout)
         l += 1
         transformLayout.addWidget(skewButton, l, 0)
@@ -426,11 +424,34 @@ class InspectorWindow(QWidget):
             sY = sX
         else:
             sY = self.scaleYEdit.text()
-        sX, sY = int(sX) if sX != "" else 1, int(sY) if sY != "" else 1
+        sX, sY = int(sX) if sX != "" else 100, int(sY) if sY != "" else 100
         sX /= 100
         sY /= 100
         # TODO: fetch center
         glyph.scale((sX, sY))
+
+    def rotateGlyph(self):
+        glyph = self._glyph
+        if glyph is None:
+            return
+        r = self.rotateEdit.text()
+        r = int(r) if r != "" else 0
+        glyph.rotate(r)
+
+    def lockSkew(self, checked):
+        self.skewYEdit.setEnabled(not checked)
+
+    def skewGlyph(self):
+        glyph = self._glyph
+        if glyph is None:
+            return
+        sX = self.skewXEdit.text()
+        if not self.skewYEdit.isEnabled():
+            sY = sX
+        else:
+            sY = self.skewYEdit.text()
+        sX, sY = int(sX) if sX != "" else 0, int(sY) if sY != "" else 0
+        glyph.skew((sX, sY))
 
     def snapGlyph(self):
         glyph = self._glyph

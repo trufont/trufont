@@ -1,11 +1,13 @@
 from booleanOperations.booleanGlyph import BooleanGlyph
 from defcon import Font, Contour, Glyph, Layer, Anchor, Component, Point, Image
 from defcon.objects.base import BaseObject
+from fontTools.misc.transform import Identity
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
 from trufont.objects import settings
 import extractor
 import fontTools
+import math
 
 
 class TFont(Font):
@@ -325,11 +327,25 @@ class TGlyph(Glyph):
         for anchor in self.anchors:
             anchor.scale(pt, center=center)
 
-    # TODO: transform
+    def transform(self, matrix):
+        for contour in self:
+            contour.transform(matrix)
+        for anchor in self.anchors:
+            anchor.transform(matrix)
 
-    # TODO: rotate
+    def rotate(self, angle, offset=(0, 0)):
+        radAngle = math.radians(angle)
+        rT = Identity.translate(offset[0], offset[1])
+        rT = rT.rotate(radAngle)
+        rT = rT.translate(-offset[0], -offset[1])
+        self.transform(rT)
 
-    # TODO: skew
+    def skew(self, angle, offset=(0, 0)):
+        xRad = math.radians(angle[0])
+        yRad = math.radians(angle[1])
+        rT = Identity.translate(offset[0], offset[1])
+        rT = rT.skew(xRad, yRad)
+        self.transform(rT)
 
     def snap(self, base):
         for contour in self:
@@ -400,6 +416,11 @@ class TContour(Contour):
                 (point.x, point.y), pt, center)
         self.dirty = True
 
+    def transform(self, matrix):
+        for point in self:
+            point.x, point.y = matrix.transformPoint((point.x, point.y))
+        self.dirty = True
+
     def snap(self, base):
         for point in self:
             point.x = _snap(point.x, base)
@@ -435,6 +456,9 @@ class TAnchor(Anchor):
     def scale(self, pt, center=(0, 0)):
         self.x, self.y = _scalePointFromCenter(
             (self.x, self.y), pt, center)
+
+    def transform(self, matrix):
+        self.x, self.y = matrix.transformPoint((self.x, self.y))
 
     def snap(self, base):
         self.x = _snap(self.x, base)
