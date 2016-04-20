@@ -15,7 +15,7 @@ def _getOffCurveSiblingPoints(contour, point):
     raise IndexError
 
 
-def moveUIPoint(contour, point, delta, origPos=None):
+def moveUIPoint(contour, point, delta):
     if point.segmentType is None:
         # point is an offCurve. Get its sibling onCurve and the other
         # offCurve.
@@ -39,32 +39,9 @@ def moveUIPoint(contour, point, delta, origPos=None):
         else:
             # keep point in tangency with onCurve -> otherPoint segment,
             # ie. do an orthogonal projection
-            """
-            line = QLineF(otherPoint.x, otherPoint.y, onCurve.x, onCurve.y)
-            n = line.normalVector()
-            n.translate(QPointF(point.x, point.y) - n.p1())
-            targetPoint = QPointF()
-            n.intersect(line, targetPoint)
-            """
-            if origPos is None:
-                raise NotImplementedError
             point.x, point.y, _ = bezierMath.lineProjection(
                 onCurve.x, onCurve.y, otherPoint.x, otherPoint.y,
-                origPos.x(), origPos.y(), False)
-            # check that targetPoint is beyond its neighbor onCurve
-            # we do this by calculating position of the offCurve and second
-            # onCurve relative to the first onCurve. If there is no symmetry
-            # in at least one of the axis, then we need to clamp
-            """
-            onCurvePoint = line.p2()
-            onDistance = line.p1() - onCurvePoint
-            newDistance = targetPoint - onCurvePoint
-            if (onDistance.x() >= 0) != (newDistance.x() <= 0) or \
-                    (onDistance.y() >= 0) != (newDistance.y() <= 0):
-                targetPoint = onCurvePoint
-            """
-            # ok, now set pos
-            # point.x, point.y = proj[:2]#targetPoint.x(), targetPoint.y()
+                point.x, point.y, False)
     else:
         # point is an onCurve. Move its offCurves along with it.
         index = contour.index(point)
@@ -80,9 +57,9 @@ def moveUIPoint(contour, point, delta, origPos=None):
     contour.dirty = True
 
 
-def moveUISelection(contour, delta, origPos=None):
+def moveUISelection(contour, delta):
     for point in contour.selection:
-        moveUIPoint(contour, point, delta, origPos)
+        moveUIPoint(contour, point, delta)
 
 
 def removeUISelection(contour, preserveShape=True):

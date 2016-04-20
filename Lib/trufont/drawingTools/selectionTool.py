@@ -300,7 +300,7 @@ class SelectionTool(BaseTool):
                 if anchor.selected:
                     anchor.move((dx, dy))
             for contour in self._glyph:
-                moveUISelection(contour, (dx, dy), canvasPos)
+                moveUISelection(contour, (dx, dy))
             for component in self._glyph.components:
                 if component.selected:
                     component.move((dx, dy))
