@@ -28,6 +28,14 @@ class TFGlyphCellFactoryDrawingController(GlyphCellFactoryDrawingController):
         super().__init__(*args, **kwargs)
         self.shouldDrawTemplate = drawTemplate
 
+    def drawCellHorizontalMetrics(self, painter, rect):
+        if not self.glyph.template:
+            super().drawCellHorizontalMetrics(painter, rect)
+
+    def drawCellVerticalMetrics(self, painter, rect):
+        if not self.glyph.template:
+            super().drawCellVerticalMetrics(painter, rect)
+
     def drawCellForeground(self, painter, rect):
         if self.shouldDrawTemplate and self.glyph.template:
             painter.save()
