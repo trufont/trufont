@@ -92,6 +92,7 @@ class SelectionTool(BaseTool):
         return False
 
     def _computeLineClick(self, pos, insert=False):
+        scale = self.parent().inverseScale()
         for contour in self._glyph:
             for index, point in enumerate(contour):
                 if point.segmentType == "line":
@@ -99,7 +100,7 @@ class SelectionTool(BaseTool):
                     dist = bezierMath.lineDistance(
                         prev.x, prev.y, point.x, point.y, pos.x(), pos.y())
                     # TODO: somewhat arbitrary
-                    if dist < 5:
+                    if dist < 5 * scale:
                         if insert:
                             self._glyph.prepareUndo()
                             contour.holdNotifications()
