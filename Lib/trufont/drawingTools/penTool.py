@@ -81,6 +81,7 @@ class PenTool(BaseTool):
                     candidate.addPoint((item.x, item.y))
                     item.segmentType = "curve"
                 item.selected = True
+                item.smooth = False
                 candidate.dirty = True
                 self._targetContour = candidate
                 return
@@ -121,7 +122,13 @@ class PenTool(BaseTool):
             pt.smooth = not event.modifiers() & Qt.AltModifier
             contour.holdNotifications()
             # TODO: defer this if Alt is pressed
-            if pt.segmentType == "line":
+            if not contour.open:
+                # pt is the last point before contour start
+                if pt.segmentType:
+                    contour.addPoint((pt.x, pt.y))
+                startPt = contour[0]
+                startPt.segmentType = "curve"
+            elif pt.segmentType == "line":
                 # remove the onCurve
                 contour.removePoint(pt)
                 # add the first of two offCurves
