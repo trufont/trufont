@@ -80,8 +80,7 @@ class InspectorWindow(QWidget):
         transformGroup = AccordionBox(self.tr("Transform"), self)
         transformLayout = QGridLayout(self)
 
-        alignmentWidget = AlignmentWidget(self)
-        alignmentWidget.setEnabled(False)
+        self.alignmentWidget = GlyphAlignmentWidget(self)
         hMirrorButton = QToolButton()
         hMirrorButton.clicked.connect(self.hMirror)
         hMirrorButton.setIcon(QIcon(":swap.svg"))
@@ -170,7 +169,7 @@ class InspectorWindow(QWidget):
         self.snapEdit.setValidator(QIntValidator(self))
 
         l = 0
-        transformLayout.addWidget(alignmentWidget, l, 0)
+        transformLayout.addWidget(self.alignmentWidget, l, 0)
         transformLayout.addLayout(buttonsLayout, l, 1, 1, 5)
         l += 1
         transformLayout.addWidget(moveButton, l, 0)
@@ -263,6 +262,7 @@ class InspectorWindow(QWidget):
         app = QApplication.instance()
         self._glyph = app.currentGlyph()
         self._subscribeToGlyph(self._glyph)
+        self.alignmentWidget.setGlyph(self._glyph)
         self._updateGlyphAttributes()
 
     def _updateFont(self, notification=None):
@@ -376,28 +376,24 @@ class InspectorWindow(QWidget):
     # transforms
 
     def hMirror(self):
-        if self._glyph is None:
+        glyph = self._glyph
+        if None in (glyph, glyph.controlPointBounds):
             return
-        controlPointBounds = self._glyph.controlPointBounds
-        if controlPointBounds is None:
-            return
-        xMin, _, xMax, _ = controlPointBounds
-        for contour in self._glyph:
+        xMin, _, xMax, _ = glyph.controlPointBounds
+        for contour in glyph:
             for point in contour:
                 point.x = xMin + xMax - point.x
-        self._glyph.dirty = True
+        glyph.dirty = True
 
     def vMirror(self):
-        if self._glyph is None:
+        glyph = self._glyph
+        if None in (glyph, glyph.controlPointBounds):
             return
-        controlPointBounds = self._glyph.controlPointBounds
-        if controlPointBounds is None:
-            return
-        _, yMin, _, yMax = controlPointBounds
-        for contour in self._glyph:
+        _, yMin, _, yMax = glyph.controlPointBounds
+        for contour in glyph:
             for point in contour:
                 point.y = yMin + yMax - point.y
-        self._glyph.dirty = True
+        glyph.dirty = True
 
     def lockMove(self, checked):
         self.moveYEdit.setEnabled(not checked)
@@ -427,8 +423,8 @@ class InspectorWindow(QWidget):
         sX, sY = int(sX) if sX != "" else 100, int(sY) if sY != "" else 100
         sX /= 100
         sY /= 100
-        # TODO: fetch center
-        glyph.scale((sX, sY))
+        center = self.alignmentWidget.origin()
+        glyph.scale((sX, sY), center=center)
 
     def rotateGlyph(self):
         glyph = self._glyph
@@ -458,8 +454,7 @@ class InspectorWindow(QWidget):
         if glyph is None:
             return
         base = self.snapEdit.text()
-        # TODO: should we fallback to no-op?
-        base = int(base) if base != "" else 1
+        base = int(base) if base != "" else 0
         glyph.snap(base)
 
     # ----------
@@ -489,19 +484,61 @@ class InspectorWindow(QWidget):
             app.dispatcher.removeObserver(self, "currentFontChanged")
 
 
-class AlignmentWidget(QWidget):
+class GlyphAlignmentWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._alignment = None
         self._alignmentPaths = []
+        self._glyph = None
+
+        self._circleRadius = 4
+        self._padding = 1
 
     def alignment(self):
         return self._alignment
 
     def setAlignment(self, value):
         self._alignment = value
+
+    def glyph(self):
+        return self._glyph
+
+    def setGlyph(self, glyph):
+        self._glyph = glyph
+
+    def origin(self):
+        alignment = self._alignment
+        glyph = self._glyph
+        if None in (alignment, glyph, glyph.controlPointBounds):
+            return (0, 0)
+        left, bottom, right, top = glyph.controlPointBounds
+        if not alignment % 3:
+            x = left
+        elif not (alignment - 2) % 3:
+            x = right
+        else:
+            x = (left + right) / 2
+        if alignment < 3:
+            y = top
+        elif alignment > 5:
+            y = bottom
+        else:
+            y = (top + bottom) / 2
+        return (x, y)
+
+    def circleRadius(self):
+        return self._circleRadius
+
+    def setCircleRadius(self, value):
+        self._circleRadius = value
+
+    def padding(self):
+        return self._padding
+
+    def setPadding(self, value):
+        self._padding = value
 
     # ----------
     # Qt methods
@@ -515,7 +552,10 @@ class AlignmentWidget(QWidget):
             pos = event.localPos()
             for index, path in enumerate(self._alignmentPaths):
                 if path.contains(pos):
-                    self._alignment = index
+                    if self._alignment == index:
+                        self._alignment = None
+                    else:
+                        self._alignment = index
                     self.update()
                     break
         else:
@@ -526,8 +566,8 @@ class AlignmentWidget(QWidget):
         painter = QPainter(self)
         painter.setPen(QColor(45, 45, 45))
 
-        circleRadius = 4
-        padding = 1
+        circleRadius = self._circleRadius
+        padding = self._padding
         rect = event.rect()
         size = min(rect.height(), rect.width())
         offset = .5 * (rect.width() - size)
@@ -540,21 +580,21 @@ class AlignmentWidget(QWidget):
         borderPath = QPainterPath()
         borderPath.addRect(*borderRect.getRect())
 
-        index = 0
+        columnCount = 3
         radioPath = QPainterPath()
         selectedPath = QPainterPath()
-        for i in range(3):
-            for j in range(3):
+        for row in range(columnCount):
+            for col in range(columnCount):
+                index = row * columnCount + col
                 path = QPainterPath()
                 path.addEllipse(
-                    padding + i * .5 * borderRect.width(),
-                    padding + j * .5 * borderRect.height(),
+                    padding + col * .5 * borderRect.width(),
+                    padding + row * .5 * borderRect.height(),
                     2 * circleRadius, 2 * circleRadius)
                 if self._alignment == index:
                     selectedPath = path
                 self._alignmentPaths.append(path.translated(offset, 0))
                 radioPath.addPath(path)
-                index += 1
         painter.drawPath(borderPath - radioPath)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.drawPath(radioPath)
