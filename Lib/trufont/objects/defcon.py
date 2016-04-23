@@ -66,9 +66,10 @@ class TFont(Font):
         glyph.width = width
         if addUnicode:
             glyph.autoUnicodes()
-        if asTemplate:
-            glyph.enableNotifications()
         glyph.template = asTemplate
+        if asTemplate:
+            glyph.dirty = False
+            glyph.enableNotifications()
         glyph.markColor = markColor
 
         app = QApplication.instance()
@@ -628,4 +629,6 @@ def _scalePointFromCenter(point, scale, center):
 
 
 def _snap(x, base=5):
+    if not base:
+        return x
     return base * round(x / base)
