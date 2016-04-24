@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QPointF, Qt
+from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.defcon import TContour
@@ -63,7 +63,7 @@ class PenTool(BaseTool):
             self._shouldMoveOnCurve = False
 
     def mousePressEvent(self, event):
-        canvasPos = event.localPos()
+        self._origin = canvasPos = event.localPos()
         x, y = canvasPos.x(), canvasPos.y()
         widget = self.parent()
         candidate = self._getSelectedCandidatePoint()
@@ -115,9 +115,16 @@ class PenTool(BaseTool):
         if contour is None:
             return
         # we don't make any check here, mousePressEvent did it for us
-        pos = self.magnetPos(event.localPos())
+        pos = event.localPos()
         pt = contour[-1]
-        if pt.segmentType:
+        if pt.segmentType and not self._shouldMoveOnCurve:
+            # don't make a curve until enough distance is reached
+            widget = self.parent()
+            rect = QRectF(self._origin, pos)
+            widgetRect = widget.mapRectFromCanvas(rect)
+            if (widgetRect.bottomRight() - widgetRect.topLeft()).manhattanLength() < 10:
+                return
+            # go
             pt.selected = False
             pt.smooth = not event.modifiers() & Qt.AltModifier
             contour.holdNotifications()
@@ -141,11 +148,20 @@ class PenTool(BaseTool):
                 # now add pt back as curve point
                 pt.segmentType = "curve"
                 contour.insertPoint(len(self._targetContour), pt)
+            else:
+                # if there's a curve segment behind, we need to update the
+                # offCurve's position to inverse
+                if len(contour) > 1:
+                    onCurveBefore = contour[-2]
+                    onCurveBefore.x = 2 * pt.x - pos.x()
+                    onCurveBefore.y = 2 * pt.y - pos.y()
             contour.addPoint((pos.x(), pos.y()))
             contour[-1].selected = True
             contour.releaseHeldNotifications()
         else:
-            if contour.open:
+            if pt.segmentType:
+                onCurve = pt
+            elif contour.open:
                 onCurve = contour[-2]
             else:
                 onCurve = contour[0]
@@ -166,9 +182,5 @@ class PenTool(BaseTool):
             contour.dirty = True
 
     def mouseReleaseEvent(self, event):
+        self._shouldMoveOnCurve = False
         self._targetContour = None
-
-    # custom painting
-
-    def paint(self, painter):
-        pass

@@ -16,4 +16,4 @@ class BaseButton(QObject):
     # event
 
     def clicked(self):
-        raise NotImplementedError
+        pass

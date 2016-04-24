@@ -70,8 +70,7 @@ class RulerTool(BaseTool):
             baseElem = path.elementAt(0)
             cursorElem = path.elementAt(2)
             # work out text alignment
-            # to do that we need to find out which quadrant the ruler is
-            # operating in
+            # we need to find out which quadrant the ruler is operating in
             xAlign, yAlign = "left", "bottom"
             dx = cursorElem.x - baseElem.x
             if dx < 0:
@@ -79,7 +78,6 @@ class RulerTool(BaseTool):
             dy = cursorElem.y - baseElem.y
             if dy <= 0:
                 yAlign = "top"
-            # XXX: draw multiLines arg
             drawing.drawTextAtPoint(
                 painter, text, cursorElem.x, baseElem.y,
                 self.parent()._inverseScale, xAlign, yAlign)
