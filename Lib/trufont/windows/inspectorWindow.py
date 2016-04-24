@@ -1,7 +1,6 @@
 from defcon import Color
 from defconQt.controls.accordionBox import AccordionBox
 from defconQt.controls.colorVignette import ColorVignette
-from defconQt.controls.glyphAlignmentWidget import GlyphAlignmentWidget
 from PyQt5.QtCore import QRegularExpression, QSize, Qt
 from PyQt5.QtGui import (
     QColor, QIcon, QIntValidator, QRegularExpressionValidator)
@@ -9,6 +8,7 @@ from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QGridLayout, QLineEdit,
     QPushButton, QSizePolicy, QToolButton, QTreeWidget, QTreeWidgetItem,
     QVBoxLayout, QWidget)
+from trufont.controls.glyphAlignmentWidget import GlyphAlignmentWidget
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel
 
@@ -150,7 +150,7 @@ class InspectorWindow(QWidget):
         rotateButton = QPushButton(self.tr("Rotate"), self)
         rotateButton.clicked.connect(self.rotateGlyph)
         rotateLabel = RLabel("α:", self)
-        self.rotateEdit = QLineEdit("100", self)
+        self.rotateEdit = QLineEdit("0", self)
         self.rotateEdit.setValidator(QIntValidator(self))
 
         skewButton = QPushButton(self.tr("Skew"), self)
@@ -165,6 +165,7 @@ class InspectorWindow(QWidget):
         skewXYBox.clicked.connect(self.lockSkew)
 
         snapButton = QPushButton(self.tr("Snap"), self)
+        snapButton.clicked.connect(self.snapGlyph)
         self.snapEdit = QLineEdit("1", self)
         self.snapEdit.setValidator(QIntValidator(self))
 
@@ -283,8 +284,7 @@ class InspectorWindow(QWidget):
             name = self._glyph.name
             unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" %
                                 u for u in self._glyph.unicodes)
-            if self._glyph.width:
-                width = str(int(self._glyph.width))
+            width = str(int(self._glyph.width))
             if self._glyph.leftMargin is not None:
                 leftSideBearing = str(int(self._glyph.leftMargin))
             if self._glyph.rightMargin is not None:
@@ -318,8 +318,7 @@ class InspectorWindow(QWidget):
             widget.setColor(color)
             widget.setMargins(2, 2, 2, 2)
             widget.setMayClearColor(False)
-            widget.colorChanged.connect(
-                self.writeLayerColor)
+            widget.colorChanged.connect(self.writeLayerColor)
             widget.setProperty("layer", layer)
             self.layerSetWidget.setItemWidget(item, 1, widget)
         self.layerSetWidget.setColumnWidth(1, 100)
@@ -362,7 +361,7 @@ class InspectorWindow(QWidget):
     def writeMarkColor(self):
         color = self.markColorWidget.color()
         if color is not None:
-            color = Color(color.getRgbF())
+            color = color.getRgbF()
         self._glyph.markColor = color
 
     def writeLayerColor(self):
@@ -370,7 +369,7 @@ class InspectorWindow(QWidget):
         color = widget.color()
         layer = widget.property("layer")
         if color is not None:
-            color = Color(color.getRgbF())
+            color = color.getRgbF()
         layer.color = color
 
     # transforms
@@ -432,7 +431,8 @@ class InspectorWindow(QWidget):
             return
         r = self.rotateEdit.text()
         r = int(r) if r != "" else 0
-        glyph.rotate(r)
+        origin = self.alignmentWidget.origin()
+        glyph.rotate(r, offset=origin)
 
     def lockSkew(self, checked):
         self.skewYEdit.setEnabled(not checked)
