@@ -1,3 +1,4 @@
+from defconQt.controls.colorVignette import ColorVignette
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QGridLayout, QLabel, QLineEdit, QListWidget,
@@ -14,7 +15,7 @@ class GotoDialog(QDialog):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle(self.tr("Go to…"))
-        self.font = currentGlyph.getParent()
+        self.font = currentGlyph.font
         self._sortedGlyphs = self.font.unicodeData.sortGlyphNames(
             self.font.keys(), self.alphabetical)
 
@@ -101,11 +102,10 @@ class AddAnchorDialog(QDialog):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         if pos is not None:
-            self.setWindowTitle(self.tr("Add anchor…"))
+            title = self.tr("Add anchor…")
         else:
-            self.setWindowTitle(self.tr("Rename anchor…"))
-
-        layout = QGridLayout(self)
+            title = self.tr("Rename anchor…")
+        self.setWindowTitle(title)
 
         anchorNameLabel = QLabel(self.tr("Anchor name:"), self)
         self.anchorNameEdit = QLineEdit(self)
@@ -120,6 +120,7 @@ class AddAnchorDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
+        layout = QGridLayout(self)
         l = 0
         layout.addWidget(anchorNameLabel, l, 0)
         layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
@@ -160,6 +161,8 @@ class AddLayerDialog(QDialog):
         layerNameLabel = QLabel(self.tr("Layer name:"), self)
         self.layerNameEdit = QLineEdit(self)
         self.layerNameEdit.setFocus(True)
+        self.layerColorVignette = ColorVignette(self)
+        self.layerColorVignette.setColor(LayerColorGenerator.getQColor())
 
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -169,16 +172,20 @@ class AddLayerDialog(QDialog):
         l = 0
         layout.addWidget(layerNameLabel, l, 0)
         layout.addWidget(self.layerNameEdit, l, 1)
+        layout.addWidget(self.layerColorVignette, l, 2)
         l += 1
-        layout.addWidget(buttonBox, l, 0, 1, 2)
+        layout.addWidget(buttonBox, l, 0, 1, 3)
         self.setLayout(layout)
 
     @classmethod
-    def getNewLayerName(cls, parent):
+    def getNewLayerNameAndColor(cls, parent):
         dialog = cls(parent)
         result = dialog.exec_()
         name = dialog.layerNameEdit.text()
-        return (name, result)
+        color = dialog.layerColorVignette.color()
+        if not result:
+            LayerColorGenerator.revert()
+        return (name, color.getRgbF(), result)
 
 
 class LayerActionsDialog(QDialog):
@@ -191,8 +198,6 @@ class LayerActionsDialog(QDialog):
         for layer in currentGlyph.layerSet:
             if layer != currentGlyph.layer:
                 self._workableLayers.append(layer)
-
-        layout = QGridLayout(self)
 
         copyBox = QRadioButton(self.tr("Copy"), self)
         moveBox = QRadioButton(self.tr("Move"), self)
@@ -212,6 +217,7 @@ class LayerActionsDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
+        layout = QGridLayout(self)
         l = 0
         layout.addWidget(copyBox, l, 0, 1, 2)
         layout.addWidget(moveBox, l, 2, 1, 2)
@@ -242,7 +248,6 @@ class LayerActionsDialog(QDialog):
 # ---------------
 # Color generator
 # ---------------
-# TODO: implement
 
 
 class LayerColorGenerator(ColorGenerator):
@@ -259,7 +264,7 @@ class LayerColorGenerator(ColorGenerator):
     @classmethod
     def getColor(cls):
         if cls.index <= len(cls.colors):
-            color = (cls / 255 for clr in cls.colors[cls.index])
+            color = (clr / 255 for clr in cls.colors[cls.index])
         else:
             color = ColorGenerator.getColor()
         cls.index += 1

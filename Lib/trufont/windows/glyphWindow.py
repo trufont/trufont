@@ -443,14 +443,13 @@ class GlyphWindow(BaseMainWindow):
     def _makeLayer(self):
         # TODO: what with duplicate names?
         glyph = self.view.glyph()
-        newLayerName, ok = AddLayerDialog.getNewLayerName(self)
+        newLayerName, color, ok = AddLayerDialog.getNewLayerNameAndColor(self)
         if ok:
             layerSet = glyph.layerSet
-            # TODO: this should return the layer
-            layerSet.newLayer(newLayerName)
-            return layerSet[newLayerName]
-        else:
-            return None
+            layer = layerSet.newLayer(newLayerName)
+            layer.color = color
+            return layer
+        return None
 
     def _makeLayerGlyph(self, layer, currentGlyph):
         glyph = layer.newGlyph(currentGlyph.name)
@@ -578,7 +577,7 @@ class GlyphCanvasWidget(GlyphWidget):
             showStroke = False
         else:
             contourFillColor = None
-            drawSelection = True
+            drawSelection = layerName is None
             showFill = self.drawingAttribute("showGlyphFill", layerName)
             showStroke = self.drawingAttribute("showGlyphStroke", layerName)
         drawing.drawGlyphFillAndStroke(

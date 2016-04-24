@@ -50,9 +50,7 @@ def defaultColor(name):
 
 def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
     painter.save()
-    turnOffAntiAliasing = False
-    if x1 == x2 or y1 == y2:
-        turnOffAntiAliasing = True
+    turnOffAntiAliasing = x1 == x2 or y1 == y2
     if turnOffAntiAliasing:
         painter.setRenderHint(QPainter.Antialiasing, False)
         if lineWidth == 1.0:
@@ -280,6 +278,10 @@ def drawGlyphPoints(
         otherColor.setAlphaF(otherColor.alphaF() * .6)
         painter.save()
         painter.setPen(otherColor)
+        # TODO: decision + color
+        font = painter.font()
+        font.setPointSize(7)
+        painter.setFont(font)
         for x, y in points:
             posX = x
             # TODO: We use + here because we align on top. Consider abstracting
