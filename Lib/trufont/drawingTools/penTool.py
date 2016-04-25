@@ -122,7 +122,8 @@ class PenTool(BaseTool):
             widget = self.parent()
             rect = QRectF(self._origin, pos)
             widgetRect = widget.mapRectFromCanvas(rect)
-            if (widgetRect.bottomRight() - widgetRect.topLeft()).manhattanLength() < 10:
+            if (widgetRect.bottomRight() - widgetRect.topLeft(
+                    )).manhattanLength() < 10:
                 return
             # go
             pt.selected = False

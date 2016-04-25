@@ -1,4 +1,3 @@
-from defcon import Color
 from defconQt.controls.glyphCellView import GlyphCellView
 from defconQt.windows.baseWindows import BaseMainWindow
 from trufont import __version__
@@ -409,11 +408,12 @@ class FontWindow(BaseMainWindow):
 
     def markColor(self):
         color = self.sender().data()
+        if color is not None:
+            color = color.getRgbF()
         glyphs = self.glyphCellView.glyphs()
         for index in self.glyphCellView.selection():
             glyph = glyphs[index]
-            glyph.markColor = Color(
-                color.getRgbF()) if color is not None else None
+            glyph.markColor = color
 
     def cut(self):
         self.copy()
@@ -489,7 +489,8 @@ class FontWindow(BaseMainWindow):
 
     def fontFeatures(self):
         # TODO: see up here
-        if self._featuresWindow and self._featuresWindow.isVisible():
+        if self._featuresWindow is not None and self._featuresWindow.isVisible(
+                ):
             self._featuresWindow.raise_()
         else:
             self._featuresWindow = FontFeaturesWindow(self._font, self)

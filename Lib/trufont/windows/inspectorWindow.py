@@ -1,7 +1,6 @@
-from defcon import Color
 from defconQt.controls.accordionBox import AccordionBox
 from defconQt.controls.colorVignette import ColorVignette
-from PyQt5.QtCore import QRegularExpression, QSize, Qt
+from PyQt5.QtCore import QRegularExpression, Qt
 from PyQt5.QtGui import (
     QColor, QIcon, QIntValidator, QRegularExpressionValidator)
 from PyQt5.QtWidgets import (

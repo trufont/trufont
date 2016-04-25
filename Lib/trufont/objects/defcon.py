@@ -430,6 +430,7 @@ class TContour(Contour):
 
 
 class TAnchor(Anchor):
+
     def __init__(self, *args, **kwargs):
         self._selected = False
         super().__init__(*args, **kwargs)
@@ -467,6 +468,7 @@ class TAnchor(Anchor):
 
 
 class TComponent(Component):
+
     def __init__(self, *args, **kwargs):
         self._selected = False
         super().__init__(*args, **kwargs)
@@ -523,6 +525,7 @@ class TPoint(Point):
 
 
 class TImage(Image):
+
     def __init__(self, *args, **kwargs):
         self._selected = False
         super().__init__(*args, **kwargs)

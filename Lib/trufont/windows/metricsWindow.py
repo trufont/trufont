@@ -339,7 +339,6 @@ class MetricsLineWidget(GlyphLineWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
-        self._showMetrics = False
 
         # inbound notification
         app = QApplication.instance()
