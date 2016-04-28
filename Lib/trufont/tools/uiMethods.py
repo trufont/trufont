@@ -7,41 +7,45 @@ from PyQt5.QtCore import QLineF
 
 def _getOffCurveSiblingPoints(contour, point):
     index = contour.index(point)
+    pts = []
     for d in (-1, 1):
         sibling = contour.getPoint(index + d)
         if sibling.segmentType is not None:
             sSibling = contour.getPoint(index + 2 * d)
-            return sibling, sSibling
-    raise IndexError
+            pts.append((sibling, sSibling))
+    return pts
 
 
 def moveUIPoint(contour, point, delta):
     if point.segmentType is None:
+        shouldMove = True
         # point is an offCurve. Get its sibling onCurve and the other
         # offCurve.
-        onCurve, otherPoint = _getOffCurveSiblingPoints(contour, point)
-        # if the onCurve is selected, the offCurve will move along with it
-        if onCurve.selected:
-            return
-        point.move(delta)
-        if not onCurve.smooth:
-            contour.dirty = True
-            return
-        # if the onCurve is smooth, we need to either...
-        if otherPoint.segmentType is None and not otherPoint.selected:
-            # keep the other offCurve inline
-            line = QLineF(point.x, point.y, onCurve.x, onCurve.y)
-            otherLine = QLineF(
-                onCurve.x, onCurve.y, otherPoint.x, otherPoint.y)
-            line.setLength(line.length() + otherLine.length())
-            otherPoint.x = line.x2()
-            otherPoint.y = line.y2()
-        else:
-            # keep point in tangency with onCurve -> otherPoint segment,
-            # ie. do an orthogonal projection
-            point.x, point.y, _ = bezierMath.lineProjection(
-                onCurve.x, onCurve.y, otherPoint.x, otherPoint.y,
-                point.x, point.y, False)
+        siblings = _getOffCurveSiblingPoints(contour, point)
+        for onCurve, otherPoint in siblings:
+            # if the onCurve is selected, the offCurve will move along with it
+            if onCurve.selected:
+                shouldMove = False
+            if not onCurve.smooth:
+                contour.dirty = True
+                continue
+            # if the onCurve is smooth, we need to either...
+            if otherPoint.segmentType is None and not otherPoint.selected:
+                # keep the other offCurve inline
+                line = QLineF(point.x, point.y, onCurve.x, onCurve.y)
+                otherLine = QLineF(
+                    onCurve.x, onCurve.y, otherPoint.x, otherPoint.y)
+                line.setLength(line.length() + otherLine.length())
+                otherPoint.x = line.x2()
+                otherPoint.y = line.y2()
+            else:
+                # keep point in tangency with onCurve -> otherPoint segment,
+                # ie. do an orthogonal projection
+                point.x, point.y, _ = bezierMath.lineProjection(
+                    onCurve.x, onCurve.y, otherPoint.x, otherPoint.y,
+                    point.x, point.y, False)
+        if shouldMove:
+            point.move(delta)
     else:
         # point is an onCurve. Move its offCurves along with it.
         index = contour.index(point)
@@ -53,6 +57,11 @@ def moveUIPoint(contour, point, delta):
                 continue
             pt = contour.getPoint(index + d)
             if pt.segmentType is None:
+                # avoid double move for qCurve with single offCurve
+                if d > 0:
+                    otherPt = contour.getPoint(index + 2 * d)
+                    if otherPt.segmentType is not None and otherPt.selected:
+                        continue
                 pt.move(delta)
     contour.dirty = True
 
