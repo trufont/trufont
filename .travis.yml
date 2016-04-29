@@ -2,6 +2,9 @@ matrix:
   include:
     - sudo: required
       dist: trusty
+      env:
+        - DISPLAY=:99.0
+        - LIBOVERLAY_SCROLLBAR=0
     - language: generic
       os: osx
 
@@ -23,7 +26,6 @@ install:
   - pip install -v .
 before_script:
   # on Linux, we run "headless" tests with xvfb (X Virtual Framebuffer)
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export DISPLAY=:99.0; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -e /etc/init.d/xvfb start; fi
   # give xvfb some time to start
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi 
