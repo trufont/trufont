@@ -18,16 +18,15 @@ def _getOffCurveSiblingPoints(contour, point):
 
 def moveUIPoint(contour, point, delta):
     if point.segmentType is None:
-        shouldMove = True
         # point is an offCurve. Get its sibling onCurve and the other
         # offCurve.
         siblings = _getOffCurveSiblingPoints(contour, point)
+        # if an onCurve is selected, the offCurve will move along with it
+        if any(onCurve.selected for onCurve, _ in siblings):
+            return
+        point.move(delta)
         for onCurve, otherPoint in siblings:
-            # if the onCurve is selected, the offCurve will move along with it
-            if onCurve.selected:
-                shouldMove = False
             if not onCurve.smooth:
-                contour.dirty = True
                 continue
             # if the onCurve is smooth, we need to either...
             if otherPoint.segmentType is None and not otherPoint.selected:
@@ -40,12 +39,10 @@ def moveUIPoint(contour, point, delta):
                 otherPoint.y = line.y2()
             else:
                 # keep point in tangency with onCurve -> otherPoint segment,
-                # ie. do an orthogonal projection
+                # i.e. do an orthogonal projection
                 point.x, point.y, _ = bezierMath.lineProjection(
                     onCurve.x, onCurve.y, otherPoint.x, otherPoint.y,
                     point.x, point.y, False)
-        if shouldMove:
-            point.move(delta)
     else:
         # point is an onCurve. Move its offCurves along with it.
         index = contour.index(point)
