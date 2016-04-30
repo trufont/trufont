@@ -4,7 +4,7 @@ from trufont.objects.application import Application
 from trufont.resources import icons_db  # noqa
 from trufont.windows.outputWindow import OutputWindow
 from PyQt5.QtCore import (
-    QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
+    Qt, QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox
 import os
@@ -26,6 +26,7 @@ def main():
     app.setApplicationName("TruFont")
     app.setApplicationVersion(__version__)
     app.setWindowIcon(QIcon(":app.png"))
+    app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     # Install stream redirection
     app.outputWindow = OutputWindow()
