@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 
 def TFGlyphCellFactory(
         glyph, width, height, drawMarkColor=True, drawTemplate=True,
-        drawHeader=None, drawMetrics=None):
+        drawHeader=None, drawMetrics=None, pixelRatio=1.0):
     if drawHeader is None:
         drawHeader = height >= GlyphCellMinHeightForHeader
     if drawMetrics is None:
@@ -14,7 +14,7 @@ def TFGlyphCellFactory(
     obj = TFGlyphCellFactoryDrawingController(
         glyph=glyph, font=glyph.font, width=width, height=height,
         drawMarkColor=drawMarkColor, drawTemplate=drawTemplate,
-        drawHeader=drawHeader, drawMetrics=drawMetrics)
+        drawHeader=drawHeader, drawMetrics=drawMetrics, pixelRatio=pixelRatio)
     return obj.getPixmap()
 
 
