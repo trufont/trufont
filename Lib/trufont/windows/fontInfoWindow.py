@@ -395,8 +395,9 @@ class GeneralTab(TabWidget):
         self.store("versionMajor")
         self.store("versionMinor")
 
-        font.info.openTypeHeadCreated = \
-            self.dateCreatedEdit.dateTime().toString("yyyy/MM/dd hh:mm:ss")
+        font.info.openTypeHeadCreated = QLocale.c().toString(
+                self.dateCreatedEdit.dateTime(),
+                "yyyy/MM/dd hh:mm:ss")
 
         self.store("unitsPerEm")
         self.store("italicAngle")
