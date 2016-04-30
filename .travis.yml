@@ -1,11 +1,20 @@
-sudo: false
-language: generic
-os: osx
+matrix:
+  include:
+    - sudo: required
+      dist: trusty
+      env:
+        - DISPLAY=:99.0
+        - LIBOVERLAY_SCROLLBAR=0
+    - language: generic
+      os: osx
+
 before_install:
-  # use homebrew to install python 3.5.1
-  - brew update || brew update
-  - if test $(brew list | grep -q 'python3'); then brew upgrade python3; else brew install python3; fi
+  # on OSX, we use homebrew to install python 3.5.1
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update || brew update; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if test $(brew list | grep -q 'python3'); then brew upgrade python3; else brew install python3; fi; fi
   - python3.5 -m pip install --user --upgrade pip virtualenv
+  # we need libegl1-mesa for Qt/plugins/platforms/libqxcb.so to load properly
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get --yes --force-yes install libegl1-mesa; fi
   # create virtual environment
   - python3.5 -m virtualenv .env
   - source .env/bin/activate
@@ -17,6 +26,11 @@ before_install:
   - pip install -r requirements.txt
 install:
   - pip install -v .
+before_script:
+  # on Linux, we run "headless" tests with xvfb (X Virtual Framebuffer)
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -e /etc/init.d/xvfb start; fi
+  # give xvfb some time to start
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi 
 script:
   - flake8 --config=setup.cfg Lib/trufont
   - py.test -v -r a tests/
