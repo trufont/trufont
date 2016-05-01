@@ -1,7 +1,7 @@
 from defconQt.tools import platformSpecific
 from PyQt5.QtCore import pyqtSignal, QObject, QSize, Qt
-from PyQt5.QtGui import QPalette, QTextCursor
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QTextEdit
+from PyQt5.QtGui import QPalette, QTextCursor, QTextOption
+from PyQt5.QtWidgets import QCheckBox, QMainWindow, QPushButton, QPlainTextEdit
 import sys
 
 
@@ -9,20 +9,23 @@ class OutputWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Tool)
-        self.outputEdit = QTextEdit(self)
+        self.outputEdit = QPlainTextEdit(self)
         self.outputEdit.setFont(platformSpecific.fixedFont())
-        self.outputEdit.setAcceptRichText(False)
+        self.outputEdit.setUndoRedoEnabled(False)
         palette = self.outputEdit.palette()
         palette.setColor(QPalette.Base, Qt.black)
         self.outputEdit.setPalette(palette)
         self.outputEdit.viewport().setCursor(Qt.ArrowCursor)
         self.outputEdit.setReadOnly(True)
-        clearOutputButton = QPushButton("Clear", self)
+        wrapLinesBox = QCheckBox(self.tr("Wrap Lines"), self)
+        wrapLinesBox.toggled.connect(self.setWordWrapEnabled)
+        clearOutputButton = QPushButton(self.tr("Clear"), self)
         clearOutputButton.clicked.connect(self.outputEdit.clear)
 
         self.setCentralWidget(self.outputEdit)
         self.setWindowTitle(self.tr("Output Window"))
         statusBar = self.statusBar()
+        statusBar.addWidget(wrapLinesBox)
         statusBar.addPermanentWidget(clearOutputButton)
         statusBar.setSizeGripEnabled(False)
 
@@ -30,14 +33,39 @@ class OutputWindow(QMainWindow):
             stream = OutputStream(channel, self)
             stream.messagePassed.connect(self.write)
 
+    def isScrollBarAtBottom(self):
+        scrollBar = self.outputEdit.verticalScrollBar()
+        return scrollBar.value() == scrollBar.maximum()
+
+    def scrollToBottom(self):
+        scrollBar = self.outputEdit.verticalScrollBar()
+        scrollBar.setValue(scrollBar.maximum())
+        # QPlainTextEdit destroys the first calls value in case of multiline
+        # text, so make sure that the scroll bar actually gets the value set.
+        # Is a noop if the first call succeeded.
+        scrollBar.setValue(scrollBar.maximum())
+
+    def setWordWrapEnabled(self, value):
+        if value:
+            wrapMode = QTextOption.WrapAtWordBoundaryOrAnywhere
+        else:
+            wrapMode = QTextOption.NoWrap
+        self.outputEdit.setWordWrapMode(wrapMode)
+
     def sizeHint(self):
         return QSize(360, 320)
 
     def write(self, message, stream=None):
-        self.outputEdit.setTextColor(
-            Qt.red if stream == "stderr" else Qt.white)
+        atBottom = self.isScrollBarAtBottom()
+        textCursor = self.outputEdit.textCursor()
+        if not textCursor.atEnd():
+            textCursor.movePosition(QTextCursor.End)
+        charFormat = self.outputEdit.currentCharFormat()
+        charFormat.setForeground(Qt.red if stream == "stderr" else Qt.white)
+        self.outputEdit.setCurrentCharFormat(charFormat)
         self.outputEdit.insertPlainText(message)
-        self.outputEdit.moveCursor(QTextCursor.End)
+        if atBottom:
+            self.scrollToBottom()
 
 
 class OutputStream(QObject):
