@@ -2,7 +2,8 @@ from defconQt.controls.accordionBox import AccordionBox
 from defconQt.controls.colorVignette import ColorVignette
 from PyQt5.QtCore import QRegularExpression, Qt
 from PyQt5.QtGui import (
-    QColor, QIcon, QIntValidator, QRegularExpressionValidator)
+    QColor, QIcon, QIntValidator, QDoubleValidator,
+    QRegularExpressionValidator)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QGridLayout, QLineEdit,
     QPushButton, QSizePolicy, QToolButton, QTreeWidget, QTreeWidgetItem,
@@ -166,7 +167,7 @@ class InspectorWindow(QWidget):
         snapButton = QPushButton(self.tr("Snap"), self)
         snapButton.clicked.connect(self.snapGlyph)
         self.snapEdit = QLineEdit("1", self)
-        self.snapEdit.setValidator(QIntValidator(self))
+        self.snapEdit.setValidator(QDoubleValidator(self))
 
         l = 0
         transformLayout.addWidget(self.alignmentWidget, l, 0)
@@ -453,7 +454,7 @@ class InspectorWindow(QWidget):
         if glyph is None:
             return
         base = self.snapEdit.text()
-        base = int(base) if base != "" else 0
+        base = float(base) if base != "" else 0
         glyph.snap(base)
 
     # ----------
