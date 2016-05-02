@@ -8,8 +8,7 @@ from PyQt5.QtGui import (
     QRegularExpressionValidator)
 from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QGridLayout, QLineEdit,
-    QPushButton, QSizePolicy, QToolButton, QTreeWidget, QTreeWidgetItem,
-    QVBoxLayout, QWidget)
+    QPushButton, QSizePolicy, QToolButton, QVBoxLayout, QWidget)
 from trufont.controls.glyphAlignmentWidget import GlyphAlignmentWidget
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel

@@ -2,6 +2,7 @@ from collections import Iterable, OrderedDict
 from defcon import Color
 from defconQt.tools.drawing import colorToQColor
 from PyQt5.QtCore import QSettings
+from PyQt5.QtGui import QColor
 
 _metricsWindowComboBoxItems = [
     "abcdefghijklmnopqrstuvwxyz",
