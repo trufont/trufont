@@ -190,9 +190,15 @@ class GroupListView(ListView):
     alignmentChanged = pyqtSignal(bool)
     groupDeleted = pyqtSignal(object)
 
-    def editRow(self, index):
+    def currentValue(self):
+        index = self.currentIndex()
         model = self.model()
-        self.edit(model.index(index, 0))
+        if model is None:
+            return None
+        return model.data(index)
+
+    def editRow(self, index):
+        self.editItem(index, 0)
 
     def keyPressEvent(self, event):
         key = event.key()

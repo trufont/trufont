@@ -1,12 +1,13 @@
 from collections import OrderedDict
 from defconQt.controls.colorVignette import ColorVignette
+from defconQt.controls.listView import ListView
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog,
     QDialogButtonBox, QFileDialog, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMenu, QPlainTextEdit, QPushButton,
-    QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+    QSplitter, QVBoxLayout, QWidget)
 from trufont.controls.nameTabWidget import NameTabWidget
 from trufont.objects import settings
 
@@ -276,15 +277,11 @@ class MiscTab(QWidget):
         self.name = self.tr("Misc")
 
         self.markColorLabel = QLabel(self.tr("Default flag colors:"), self)
-        # TODO: enforce duplicate names avoidance
-        self.markColorWidget = QTreeWidget(self)
-        self.markColorWidget.setHeaderLabels(
+        self.markColorView = ListView(self)
+        # HACK: we need a model before declaring headers
+        self.markColorView.setList([])
+        self.markColorView.setHeaderLabels(
             (self.tr("Color"), self.tr("Name")))
-        self.markColorWidget.setRootIsDecorated(False)
-        self.markColorWidget.setSelectionBehavior(
-            QAbstractItemView.SelectRows)
-        # TODO: make this work correctly, top-level items only
-        # self.markColorWidget.setDragDropMode(QAbstractItemView.InternalMove)
         self.addItemButton = QPushButton("+", self)
         self.addItemButton.clicked.connect(self.addItem)
         self.removeItemButton = QPushButton("−", self)
@@ -297,7 +294,7 @@ class MiscTab(QWidget):
         l = 0
         layout.addWidget(self.markColorLabel, l, 0, 1, 3)
         l += 1
-        layout.addWidget(self.markColorWidget, l, 0, 1, 3)
+        layout.addWidget(self.markColorView, l, 0, 1, 3)
         l += 1
         layout.addWidget(self.addItemButton, l, 0)
         layout.addWidget(self.removeItemButton, l, 1)
@@ -308,45 +305,20 @@ class MiscTab(QWidget):
         self.readSettings()
 
     def addItem(self):
-        def mangleNewName():
-            name = self.tr("New")
-            index = 0
-            while self.markColorWidget.findItems(name, Qt.MatchExactly, 1):
-                index += 1
-                name = "{0} ({1})".format(name, index)
-            return name
-
-        # TODO: not DRY with ctor
-        item = QTreeWidgetItem(self.markColorWidget)
-        item.setFlags(item.flags() | Qt.ItemIsEditable)
-        widget = ColorVignette(self)
-        widget.setColor(QColor(Qt.white))
-        widget.setMargins(2, 2, 2, 2)
-        widget.setMayClearColor(False)
-        self.markColorWidget.setItemWidget(item, 0, widget)
-        item.setText(1, mangleNewName())
-
-        self.markColorWidget.setCurrentItem(item)
-        self.markColorWidget.editItem(item, 1)
+        lst = self.markColorView.list()
+        lst.append([QColor(170, 255, 255), self.tr("New!")])
+        self.markColorView.setList(lst)
+        self.markColorView.editIndex(len(lst) - 1, 1)
         self.removeItemButton.setEnabled(True)
 
     def removeItem(self):
-        i = self.markColorWidget.selectionModel().currentIndex().row()
-        self.markColorWidget.takeTopLevelItem(i)
-        if not self.markColorWidget.topLevelItemCount():
+        self.markColorView.removeCurrentRow()
+        if not len(self.markColorView.list()):
             self.removeItemButton.setEnabled(False)
 
     def readSettings(self):
         entries = settings.readMarkColors()
-        for name, color in entries.items():
-            item = QTreeWidgetItem(self.markColorWidget)
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
-            widget = ColorVignette(self)
-            widget.setColor(color)
-            widget.setMargins(2, 2, 2, 2)
-            widget.setMayClearColor(False)
-            self.markColorWidget.setItemWidget(item, 0, widget)
-            item.setText(1, name)
+        self.markColorView.setList(entries)
         if not len(entries):
             self.removeItemButton.setEnabled(False)
 
@@ -354,12 +326,7 @@ class MiscTab(QWidget):
         self.loadRecentFileBox.setChecked(loadRecentFile)
 
     def writeSettings(self):
-        markColors = OrderedDict()
-        for i in range(self.markColorWidget.topLevelItemCount()):
-            item = self.markColorWidget.topLevelItem(i)
-            name = item.text(1)
-            color = self.markColorWidget.itemWidget(item, 0).color()
-            markColors[name] = color
+        markColors = self.markColorView.list()
         settings.writeMarkColors(markColors)
 
         loadRecentFile = self.loadRecentFileBox.isChecked()

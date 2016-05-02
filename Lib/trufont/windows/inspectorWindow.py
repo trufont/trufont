@@ -1,5 +1,7 @@
 from defconQt.controls.accordionBox import AccordionBox
 from defconQt.controls.colorVignette import ColorVignette
+from defconQt.controls.listView import ListView
+from defconQt.tools.drawing import colorToQColor
 from PyQt5.QtCore import QRegularExpression, Qt
 from PyQt5.QtGui import (
     QColor, QIcon, QIntValidator, QDoubleValidator,
@@ -208,15 +210,14 @@ class InspectorWindow(QWidget):
         layerSetGroup = AccordionBox(self.tr("Layers"), self)
         layerSetLayout = QVBoxLayout(self)
 
-        self.layerSetWidget = QTreeWidget(self)
-        self.layerSetWidget.setHeaderLabels(
-            (self.tr("Layer Name"), self.tr("Color")))
-        self.layerSetWidget.setRootIsDecorated(False)
-        self.layerSetWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
-        # TODO: make this work correctly, top-level items only
-        # self.layerSetWidget.setDragDropMode(QAbstractItemView.InternalMove)
+        self.layerSetView = ListView(self)
+        # HACK: we need this for header labels
+        self.layerSetView.setList([[None, None]])
+        self.layerSetView.setHeaderLabels(
+            (self.tr("Color"), self.tr("Layer Name")))
+        self.layerSetView.valueChanged.connect(self.writeLayerAttribute)
 
-        layerSetLayout.addWidget(self.layerSetWidget)
+        layerSetLayout.addWidget(self.layerSetView)
         layerSetGroup.setLayout(layerSetLayout)
 
         spacer = QWidget()
@@ -228,7 +229,6 @@ class InspectorWindow(QWidget):
         mainLayout.addWidget(layerSetGroup)
         mainLayout.addWidget(spacer)
         self.setLayout(mainLayout)
-        self.resize(200, self.height())
 
     # -------------
     # Notifications
@@ -301,27 +301,19 @@ class InspectorWindow(QWidget):
         self.markColorWidget.setColor(markColor)
 
     def _updateLayerAttributes(self, notification=None):
-        self.layerSetWidget.clear()
-        if self._font is None:
+        self.layerSetView.setList([])
+        font = self._font
+        if None in (font, font.layers):
             return
-        layerSet = self._font.layers
-        if layerSet is None:
-            return
-        for layer in layerSet:
-            item = QTreeWidgetItem(self.layerSetWidget)
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
-            item.setText(0, layer.name)
-            widget = ColorVignette(self)
+        layers = []
+        for layer in font.layers:
             color = layer.color
             if color is not None:
-                color = QColor.fromRgbF(*tuple(color))
-            widget.setColor(color)
-            widget.setMargins(2, 2, 2, 2)
-            widget.setMayClearColor(False)
-            widget.colorChanged.connect(self.writeLayerColor)
-            widget.setProperty("layer", layer)
-            self.layerSetWidget.setItemWidget(item, 1, widget)
-        self.layerSetWidget.setColumnWidth(1, 100)
+                color = colorToQColor(color)
+            else:
+                color = QColor()
+            layers.append([color, layer.name])
+        self.layerSetView.setList(layers)
 
     # ---------
     # Callbacks
@@ -364,13 +356,25 @@ class InspectorWindow(QWidget):
             color = color.getRgbF()
         self._glyph.markColor = color
 
-    def writeLayerColor(self):
-        widget = self.sender()
-        color = widget.color()
-        layer = widget.property("layer")
-        if color is not None:
-            color = color.getRgbF()
-        layer.color = color
+    def writeLayerAttribute(self, index, previous, current):
+        font = self._font
+        if None in (font, font.layers):
+            return
+        row, column = index.row(), index.column()
+        layers = font.layers
+        layer = layers[layers.layerOrder[row]]
+        if column == 0:
+            # color
+            if current.isValid():
+                color = current.getRgbF()
+            else:
+                color = None
+            layer.color = color
+        elif column == 1:
+            # name
+            layer.name = current
+        else:
+            raise ValueError("invalid column selected: %d." % column)
 
     # transforms
 
@@ -460,6 +464,10 @@ class InspectorWindow(QWidget):
     # ----------
     # Qt methods
     # ----------
+
+    def sizeHint(self):
+        sizeHint = super().sizeHint()
+        return sizeHint.__class__(200, sizeHint.height())
 
     def showEvent(self, event):
         super().showEvent(event)

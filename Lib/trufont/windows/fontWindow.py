@@ -635,7 +635,7 @@ class FontWindow(BaseMainWindow):
         pixmap = QPixmap(24, 24)
         none = self.markColorMenu.addAction("None", self.markColor)
         none.setData(None)
-        for name, color in entries.items():
+        for color, name in entries:
             action = self.markColorMenu.addAction(name, self.markColor)
             pixmap.fill(color)
             action.setIcon(QIcon(pixmap))

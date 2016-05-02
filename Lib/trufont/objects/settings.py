@@ -165,17 +165,19 @@ def writeGlyphSets(glyphSets):
 def readMarkColors():
     settings = QSettings()
     size = settings.beginReadArray("misc/markColors")
-    markColors = OrderedDict()
     if not size:
-        # serialized in UFO form
-        markColors["Red"] = colorToQColor("1,0,0,1")
-        markColors["Yellow"] = colorToQColor("1,1,0,1")
-        markColors["Green"] = colorToQColor("0,1,0,1")
+        markColors = [
+            [QColor(255, 0, 0), "Red"],
+            [QColor(255, 255, 0), "Yellow"],
+            [QColor(0, 255, 0), "Green"],
+        ]
+    else:
+        markColors = []
     for i in range(size):
         settings.setArrayIndex(i)
-        markColorName = settings.value("name", type=str)
         markColor = settings.value("color", type=str)
-        markColors[markColorName] = colorToQColor(markColor)
+        markColorName = settings.value("name", type=str)
+        markColors.append([colorToQColor(markColor), markColorName])
     settings.endArray()
     return markColors
 
@@ -185,9 +187,9 @@ def writeMarkColors(markColors):
     settings.beginWriteArray("misc/markColors")
     # serialized in UFO form
     i = 0
-    for name, color in markColors.items():
+    for color, name in markColors:
         settings.setArrayIndex(i)
-        settings.setValue("name", name)
         settings.setValue("color", str(Color(color.getRgbF())))
+        settings.setValue("name", name)
         i += 1
     settings.endArray()
