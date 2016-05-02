@@ -210,10 +210,12 @@ class InspectorWindow(QWidget):
         layerSetLayout = QVBoxLayout(self)
 
         self.layerSetView = ListView(self)
+        self.layerSetView.setDragEnabled(True)
         # HACK: we need this for header labels
         self.layerSetView.setList([[None, None]])
         self.layerSetView.setHeaderLabels(
             (self.tr("Color"), self.tr("Layer Name")))
+        self.layerSetView.dataDropped.connect(self.writeLayerOrder)
         self.layerSetView.valueChanged.connect(self.writeLayerAttribute)
 
         layerSetLayout.addWidget(self.layerSetView)
@@ -374,6 +376,18 @@ class InspectorWindow(QWidget):
             layer.name = current
         else:
             raise ValueError("invalid column selected: %d." % column)
+
+    def writeLayerOrder(self):
+        font = self._font
+        if None in (font, font.layers):
+            return
+        data = self.layerSetView.list()
+        layerSet = font.layers
+        layerOrder = []
+        for _, name in data:
+            layerOrder.append(name)
+        # defcon has data validity assertion (constant len etc.)
+        layerSet.layerOrder = layerOrder
 
     # transforms
 

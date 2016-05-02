@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
     QGridLayout, QPushButton, QRadioButton, QWidget)
+import bisect
 
 _leftGroupPrefix = "public.kern1"
 _rightGroupPrefix = "public.kern2"
@@ -117,9 +118,10 @@ class GroupsWindow(QWidget):
         groups[groupName] = []
         # TODO; make this a listView method
         lst = self.groupsListView.list()
-        lst.insert(0, groupName)
+        index = bisect.bisect_left(lst, groupName)
+        lst.insert(index, groupName)
         self.groupsListView.setList(lst)
-        self.groupsListView.editRow(0)
+        self.groupsListView.editRow(index)
         self.removeGroupButton.setEnabled(True)
         groups.enableNotifications(observer=self)
 

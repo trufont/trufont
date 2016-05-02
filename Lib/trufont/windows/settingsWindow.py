@@ -276,6 +276,7 @@ class MiscTab(QWidget):
 
         self.markColorLabel = QLabel(self.tr("Default flag colors:"), self)
         self.markColorView = ListView(self)
+        self.markColorView.setDragEnabled(True)
         # HACK: we need a model before declaring headers
         self.markColorView.setList([])
         self.markColorView.setHeaderLabels(
