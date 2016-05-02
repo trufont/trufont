@@ -19,6 +19,8 @@ def main():
     # register representation factories
     baseRepresentationFactories.registerAllFactories()
     representationFactories.registerAllFactories()
+    if hasattr(Qt, "AA_EnableHighDpiScaling"):
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     # initialize the app
     app = Application(sys.argv)
     app.setOrganizationName("TruFont")
