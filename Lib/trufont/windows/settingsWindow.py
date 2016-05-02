@@ -1,5 +1,3 @@
-from collections import OrderedDict
-from defconQt.controls.colorVignette import ColorVignette
 from defconQt.controls.listView import ListView
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor

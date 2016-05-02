@@ -1,4 +1,4 @@
-from collections import Iterable, OrderedDict
+from collections import Iterable
 from defcon import Color
 from defconQt.tools.drawing import colorToQColor
 from PyQt5.QtCore import QSettings
