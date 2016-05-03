@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QMessageBox, QSplitter, QTreeView, QWidget, QVBoxLayout)
 from trufont.tools import platformSpecific
 import os
+import tokenize
 import traceback
 
 
@@ -73,7 +74,7 @@ class ScriptingWindow(QMainWindow):
             if path is None:
                 return
             self.fileChooser.setCurrentFolder(os.path.basename(path))
-        with open(path, "rt") as inputFile:
+        with tokenize.open(path) as inputFile:
             self.editor.setPlainText(inputFile.read())
         self.currentPath = path
 
@@ -282,7 +283,7 @@ class PythonEditor(BaseCodeEditor):
         self.highlighter = PythonHighlighter(self.document())
 
     def write(self, path):
-        with open(path, "wt") as outputFile:
+        with open(path, "wt", encoding="utf-8") as outputFile:
             outputFile.write(self.toPlainText())
         self.document().setModified(False)
 
