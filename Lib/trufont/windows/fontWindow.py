@@ -543,7 +543,7 @@ class FontWindow(BaseMainWindow):
 
     def inspector(self):
         app = QApplication.instance()
-        if not hasattr(app, 'inspectorWindow'):
+        if app.inspectorWindow is None:
             app.inspectorWindow = InspectorWindow()
             app.inspectorWindow.show()
         elif app.inspectorWindow.isVisible():
@@ -698,6 +698,9 @@ class FontWindow(BaseMainWindow):
         if event.type() == QEvent.WindowActivate:
             app = QApplication.instance()
             app.setCurrentMainWindow(self)
+            inspector = app.inspectorWindow
+            if inspector is not None and inspector.isVisible():
+                inspector.raise_()
             lastSelectedGlyph = self.glyphCellView.lastSelectedGlyph()
             if lastSelectedGlyph is not None:
                 app.setCurrentGlyph(lastSelectedGlyph)

@@ -24,6 +24,7 @@ class Application(QApplication):
         self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")
         self.focusChanged.connect(self.updateCurrentMainWindow)
         self.GL2UV = None
+        self.inspectorWindow = None
         self.outputWindow = None
 
     def event(self, event):
