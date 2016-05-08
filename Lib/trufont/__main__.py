@@ -82,7 +82,7 @@ def exceptionCallback(etype, value, tb):
     text = "TruFont has encountered a problem and must shutdown."
     exc = traceback.format_exception(etype, value, tb)
     exc_text = "".join(exc)
-    print(exc_text)
+    print(exc_text, file=sys.stderr)
 
     if _showMessages:
         messageBox = QMessageBox(QMessageBox.Critical, ":(", text)

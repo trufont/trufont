@@ -187,12 +187,10 @@ class InspectorWindow(QWidget):
         transformLayout.addWidget(scaleYLabel, l, 3)
         transformLayout.addWidget(self.scaleYEdit, l, 4)
         transformLayout.addWidget(scaleXYBox, l, 5)
-        transformGroup.setLayout(transformLayout)
         l += 1
         transformLayout.addWidget(rotateButton, l, 0)
         transformLayout.addWidget(rotateLabel, l, 1)
         transformLayout.addWidget(self.rotateEdit, l, 2)
-        transformGroup.setLayout(transformLayout)
         l += 1
         transformLayout.addWidget(skewButton, l, 0)
         transformLayout.addWidget(skewXLabel, l, 1)
@@ -200,7 +198,6 @@ class InspectorWindow(QWidget):
         transformLayout.addWidget(skewYLabel, l, 3)
         transformLayout.addWidget(self.skewYEdit, l, 4)
         transformLayout.addWidget(skewXYBox, l, 5)
-        transformGroup.setLayout(transformLayout)
         l += 1
         transformLayout.addWidget(snapButton, l, 0)
         transformLayout.addWidget(self.snapEdit, l, 2)

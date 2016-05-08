@@ -941,6 +941,15 @@ class GlyphCanvasView(GlyphView):
         super().setFocus(value)
         self._glyphWidget.setFocus(value)
 
+    # ----------
+    # Qt methods
+    # ----------
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        if event.isAccepted():
+            self._glyphWidget.closeEvent(event)
+
 
 def _shapeFromPath(path, width):
     if path.isEmpty():

@@ -98,7 +98,7 @@ def removeUISelection(contour, preserveShape=True):
             # move with trailing offCurve
             offCurve = segment[0]
             if offCurve.selected:
-                assert(offCurve.segmentType is None)
+                assert offCurve.segmentType is None
                 contour.removePoint(offCurve)
         elif len(segment) == 3:
             # if offCurve selected, wipe them

@@ -73,7 +73,7 @@ class ScriptingWindow(QMainWindow):
             path = self._ioDialog(QFileDialog.AcceptOpen)
             if path is None:
                 return
-            self.fileChooser.setCurrentFolder(os.path.basename(path))
+            self.fileChooser.setCurrentFolder(os.path.dirname(path))
         with tokenize.open(path) as inputFile:
             self.editor.setPlainText(inputFile.read())
         self.currentPath = path
