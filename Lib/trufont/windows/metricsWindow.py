@@ -79,12 +79,8 @@ class MetricsWindow(BaseWindow):
             if glyph.unicode is not None:
                 glyphNames.append(chr(glyph.unicode))
             else:
-                glyphNames.append("".join(("/", glyph.name, " ")))
-        self.toolbar.setText("".join(glyphNames))
-        # set the records into the view
-        # TODO: shouldn't this happen on its own?
-        self.lineView.setGlyphRecords(glyphs)
-        self.table.setGlyphs(glyphs)
+                glyphNames.append("/%s " % glyph.name)
+        self.setText("".join(glyphNames))
 
     def setText(self, text):
         self.toolbar.setText(text)
