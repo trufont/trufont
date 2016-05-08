@@ -41,6 +41,20 @@ class PenTool(BaseTool):
             return next(iter(candidates))
         return None
 
+    def _coerceSegmentToCurve(self, contour, pt, pos):
+        contour.holdNotifications()
+        index = contour.index(pt)
+        otherPt = contour.getPoint(index - 1)
+        # add an offCurve before pt
+        inverseX = 2 * pt.x - pos.x()
+        inverseY = 2 * pt.y - pos.y()
+        contour.insertPoint(index, pt.__class__((inverseX, inverseY)))
+        # add the first of two offCurves
+        contour.insertPoint(index, pt.__class__((otherPt.x, otherPt.y)))
+        # now flag pt as curve point
+        pt.segmentType = "curve"
+        contour.releaseHeldNotifications()
+
     def _updateOnCurveSmoothness(self, event):
         if self._targetContour is not None:
             if len(self._targetContour) < 2:
@@ -136,26 +150,16 @@ class PenTool(BaseTool):
                     contour.addPoint((pt.x, pt.y))
                 startPt = contour[0]
                 startPt.segmentType = "curve"
-            elif pt.segmentType == "line":
-                # remove the onCurve
-                contour.removePoint(pt)
-                # add the first of two offCurves
-                otherPt = contour[-1]
-                contour.addPoint((otherPt.x, otherPt.y))
-                # add an offCurve before pt
-                inverseX = 2 * pt.x - pos.x()
-                inverseY = 2 * pt.y - pos.y()
-                contour.addPoint((inverseX, inverseY))
-                # now add pt back as curve point
-                pt.segmentType = "curve"
-                contour.insertPoint(len(self._targetContour), pt)
-            else:
-                # if there's a curve segment behind, we need to update the
-                # offCurve's position to inverse
-                if len(contour) > 1:
-                    onCurveBefore = contour[-2]
-                    onCurveBefore.x = 2 * pt.x - pos.x()
-                    onCurveBefore.y = 2 * pt.y - pos.y()
+            elif pt.smooth:
+                if pt.segmentType == "line":
+                    self._coerceSegmentToCurve(contour, pt, pos)
+                else:
+                    # if there's a curve segment behind, we need to update the
+                    # offCurve's position to inverse
+                    if len(contour) > 1:
+                        onCurveBefore = contour[-2]
+                        onCurveBefore.x = 2 * pt.x - pos.x()
+                        onCurveBefore.y = 2 * pt.y - pos.y()
             contour.addPoint((pos.x(), pos.y()))
             contour[-1].selected = True
             contour.releaseHeldNotifications()
@@ -177,6 +181,8 @@ class PenTool(BaseTool):
                 pt.x = pos.x()
                 pt.y = pos.y()
                 if contour.open and len(contour) >= 3 and onCurve.smooth:
+                    if onCurve.segmentType == "line":
+                        self._coerceSegmentToCurve(contour, onCurve, pos)
                     otherSidePoint = contour[-3]
                     otherSidePoint.x = 2 * onCurve.x - pos.x()
                     otherSidePoint.y = 2 * onCurve.y - pos.y()
