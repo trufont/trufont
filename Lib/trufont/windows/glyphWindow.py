@@ -188,6 +188,7 @@ class GlyphWindow(BaseMainWindow):
         for contour in glyph:
             for point in contour:
                 point.selected = not point.selected
+            contour.postNotification("Contour.SelectionChanged")
         cutGlyph = glyph.getRepresentation("TruFont.FilterSelection")
         glyph.prepareUndo()
         glyph.holdNotifications()

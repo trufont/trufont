@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QKeySequence, QPainter, QTransform
+from PyQt5.QtGui import QKeySequence, QPainter, QPainterPath, QTransform
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
@@ -10,6 +10,20 @@ from trufont.tools.uiMethods import moveUISelection, removeUISelection
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
+
+
+def _pointWithinThreshold(x, y, curve, eps):
+    """
+    See whether *(x, y)* is within *eps* of *curve*.
+    """
+    path = QPainterPath()
+    path.addEllipse(x - eps, y - eps, 2 * eps, 2 * eps)
+    curvePath = QPainterPath()
+    p1, p2, p3, p4 = curve
+    curvePath.moveTo(p1.x, p1.y)
+    curvePath.cubicTo(p2.x, p2.y, p3.x, p3.y, p4.x, p4.y)
+    curvePath.cubicTo(p3.x, p3.y, p2.x, p2.y, p1.x, p1.y)
+    return path.intersects(curvePath)
 
 
 class SelectionTool(BaseTool):
@@ -91,7 +105,7 @@ class SelectionTool(BaseTool):
                 return True
         return False
 
-    def _computeLineClick(self, pos, insert=False):
+    def _computeSegmentClick(self, pos, insert=False):
         scale = self.parent().inverseScale()
         for contour in self._glyph:
             for index, point in enumerate(contour):
@@ -116,6 +130,18 @@ class SelectionTool(BaseTool):
                             contour.postNotification(
                                 notification="Contour.SelectionChanged")
                             self._shouldMove = self._shouldPrepareUndo = True
+                        return
+                elif point.segmentType == "curve":
+                    if insert:
+                        continue
+                    bez = [contour.getPoint(index-3+i) for i in range(4)]
+                    ok = _pointWithinThreshold(pos.x(), pos.y(), bez, 5 * scale)
+                    if ok:
+                        prev = bez[0]
+                        prev.selected = point.selected = True
+                        contour.postNotification(
+                            notification="Contour.SelectionChanged")
+                        self._shouldMove = self._shouldPrepareUndo = True
                         return
 
     def _moveForEvent(self, event):
@@ -267,7 +293,7 @@ class SelectionTool(BaseTool):
                     component.selected = False
                 self._glyph.selected = False
                 self._glyph.image.selected = False
-            self._computeLineClick(event.localPos())
+            self._computeSegmentClick(event.localPos())
         widget.update()
 
     def mouseMoveEvent(self, event):
@@ -345,7 +371,7 @@ class SelectionTool(BaseTool):
                     point.smooth = not point.smooth
                 contour.dirty = True
         else:
-            self._computeLineClick(event.localPos(), True)
+            self._computeSegmentClick(event.localPos(), True)
 
     # custom painting
 

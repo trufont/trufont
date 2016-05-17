@@ -329,6 +329,10 @@ class PythonEditor(BaseCodeEditor):
                     return
         super().keyPressEvent(event)
 
+    def setPlainText(self, text):
+        super().setPlainText(text)
+        self.document().setModified(False)
+
 
 class PythonHighlighter(BaseCodeHighlighter):
 
