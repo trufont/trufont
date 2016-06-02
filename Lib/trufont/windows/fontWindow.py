@@ -1,4 +1,4 @@
-from defconQt.controls.glyphCellView import GlyphCellView
+from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.windows.baseWindows import BaseMainWindow
 from trufont import __version__
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
@@ -127,7 +127,7 @@ class FontWindow(BaseMainWindow):
         menuBar.addMenu(helpMenu)
 
         cellSize = 56
-        self.glyphCellView = GlyphCellView(self)
+        self.glyphCellView = FontCellView(self)
         self.glyphCellView.glyphActivated.connect(self._glyphActivated)
         self.glyphCellView.glyphsDropped.connect(self._orderChanged)
         self.glyphCellView.selectionChanged.connect(self._selectionChanged)
@@ -286,9 +286,8 @@ class FontWindow(BaseMainWindow):
                 font.glyphOrder = [glyph.name for glyph in glyphs]
                 font.enableNotifications(observer=self)
         else:
-            glyphs = list(font)
             font.disableNotifications(observer=self)
-            font.glyphOrder = [glyph.name for glyph in glyphs]
+            font.glyphOrder = [glyph.name for glyph in font]
             font.enableNotifications(observer=self)
         self.glyphCellView.setGlyphs(glyphs)
 
@@ -713,3 +712,56 @@ class FontWindow(BaseMainWindow):
             else:
                 title = self.tr("Untitled.ufo")
         super().setWindowTitle("[*]{}".format(title))
+
+
+class FontCellWidget(GlyphCellWidget):
+
+    def _proceedWithDeletion(self, erase=False):
+        if not self._selection:
+            return
+        tr = self.tr("Delete") if erase else self.tr("Clear")
+        text = self.tr("Do you want to %s selected glyphs?") % tr.lower()
+        closeDialog = QMessageBox(
+            QMessageBox.Question, "",
+            self.tr("%s glyphs") % tr,
+            QMessageBox.Yes | QMessageBox.No, self)
+        closeDialog.setInformativeText(text)
+        closeDialog.setModal(True)
+        ret = closeDialog.exec_()
+        if ret == QMessageBox.Yes:
+            return True
+        return False
+
+    def _isDelEvent(self, event):
+        if event.matches(QKeySequence.Delete):
+            return True
+        if event.modifiers() & Qt.ShiftModifier:
+            event_ = event.__class__(
+                event.type(), event.key(), event.modifiers().__class__(),
+                event.text(), event.isAutoRepeat(), event.count())
+            return event_.matches(QKeySequence.Delete)
+        return False
+
+    def keyPressEvent(self, event):
+        if self._isDelEvent(event):
+            erase = event.modifiers() & Qt.ShiftModifier
+            if self._proceedWithDeletion(erase):
+                glyphs = self.glyphsForIndexes(self._selection)
+                for glyph in glyphs:
+                    font = glyph.font
+                    if erase:
+                        del font[glyph.name]
+                    else:
+                        # TODO: consider doing that in glyph template setter
+                        glyph.clear()
+                        glyph.template = True
+        elif event.matches(QKeySequence.SelectAll):
+            self.selectAll()
+        elif event.key() == Qt.Key_D and event.modifiers() & Qt.ControlModifier:
+            self.setSelection(set())
+        else:
+            super().keyPressEvent(event)
+
+
+class FontCellView(GlyphCellView):
+    glyphCellWidgetClass = FontCellWidget
