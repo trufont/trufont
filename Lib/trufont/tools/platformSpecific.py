@@ -30,3 +30,11 @@ def closeKeySequence():
 
 def useTabBar():
     return sys.platform == "darwin"
+
+# -----------
+# Message box
+# -----------
+
+
+def useCenteredButtons():
+    return sys.platform == "darwin"

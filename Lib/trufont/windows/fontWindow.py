@@ -606,8 +606,9 @@ class FontWindow(BaseMainWindow):
         msgBox.setWindowTitle(self.tr("About {}").format(name))
         msgBox.setText(caption)
         msgBox.setInformativeText(text)
-        buttonBox = msgBox.findChild(QDialogButtonBox)
-        buttonBox.setCenterButtons(True)
+        if platformSpecific.useCenteredButtons():
+            buttonBox = msgBox.findChild(QDialogButtonBox)
+            buttonBox.setCenterButtons(True)
         msgBox.show()
 
     # update methods
