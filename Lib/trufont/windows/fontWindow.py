@@ -13,11 +13,11 @@ from trufont.windows.metricsWindow import MetricsWindow
 from trufont.windows.inspectorWindow import InspectorWindow
 from trufont.windows.scriptingWindow import ScriptingWindow
 from trufont.windows.settingsWindow import SettingsWindow
-from PyQt5.QtCore import QEvent, QMimeData, Qt
+from PyQt5.QtCore import QEvent, QMimeData, QSize, Qt
 from PyQt5.QtGui import QCursor, QIcon, QKeySequence, QPixmap
 from PyQt5.QtWidgets import (
-    QAction, QApplication, QFileDialog, QLabel, QMenu, QMessageBox,
-    QSlider, QToolTip)
+    QAction, QApplication, QDialogButtonBox, QFileDialog, QLabel, QMenu,
+    QMessageBox, QSlider, QToolTip)
 from collections import OrderedDict
 import os
 import pickle
@@ -580,21 +580,35 @@ class FontWindow(BaseMainWindow):
     def about(self):
         name = QApplication.applicationName()
         domain = QApplication.organizationDomain()
-        text = self.tr(
+        caption = self.tr(
             "<h3>About {n}</h3>"
             "<p>{n} is a cross-platform, modular typeface design "
-            "application.</p><p>{n} is built on top of "
+            "application.</p>").format(n=name)
+        text = self.tr(
+            "<p>{} is built on top of "
             "<a href='http://ts-defcon.readthedocs.org/en/ufo3/'>defcon</a> "
             "and includes scripting support "
             "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>"
             "<p>Version {} {} – Python {}.").format(
-            __version__, gitShortHash, platform.python_version(), n=name)
+            name, __version__, gitShortHash, platform.python_version())
         if domain:
             text += self.tr("<br>See <a href='http://{d}'>{d}</a> for more "
                             "information.</p>").format(d=domain)
         else:
             text += "</p>"
-        QMessageBox.about(self, self.tr("About {}").format(name), text)
+        # This duplicates much of QMessageBox.about(), but it has no way to
+        # setInformativeText()...
+        msgBox = QMessageBox(self)
+        msgBox.setAttribute(Qt.WA_DeleteOnClose)
+        icon = msgBox.windowIcon()
+        size = icon.actualSize(QSize(64, 64))
+        msgBox.setIconPixmap(icon.pixmap(size))
+        msgBox.setWindowTitle(self.tr("About {}").format(name))
+        msgBox.setText(caption)
+        msgBox.setInformativeText(text)
+        buttonBox = msgBox.findChild(QDialogButtonBox)
+        buttonBox.setCenterButtons(True)
+        msgBox.show()
 
     # update methods
 
