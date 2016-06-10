@@ -135,8 +135,7 @@ class SelectionTool(BaseTool):
                     if insert:
                         continue
                     bez = [contour.getPoint(index-3+i) for i in range(4)]
-                    ok = _pointWithinThreshold(pos.x(), pos.y(), bez, 5 * scale)
-                    if ok:
+                    if _pointWithinThreshold(pos.x(), pos.y(), bez, 5 * scale):
                         prev = bez[0]
                         prev.selected = point.selected = True
                         contour.postNotification(

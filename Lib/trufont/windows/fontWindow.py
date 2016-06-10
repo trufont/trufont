@@ -758,8 +758,9 @@ class FontCellWidget(GlyphCellWidget):
         return False
 
     def keyPressEvent(self, event):
+        modifiers = event.modifiers()
         if self._isDelEvent(event):
-            erase = event.modifiers() & Qt.ShiftModifier
+            erase = modifiers & Qt.ShiftModifier
             if self._proceedWithDeletion(erase):
                 glyphs = self.glyphsForIndexes(self._selection)
                 for glyph in glyphs:
@@ -772,7 +773,7 @@ class FontCellWidget(GlyphCellWidget):
                         glyph.template = True
         elif event.matches(QKeySequence.SelectAll):
             self.selectAll()
-        elif event.key() == Qt.Key_D and event.modifiers() & Qt.ControlModifier:
+        elif event.key() == Qt.Key_D and modifiers & Qt.ControlModifier:
             self.setSelection(set())
         else:
             super().keyPressEvent(event)
