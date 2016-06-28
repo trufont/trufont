@@ -12,6 +12,7 @@ class PenTool(BaseTool):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._shouldMoveOnCurve = False
+        self._stashedOffCurve = None
         self._targetContour = None
 
     # helpers
@@ -50,7 +51,13 @@ class PenTool(BaseTool):
         inverseY = 2 * pt.y - pos.y()
         contour.insertPoint(index, pt.__class__((inverseX, inverseY)))
         # add the first of two offCurves
-        contour.insertPoint(index, pt.__class__((otherPt.x, otherPt.y)))
+        if self._stashedOffCurve is not None:
+            contour.insertPoint(index, self._stashedOffCurve)
+            self._stashedOffCurve = None
+        else:
+            firstX = otherPt.x + round(.35 * (pt.x - otherPt.x))
+            firstY = otherPt.y + round(.35 * (pt.y - otherPt.y))
+            contour.insertPoint(index, pt.__class__((firstX, firstY)))
         # now flag pt as curve point
         pt.segmentType = "curve"
         contour.releaseHeldNotifications()
@@ -108,11 +115,10 @@ class PenTool(BaseTool):
                 pos = self.clampToOrigin(
                     canvasPos, QPointF(lastPoint.x, lastPoint.y))
                 x, y = pos.x(), pos.y()
-            if lastPoint.segmentType:
-                pointType = "line"
-            else:
-                pointType = "curve"
-                contour.addPoint((x, y))
+            if not lastPoint.segmentType:
+                contour.removePoint(lastPoint)
+                self._stashedOffCurve = lastPoint
+            pointType = "line"
         # or create a new one
         else:
             contour = TContour()
@@ -190,4 +196,5 @@ class PenTool(BaseTool):
 
     def mouseReleaseEvent(self, event):
         self._shouldMoveOnCurve = False
+        self._stashedOffCurve = None
         self._targetContour = None
