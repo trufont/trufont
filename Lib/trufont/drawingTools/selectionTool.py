@@ -105,7 +105,7 @@ class SelectionTool(BaseTool):
                 return True
         return False
 
-    def _computeSegmentClick(self, pos, insert=False):
+    def _findSegmentUnderMouse(self, pos, action=None):
         scale = self.parent().inverseScale()
         for contour in self._glyph:
             for index, point in enumerate(contour):
@@ -115,33 +115,43 @@ class SelectionTool(BaseTool):
                         prev.x, prev.y, point.x, point.y, pos.x(), pos.y())
                     # TODO: somewhat arbitrary
                     if dist < 5 * scale:
-                        if insert:
-                            self._glyph.prepareUndo()
-                            contour.holdNotifications()
-                            for i, t in enumerate((.35, .65)):
-                                xt = prev.x + t * (point.x - prev.x)
-                                yt = prev.y + t * (point.y - prev.y)
-                                contour.insertPoint(
-                                    index+i, point.__class__((xt, yt)))
-                            point.segmentType = "curve"
-                            contour.releaseHeldNotifications()
-                        else:
-                            prev.selected = point.selected = True
-                            contour.postNotification(
-                                notification="Contour.SelectionChanged")
-                            self._shouldMove = self._shouldPrepareUndo = True
-                        return
+                        return [prev, point]
                 elif point.segmentType == "curve":
-                    if insert:
+                    if action == "insert":
                         continue
                     bez = [contour.getPoint(index-3+i) for i in range(4)]
                     if _pointWithinThreshold(pos.x(), pos.y(), bez, 5 * scale):
-                        prev = bez[0]
-                        prev.selected = point.selected = True
-                        contour.postNotification(
-                            notification="Contour.SelectionChanged")
-                        self._shouldMove = self._shouldPrepareUndo = True
-                        return
+                        return bez
+        return None
+
+    def _performSegmentClick(self, pos, action=None, segment=None):
+        if segment is None:
+            segment = self._findSegmentUnderMouse(pos, action)
+        if segment is None:
+            return
+        prev, point = segment[0], segment[-1]
+        scale = self.parent().inverseScale()
+        if point.segmentType == "line":
+            if action == "insert":
+                self._glyph.prepareUndo()
+                contour.holdNotifications()
+                for i, t in enumerate((.35, .65)):
+                    xt = prev.x + t * (point.x - prev.x)
+                    yt = prev.y + t * (point.y - prev.y)
+                    contour.insertPoint(
+                        index+i, point.__class__((xt, yt)))
+                point.segmentType = "curve"
+                contour.releaseHeldNotifications()
+                return
+        elif point.segmentType != "curve":
+            return
+        if action == "selectContour":
+            contour.selected = True
+        else:
+            prev.selected = point.selected = True
+            contour.postNotification(
+                notification="Contour.SelectionChanged")
+        self._shouldMove = self._shouldPrepareUndo = True
 
     def _moveForEvent(self, event):
         key = event.key()
@@ -266,7 +276,7 @@ class SelectionTool(BaseTool):
             return
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ControlModifier
-        self._origin = self.magnetPos(event.localPos())
+        self._origin = pos = self.magnetPos(event.localPos())
         self._itemTuple = widget.itemAt(self._origin)
         if self._itemTuple is not None:
             itemUnderMouse, parentContour = self._itemTuple
@@ -283,16 +293,23 @@ class SelectionTool(BaseTool):
                     notification="Contour.SelectionChanged")
             self._shouldPrepareUndo = True
         else:
-            if addToSelection:
-                self._oldSelection = self._glyph.selection
+            action = "insert" if event.modifiers() & Qt.AltModifier else None
+            segment = self._findSegmentUnderMouse(pos, action)
+            selected = segment and segment[0].selected and segment[-1].selected
+            if not selected:
+                if addToSelection:
+                    self._oldSelection = self._glyph.selection
+                else:
+                    for anchor in self._glyph.anchors:
+                        anchor.selected = False
+                    for component in self._glyph.components:
+                        component.selected = False
+                    self._glyph.selected = False
+                    self._glyph.image.selected = False
+                if segment is not None:
+                    self._performSegmentClick(pos, action, segment)
             else:
-                for anchor in self._glyph.anchors:
-                    anchor.selected = False
-                for component in self._glyph.components:
-                    component.selected = False
-                self._glyph.selected = False
-                self._glyph.image.selected = False
-            self._computeSegmentClick(event.localPos())
+                self._shouldMove = True
         widget.update()
 
     def mouseMoveEvent(self, event):
@@ -303,22 +320,24 @@ class SelectionTool(BaseTool):
                 self._glyph.prepareUndo()
                 self._shouldPrepareUndo = False
             modifiers = event.modifiers()
-            # Alt: move point along handles
-            if modifiers & Qt.AltModifier and len(self._glyph.selection) == 1:
-                item, parent = self._itemTuple
-                if parent is not None:
-                    x, y = canvasPos.x(), canvasPos.y()
-                    didMove = self._moveOnCurveAlongHandles(parent, item, x, y)
-                    if didMove:
-                        return
-            # Shift: clamp pos on axis
-            elif modifiers & Qt.ShiftModifier:
-                item, parent = self._itemTuple
-                if parent is not None:
-                    if item.segmentType is None:
-                        onCurve = self._getOffCurveSiblingPoint(parent, item)
-                        canvasPos = self.clampToOrigin(
-                            canvasPos, QPointF(onCurve.x, onCurve.y))
+            if self._itemTuple is not None:
+                # Alt: move point along handles
+                if modifiers & Qt.AltModifier and len(self._glyph.selection) == 1:
+                    item, parent = self._itemTuple
+                    if parent is not None:
+                        x, y = canvasPos.x(), canvasPos.y()
+                        didMove = self._moveOnCurveAlongHandles(
+                            parent, item, x, y)
+                        if didMove:
+                            return
+                # Shift: clamp pos on axis
+                elif modifiers & Qt.ShiftModifier:
+                        item, parent = self._itemTuple
+                        if parent is not None:
+                            if item.segmentType is None:
+                                onCurve = self._getOffCurveSiblingPoint(parent, item)
+                                canvasPos = self.clampToOrigin(
+                                    canvasPos, QPointF(onCurve.x, onCurve.y))
             dx = canvasPos.x() - self._origin.x()
             dy = canvasPos.y() - self._origin.y()
             for anchor in self._glyph.anchors:
@@ -370,7 +389,7 @@ class SelectionTool(BaseTool):
                     point.smooth = not point.smooth
                 contour.dirty = True
         else:
-            self._computeSegmentClick(event.localPos(), True)
+            self._performSegmentClick(event.localPos(), "selectContour")
 
     # custom painting
 

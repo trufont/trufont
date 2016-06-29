@@ -57,7 +57,8 @@ def moveUIPoint(contour, point, delta):
                 # avoid double move for qCurve with single offCurve
                 if d > 0:
                     otherPt = contour.getPoint(index + 2 * d)
-                    if otherPt.segmentType is not None and otherPt.selected:
+                    if otherPt.segmentType is not None and \
+                            otherPt.segmentType != "move" and otherPt.selected:
                         continue
                 pt.move(delta)
     contour.dirty = True
