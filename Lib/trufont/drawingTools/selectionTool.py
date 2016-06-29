@@ -131,9 +131,9 @@ class SelectionTool(BaseTool):
                 return
         segment, contour = segmentTuple
         prev, point = segment[0], segment[-1]
-        scale = self.parent().inverseScale()
         if point.segmentType == "line":
             if action == "insert":
+                index = contour.index(point)
                 self._glyph.prepareUndo()
                 contour.holdNotifications()
                 for i, t in enumerate((.35, .65)):
@@ -319,6 +319,7 @@ class SelectionTool(BaseTool):
 
     def mouseMoveEvent(self, event):
         canvasPos = event.localPos()
+        glyph = self._glyph
         widget = self.parent()
         if self._shouldMove or self._itemTuple is not None:
             if self._shouldPrepareUndo:
@@ -327,7 +328,7 @@ class SelectionTool(BaseTool):
             modifiers = event.modifiers()
             if self._itemTuple is not None:
                 # Alt: move point along handles
-                if modifiers & Qt.AltModifier and len(self._glyph.selection) == 1:
+                if modifiers & Qt.AltModifier and len(glyph.selection) == 1:
                     item, parent = self._itemTuple
                     if parent is not None:
                         x, y = canvasPos.x(), canvasPos.y()
@@ -340,20 +341,21 @@ class SelectionTool(BaseTool):
                         item, parent = self._itemTuple
                         if parent is not None:
                             if item.segmentType is None:
-                                onCurve = self._getOffCurveSiblingPoint(parent, item)
+                                onCurve = self._getOffCurveSiblingPoint(
+                                    parent, item)
                                 canvasPos = self.clampToOrigin(
                                     canvasPos, QPointF(onCurve.x, onCurve.y))
             dx = canvasPos.x() - self._origin.x()
             dy = canvasPos.y() - self._origin.y()
-            for anchor in self._glyph.anchors:
+            for anchor in glyph.anchors:
                 if anchor.selected:
                     anchor.move((dx, dy))
-            for contour in self._glyph:
+            for contour in glyph:
                 moveUISelection(contour, (dx, dy))
-            for component in self._glyph.components:
+            for component in glyph.components:
                 if component.selected:
                     component.move((dx, dy))
-            image = self._glyph.image
+            image = glyph.image
             if image.selected:
                 image.move((dx, dy))
             self._origin = canvasPos
@@ -369,7 +371,7 @@ class SelectionTool(BaseTool):
             if points != self._glyph.selection:
                 # TODO: doing this takes more time than by-contour
                 # discrimination for large point count
-                self._glyph.selection = points
+                glyph.selection = points
         widget.update()
 
     def mouseReleaseEvent(self, event):
