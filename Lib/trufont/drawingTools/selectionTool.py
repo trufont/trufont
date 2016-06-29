@@ -115,20 +115,21 @@ class SelectionTool(BaseTool):
                         prev.x, prev.y, point.x, point.y, pos.x(), pos.y())
                     # TODO: somewhat arbitrary
                     if dist < 5 * scale:
-                        return [prev, point]
+                        return [prev, point], contour
                 elif point.segmentType == "curve":
                     if action == "insert":
                         continue
                     bez = [contour.getPoint(index-3+i) for i in range(4)]
                     if _pointWithinThreshold(pos.x(), pos.y(), bez, 5 * scale):
-                        return bez
+                        return bez, contour
         return None
 
-    def _performSegmentClick(self, pos, action=None, segment=None):
-        if segment is None:
-            segment = self._findSegmentUnderMouse(pos, action)
-        if segment is None:
-            return
+    def _performSegmentClick(self, pos, action=None, segmentTuple=None):
+        if segmentTuple is None:
+            segmentTuple = self._findSegmentUnderMouse(pos, action)
+            if segmentTuple is None:
+                return
+        segment, contour = segmentTuple
         prev, point = segment[0], segment[-1]
         scale = self.parent().inverseScale()
         if point.segmentType == "line":
@@ -294,8 +295,12 @@ class SelectionTool(BaseTool):
             self._shouldPrepareUndo = True
         else:
             action = "insert" if event.modifiers() & Qt.AltModifier else None
-            segment = self._findSegmentUnderMouse(pos, action)
-            selected = segment and segment[0].selected and segment[-1].selected
+            segmentTuple = self._findSegmentUnderMouse(pos, action)
+            if segmentTuple is not None:
+                segment, contour = segmentTuple
+                selected = segment[0].selected and segment[-1].selected
+            else:
+                selected = False
             if not selected:
                 if addToSelection:
                     self._oldSelection = self._glyph.selection
@@ -306,8 +311,8 @@ class SelectionTool(BaseTool):
                         component.selected = False
                     self._glyph.selected = False
                     self._glyph.image.selected = False
-                if segment is not None:
-                    self._performSegmentClick(pos, action, segment)
+                if segmentTuple is not None:
+                    self._performSegmentClick(pos, action, segmentTuple)
             else:
                 self._shouldMove = True
         widget.update()
