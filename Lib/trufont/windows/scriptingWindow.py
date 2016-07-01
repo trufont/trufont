@@ -329,6 +329,40 @@ class PythonEditor(BaseCodeEditor):
                     return
         super().keyPressEvent(event)
 
+    def dragEnterEvent(self, event):
+        if event.source() != self:
+            mimeData = event.mimeData()
+            if mimeData.hasUrls():
+                urls = mimeData.urls()
+                for url in urls:
+                    if url.isLocalFile():
+                        event.acceptProposedAction()
+                        break
+                return
+        super().dragEnterEvent(event)
+
+    def dropEvent(self, event):
+        if event.source() != self:
+            mimeData = event.mimeData()
+            if mimeData.hasUrls():
+                urls = mimeData.urls()
+                paths = [
+                    url.toLocalFile() for url in urls if url.isLocalFile()]
+                text = ", ".join(paths)
+                if len(paths) > 1:
+                    text = "[%s]" % text
+                textCursor = self.cursorForPosition(event.pos())
+                textCursor.insertText(text)
+                self.setTextCursor(textCursor)
+                # HACK: Qt uses cleanup routines in a private namespace
+                # called by the superclass. Ugh. We have no choice but to make
+                # up an empty event if we want to exit drag state.
+                mimeData = mimeData.__class__()
+                event = event.__class__(
+                    event.posF(), event.possibleActions(), mimeData,
+                    event.mouseButtons(), event.keyboardModifiers())
+        super().dropEvent(event)
+
     def setPlainText(self, text):
         super().setPlainText(text)
         self.document().setModified(False)

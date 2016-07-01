@@ -630,13 +630,14 @@ class GlyphCanvasWidget(GlyphWidget):
     def dragEnterEvent(self, event):
         mimeData = event.mimeData()
         if mimeData.hasUrls():
-            paths = mimeData.urls()
-            path = paths[0].toLocalFile()
-            ext = os.path.splitext(path)[1][1:]
-            if ext.lower() in QImageReader.supportedImageFormats():
-                event.acceptProposedAction()
-        else:
-            super().dragEnterEvent(event)
+            url = mimeData.urls()[0]
+            if url.isLocalFile():
+                path = url.toLocalFile()
+                ext = os.path.splitext(path)[1][1:]
+                if ext.lower() in QImageReader.supportedImageFormats():
+                    event.acceptProposedAction()
+            return
+        super().dragEnterEvent(event)
 
     def dropEvent(self, event):
         mimeData = event.mimeData()
