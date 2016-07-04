@@ -286,8 +286,9 @@ class FontWindow(BaseMainWindow):
                 font.glyphOrder = [glyph.name for glyph in glyphs]
                 font.enableNotifications(observer=self)
         else:
+            glyphs = list(font)
             font.disableNotifications(observer=self)
-            font.glyphOrder = [glyph.name for glyph in font]
+            font.glyphOrder = [glyph.name for glyph in glyphs]
             font.enableNotifications(observer=self)
         self.glyphCellView.setGlyphs(glyphs)
 
