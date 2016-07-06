@@ -113,9 +113,9 @@ def drawGlyphImage(painter, glyph, scale, rect, selectionColor=None):
 
 def drawGlyphFillAndStroke(
         painter, glyph, scale, rect, drawFill=True, drawStroke=True,
-        drawSelection=True, partialAliasing=True, contourFillColor=None,
-        contourStrokeColor=None, componentFillColor=None,
-        contourStrokeWidth=1.0, selectionColor=None):
+        drawSelection=True, contourFillColor=None, contourStrokeColor=None,
+        componentFillColor=None, componentStrokeColor=None,
+        strokeWidth=1.0, partialAliasing=True, selectionColor=None):
     # get the layer color
     layer = glyph.layer
     layerColor = None
@@ -159,12 +159,18 @@ def drawGlyphFillAndStroke(
             contourStrokeColor = defaultColor("glyphContourStroke")
         # contours
         pen = QPen(contourStrokeColor)
-        pen.setWidthF(contourStrokeWidth * scale)
+        pen.setWidthF(strokeWidth * scale)
         painter.setPen(pen)
         if partialAliasing:
             drawGlyphWithAliasedLines(painter, glyph)
         else:
             painter.drawPath(contourPath)
+    # components
+    if componentStrokeColor is not None:
+        pen = QPen(componentStrokeColor)
+        pen.setWidthF(strokeWidth * scale)
+        painter.setPen(pen)
+        painter.drawPath(componentPath)
     painter.restore()
 
 # points
@@ -173,15 +179,14 @@ def drawGlyphFillAndStroke(
 def drawGlyphPoints(
         painter, glyph, scale, rect,
         drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
-        drawCoordinates=True, drawSelection=True, onCurveColor=None,
+        drawCoordinates=False, drawSelection=True, onCurveColor=None,
         otherColor=None, backgroundColor=None):
-    layer = glyph.layer
-    onCurveColor = None
-    if layer is not None:
-        if layer.color is not None:
-            onCurveColor = colorToQColor(layer.color)
     if onCurveColor is None:
-        onCurveColor = defaultColor("glyphOnCurvePoints")
+        layer = glyph.layer
+        if layer is not None and layer.color is not None:
+            onCurveColor = colorToQColor(layer.color)
+        else:
+            onCurveColor = defaultColor("glyphOnCurvePoints")
     if otherColor is None:
         otherColor = defaultColor("glyphOtherPoints")
     if backgroundColor is None:
