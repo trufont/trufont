@@ -172,8 +172,13 @@ class SelectionTool(BaseTool):
                     continue
                 if contour != parent or contour[otherIndex] != point:
                     continue
-                contour.removePoint(item)
-                contour[otherIndex].segmentType = "line"
+                if item.segmentType == "move":
+                    item.x = point.x
+                    item.y = point.y
+                    contour.removePoint(point)
+                else:
+                    contour.removePoint(item)
+                contour[0].segmentType = "line"
                 contour.dirty = True
                 return
 
