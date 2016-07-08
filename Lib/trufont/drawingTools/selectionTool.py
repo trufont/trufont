@@ -155,7 +155,7 @@ class SelectionTool(BaseTool):
         self._shouldMove = self._shouldPrepareUndo = True
 
     def _maybeCloseContour(self, pos):
-        if self._itemTuple not None:
+        if self._itemTuple is not None:
             return
         item, parent = self._itemTuple
         if parent is None or not parent.open or item.segmentType is None:
