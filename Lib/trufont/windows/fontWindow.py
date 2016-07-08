@@ -748,19 +748,9 @@ class FontCellWidget(GlyphCellWidget):
             return True
         return False
 
-    def _isDelEvent(self, event):
-        if event.matches(QKeySequence.Delete):
-            return True
-        if event.modifiers() & Qt.ShiftModifier:
-            event_ = event.__class__(
-                event.type(), event.key(), event.modifiers().__class__(),
-                event.text(), event.isAutoRepeat(), event.count())
-            return event_.matches(QKeySequence.Delete)
-        return False
-
     def keyPressEvent(self, event):
         modifiers = event.modifiers()
-        if self._isDelEvent(event):
+        if platformSpecific.isDeleteEvent(event):
             erase = modifiers & Qt.ShiftModifier
             if self._proceedWithDeletion(erase):
                 glyphs = self.glyphsForIndexes(self._selection)

@@ -2,6 +2,7 @@ from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.controls.listView import ListView
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from trufont.controls.glyphStackWidget import GlyphStackWidget
+from trufont.tools import platformSpecific
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
@@ -204,7 +205,7 @@ class GroupListView(ListView):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if event.matches(QKeySequence.Delete):
+        if platformSpecific.isDeleteEvent(event):
             indexes = self.selectedIndexes()
             if indexes:
                 data = self.model().data(indexes[0])

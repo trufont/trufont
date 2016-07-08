@@ -1,3 +1,4 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication
 import sys
@@ -22,6 +23,21 @@ def closeKeySequence():
     if sys.platform == "win32":
         return "Ctrl+W"
     return QKeySequence.Close
+
+
+def isDeleteEvent(event):
+    if event.matches(QKeySequence.Delete):
+        return True
+    if sys.platform == "darwin" and event.key() == Qt.Key_Backspace:
+        return True
+    modifiers = event.modifiers()
+    if modifiers & Qt.ShiftModifier or modifiers & Qt.AltModifier:
+        modifiers_ = modifiers & ~Qt.ShiftModifier & ~Qt.AltModifier
+        event_ = event.__class__(
+            event.type(), event.key(), modifiers_,
+            event.text(), event.isAutoRepeat(), event.count())
+        return event_.matches(QKeySequence.Delete)
+    return False
 
 # -------
 # ToolBar

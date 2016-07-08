@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.defcon import TAnchor, TComponent
-from trufont.tools import bezierMath
+from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import moveUISelection, removeUISelection
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
@@ -245,7 +245,7 @@ class SelectionTool(BaseTool):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if event.matches(QKeySequence.Delete):
+        if platformSpecific.isDeleteEvent(event):
             glyph = self._glyph
             # TODO: prune
             glyph.prepareUndo()
