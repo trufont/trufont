@@ -1,12 +1,13 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QKeySequence, QPainter, QPainterPath, QTransform
+from PyQt5.QtGui import QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.defcon import TAnchor, TComponent
 from trufont.tools import bezierMath, platformSpecific
-from trufont.tools.uiMethods import moveUISelection, removeUISelection
+from trufont.tools.uiMethods import (
+    deleteUISelection, moveUISelection, removeUISelection)
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
@@ -247,19 +248,24 @@ class SelectionTool(BaseTool):
         key = event.key()
         if platformSpecific.isDeleteEvent(event):
             glyph = self._glyph
-            # TODO: prune
-            glyph.prepareUndo()
-            preserveShape = not event.modifiers() & Qt.ShiftModifier
-            for anchor in glyph.anchors:
-                if anchor.selected:
-                    glyph.removeAnchor(anchor)
-            for contour in reversed(glyph):
-                removeUISelection(contour, preserveShape)
-            for component in glyph.components:
-                if component.selected:
-                    glyph.removeComponent(component)
-            if glyph.image.selected:
-                glyph.image = None
+            # TODO: fuse more the two methods, they're similar and delete is
+            # Cut except not putting in the clipboard
+            if event.modifiers() & Qt.AltModifier:
+                deleteUISelection(glyph)
+            else:
+                preserveShape = not event.modifiers() & Qt.ShiftModifier
+                # TODO: prune
+                glyph.prepareUndo()
+                for anchor in glyph.anchors:
+                    if anchor.selected:
+                        glyph.removeAnchor(anchor)
+                for contour in reversed(glyph):
+                    removeUISelection(contour, preserveShape)
+                for component in glyph.components:
+                    if component.selected:
+                        glyph.removeComponent(component)
+                if glyph.image.selected:
+                    glyph.image = None
         elif key in arrowKeys:
             # TODO: prune
             self._glyph.prepareUndo()
@@ -445,7 +451,7 @@ class SelectionTool(BaseTool):
         option.shape = QRubberBand.Rectangle
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, False)
-        painter.setTransform(QTransform())
+        painter.resetTransform()
         widget.style().drawControl(
             QStyle.CE_RubberBand, option, painter, widget)
         painter.restore()

@@ -69,6 +69,28 @@ def moveUISelection(contour, delta):
         moveUIPoint(contour, point, delta)
 
 
+def deleteUISelection(glyph):
+    for anchor in glyph.anchors:
+        anchor.selected = not anchor.selected
+    for component in glyph.components:
+        component.selected = not component.selected
+    for contour in glyph:
+        for point in contour:
+            point.selected = not point.selected
+        contour.postNotification("Contour.SelectionChanged")
+    cutGlyph = glyph.getRepresentation("TruFont.FilterSelection")
+    glyph.prepareUndo()
+    glyph.holdNotifications()
+    glyph.clear()
+    pen = glyph.getPointPen()
+    cutGlyph.drawPoints(pen)
+    # HACK: defcon won't let us transfer anchors in bulk otherwise
+    for anchor in cutGlyph.anchors:
+        anchor._glyph = None
+    glyph.anchors = cutGlyph.anchors
+    glyph.releaseHeldNotifications()
+
+
 def removeUISelection(contour, preserveShape=True):
     segments = contour.segments
     # the last segments contains the first point, make sure to process it last

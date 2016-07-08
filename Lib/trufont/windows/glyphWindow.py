@@ -6,6 +6,7 @@ from trufont.controls.glyphDialogs import (
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.drawingTools.removeOverlapButton import RemoveOverlapButton
 from trufont.tools import drawing, errorReports, platformSpecific
+from trufont.tools.uiMethods import deleteUISelection
 from PyQt5.QtCore import (
     QBuffer, QByteArray, QEvent, QIODevice, QMimeData, QRectF,
     Qt)
@@ -181,22 +182,7 @@ class GlyphWindow(BaseMainWindow):
     def cutOutlines(self):
         glyph = self.view.glyph()
         self.copyOutlines()
-        for anchor in glyph.anchors:
-            anchor.selected = not anchor.selected
-        for component in glyph.components:
-            component.selected = not component.selected
-        for contour in glyph:
-            for point in contour:
-                point.selected = not point.selected
-            contour.postNotification("Contour.SelectionChanged")
-        cutGlyph = glyph.getRepresentation("TruFont.FilterSelection")
-        glyph.prepareUndo()
-        glyph.holdNotifications()
-        glyph.clear()
-        pen = glyph.getPointPen()
-        cutGlyph.drawPoints(pen)
-        glyph.anchors = cutGlyph.anchors
-        glyph.releaseHeldNotifications()
+        deleteUISelection(glyph)
 
     def copyOutlines(self):
         glyph = self.view.glyph()
