@@ -154,6 +154,29 @@ class SelectionTool(BaseTool):
                 notification="Contour.SelectionChanged")
         self._shouldMove = self._shouldPrepareUndo = True
 
+    def _maybeCloseContour(self, pos):
+        if self._itemTuple not None:
+            return
+        item, parent = self._itemTuple
+        if parent is None or not parent.open or item.segmentType is None:
+            return
+        otherIndex = None
+        for index in range(2):
+            if parent[index-1] == item:
+                otherIndex = -index
+        if otherIndex is not None:
+            widget = self.parent()
+            items = widget.itemsAt(pos)
+            for point, contour in zip(items["points"], items["contours"]):
+                if not point.segmentType:
+                    continue
+                if contour != parent or contour[otherIndex] != point:
+                    continue
+                contour.removePoint(item)
+                contour[otherIndex].segmentType = "line"
+                contour.dirty = True
+                return
+
     def _moveForEvent(self, event):
         key = event.key()
         modifiers = event.modifiers()
@@ -375,6 +398,7 @@ class SelectionTool(BaseTool):
         widget.update()
 
     def mouseReleaseEvent(self, event):
+        self._maybeCloseContour()
         self._itemTuple = None
         self._oldSelection = set()
         self._rubberBandRect = None
