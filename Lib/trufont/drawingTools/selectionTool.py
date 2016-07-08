@@ -155,7 +155,7 @@ class SelectionTool(BaseTool):
         self._shouldMove = self._shouldPrepareUndo = True
 
     def _maybeCloseContour(self, pos):
-        if self._itemTuple is not None:
+        if self._itemTuple is None:
             return
         item, parent = self._itemTuple
         if parent is None or not parent.open or item.segmentType is None:
@@ -398,7 +398,7 @@ class SelectionTool(BaseTool):
         widget.update()
 
     def mouseReleaseEvent(self, event):
-        self._maybeCloseContour()
+        self._maybeCloseContour(event.localPos())
         self._itemTuple = None
         self._oldSelection = set()
         self._rubberBandRect = None
