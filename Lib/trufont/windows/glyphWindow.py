@@ -610,6 +610,7 @@ class GlyphCanvasWidget(GlyphWidget):
     def closeEvent(self, event):
         super().closeEvent(event)
         if event.isAccepted():
+            self._currentTool.toolDisabled()
             app = QApplication.instance()
             app.dispatcher.removeObserver(self, "glyphViewUpdate")
 

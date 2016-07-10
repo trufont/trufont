@@ -8,6 +8,7 @@ from trufont.objects.defcon import TAnchor, TComponent
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
     deleteUISelection, moveUISelection, removeUISelection)
+import math
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
@@ -125,11 +126,10 @@ class SelectionTool(BaseTool):
                         return bez, contour
         return None
 
-    def _performSegmentClick(self, pos, action=None, segmentTuple=None):
+    def _performSegmentClick(self, pos, action=None):
+        segmentTuple = self._findSegmentUnderMouse(pos, action)
         if segmentTuple is None:
-            segmentTuple = self._findSegmentUnderMouse(pos, action)
-            if segmentTuple is None:
-                return
+            return
         segment, contour = segmentTuple
         prev, point = segment[0], segment[-1]
         if point.segmentType == "line":
@@ -155,24 +155,78 @@ class SelectionTool(BaseTool):
                 notification="Contour.SelectionChanged")
         self._shouldMove = self._shouldPrepareUndo = True
 
-    def _maybeCloseContour(self, pos):
+    def _maybeMakeSingleOffCurveTangent(self, contour, onCurve):
+        if not onCurve.smooth:
+            return
+        index = contour.index(onCurve)
+        offCurve, otherPoint = None, None
+        for delta in (-1, 1):
+            pt = contour.getPoint(index + delta)
+            if pt.segmentType is None:
+                if offCurve is not None:
+                    return
+                offCurve = pt
+            else:
+                if otherPoint is not None:
+                    return
+                otherPoint = pt
+        if None not in (offCurve, otherPoint):
+            # target angle: take the other onCurve's angle and add pi
+            dy, dx = otherPoint.y - onCurve.y, otherPoint.x - onCurve.x
+            angle = math.atan2(dy, dx) + math.pi
+            # subtract the offCurve's angle
+            dy, dx = offCurve.y - onCurve.y, offCurve.x - onCurve.x
+            angle -= math.atan2(dy, dx)
+            c, s = math.cos(angle), math.sin(angle)
+            # rotate by our newly found angle
+            # http://stackoverflow.com/a/2259502
+            offCurve.x -= onCurve.x
+            offCurve.y -= onCurve.y
+            nx = offCurve.x * c - offCurve.y * s
+            ny = offCurve.x * s + offCurve.y * c
+            offCurve.x = nx + onCurve.x
+            offCurve.y = ny + onCurve.y
+            contour.dirty = True
+
+    def _maybeJoinContour(self, pos):
+        def getAtEdge(contour, pt):
+            for index in range(2):
+                if contour[index-1] == pt:
+                    return index - 1
+            return None
+
         if self._itemTuple is None:
             return
         item, parent = self._itemTuple
-        if parent is None or not parent.open or item.segmentType is None:
+        if parent is None or not (item.segmentType and parent.open):
             return
-        otherIndex = None
-        for index in range(2):
-            if parent[index-1] == item:
-                otherIndex = -index
-        if otherIndex is not None:
-            widget = self.parent()
-            items = widget.itemsAt(pos)
-            for point, contour in zip(items["points"], items["contours"]):
-                if not point.segmentType:
-                    continue
-                if contour != parent or contour[otherIndex] != point:
-                    continue
+        ptIndex = getAtEdge(parent, item)
+        if ptIndex is None:
+            return
+        widget = self.parent()
+        items = widget.itemsAt(pos)
+        for point, contour in zip(items["points"], items["contours"]):
+            if point == item or not (point.segmentType and contour.open):
+                continue
+            otherIndex = getAtEdge(contour, point)
+            if otherIndex is None:
+                continue
+            if parent != contour:
+                # TODO: blacklist single onCurve contours
+                # Note reverse uses different point objects
+                # TODO: does it have to work this way?
+                if not ptIndex:
+                    parent.reverse()
+                if otherIndex == -1:
+                    contour.reverse()
+                dragPoint = parent[-1]
+                parent.removePoint(dragPoint)
+                contour[0].segmentType = dragPoint.segmentType
+                contour.drawPoints(parent)
+                glyph = contour.glyph
+                glyph.removeContour(contour)
+                parent.dirty = True
+            else:
                 if item.segmentType == "move":
                     item.x = point.x
                     item.y = point.y
@@ -181,7 +235,7 @@ class SelectionTool(BaseTool):
                     contour.removePoint(item)
                 contour[0].segmentType = "line"
                 contour.dirty = True
-                return
+            return
 
     def _moveForEvent(self, event):
         key = event.key()
@@ -329,26 +383,15 @@ class SelectionTool(BaseTool):
             self._shouldPrepareUndo = True
         else:
             action = "insert" if event.modifiers() & Qt.AltModifier else None
-            segmentTuple = self._findSegmentUnderMouse(pos, action)
-            if segmentTuple is not None:
-                segment, contour = segmentTuple
-                selected = segment[0].selected and segment[-1].selected
+            if addToSelection:
+                self._oldSelection = self._glyph.selection
             else:
-                selected = False
-            if not selected:
-                if addToSelection:
-                    self._oldSelection = self._glyph.selection
-                else:
-                    for anchor in self._glyph.anchors:
-                        anchor.selected = False
-                    for component in self._glyph.components:
-                        component.selected = False
-                    self._glyph.selected = False
-                    self._glyph.image.selected = False
-                if segmentTuple is not None:
-                    self._performSegmentClick(pos, action, segmentTuple)
-            else:
-                self._shouldMove = True
+                for anchor in self._glyph.anchors:
+                    anchor.selected = False
+                for component in self._glyph.components:
+                    component.selected = False
+                self._glyph.selected = False
+                self._glyph.image.selected = False
         widget.update()
 
     def mouseMoveEvent(self, event):
@@ -409,7 +452,7 @@ class SelectionTool(BaseTool):
         widget.update()
 
     def mouseReleaseEvent(self, event):
-        self._maybeCloseContour(event.localPos())
+        self._maybeJoinContour(event.localPos())
         self._itemTuple = None
         self._oldSelection = set()
         self._rubberBandRect = None
@@ -429,7 +472,9 @@ class SelectionTool(BaseTool):
                 if point.segmentType is not None:
                     self._glyph.prepareUndo()
                     point.smooth = not point.smooth
-                contour.dirty = True
+                    contour.dirty = True
+                    # if we have one offCurve, make it tangent
+                    self._maybeMakeSingleOffCurveTangent(contour, point)
         else:
             self._performSegmentClick(event.localPos(), "selectContour")
 

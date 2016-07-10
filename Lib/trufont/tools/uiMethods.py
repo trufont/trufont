@@ -12,7 +12,10 @@ def _getOffCurveSiblingPoints(contour, point):
         sibling = contour.getPoint(index + d)
         if sibling.segmentType is not None:
             sSibling = contour.getPoint(index + 2 * d)
-            pts.append((sibling, sSibling))
+            curPts = (sibling, sSibling)
+            if contour.open and any(pt == contour[0] for pt in curPts):
+                continue
+            pts.append(curPts)
     return pts
 
 
