@@ -213,6 +213,36 @@ def drawGlyphPoints(
         aF = startPointColor.alphaF()
         startPointColor.setAlphaF(aF * .3)
         painter.fillPath(path, startPointColor)
+    # on curve
+    if drawOnCurves and outlineData["onCurvePoints"]:
+        width = 7 * scale
+        half = width / 2.0
+        smoothWidth = 8 * scale
+        smoothHalf = smoothWidth / 2.0
+        painter.save()
+        path = QPainterPath()
+        selectedPath = QPainterPath()
+        for point in outlineData["onCurvePoints"]:
+            x, y = point["point"]
+            points.append((x, y))
+            pointPath = QPainterPath()
+            if point["smooth"]:
+                x -= smoothHalf
+                y -= smoothHalf
+                pointPath.addEllipse(x, y, smoothWidth, smoothWidth)
+            else:
+                x -= half
+                y -= half
+                pointPath.addRect(x, y, width, width)
+            if drawSelection and point["selected"]:
+                selectedPath.addPath(pointPath)
+            path.addPath(pointPath)
+        pen = QPen(onCurveColor)
+        pen.setWidthF(1.5 * scale)
+        painter.setPen(pen)
+        painter.fillPath(selectedPath, onCurveColor)
+        painter.drawPath(path)
+        painter.restore()
     # off curve
     if drawOffCurves and outlineData["offCurvePoints"]:
         # lines
@@ -246,36 +276,6 @@ def drawGlyphPoints(
         painter.fillPath(path, QBrush(backgroundColor))
         painter.drawPath(selectedPath)
         painter.fillPath(selectedPath, QBrush(otherColor))
-        painter.restore()
-    # on curve
-    if drawOnCurves and outlineData["onCurvePoints"]:
-        width = 7 * scale
-        half = width / 2.0
-        smoothWidth = 8 * scale
-        smoothHalf = smoothWidth / 2.0
-        painter.save()
-        path = QPainterPath()
-        selectedPath = QPainterPath()
-        for point in outlineData["onCurvePoints"]:
-            x, y = point["point"]
-            points.append((x, y))
-            pointPath = QPainterPath()
-            if point["smooth"]:
-                x -= smoothHalf
-                y -= smoothHalf
-                pointPath.addEllipse(x, y, smoothWidth, smoothWidth)
-            else:
-                x -= half
-                y -= half
-                pointPath.addRect(x, y, width, width)
-            if drawSelection and point["selected"]:
-                selectedPath.addPath(pointPath)
-            path.addPath(pointPath)
-        pen = QPen(onCurveColor)
-        pen.setWidthF(1.5 * scale)
-        painter.setPen(pen)
-        painter.fillPath(selectedPath, onCurveColor)
-        painter.drawPath(path)
         painter.restore()
     # coordinates
     if drawCoordinates:
