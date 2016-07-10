@@ -125,8 +125,9 @@ class SelectionTool(BaseTool):
                         return bez, contour
         return None
 
-    def _performSegmentClick(self, pos, action=None):
-        segmentTuple = self._findSegmentUnderMouse(pos, action)
+    def _performSegmentClick(self, pos, action=None, segmentTuple=None):
+        if segmentTuple is None:
+            segmentTuple = self._findSegmentUnderMouse(pos, action)
         if segmentTuple is None:
             return
         segment, contour = segmentTuple
@@ -394,6 +395,7 @@ class SelectionTool(BaseTool):
                         component.selected = False
                     self._glyph.selected = False
                     self._glyph.image.selected = False
+                self._performSegmentClick(pos, action, segmentTuple)
             else:
                 self._shouldMove = True
         widget.update()
