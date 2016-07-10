@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from trufont.drawingTools.baseTool import BaseTool
+from trufont.objects.defcon import TAnchor
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
     deleteUISelection, moveUISelection, removeUISelection)
