@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.objects.defcon import TAnchor, TComponent
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
     deleteUISelection, moveUISelection, removeUISelection)
@@ -47,7 +46,7 @@ class SelectionTool(BaseTool):
         pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
         newAnchorName, ok = AddAnchorDialog.getNewAnchorName(widget, pos)
         if ok:
-            anchor = TAnchor()
+            anchor = self._glyph.instantiateAnchor()
             anchor.x = pos.x()
             anchor.y = pos.y()
             anchor.name = newAnchorName
@@ -57,7 +56,7 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         newGlyph, ok = AddComponentDialog.getNewGlyph(widget, self._glyph)
         if ok and newGlyph is not None:
-            component = TComponent()
+            component = self._glyph.instantiateComponent()
             component.baseGlyph = newGlyph.name
             self._glyph.appendComponent(component)
 
@@ -148,12 +147,8 @@ class SelectionTool(BaseTool):
         elif point.segmentType != "curve":
             return
         if action == "selectContour":
-            contour.selected = True
-        else:
-            prev.selected = point.selected = True
-            contour.postNotification(
-                notification="Contour.SelectionChanged")
-        self._shouldMove = self._shouldPrepareUndo = True
+            contour.selected = not contour.selected
+            self._shouldMove = self._shouldPrepareUndo = True
 
     def _maybeMakeSingleOffCurveTangent(self, contour, onCurve):
         if not onCurve.smooth:
@@ -383,15 +378,24 @@ class SelectionTool(BaseTool):
             self._shouldPrepareUndo = True
         else:
             action = "insert" if event.modifiers() & Qt.AltModifier else None
-            if addToSelection:
-                self._oldSelection = self._glyph.selection
+            segmentTuple = self._findSegmentUnderMouse(pos, action)
+            if segmentTuple is not None:
+                segment, contour = segmentTuple
+                selected = segment[0].selected and segment[-1].selected
             else:
-                for anchor in self._glyph.anchors:
-                    anchor.selected = False
-                for component in self._glyph.components:
-                    component.selected = False
-                self._glyph.selected = False
-                self._glyph.image.selected = False
+                selected = False
+            if not selected:
+                if addToSelection:
+                    self._oldSelection = self._glyph.selection
+                else:
+                    for anchor in self._glyph.anchors:
+                        anchor.selected = False
+                    for component in self._glyph.components:
+                        component.selected = False
+                    self._glyph.selected = False
+                    self._glyph.image.selected = False
+            else:
+                self._shouldMove = True
         widget.update()
 
     def mouseMoveEvent(self, event):

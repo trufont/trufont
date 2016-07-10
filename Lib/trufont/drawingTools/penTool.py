@@ -1,7 +1,6 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.objects.defcon import TContour
 from trufont.tools.uiMethods import moveUIPoint
 
 
@@ -27,7 +26,8 @@ class PenTool(BaseTool):
     # notifications
 
     def _selectionChanged(self, notification):
-        self._cleanupTrailingOffcurve()
+        if len(self._glyph.selection) != 1:
+            self._cleanupTrailingOffcurve()
 
     # helpers
 
@@ -145,6 +145,8 @@ class PenTool(BaseTool):
                 item.segmentType = "line"
                 item.selected = True
                 item.smooth = False
+                candidate.postNotification(
+                    notification="Contour.SelectionChanged")
                 candidate.dirty = True
                 self._targetContour = candidate
                 return
@@ -163,13 +165,15 @@ class PenTool(BaseTool):
             pointType = "line"
         # or create a new one
         else:
-            contour = TContour()
+            contour = self._glyph.instantiateContour()
             self._glyph.appendContour(contour)
             pointType = "move"
         # in any case here, unselect all points (*click*) and enable new point
         self._glyph.selected = False
         contour.addPoint((x, y), pointType)
         contour[-1].selected = True
+        contour.postNotification(
+            notification="Contour.SelectionChanged")
         self._targetContour = contour
 
     def mouseMoveEvent(self, event):
@@ -209,6 +213,8 @@ class PenTool(BaseTool):
             if contour.open:
                 contour.addPoint((pos.x(), pos.y()))
             contour[-1].selected = True
+            contour.postNotification(
+                notification="Contour.SelectionChanged")
             contour.releaseHeldNotifications()
         else:
             if pt.segmentType:
