@@ -11,6 +11,8 @@ def _getOffCurveSiblingPoints(contour, point):
     pts = []
     for d in (-1, 1):
         sibling = contour.getPoint(index + d)
+        if sibling.selected:
+            continue
         if sibling.segmentType is not None:
             sSibling = contour.getPoint(index + 2 * d)
             curPts = (sibling, sSibling)
@@ -24,6 +26,8 @@ def maybeProjectUISmoothPointOffcurve(contour, onCurve):
     if not onCurve.smooth:
         return
     index = contour.index(onCurve)
+    if contour.open and index in (0, len(contour) - 1):
+        return
     offCurve, otherPoint = None, None
     for delta in (-1, 1):
         pt = contour.getPoint(index + delta)
@@ -60,7 +64,7 @@ def moveUIPoint(contour, point, delta):
         # offCurve.
         siblings = _getOffCurveSiblingPoints(contour, point)
         # if an onCurve is selected, the offCurve will move along with it
-        if any(onCurve.selected for onCurve, _ in siblings):
+        if not siblings:
             return
         point.move(delta)
         for onCurve, otherPoint in siblings:
