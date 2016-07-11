@@ -322,7 +322,17 @@ class InspectorWindow(QWidget):
     def writeGlyphName(self):
         if self._glyph is None:
             return
-        self._glyph.name = self.nameEdit.text()
+        # TODO: should there be an API for this (e.g. glyph.rename())
+        layerSet = self._glyph.layerSet
+        newName = self.nameEdit.text()
+        if layerSet is not None:
+            oldName = self._glyph.name
+            for layer in layerSet:
+                if oldName in layer:
+                    glyph = layer[oldName]
+                    glyph.name = newName
+        else:
+            self._glyph.name = newName
 
     def writeUnicodes(self):
         if self._glyph is None:
