@@ -7,8 +7,8 @@ from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.defcon import TAnchor
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
-    deleteUISelection, moveUISelection, removeUISelection)
-import math
+    deleteUISelection, maybeProjectUISmoothPointOffcurve, moveUISelection,
+    removeUISelection)
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
@@ -151,39 +151,6 @@ class SelectionTool(BaseTool):
         if action == "selectContour":
             contour.selected = not contour.selected
             self._shouldMove = self._shouldPrepareUndo = True
-
-    def _maybeMakeSingleOffCurveTangent(self, contour, onCurve):
-        if not onCurve.smooth:
-            return
-        index = contour.index(onCurve)
-        offCurve, otherPoint = None, None
-        for delta in (-1, 1):
-            pt = contour.getPoint(index + delta)
-            if pt.segmentType is None:
-                if offCurve is not None:
-                    return
-                offCurve = pt
-            else:
-                if otherPoint is not None:
-                    return
-                otherPoint = pt
-        if None not in (offCurve, otherPoint):
-            # target angle: take the other onCurve's angle and add pi
-            dy, dx = otherPoint.y - onCurve.y, otherPoint.x - onCurve.x
-            angle = math.atan2(dy, dx) + math.pi
-            # subtract the offCurve's angle
-            dy, dx = offCurve.y - onCurve.y, offCurve.x - onCurve.x
-            angle -= math.atan2(dy, dx)
-            c, s = math.cos(angle), math.sin(angle)
-            # rotate by our newly found angle
-            # http://stackoverflow.com/a/2259502
-            offCurve.x -= onCurve.x
-            offCurve.y -= onCurve.y
-            nx = offCurve.x * c - offCurve.y * s
-            ny = offCurve.x * s + offCurve.y * c
-            offCurve.x = nx + onCurve.x
-            offCurve.y = ny + onCurve.y
-            contour.dirty = True
 
     def _maybeJoinContour(self, pos):
         def getAtEdge(contour, pt):
@@ -481,7 +448,7 @@ class SelectionTool(BaseTool):
                     point.smooth = not point.smooth
                     contour.dirty = True
                     # if we have one offCurve, make it tangent
-                    self._maybeMakeSingleOffCurveTangent(contour, point)
+                    maybeProjectUISmoothPointOffcurve(contour, point)
         else:
             self._performSegmentClick(event.localPos(), "selectContour")
 

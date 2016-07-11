@@ -3,6 +3,7 @@ UI-constrained point management methods.
 """
 from trufont.tools import bezierMath
 from PyQt5.QtCore import QLineF
+import math
 
 
 def _getOffCurveSiblingPoints(contour, point):
@@ -17,6 +18,40 @@ def _getOffCurveSiblingPoints(contour, point):
                 continue
             pts.append(curPts)
     return pts
+
+
+def maybeProjectUISmoothPointOffcurve(contour, onCurve):
+    if not onCurve.smooth:
+        return
+    index = contour.index(onCurve)
+    offCurve, otherPoint = None, None
+    for delta in (-1, 1):
+        pt = contour.getPoint(index + delta)
+        if pt.segmentType is None:
+            if offCurve is not None:
+                return
+            offCurve = pt
+        else:
+            if otherPoint is not None:
+                return
+            otherPoint = pt
+    if None not in (offCurve, otherPoint):
+        # target angle: take the other onCurve's angle and add pi
+        dy, dx = otherPoint.y - onCurve.y, otherPoint.x - onCurve.x
+        angle = math.atan2(dy, dx) + math.pi
+        # subtract the offCurve's angle
+        dy, dx = offCurve.y - onCurve.y, offCurve.x - onCurve.x
+        angle -= math.atan2(dy, dx)
+        c, s = math.cos(angle), math.sin(angle)
+        # rotate by our newly found angle
+        # http://stackoverflow.com/a/2259502
+        offCurve.x -= onCurve.x
+        offCurve.y -= onCurve.y
+        nx = offCurve.x * c - offCurve.y * s
+        ny = offCurve.x * s + offCurve.y * c
+        offCurve.x = nx + onCurve.x
+        offCurve.y = ny + onCurve.y
+        contour.dirty = True
 
 
 def moveUIPoint(contour, point, delta):
@@ -64,6 +99,7 @@ def moveUIPoint(contour, point, delta):
                             otherPt.segmentType != "move" and otherPt.selected:
                         continue
                 pt.move(delta)
+                maybeProjectUISmoothPointOffcurve(contour, point)
     contour.dirty = True
 
 
