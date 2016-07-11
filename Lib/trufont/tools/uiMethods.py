@@ -154,6 +154,8 @@ def removeUISelection(contour, preserveShape=True):
                 glyph.removeContour(contour)
                 return
             # using preserveShape at the edge of an open contour will traceback
+            if onCurve.segmentType == "line":
+                preserveShape = False
             if preserveShape and contour.open:
                 if index in (0, len(segments) - 1):
                     preserveShape = False
@@ -170,7 +172,10 @@ def removeUISelection(contour, preserveShape=True):
             # if offCurve selected, wipe them
             for i in (0, 1):
                 if segment[i].selected:
-                    contour.removePoint(segment[0])
-                    contour.removePoint(segment[1])
-                    segment[2].segmentType = "line"
+                    onCurve = segment[2]
+                    otherOnCurve = contour.getPoint(contour.index(onCurve) - 3)
+                    for i in range(2):
+                        contour.removePoint(segment[i])
+                    onCurve.segmentType = "line"
+                    onCurve.smooth = otherOnCurve.smooth = False
                     break
