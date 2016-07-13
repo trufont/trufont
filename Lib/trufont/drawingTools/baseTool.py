@@ -30,12 +30,15 @@ class BaseTool(QObject):
         # go into the first quadrant to simplify our study
         aDeltaX = abs(deltaX)
         aDeltaY = abs(deltaY)
-        if aDeltaY >= aDeltaX * 2:
+        # diagonal incr.
+        #if aDeltaY >= aDeltaX * 2:
+        #    pos.setX(origin.x())
+        #elif aDeltaY > aDeltaX / 2:
+        #    avg = (aDeltaX + aDeltaY) / 2
+        #    pos.setX(origin.x() + copysign(avg, deltaX))
+        #    pos.setY(origin.y() + copysign(avg, deltaY))
+        if aDeltaY >= aDeltaX:
             pos.setX(origin.x())
-        elif aDeltaY > aDeltaX / 2:
-            avg = (aDeltaX + aDeltaY) / 2
-            pos.setX(origin.x() + copysign(avg, deltaX))
-            pos.setY(origin.y() + copysign(avg, deltaY))
         else:
             pos.setY(origin.y())
         return pos

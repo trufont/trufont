@@ -334,7 +334,7 @@ class SelectionTool(BaseTool):
             return
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ControlModifier
-        self._origin = pos = self.magnetPos(event.localPos())
+        self._origin = self._prevPos = pos = self.magnetPos(event.localPos())
         self._itemTuple = widget.itemAt(self._origin)
         if self._itemTuple is not None:
             itemUnderMouse, parentContour = self._itemTuple
@@ -401,8 +401,11 @@ class SelectionTool(BaseTool):
                                     parent, item)
                                 canvasPos = self.clampToOrigin(
                                     canvasPos, QPointF(onCurve.x, onCurve.y))
-            dx = canvasPos.x() - self._origin.x()
-            dy = canvasPos.y() - self._origin.y()
+                            else:
+                                canvasPos = self.clampToOrigin(
+                                    canvasPos, self._origin)
+            dx = canvasPos.x() - self._prevPos.x()
+            dy = canvasPos.y() - self._prevPos.y()
             for anchor in glyph.anchors:
                 if anchor.selected:
                     anchor.move((dx, dy))
@@ -414,7 +417,7 @@ class SelectionTool(BaseTool):
             image = glyph.image
             if image.selected:
                 image.move((dx, dy))
-            self._origin = canvasPos
+            self._prevPos = canvasPos
         else:
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
             items = widget.items(self._rubberBandRect)
@@ -433,6 +436,7 @@ class SelectionTool(BaseTool):
     def mouseReleaseEvent(self, event):
         self._maybeJoinContour(event.localPos())
         self._itemTuple = None
+        self._origin = self._prevPos = None
         self._oldSelection = set()
         self._rubberBandRect = None
         self._shouldMove = False
