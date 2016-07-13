@@ -63,7 +63,14 @@ class MetricsWindow(BaseWindow):
         self.font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
 
         self.updateWindowTitle(font=font)
-        self.resize(600, 500)
+
+    def readSettings(self):
+        size = settings.metricsWindowSize()
+        if size.isValid():
+            self.resize(size)
+
+    def writeSettings(self):
+        settings.setMetricsWindowSize(self.size())
 
     def updateWindowTitle(self, title=None, font=None):
         if title is None:
@@ -103,6 +110,12 @@ class MetricsWindow(BaseWindow):
     # ----------
     # Qt methods
     # ----------
+
+    def sizeHint(self):
+        return QSize(800, 650)
+
+    def resizeEvent(self, event):
+        self.writeSettings()
 
     def showEvent(self, event):
         app = QApplication.instance()
@@ -196,8 +209,6 @@ class MetricsToolBar(QToolBar):
         # XXX: had to use Maximum because Preferred did extend the widget(?)
         self.textField.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Maximum)
-        items = settings.metricsWindowComboBoxItems()
-        self.textField.addItems(items)
         self.rightTextField = MetricsSequenceEdit(font, self)
         self.rightTextField.setMaximumWidth(auxiliaryWidth)
         self.leftTextField.textEdited.connect(self.textField.editTextChanged)
@@ -255,6 +266,13 @@ class MetricsToolBar(QToolBar):
         app = QApplication.instance()
         app.dispatcher.addObserver(
             self, "_currentGlyphChanged", "currentGlyphChanged")
+
+        self.readSettings()
+
+    def readSettings(self):
+        items = settings.metricsWindowComboBoxItems()
+        self.textField.clear()
+        self.textField.addItems(items)
 
     # -------------
     # Notifications

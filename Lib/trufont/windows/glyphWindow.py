@@ -5,11 +5,12 @@ from trufont.controls.glyphDialogs import (
     GotoDialog, AddLayerDialog, LayerActionsDialog)
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.drawingTools.removeOverlapButton import RemoveOverlapButton
+from trufont.objects import settings
 from trufont.tools import drawing, errorReports, platformSpecific
 from trufont.tools.uiMethods import deleteUISelection
 from PyQt5.QtCore import (
     QBuffer, QByteArray, QEvent, QIODevice, QMimeData, QRectF,
-    Qt)
+    QSize, Qt)
 from PyQt5.QtGui import (
     QIcon, QImage, QImageReader, QKeySequence, QMouseEvent, QPainterPath,
     QPainterPathStroker, QTransform)
@@ -114,8 +115,18 @@ class GlyphWindow(BaseMainWindow):
         self.installButton(RemoveOverlapButton)
 
         self.setCentralWidget(self.view)
-        self.resize(900, 700)
         self.view.setFocus(True)
+
+        self.readSettings()
+
+    def readSettings(self):
+        size = settings.glyphWindowSize()
+        if size.isValid():
+            self.resize(size)
+
+    def writeSettings(self):
+        # TODO: save current tool?
+        settings.setGlyphWindowSize(self.size())
 
     # ----------
     # Menu items
@@ -465,6 +476,12 @@ class GlyphWindow(BaseMainWindow):
     # ---------------------
     # QMainWindow functions
     # ---------------------
+
+    def sizeHint(self):
+        return QSize(1100, 750)
+
+    def resizeEvent(self, event):
+        self.writeSettings()
 
     def event(self, event):
         if event.type() == QEvent.WindowActivate:

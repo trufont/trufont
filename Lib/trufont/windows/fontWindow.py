@@ -126,21 +126,19 @@ class FontWindow(BaseMainWindow):
             self.tr("About &Qt"), QApplication.instance().aboutQt)
         menuBar.addMenu(helpMenu)
 
-        cellSize = 56
         self.glyphCellView = FontCellView(self)
         self.glyphCellView.glyphActivated.connect(self._glyphActivated)
         self.glyphCellView.glyphsDropped.connect(self._orderChanged)
         self.glyphCellView.selectionChanged.connect(self._selectionChanged)
         self.glyphCellView.setAcceptDrops(True)
         self.glyphCellView.setCellRepresentationName("TruFont.GlyphCell")
-        self.glyphCellView.setCellSize(cellSize)
         self.glyphCellView.setFocus()
 
         self.cellSizeSlider = QSlider(Qt.Horizontal, self)
         self.cellSizeSlider.setMinimum(32)
         self.cellSizeSlider.setMaximum(116)
         self.cellSizeSlider.setFixedWidth(.9 * self.cellSizeSlider.width())
-        self.cellSizeSlider.setValue(cellSize)
+        self.cellSizeSlider.sliderReleased.connect(self.writeSettings)
         self.cellSizeSlider.valueChanged.connect(self._sliderCellSizeChanged)
         self.selectionLabel = QLabel(self)
         statusBar = self.statusBar()
@@ -159,7 +157,23 @@ class FontWindow(BaseMainWindow):
 
         self.setCentralWidget(self.glyphCellView)
         self.setWindowTitle()
-        self.resize(605, 430)
+
+        self.readSettings()
+
+    def readSettings(self):
+        size = settings.fontWindowSize()
+        if size.isValid():
+            # if no size was registered, we just let sizeHint find an
+            # appropriate size, which will subsequently be saved in the
+            # settings
+            self.resize(size)
+        cellSize = settings.glyphCellSize()
+        self.cellSizeSlider.setValue(cellSize)
+        self.cellSizeSlider.valueChanged.emit(cellSize)
+
+    def writeSettings(self):
+        settings.setGlyphCellSize(self.cellSizeSlider.value())
+        settings.setFontWindowSize(self.size())
 
     # --------------
     # Custom methods
@@ -681,6 +695,12 @@ class FontWindow(BaseMainWindow):
     # ----------
     # Qt methods
     # ----------
+
+    def sizeHint(self):
+        return QSize(860, 590)
+
+    def resizeEvent(self, event):
+        self.writeSettings()
 
     def showEvent(self, event):
         app = QApplication.instance()

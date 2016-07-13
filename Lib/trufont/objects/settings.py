@@ -1,7 +1,7 @@
 from collections import Iterable
 from defcon import Color
 from defconQt.tools.drawing import colorToQColor
-from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import QSettings, QSize
 from PyQt5.QtGui import QColor
 
 _metricsWindowComboBoxItems = [
@@ -45,6 +45,7 @@ _latinDefaultGlyphNames = \
      "tildecomb", "uni0327", "quoteleft", "quoteright", "minus"]
 
 _fallbackValues = {
+    "fontWindow/glyphCellSize": 68,
     "metricsWindow/comboBoxItems": _metricsWindowComboBoxItems,
     "misc/loadRecentFile": False,
     "settings/defaultGlyphSet": _latinDefaultName,
@@ -81,6 +82,38 @@ def setValue(key, value):
 # XXX: use more robust setting
 # defaultGlyphSet will always be the first in array and we have a bool
 # to say whether we should apply it
+
+
+def fontWindowSize():
+    return value("fontWindow/size", type=QSize)
+
+
+def setFontWindowSize(size):
+    setValue("fontWindow/size", size)
+
+
+def glyphCellSize():
+    return value("fontWindow/glyphCellSize")
+
+
+def setGlyphCellSize(cellSize):
+    setValue("fontWindow/glyphCellSize", cellSize)
+
+
+def glyphWindowSize():
+    return value("glyphWindow/size", type=QSize)
+
+
+def setGlyphWindowSize(size):
+    setValue("glyphWindow/size", size)
+
+
+def metricsWindowSize():
+    return value("glyphWindow/size", type=QSize)
+
+
+def setMetricsWindowSize(size):
+    setValue("glyphWindow/size", size)
 
 
 def defaultGlyphSet():
