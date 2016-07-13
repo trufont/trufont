@@ -2,6 +2,7 @@ from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
+from defcon import Component
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.defcon import TAnchor
@@ -257,6 +258,10 @@ class SelectionTool(BaseTool):
                 menu.addSeparator()
                 menu.addAction(self.tr("Set Start Point"),
                                lambda: self._setStartPoint(item, parent))
+            elif isinstance(item, Component):
+                menu.addSeparator()
+                menu.addAction(self.tr("Decompose Component"),
+                               lambda: self._glyph.decomposeComponent(item))
         menu.exec_(self._cachedPos)
         self._cachedPos = None
 
