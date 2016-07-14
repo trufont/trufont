@@ -436,7 +436,6 @@ class SelectionTool(BaseTool):
     def mouseReleaseEvent(self, event):
         self._maybeJoinContour(event.localPos())
         self._itemTuple = None
-        self._origin = self._prevPos = None
         self._oldSelection = set()
         self._rubberBandRect = None
         self._shouldMove = False
