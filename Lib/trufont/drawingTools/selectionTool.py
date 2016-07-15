@@ -10,6 +10,7 @@ from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
     deleteUISelection, maybeProjectUISmoothPointOffcurve, moveUISelection,
     removeUISelection)
+from trufont.windows.glyphWindow import GlyphWindow
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
@@ -61,6 +62,14 @@ class SelectionTool(BaseTool):
             component = self._glyph.instantiateComponent()
             component.baseGlyph = newGlyph.name
             self._glyph.appendComponent(component)
+
+    def _goToGlyph(self, glyphName):
+        widget = self.parent()
+        font = self._glyph.getParent()
+        if glyphName in font:
+            glyph = font[glyphName]
+            glyphWindow = GlyphWindow(glyph, widget.parent())
+            glyphWindow.show()
 
     def _getSelectedCandidatePoint(self):
         """
@@ -260,8 +269,12 @@ class SelectionTool(BaseTool):
                                lambda: self._setStartPoint(item, parent))
             elif isinstance(item, Component):
                 menu.addSeparator()
+                menu.addAction(self.tr("Go To Glyph"),
+                               lambda: self._goToGlyph(item.baseGlyph))
                 menu.addAction(self.tr("Decompose Component"),
                                lambda: self._glyph.decomposeComponent(item))
+                menu.addAction(self.tr("Decompose All"),
+                               self._glyph.decomposeAllComponents)
         menu.exec_(self._cachedPos)
         self._cachedPos = None
 
