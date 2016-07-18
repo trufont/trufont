@@ -375,14 +375,17 @@ class PythonHighlighter(BaseCodeHighlighter):
 
         quotationFormat = QTextCharFormat()
         quotationFormat.setForeground(QColor(255, 27, 147))
-        self.addBlockRule('"""', '"""', quotationFormat)
-        self.addBlockRule("'''", "'''", quotationFormat)
+        self.addBlockRule('u?r?"""', '"""', quotationFormat)
+        self.addBlockRule("u?r?'''", "'''", quotationFormat)
 
         singleLineCommentFormat = QTextCharFormat()
-        singleLineCommentFormat.setForeground(Qt.darkGray)
+        singleLineCommentFormat.setForeground(QColor(112, 128, 144))
         self.addRule("#[^\n]*", singleLineCommentFormat)
 
-        self.addRule("'.*?'|\".*?\"(?!\")", quotationFormat)
+        quotationTemplate = "{0}[^{0}\\\\]*(\\\\.[^{0}\\\\]*)*{0}"
+        self.addRule(
+            "|".join(quotationTemplate.format(char) for char in ("'", "\"")),
+            quotationFormat)
 
         classOrFnNameFormat = QTextCharFormat()
         classOrFnNameFormat.setForeground(QColor(96, 106, 161))
