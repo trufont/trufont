@@ -228,9 +228,10 @@ class GlyphWindow(BaseMainWindow):
     def selectAll(self):
         glyph = self.view.glyph()
         glyph.selected = True
-        if not len(glyph):
-            for component in glyph.components:
-                component.selected = True
+        for component in glyph.components:
+            component.selected = True
+        for anchor in glyph.anchors:
+            anchor.selected = True
 
     def deselect(self):
         glyph = self.view.glyph()
