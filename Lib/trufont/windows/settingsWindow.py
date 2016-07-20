@@ -1,5 +1,5 @@
 from defconQt.controls.listView import ListView
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog,
@@ -30,6 +30,24 @@ class SettingsWindow(QDialog):
         mainLayout.addWidget(self.tabWidget)
         mainLayout.addWidget(buttonBox)
         self.setLayout(mainLayout)
+
+        self.readSettings()
+
+    def readSettings(self):
+        geometry = settings.settingsWindowGeometry()
+        if geometry:
+            self.restoreGeometry()
+
+    def writeSettings(self):
+        settings.setSettingsWindowGeometry(self.saveGeometry())
+
+    def moveEvent(self, event):
+        self.writeSettings()
+
+    resizeEvent = moveEvent
+
+    def sizeHint(self):
+        return QSize(625, 450)
 
     def accept(self):
         for i in range(self.tabWidget.count()):

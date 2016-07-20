@@ -1,13 +1,16 @@
 from defconQt.controls.baseCodeEditor import (
-    BaseCodeEditor, BaseCodeHighlighter)
+    BaseCodeEditor, BaseCodeHighlighter, GotoLineDialog)
 from keyword import kwlist
 from PyQt5.QtCore import (
-    pyqtSignal, QDir, QSettings, QStandardPaths, Qt, QUrl)
+    pyqtSignal, QDir, QSettings, QSize, QStandardPaths, Qt, QUrl)
 from PyQt5.QtGui import (
     QColor, QDesktopServices, QKeySequence, QTextCharFormat, QTextCursor)
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QFileDialog, QFileSystemModel, QMainWindow, QMenu,
-    QMessageBox, QSplitter, QTreeView, QWidget, QVBoxLayout)
+    QMessageBox, QPushButton, QSplitter, QStatusBar, QTreeView, QWidget,
+    QVBoxLayout)
+from trufont.controls.clickLabel import ClickLabel
+from trufont.objects import settings
 from trufont.tools import platformSpecific
 import os
 import tokenize
@@ -39,12 +42,21 @@ class ScriptingWindow(QMainWindow):
         splitter = QSplitter(self)
         splitter.addWidget(self.fileChooser)
         splitter.addWidget(self.editor)
-        splitter.setStretchFactor(0, 2)
-        splitter.setStretchFactor(1, 5)
-        splitter.setSizes([0, 1])
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        statusBar = ScriptingStatusBar(self)
         self.setCentralWidget(splitter)
+        self.setStatusBar(statusBar)
         self.newFile()
         self.editor.modificationChanged.connect(self.setWindowModified)
+        statusBar.setPosition(self.editor.textCursor())
+        self.editor.cursorPositionChanged.connect(
+            lambda: statusBar.setPosition(self.sender().textCursor()))
+        statusBar.setIndent(self.editor.indent())
+        self.editor.indentChanged.connect(statusBar.setIndent)
+        statusBar.indentModified.connect(self.editor.setIndent)
+        statusBar.positionClicked.connect(self.gotoLine)
+        statusBar.runButtonClicked.connect(self.runScript)
 
         self.readSettings()
 
@@ -118,6 +130,11 @@ class ScriptingWindow(QMainWindow):
         if ok:
             return dialog.selectedFiles()[0]
         return None
+
+    def gotoLine(self):
+        newLine, newColumn, ret = GotoLineDialog.getLineColumnNumber(self)
+        if ret and newLine:
+            self.editor.scrollToLine(newLine, newColumn)
 
     def runScript(self):
         app = QApplication.instance()
@@ -195,17 +212,19 @@ class FileTreeView(QTreeView):
         QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 
     def mousePressEvent(self, event):
+        super().mousePressEvent(event)
         if event.button() == Qt.RightButton:
+            model = self.model()
             modelIndex = self.indexAt(event.pos())
             if modelIndex.isValid():
-                path = self.model().filePath(modelIndex)
-                menu = QMenu(self)
-                menu.addAction(
-                    self.tr("Open In Explorer"),
-                    lambda: self._showInExplorer(path))
-                menu.exec_(event.globalPos())
-        else:
-            super().mousePressEvent(event)
+                path = model.filePath(modelIndex)
+            else:
+                path = model.rootPath()
+            menu = QMenu(self)
+            menu.addAction(
+                self.tr("Open In Explorer"),
+                lambda: self._showInExplorer(path))
+            menu.exec_(event.globalPos())
 
     def mouseDoubleClickEvent(self, event):
         if self.doubleClickCallback is not None:
@@ -421,3 +440,70 @@ class PythonHighlighter(BaseCodeHighlighter):
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground(QColor(45, 95, 235))
         self.addRule("\\b(%s)\\b" % ("|".join(kwlist)), keywordFormat)
+
+
+class ScriptingStatusBar(QStatusBar):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        if platformSpecific.needsTighterMargins():
+            self.setContentsMargins(6, -10, 9, -12)
+        self.setSizeGripEnabled(False)
+        self.positionLabel = ClickLabel(self)
+        self.indentLabel = IndentLabel(self)
+        self.clearButton = QPushButton(self.tr("Clear"), self)
+        self.clearButton.setEnabled(False)  # XXX
+        self.runButton = QPushButton(self.tr("Run"), self)
+
+        self.addWidget(self.positionLabel)
+        self.addPermanentWidget(self.indentLabel)
+        self.addPermanentWidget(self.clearButton)
+        self.addPermanentWidget(self.runButton)
+
+        self.indentModified = self.indentLabel.indentModified
+        self.positionClicked = self.positionLabel.clicked
+        self.clearButtonClicked = self.clearButton.clicked
+        self.runButtonClicked = self.runButton.clicked
+
+    def setIndent(self, indent):
+        # TODO: this could be in a label widget subclass for better
+        # encapsulation
+        space = tab = 0
+        for char in indent:
+            if char == " ":
+                space += 1
+            elif char == "\t":
+                tab += 1
+        if space and not tab:
+            if space < 2:
+                text = self.tr("Space")
+            else:
+                text = self.tr("{}-Spaces").format(space)
+        elif tab and not space:
+            if tab < 2:
+                text = self.tr("Tab")
+            else:
+                text = self.tr("Tabs")
+        else:
+            text = self.tr("Other")
+        self.indentLabel.setText(text)
+
+    def setPosition(self, textCursor):
+        blockNumber, blockPosition = textCursor.blockNumber(
+            ), textCursor.positionInBlock()
+        # TODO: display selection information?
+        self.positionLabel.setText("%d:%d" % (blockNumber+1, blockPosition+1))
+
+
+class IndentLabel(ClickLabel):
+    indentModified = pyqtSignal(str)
+
+    def contextMenu(self):
+        menu = QMenu(self)
+        menu.addAction(
+            self.tr("2-Spaces"), lambda: self.indentModified.emit("  "))
+        menu.addAction(
+            self.tr("4-Spaces"), lambda: self.indentModified.emit("    "))
+        menu.addAction(
+            self.tr("Tab"), lambda: self.indentModified.emit("\t"))
+        return menu

@@ -40,6 +40,14 @@ def isDeleteEvent(event):
     return False
 
 # -------
+# Margins
+# -------
+
+
+def needsTighterMargins():
+    return sys.platform == "darwin"
+
+# -------
 # ToolBar
 # -------
 

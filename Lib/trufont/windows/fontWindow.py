@@ -144,6 +144,9 @@ class FontWindow(BaseMainWindow):
         statusBar = self.statusBar()
         statusBar.addPermanentWidget(self.cellSizeSlider)
         statusBar.addWidget(self.selectionLabel)
+        statusBar.setSizeGripEnabled(False)
+        if platformSpecific.needsTighterMargins():
+            statusBar.setContentsMargins(6, -4, 9, -3)
 
         self.setFont_(font)
         if font is not None:

@@ -1,7 +1,8 @@
-from defconQt.tools import platformSpecific
+from defconQt.tools import platformSpecific as basePlatformSpecific
 from PyQt5.QtCore import pyqtSignal, QObject, QSize, Qt
 from PyQt5.QtGui import QPalette, QTextCursor, QTextOption
 from PyQt5.QtWidgets import QCheckBox, QMainWindow, QPushButton, QPlainTextEdit
+from trufont.tools import platformSpecific
 import sys
 
 
@@ -10,7 +11,7 @@ class OutputWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Tool)
         self.outputEdit = QPlainTextEdit(self)
-        self.outputEdit.setFont(platformSpecific.fixedFont())
+        self.outputEdit.setFont(basePlatformSpecific.fixedFont())
         self.outputEdit.setUndoRedoEnabled(False)
         palette = self.outputEdit.palette()
         palette.setColor(QPalette.Base, Qt.black)
@@ -28,6 +29,8 @@ class OutputWindow(QMainWindow):
         statusBar.addWidget(wrapLinesBox)
         statusBar.addPermanentWidget(clearOutputButton)
         statusBar.setSizeGripEnabled(False)
+        if platformSpecific.needsTighterMargins():
+            statusBar.setContentsMargins(7, -10, 9, -12)
 
         for channel in ("stdout", "stderr"):
             stream = OutputStream(channel, self)
