@@ -36,7 +36,7 @@ class SettingsWindow(QDialog):
     def readSettings(self):
         geometry = settings.settingsWindowGeometry()
         if geometry:
-            self.restoreGeometry()
+            self.restoreGeometry(geometry)
 
     def writeSettings(self):
         settings.setSettingsWindowGeometry(self.saveGeometry())

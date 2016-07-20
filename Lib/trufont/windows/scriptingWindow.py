@@ -177,6 +177,7 @@ class ScriptingWindow(QMainWindow):
             traceback.print_exc()
         for stream in streams:
             stream.unregisterStream()
+            stream.messagePassed.disconnect(self.outputEdit.write)
 
     # ----------
     # Qt methods
