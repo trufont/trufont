@@ -1,6 +1,8 @@
 from defconQt.controls.featureCodeEditor import FeatureCodeEditor
+from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QMessageBox
+from trufont.objects import settings
 from trufont.tools import platformSpecific
 
 
@@ -25,7 +27,16 @@ class FontFeaturesWindow(QMainWindow):
 
         self.updateWindowTitle()
         self.setCentralWidget(self.editor)
-        self.resize(600, 500)
+
+        self.readSettings()
+
+    def readSettings(self):
+        geometry = settings.fontFeaturesWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
+
+    def writeSettings(self):
+        settings.setFontFeaturesWindowGeometry(self.saveGeometry())
 
     def updateWindowTitle(self, title=None, font=None):
         if title is None:
@@ -57,6 +68,14 @@ class FontFeaturesWindow(QMainWindow):
     # ----------
     # Qt methods
     # ----------
+
+    def sizeHint(self):
+        return QSize(650, 500)
+
+    def moveEvent(self, event):
+        self.writeSettings()
+
+    resizeEvent = moveEvent
 
     # TODO: maybe bring up to the code editor widget?
     def closeEvent(self, event):

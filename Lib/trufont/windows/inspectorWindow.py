@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QApplication, QCheckBox, QGridLayout, QLineEdit, QPushButton, QSizePolicy,
     QToolButton, QVBoxLayout, QWidget)
 from trufont.controls.glyphAlignmentWidget import GlyphAlignmentWidget
+from trufont.objects import settings
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel
 
@@ -227,6 +228,16 @@ class InspectorWindow(QWidget):
         mainLayout.addWidget(layerSetGroup)
         mainLayout.addWidget(spacer)
         self.setLayout(mainLayout)
+
+        self.readSettings()
+
+    def readSettings(self):
+        geometry = settings.inspectorWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
+
+    def writeSettings(self):
+        settings.setInspectorWindowGeometry(self.saveGeometry())
 
     # -------------
     # Notifications
@@ -487,22 +498,32 @@ class InspectorWindow(QWidget):
 
     def sizeHint(self):
         sizeHint = super().sizeHint()
-        return sizeHint.__class__(200, sizeHint.height())
+        sizeHint.setWidth(200)
+        return sizeHint
 
     def showEvent(self, event):
         super().showEvent(event)
         # positioning
+        # TODO: make this multiscreen aware and kick it off when restoring
+        # geometry
+        """
         screenRect = QApplication.desktop().availableGeometry(self)
         widgetRect = self.frameGeometry()
         x = screenRect.width() - (widgetRect.width() + 20)
         y = screenRect.center().y() - widgetRect.height() / 2
         self.move(x, y)
+        """
         # notifications
         app = QApplication.instance()
         self._updateGlyph()
         app.dispatcher.addObserver(self, "_updateGlyph", "currentGlyphChanged")
         self._updateFont()
         app.dispatcher.addObserver(self, "_updateFont", "currentFontChanged")
+
+    def moveEvent(self, event):
+        self.writeSettings()
+
+    resizeEvent = moveEvent
 
     def closeEvent(self, event):
         super().closeEvent(event)

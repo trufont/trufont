@@ -1,7 +1,7 @@
 from collections import Iterable
 from defcon import Color
 from defconQt.tools.drawing import colorToQColor
-from PyQt5.QtCore import QSettings, QSize
+from PyQt5.QtCore import QByteArray, QSettings
 from PyQt5.QtGui import QColor
 
 _metricsWindowComboBoxItems = [
@@ -48,6 +48,7 @@ _fallbackValues = {
     "fontWindow/glyphCellSize": 68,
     "metricsWindow/comboBoxItems": _metricsWindowComboBoxItems,
     "misc/loadRecentFile": False,
+    "scriptingWindow/hSplitterSizes": [0, 1],
     "settings/defaultGlyphSet": _latinDefaultName,
 }
 
@@ -84,12 +85,28 @@ def setValue(key, value):
 # to say whether we should apply it
 
 
-def fontWindowSize():
-    return value("fontWindow/size", type=QSize)
+def fontWindowGeometry():
+    return value("fontWindow/geometry", type=QByteArray)
 
 
-def setFontWindowSize(size):
-    setValue("fontWindow/size", size)
+def setFontWindowGeometry(geometry):
+    setValue("fontWindow/geometry", geometry)
+
+
+def fontFeaturesWindowGeometry():
+    return value("fontFeaturesWindow/geometry", type=QByteArray)
+
+
+def setFontFeaturesWindowGeometry(geometry):
+    setValue("fontFeaturesWindow/geometry", geometry)
+
+
+def fontInfoWindowGeometry():
+    return value("fontInfoWindow/geometry", type=QByteArray)
+
+
+def setFontInfoWindowGeometry(geometry):
+    setValue("fontInfoWindow/geometry", geometry)
 
 
 def glyphCellSize():
@@ -100,20 +117,60 @@ def setGlyphCellSize(cellSize):
     setValue("fontWindow/glyphCellSize", cellSize)
 
 
-def glyphWindowSize():
-    return value("glyphWindow/size", type=QSize)
+def glyphWindowGeometry():
+    return value("glyphWindow/geometry", type=QByteArray)
 
 
-def setGlyphWindowSize(size):
-    setValue("glyphWindow/size", size)
+def setGlyphWindowGeometry(geometry):
+    setValue("glyphWindow/geometry", geometry)
 
 
-def metricsWindowSize():
-    return value("glyphWindow/size", type=QSize)
+def groupsWindowGeometry():
+    return value("groupsWindow/geometry", type=QByteArray)
 
 
-def setMetricsWindowSize(size):
-    setValue("glyphWindow/size", size)
+def setGroupsWindowGeometry(geometry):
+    setValue("groupsWindow/geometry", geometry)
+
+
+def inspectorWindowGeometry():
+    return value("inspectorWindow/geometry", type=QByteArray)
+
+
+def setInspectorWindowGeometry(geometry):
+    setValue("inspectorWindow/geometry", geometry)
+
+
+def metricsWindowGeometry():
+    return value("metricsWindow/geometry", type=QByteArray)
+
+
+def setMetricsWindowGeometry(geometry):
+    setValue("metricsWindow/geometry", geometry)
+
+
+def scriptingWindowGeometry():
+    return value("scriptingWindow/geometry", type=QByteArray)
+
+
+def setScriptingWindowGeometry(geometry):
+    setValue("scriptingWindow/geometry", geometry)
+
+
+def scriptingWindowHSplitterSizes():
+    value("scriptingWindow/hSplitterSizes")
+
+
+def setScriptingWindowHSplitterSizes(sizes):
+    setValue("scriptingWindow/hSplitterSizes", sizes)
+
+
+def settingsWindowGeometry():
+    return value("settingsWindow/geometry", type=QByteArray)
+
+
+def setSettingsWindowGeometry(geometry):
+    setValue("settingsWindow/geometry", geometry)
 
 
 def defaultGlyphSet():

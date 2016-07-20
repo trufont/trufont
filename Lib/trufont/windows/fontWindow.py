@@ -161,19 +161,16 @@ class FontWindow(BaseMainWindow):
         self.readSettings()
 
     def readSettings(self):
-        size = settings.fontWindowSize()
-        if size.isValid():
-            # if no size was registered, we just let sizeHint find an
-            # appropriate size, which will subsequently be saved in the
-            # settings
-            self.resize(size)
+        geometry = settings.fontWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
         cellSize = settings.glyphCellSize()
         self.cellSizeSlider.setValue(cellSize)
         self.cellSizeSlider.valueChanged.emit(cellSize)
 
     def writeSettings(self):
+        settings.setFontWindowGeometry(self.saveGeometry())
         settings.setGlyphCellSize(self.cellSizeSlider.value())
-        settings.setFontWindowSize(self.size())
 
     # --------------
     # Custom methods
@@ -699,8 +696,10 @@ class FontWindow(BaseMainWindow):
     def sizeHint(self):
         return QSize(860, 590)
 
-    def resizeEvent(self, event):
+    def moveEvent(self, event):
         self.writeSettings()
+
+    resizeEvent = moveEvent
 
     def showEvent(self, event):
         app = QApplication.instance()

@@ -120,13 +120,13 @@ class GlyphWindow(BaseMainWindow):
         self.readSettings()
 
     def readSettings(self):
-        size = settings.glyphWindowSize()
-        if size.isValid():
-            self.resize(size)
+        geometry = settings.glyphWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
 
     def writeSettings(self):
         # TODO: save current tool?
-        settings.setGlyphWindowSize(self.size())
+        settings.setGlyphWindowGeometry(self.saveGeometry())
 
     # ----------
     # Menu items

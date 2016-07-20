@@ -2,8 +2,9 @@ from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.controls.listView import ListView
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from trufont.controls.glyphStackWidget import GlyphStackWidget
+from trufont.objects import settings
 from trufont.tools import platformSpecific
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
     QGridLayout, QPushButton, QRadioButton, QWidget)
@@ -61,8 +62,16 @@ class GroupsWindow(QWidget):
         layout.setColumnStretch(4, 1)
         self.setLayout(layout)
 
-        self.adjustSize()
         self.updateWindowTitle(font=self._font)
+        self.readSettings()
+
+    def readSettings(self):
+        geometry = settings.groupsWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
+
+    def writeSettings(self):
+        settings.setGroupsWindowGeometry(self.saveGeometry())
 
     def updateWindowTitle(self, title=None, font=None):
         if title is None:
@@ -181,6 +190,14 @@ class GroupsWindow(QWidget):
     # ----------
     # Qt methods
     # ----------
+
+    def sizeHint(self):
+        return QSize(650, 650)
+
+    def moveEvent(self, event):
+        self.writeSettings()
+
+    resizeEvent = moveEvent
 
     def closeEvent(self, event):
         super().closeEvent(event)

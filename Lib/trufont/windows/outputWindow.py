@@ -52,9 +52,6 @@ class OutputWindow(QMainWindow):
             wrapMode = QTextOption.NoWrap
         self.outputEdit.setWordWrapMode(wrapMode)
 
-    def sizeHint(self):
-        return QSize(360, 320)
-
     def write(self, message, stream=None):
         atBottom = self.isScrollBarAtBottom()
         textCursor = self.outputEdit.textCursor()
@@ -66,6 +63,18 @@ class OutputWindow(QMainWindow):
         self.outputEdit.insertPlainText(message)
         if atBottom:
             self.scrollToBottom()
+
+    # ----------
+    # Qt methods
+    # ----------
+
+    def moveEvent(self, event):
+        self.writeSettings()
+
+    resizeEvent = moveEvent
+
+    def sizeHint(self):
+        return QSize(465, 400)
 
 
 class OutputStream(QObject):

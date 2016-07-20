@@ -1,4 +1,3 @@
-from math import copysign
 from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QApplication
@@ -31,12 +30,12 @@ class BaseTool(QObject):
         aDeltaX = abs(deltaX)
         aDeltaY = abs(deltaY)
         # diagonal incr.
-        #if aDeltaY >= aDeltaX * 2:
-        #    pos.setX(origin.x())
-        #elif aDeltaY > aDeltaX / 2:
-        #    avg = (aDeltaX + aDeltaY) / 2
-        #    pos.setX(origin.x() + copysign(avg, deltaX))
-        #    pos.setY(origin.y() + copysign(avg, deltaY))
+        # if aDeltaY >= aDeltaX * 2:
+        #     pos.setX(origin.x())
+        # elif aDeltaY > aDeltaX / 2:
+        #     avg = (aDeltaX + aDeltaY) / 2
+        #     pos.setX(origin.x() + copysign(avg, deltaX))
+        #     pos.setY(origin.y() + copysign(avg, deltaY))
         if aDeltaY >= aDeltaX:
             pos.setX(origin.x())
         else:

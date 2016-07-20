@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
     QPlainTextEdit, QVBoxLayout, QHBoxLayout, QFormLayout, QWidget,
     QScrollArea, QSpacerItem, QSizePolicy, QSpinBox)
 from trufont.controls.nameTabWidget import NameTabWidget
+from trufont.objects import settings
 
 
 # TODO: add placeholder text (fallbacks) and update on font.info changed
@@ -47,10 +48,25 @@ class FontInfoWindow(QDialog):
         self.setWindowTitle(self.tr("Font Info – {0} {1}").format(
             self.font.info.familyName, self.font.info.styleName))
 
+        self.readSettings()
+
+    def readSettings(self):
+        geometry = settings.fontInfoWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
+
+    def writeSettings(self):
+        settings.setFontInfoWindowGeometry(self.saveGeometry())
+
     def accept(self):
         for i in range(self.tabWidget.count()):
             self.tabWidget.widget(i).storeValues()
         super().accept()
+
+    def moveEvent(self, event):
+        self.writeSettings()
+
+    resizeEvent = moveEvent
 
 
 class TabWidget(QWidget):

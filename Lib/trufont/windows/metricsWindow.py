@@ -65,12 +65,12 @@ class MetricsWindow(BaseWindow):
         self.updateWindowTitle(font=font)
 
     def readSettings(self):
-        size = settings.metricsWindowSize()
-        if size.isValid():
-            self.resize(size)
+        geometry = settings.metricsWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
 
     def writeSettings(self):
-        settings.setMetricsWindowSize(self.size())
+        settings.setMetricsWindowGeometry(self.saveGeometry())
 
     def updateWindowTitle(self, title=None, font=None):
         if title is None:
@@ -114,8 +114,10 @@ class MetricsWindow(BaseWindow):
     def sizeHint(self):
         return QSize(800, 650)
 
-    def resizeEvent(self, event):
+    def moveEvent(self, event):
         self.writeSettings()
+
+    resizeEvent = moveEvent
 
     def showEvent(self, event):
         app = QApplication.instance()

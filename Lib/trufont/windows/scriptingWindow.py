@@ -19,9 +19,6 @@ class ScriptingWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.editor = PythonEditor(self)
-        self.resize(650, 500)
-
         fileMenu = QMenu(self.tr("&File"), self)
         fileMenu.addAction(self.tr("&New…"), self.newFile, QKeySequence.New)
         fileMenu.addAction(
@@ -36,6 +33,7 @@ class ScriptingWindow(QMainWindow):
             self.tr("&Close"), self.close, platformSpecific.closeKeySequence())
         self.menuBar().addMenu(fileMenu)
 
+        self.editor = PythonEditor(self)
         self.fileChooser = FileChooser(self)
         self.fileChooser.fileOpened.connect(self.openFile)
         splitter = QSplitter(self)
@@ -47,6 +45,22 @@ class ScriptingWindow(QMainWindow):
         self.setCentralWidget(splitter)
         self.newFile()
         self.editor.modificationChanged.connect(self.setWindowModified)
+
+        self.readSettings()
+
+    def readSettings(self):
+        geometry = settings.scriptingWindowGeometry()
+        if geometry:
+            self.restoreGeometry(geometry)
+        sizes = settings.scriptingWindowHSplitterSizes()
+        if sizes:
+            splitter = self.centralWidget()
+            splitter.setSizes()
+
+    def writeSettings(self):
+        settings.setScriptingWindowGeometry(self.saveGeometry())
+        splitter = self.centralWidget()
+        settings.setScriptingWindowHSplitterSizes(splitter.sizes())
 
     @property
     def currentPath(self):
@@ -105,6 +119,40 @@ class ScriptingWindow(QMainWindow):
             return dialog.selectedFiles()[0]
         return None
 
+    def runScript(self):
+        app = QApplication.instance()
+        script = self.editor.toPlainText()
+        global_vars = {
+            "__builtins__": __builtins__,
+            "AllFonts": app.allFonts,
+            "CurrentFont": app.currentFont,
+            "CurrentGlyph": app.currentGlyph,
+            "events": app.dispatcher,
+            "installTool": app.installTool,
+            "OpenMetricsWindow": app.openMetricsWindow,
+            "qApp": app,
+        }
+        try:
+            code = compile(script, "<string>", "exec")
+            exec(code, global_vars)
+        except:
+            traceback.print_exc()
+
+    # ----------
+    # Qt methods
+    # ----------
+
+    def setWindowTitle(self, title):
+        super().setWindowTitle("[*]{}".format(title))
+
+    def sizeHint(self):
+        return QSize(650, 700)
+
+    def moveEvent(self, event):
+        self.writeSettings()
+
+    resizeEvent = moveEvent
+
     def closeEvent(self, event):
         ok = self._maybeSaveBeforeExit()
         if ok:
@@ -133,28 +181,6 @@ class ScriptingWindow(QMainWindow):
                 return True
             return False
         return True
-
-    def runScript(self):
-        app = QApplication.instance()
-        script = self.editor.toPlainText()
-        global_vars = {
-            "__builtins__": __builtins__,
-            "AllFonts": app.allFonts,
-            "CurrentFont": app.currentFont,
-            "CurrentGlyph": app.currentGlyph,
-            "events": app.dispatcher,
-            "installTool": app.installTool,
-            "OpenMetricsWindow": app.openMetricsWindow,
-            "qApp": app,
-        }
-        try:
-            code = compile(script, "<string>", "exec")
-            exec(code, global_vars)
-        except:
-            traceback.print_exc()
-
-    def setWindowTitle(self, title):
-        super().setWindowTitle("[*]{}".format(title))
 
 
 class FileTreeView(QTreeView):
