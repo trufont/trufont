@@ -213,6 +213,16 @@ def drawGlyphPoints(
         aF = startPointColor.alphaF()
         startPointColor.setAlphaF(aF * .3)
         painter.fillPath(path, startPointColor)
+    # handles
+    if drawOffCurves and outlineData["offCurvePoints"]:
+        painter.save()
+        painter.setPen(otherColor)
+        for pt1, pt2 in outlineData["bezierHandles"]:
+            x1, y1 = pt1
+            x2, y2 = pt2
+            # TODO: should lineWidth account scale by default
+            drawLine(painter, x1, y1, x2, y2, 1.0 * scale)
+        painter.restore()
     # on curve
     if drawOnCurves and outlineData["onCurvePoints"]:
         width = 7 * scale
@@ -246,13 +256,6 @@ def drawGlyphPoints(
     # off curve
     if drawOffCurves and outlineData["offCurvePoints"]:
         # lines
-        painter.save()
-        painter.setPen(otherColor)
-        for pt1, pt2 in outlineData["bezierHandles"]:
-            x1, y1 = pt1
-            x2, y2 = pt2
-            # TODO: should lineWidth account scale by default
-            drawLine(painter, x1, y1, x2, y2, 1.0 * scale)
         # points
         offWidth = 5 * scale
         offHalf = offWidth / 2.0
@@ -271,6 +274,7 @@ def drawGlyphPoints(
                 path.addPath(pointPath)
         pen = QPen(otherColor)
         pen.setWidthF(3.0 * scale)
+        painter.save()
         painter.setPen(pen)
         painter.drawPath(path)
         painter.fillPath(path, QBrush(backgroundColor))
