@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
 from trufont.controls.clickLabel import ClickLabel
 from trufont.objects import settings
 from trufont.tools import platformSpecific
+from trufont.windows.outputWindow import OutputEdit, OutputStream
 import os
 import tokenize
 import traceback
@@ -39,9 +40,16 @@ class ScriptingWindow(QMainWindow):
         self.editor = PythonEditor(self)
         self.fileChooser = FileChooser(self)
         self.fileChooser.fileOpened.connect(self.openFile)
+        self.outputEdit = OutputEdit(self)
+
         splitter = QSplitter(self)
+        self.vSplitter = QSplitter(Qt.Vertical, splitter)
+        self.vSplitter.addWidget(self.editor)
+        self.vSplitter.addWidget(self.outputEdit)
+        self.vSplitter.setStretchFactor(0, 1)
+        self.vSplitter.setStretchFactor(1, 0)
         splitter.addWidget(self.fileChooser)
-        splitter.addWidget(self.editor)
+        splitter.addWidget(self.vSplitter)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         statusBar = ScriptingStatusBar(self)
@@ -54,8 +62,11 @@ class ScriptingWindow(QMainWindow):
             lambda: statusBar.setPosition(self.sender().textCursor()))
         statusBar.setIndent(self.editor.indent())
         self.editor.indentChanged.connect(statusBar.setIndent)
+        splitter.splitterMoved.connect(self.writeSettings)
+        self.vSplitter.splitterMoved.connect(self.writeSettings)
         statusBar.indentModified.connect(self.editor.setIndent)
         statusBar.positionClicked.connect(self.gotoLine)
+        statusBar.clearButtonClicked.connect(self.outputEdit.clear)
         statusBar.runButtonClicked.connect(self.runScript)
 
         self.readSettings()
@@ -67,12 +78,16 @@ class ScriptingWindow(QMainWindow):
         sizes = settings.scriptingWindowHSplitterSizes()
         if sizes:
             splitter = self.centralWidget()
-            splitter.setSizes()
+            splitter.setSizes(sizes)
+        sizes = settings.scriptingWindowVSplitterSizes()
+        if sizes:
+            self.vSplitter.setSizes(sizes)
 
     def writeSettings(self):
         settings.setScriptingWindowGeometry(self.saveGeometry())
         splitter = self.centralWidget()
         settings.setScriptingWindowHSplitterSizes(splitter.sizes())
+        settings.setScriptingWindowVSplitterSizes(self.vSplitter.sizes())
 
     @property
     def currentPath(self):
@@ -149,11 +164,19 @@ class ScriptingWindow(QMainWindow):
             "OpenMetricsWindow": app.openMetricsWindow,
             "qApp": app,
         }
+        streams = []
+        for channel in ("stdout", "stderr"):
+            stream = OutputStream(channel, self)
+            stream.forward = True
+            stream.messagePassed.connect(self.outputEdit.write)
+            streams.append(stream)
         try:
             code = compile(script, "<string>", "exec")
             exec(code, global_vars)
         except:
             traceback.print_exc()
+        for stream in streams:
+            stream.unregisterStream()
 
     # ----------
     # Qt methods
@@ -452,7 +475,6 @@ class ScriptingStatusBar(QStatusBar):
         self.positionLabel = ClickLabel(self)
         self.indentLabel = IndentLabel(self)
         self.clearButton = QPushButton(self.tr("Clear"), self)
-        self.clearButton.setEnabled(False)  # XXX
         self.runButton = QPushButton(self.tr("Run"), self)
 
         self.addWidget(self.positionLabel)

@@ -48,7 +48,9 @@ _fallbackValues = {
     "fontWindow/glyphCellSize": 68,
     "metricsWindow/comboBoxItems": _metricsWindowComboBoxItems,
     "misc/loadRecentFile": False,
+    "outputWindow/wrapLines": False,
     "scriptingWindow/hSplitterSizes": [0, 1],
+    "scriptingWindow/vSplitterSizes": [1, 100],
     "settings/defaultGlyphSet": _latinDefaultName,
 }
 
@@ -149,6 +151,22 @@ def setMetricsWindowGeometry(geometry):
     setValue("metricsWindow/geometry", geometry)
 
 
+def outputWindowGeometry():
+    return value("outputWindow/geometry", type=QByteArray)
+
+
+def setOutputWindowGeometry(geometry):
+    setValue("outputWindow/geometry", geometry)
+
+
+def outputWindowWrapLines():
+    return value("outputWindow/wrapLines")
+
+
+def setOutputWindowWrapLines(value):
+    setValue("outputWindow/wrapLines", value)
+
+
 def scriptingWindowGeometry():
     return value("scriptingWindow/geometry", type=QByteArray)
 
@@ -158,11 +176,19 @@ def setScriptingWindowGeometry(geometry):
 
 
 def scriptingWindowHSplitterSizes():
-    value("scriptingWindow/hSplitterSizes")
+    return value("scriptingWindow/hSplitterSizes")
 
 
 def setScriptingWindowHSplitterSizes(sizes):
     setValue("scriptingWindow/hSplitterSizes", sizes)
+
+
+def scriptingWindowVSplitterSizes():
+    return value("scriptingWindow/vSplitterSizes", type=int)
+
+
+def setScriptingWindowVSplitterSizes(sizes):
+    setValue("scriptingWindow/vSplitterSizes", sizes)
 
 
 def settingsWindowGeometry():
