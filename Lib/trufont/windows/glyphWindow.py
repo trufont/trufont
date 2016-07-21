@@ -483,8 +483,10 @@ class GlyphWindow(BaseMainWindow):
     def sizeHint(self):
         return QSize(1100, 750)
 
-    def resizeEvent(self, event):
+    def moveEvent(self, event):
         self.writeSettings()
+
+    resizeEvent = moveEvent
 
     def event(self, event):
         if event.type() == QEvent.WindowActivate:
