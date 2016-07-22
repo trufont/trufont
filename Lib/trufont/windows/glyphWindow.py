@@ -146,7 +146,13 @@ class GlyphWindow(BaseMainWindow):
         if not (glyphOrder and len(glyphOrder)):
             return
         index = glyphOrder.index(currentGlyph.name)
-        newIndex = (index + offset) % len(glyphOrder)
+        newIndex = index
+        sign = offset//abs(offset)
+        while True:
+            newIndex = newIndex + sign
+            newIndex = (newIndex) % len(glyphOrder)
+            if glyphOrder[newIndex] in font:
+                break
         glyph = font[glyphOrder[newIndex]]
         self.setGlyph(glyph)
 
