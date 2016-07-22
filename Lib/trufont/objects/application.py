@@ -1,5 +1,5 @@
 from defcon.tools.notifications import NotificationCenter
-from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtCore import QEvent, QStandardPaths, Qt
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.selectionTool import SelectionTool
 from trufont.drawingTools.penTool import PenTool
@@ -20,6 +20,7 @@ class Application(QApplication):
         self._currentMainWindow = None
         self._launched = False
         self._drawingTools = [SelectionTool, PenTool, RulerTool, KnifeTool]
+        self._extensions = []
         self.dispatcher = NotificationCenter()
         self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")
         self.focusChanged.connect(self.updateCurrentMainWindow)
@@ -92,6 +93,32 @@ class Application(QApplication):
         if self._currentGlyph is not None:
             if self._currentGlyph.font == font:
                 self.setCurrentGlyph(None)
+
+    def _getLocalDirectory(self, key, name):
+        userPath = settings.value(key, type=str)
+        if userPath and os.path.isdir(userPath):
+            return userPath
+
+        appDataFolder = QStandardPaths.standardLocations(
+            QStandardPaths.AppLocalDataLocation)[0]
+        subFolder = os.path.normpath(os.path.join(
+            appDataFolder, name))
+
+        if not os.path.exists(subFolder):
+            try:
+                os.makedirs(subFolder)
+            except OSError:
+                subFolder = os.path.expanduser("~")
+
+        settings.setValue(key, subFolder)
+        return subFolder
+
+    def getExtensionsDirectory(self):
+        return self._getLocalDirectory(
+            "scripting/extensionsPath", "Extensions")
+
+    def getScriptsDirectory(self):
+        return self._getLocalDirectory("scripting/scriptsPath", "Scripts")
 
     def newFile(self):
         font = TFont.newStandardFont()
@@ -167,6 +194,19 @@ class Application(QApplication):
                 return window._metricsWindow
         return None
 
+    def globals(self):
+        global_vars = {
+            "__builtins__": __builtins__,
+            "AllFonts": self.allFonts,
+            "CurrentFont": self.currentFont,
+            "CurrentGlyph": self.currentGlyph,
+            "events": self.dispatcher,
+            "registerTool": self.registerTool,
+            "OpenMetricsWindow": self.openMetricsWindow,
+            "qApp": self,
+        }
+        return global_vars
+
     # -------------
     # Drawing tools
     # -------------
@@ -174,10 +214,29 @@ class Application(QApplication):
     def drawingTools(self):
         return self._drawingTools
 
-    def installTool(self, tool):
+    def registerTool(self, tool):
         self._drawingTools.append(tool)
         data = dict(tool=tool)
-        self.postNotification("drawingToolInstalled", data)
+        self.postNotification("drawingToolRegistered", data)
 
-    def uninstallTool(self, tool):
-        pass  # XXX
+    def unregisterTool(self, tool):
+        self._drawingTools.remove(tool)
+        data = dict(tool=tool)
+        self.postNotification("drawingToolUnregistered", data)
+
+    # ----------
+    # Extensions
+    # ----------
+
+    def extensions(self):
+        return self._extensions
+
+    def registerExtension(self, extension):
+        self._extensions.append(extension)
+        data = dict(extension=extension)
+        self.postNotification("extensionRegistered", data)
+
+    def unregisterExtension(self, extension):
+        self._extensions.remove(extension)
+        data = dict(extension=extension)
+        self.postNotification("extensionUnregistered", data)

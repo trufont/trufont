@@ -1,7 +1,9 @@
 from defconQt import representationFactories as baseRepresentationFactories
 from trufont import __version__, representationFactories
 from trufont.objects.application import Application
+from trufont.objects.extension import TExtension
 from trufont.resources import icons_db  # noqa
+from trufont.tools import errorReports
 from trufont.windows.outputWindow import OutputWindow
 from PyQt5.QtCore import (
     Qt, QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
@@ -57,6 +59,24 @@ def main():
         "Command-line parser", "files"), QApplication.translate(
         "Command-line parser", "The UFO files to open."))
     parser.process(app)
+    # bootstrap extensions
+    folder = app.getExtensionsDirectory()
+    for file in os.listdir(folder):
+        if not file.rstrip("\\/ ").endswith(".tfExt"):
+            continue
+        path = os.path.join(folder, file)
+        try:
+            extension = TExtension(path)
+            if extension.launchAtStartup:
+                extension.run()
+        except Exception as e:
+            msg = QApplication.translate(
+                "Extensions", "The extension at {0} could not be run.".format(
+                    path))
+            errorReports.showWarningException(e, msg)
+            continue
+        app.registerExtension(extension)
+    # process files
     args = parser.positionalArguments()
     if not args:
         fontPath = None

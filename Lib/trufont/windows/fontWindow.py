@@ -46,6 +46,7 @@ class FontWindow(BaseMainWindow):
         self._metricsWindow = None
         self._groupsWindow = None
 
+        app = QApplication.instance()
         menuBar = self.menuBar()
         fileMenu = QMenu(self.tr("&File"), self)
         fileMenu.addAction(self.tr("&New…"), self.newFile, QKeySequence.New)
@@ -109,6 +110,10 @@ class FontWindow(BaseMainWindow):
             self.tr("&Output Window"), self.outputWindow, "Ctrl+Alt+O")
         menuBar.addMenu(pythonMenu)
 
+        self._scriptsMenu = QMenu(self.tr("Scripts"), self)
+        self._addExtensions(app.extensions())
+        menuBar.addMenu(self._scriptsMenu)
+
         windowMenu = QMenu(self.tr("&Windows"), self)
         action = windowMenu.addAction(
             self.tr("&Inspector"), self.inspector, "Ctrl+I")
@@ -152,10 +157,12 @@ class FontWindow(BaseMainWindow):
         if font is not None:
             self.setCurrentFile(font.path)
 
-        app = QApplication.instance()
         app.dispatcher.addObserver(
             self, "_preferencesChanged", "preferencesChanged")
         app.dispatcher.addObserver(self, "_fontSaved", "fontSaved")
+        app.dispatcher.addObserver(
+            self, "_extensionRegistered", "extensionRegistered")
+        # TODO: extensionUnregistered
         self._updateGlyphActions()
 
         self.setCentralWidget(self.glyphCellView)
@@ -230,6 +237,10 @@ class FontWindow(BaseMainWindow):
         path = notification.data["path"]
         self.setCurrentFile(path)
         self.setWindowModified(False)
+
+    def _extensionRegistered(self, notification):
+        extension = notification.data["extension"]
+        self._addExtensions([extension])
 
     def _preferencesChanged(self, notification):
         self.updateMarkColors()
@@ -669,6 +680,27 @@ class FontWindow(BaseMainWindow):
             pixmap.fill(color)
             action.setIcon(QIcon(pixmap))
             action.setData(color)
+
+    def _addExtensions(self, extensions):
+        def getFunc(ext, path):
+            # need a stack frame here to return a unique lambda for each run
+            return lambda: ext.run(path)
+
+        for extension in extensions:
+            # XXX: wrap this in try block or validate() beforehand?
+            addToMenu = extension.addToMenu
+            if addToMenu:
+                if isinstance(addToMenu, list):
+                    parentMenu = self._scriptsMenu.addMenu(
+                        extension.name or "")
+                else:
+                    parentMenu = self._scriptsMenu
+                for entry in addToMenu:
+                    menuName = entry.get("name")
+                    menuPath = entry.get("path")
+                    shortcut = entry.get("shortcut")
+                    parentMenu.addAction(
+                        menuName, getFunc(extension, menuPath), shortcut)
 
     def _updateGlyphActions(self):
         currentGlyph = self.glyphCellView.lastSelectedGlyph()

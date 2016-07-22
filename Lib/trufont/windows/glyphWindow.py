@@ -111,7 +111,8 @@ class GlyphWindow(BaseMainWindow):
             if not index:
                 action.trigger()
         app.dispatcher.addObserver(
-            self, "_drawingToolInstalled", "drawingToolInstalled")
+            self, "_drawingToolRegistered", "drawingToolRegistered")
+        # TODO: drawingToolUnregistered
         self.installButton(RemoveOverlapButton)
 
         self.setCentralWidget(self.view)
@@ -306,7 +307,7 @@ class GlyphWindow(BaseMainWindow):
 
     # app
 
-    def _drawingToolInstalled(self, notification):
+    def _drawingToolRegistered(self, notification):
         tool = notification.data["tool"]
         self.installTool(tool)
 
@@ -505,7 +506,7 @@ class GlyphWindow(BaseMainWindow):
         super().closeEvent(event)
         if event.isAccepted():
             app = QApplication.instance()
-            app.dispatcher.removeObserver(self, "drawingToolInstalled")
+            app.dispatcher.removeObserver(self, "drawingToolRegistered")
             data = dict(window=self)
             app.postNotification("glyphWindowWillClose", data)
             glyph = self.view.glyph()

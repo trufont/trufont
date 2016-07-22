@@ -153,17 +153,8 @@ class ScriptingWindow(QMainWindow):
 
     def runScript(self):
         app = QApplication.instance()
+        global_vars = app.globals()
         script = self.editor.toPlainText()
-        global_vars = {
-            "__builtins__": __builtins__,
-            "AllFonts": app.allFonts,
-            "CurrentFont": app.currentFont,
-            "CurrentGlyph": app.currentGlyph,
-            "events": app.dispatcher,
-            "installTool": app.installTool,
-            "OpenMetricsWindow": app.openMetricsWindow,
-            "qApp": app,
-        }
         streams = []
         for channel in ("stdout", "stderr"):
             stream = OutputStream(channel, self)
