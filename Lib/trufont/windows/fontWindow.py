@@ -642,6 +642,7 @@ class FontWindow(BaseMainWindow):
     def setCurrentFile(self, path):
         if path is None:
             return
+        path = os.path.abspath(path)
         recentFiles = settings.recentFiles()
         if path in recentFiles:
             recentFiles.remove(path)
