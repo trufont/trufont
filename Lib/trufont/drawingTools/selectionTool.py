@@ -311,7 +311,7 @@ class SelectionTool(BaseTool):
                 reverseText = self.tr("Reverse Selected Contours")
             else:
                 reverseText = self.tr("Reverse All Contours")
-        menu.addAction(reverseText, lambda: self._reverse([targetContour]))
+        menu.addAction(reverseText, lambda: self._reverse(targetContour))
         menu.addSeparator()
         menu.addAction(self.tr("Add Component…"), self._createComponent)
         menu.addAction(self.tr("Add Anchor…"), self._createAnchor)
