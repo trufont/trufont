@@ -56,6 +56,9 @@ class RulerTool(BaseTool):
         self.parent().update()
 
     def mouseReleaseEvent(self, event):
+        # double click calls release twice
+        if self._rulerObject is None:
+            return
         text = self._rulerObject[1]
         if text == "0":
             # delete no-op ruler
