@@ -7,7 +7,7 @@ from trufont.drawingTools.baseTool import BaseTool
 from trufont.drawingTools.removeOverlapButton import RemoveOverlapButton
 from trufont.objects import settings
 from trufont.tools import drawing, errorReports, platformSpecific
-from trufont.tools.uiMethods import deleteUISelection
+from trufont.tools.uiMethods import deleteUISelection, UIGlyphGuidelines
 from PyQt5.QtCore import (
     QBuffer, QByteArray, QEvent, QIODevice, QMimeData, QRectF,
     QSize, Qt)
@@ -825,6 +825,7 @@ class GlyphCanvasWidget(GlyphWidget):
                 contours=[],
                 points=[],
                 components=[],
+                guidelines=[],
                 image=None,
             )
         # anchors
@@ -868,6 +869,19 @@ class GlyphCanvasWidget(GlyphWidget):
                 if justOne:
                     return (component, None)
                 ret["components"].append(component)
+        # guideline
+        for guideline in UIGlyphGuidelines(self._glyph):
+            if None not in (guideline.x, guideline.y):
+                # point
+                x = guideline.x - smoothHalf
+                y = guideline.y - smoothHalf
+                path = QPainterPath()
+                path.addEllipse(x, y, smoothWidth, smoothWidth)
+                if func(path, obj):
+                    if justOne:
+                        return (guideline, None)
+                    ret["guidelines"].append(guideline)
+                # TODO: catch line if selected
         # image
         image = self._glyph.image
         pixmap = image.getRepresentation("defconQt.QPixmap")

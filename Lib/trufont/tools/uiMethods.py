@@ -3,6 +3,7 @@ UI-constrained point management methods.
 """
 from trufont.tools import bezierMath
 from PyQt5.QtCore import QLineF
+import itertools
 import math
 
 
@@ -179,3 +180,40 @@ def removeUISelection(contour, preserveShape=True):
                     onCurve.segmentType = "line"
                     onCurve.smooth = otherOnCurve.smooth = False
                     break
+
+
+def UIGlyphGuidelines(glyph):
+    guidelines = glyph.guidelines
+    font = glyph.font
+    if font is not None:
+        guidelines = itertools.chain(guidelines, font.guidelines)
+    return guidelines
+
+
+def moveUIGlyphElements(glyph, dx, dy):
+    for anchor in glyph.anchors:
+        if anchor.selected:
+            anchor.move((dx, dy))
+    for contour in glyph:
+        moveUISelection(contour, (dx, dy))
+    for component in glyph.components:
+        if component.selected:
+            component.move((dx, dy))
+    for guideline in UIGlyphGuidelines(glyph):
+        if guideline.selected:
+            guideline.x += dx
+            guideline.y += dy
+    image = glyph.image
+    if image.selected:
+        image.move((dx, dy))
+
+
+def unselectUIGlyphElements(glyph):
+    for anchor in glyph.anchors:
+        anchor.selected = False
+    for component in glyph.components:
+        component.selected = False
+    glyph.selected = False
+    for guideline in UIGlyphGuidelines(glyph):
+        guideline.selected = False
+    glyph.image.selected = False

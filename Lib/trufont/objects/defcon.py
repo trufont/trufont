@@ -1,5 +1,6 @@
 from booleanOperations.booleanGlyph import BooleanGlyph
-from defcon import Font, Contour, Glyph, Layer, Anchor, Component, Point, Image
+from defcon import (
+    Font, Layer, Glyph, Contour, Point, Anchor, Component, Guideline, Image)
 from defcon.objects.base import BaseObject
 from fontTools.misc.transform import Identity
 from PyQt5.QtCore import pyqtSignal, QObject
@@ -21,6 +22,7 @@ class TFont(Font):
             ("glyphContourClass", TContour),
             ("glyphPointClass", TPoint),
             ("glyphImageClass", TImage),
+            ("guidelineClass", TGuideline),
             ("layerClass", TLayer),
         )
         for attr, defaultClass in attrs:
@@ -436,10 +438,7 @@ class TAnchor(Anchor):
         super().__init__(*args, **kwargs)
         if "anchorDict" in kwargs:
             anchorDict = kwargs["anchorDict"]
-        else:
-            anchorDict = None
-        if anchorDict is not None:
-            self._selected = anchorDict.get("selected")
+            self._selected = anchorDict.get("selected", False)
 
     def _get_selected(self):
         return self._selected
@@ -524,6 +523,30 @@ class TPoint(Point):
         doc="A boolean indicating the selected state of the point.")
 
 
+class TGuideline(Guideline):
+
+    def __init__(self, *args, **kwargs):
+        self._selected = False
+        super().__init__(*args, **kwargs)
+        if "guidelineDict" in kwargs:
+            guidelineDict = kwargs["guidelineDict"]
+            self._selected = guidelineDict.get("selected", False)
+
+    def _get_selected(self):
+        return self._selected
+
+    def _set_selected(self, value):
+        if value == self._selected:
+            return
+        self._selected = value
+        self.postNotification(notification="Guideline.SelectionChanged")
+
+    # TODO: add to repr
+    selected = property(
+        _get_selected, _set_selected,
+        doc="A boolean indicating the selected state of the guideline.")
+
+
 class TImage(Image):
 
     def __init__(self, *args, **kwargs):
@@ -531,10 +554,7 @@ class TImage(Image):
         super().__init__(*args, **kwargs)
         if "imageDict" in kwargs:
             imageDict = kwargs["imageDict"]
-        else:
-            imageDict = None
-        if imageDict is not None:
-            self._selected = imageDict.get("selected")
+            self._selected = imageDict.get("selected", False)
 
     def _get_selected(self):
         return self._selected

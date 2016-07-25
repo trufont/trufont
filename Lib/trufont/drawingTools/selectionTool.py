@@ -3,13 +3,14 @@ from PyQt5.QtGui import QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from defcon import Component
+from fontTools.pens.basePen import decomposeQuadraticSegment
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.defcon import TAnchor
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
-    deleteUISelection, maybeProjectUISmoothPointOffcurve, moveUISelection,
-    removeUISelection)
+    deleteUISelection, maybeProjectUISmoothPointOffcurve, removeUISelection,
+    moveUIGlyphElements, unselectUIGlyphElements)
 from trufont.windows.glyphWindow import GlyphWindow
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
@@ -23,10 +24,23 @@ def _pointWithinThreshold(x, y, curve, eps):
     path = QPainterPath()
     path.addEllipse(x - eps, y - eps, 2 * eps, 2 * eps)
     curvePath = QPainterPath()
-    p1, p2, p3, p4 = curve
-    curvePath.moveTo(p1.x, p1.y)
-    curvePath.cubicTo(p2.x, p2.y, p3.x, p3.y, p4.x, p4.y)
-    curvePath.cubicTo(p3.x, p3.y, p2.x, p2.y, p1.x, p1.y)
+    if curve[-1].segmentType == "curve":
+        p1, p2, p3, p4 = curve
+        curvePath.moveTo(p1.x, p1.y)
+        curvePath.cubicTo(p2.x, p2.y, p3.x, p3.y, p4.x, p4.y)
+        curvePath.cubicTo(p3.x, p3.y, p2.x, p2.y, p1.x, p1.y)
+    else:
+        first = curve[0]
+        curvePath.moveTo(first.x, first.y)
+        # PACK for fontTools
+        pts = []
+        for pt in curve:
+            pts.append((pt.x, pt.y))
+        # draw
+        for pt1, pt2 in decomposeQuadraticSegment(pts[1:]):
+            curvePath.quadTo(*pt1+pt2)
+        for pt1, pt2 in decomposeQuadraticSegment(list(reversed(pts[:-1]))):
+            curvePath.quadTo(*pt1+pt2)
     return path.intersects(curvePath)
 
 
@@ -62,6 +76,13 @@ class SelectionTool(BaseTool):
             component = self._glyph.instantiateComponent()
             component.baseGlyph = newGlyph.name
             self._glyph.appendComponent(component)
+
+    def _createGuideline(self, *args):
+        widget = self.parent()
+        pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
+        content = dict(x=pos.x(), y=pos.y())
+        guideline = self._glyph.instantiateGuideline(content)
+        self._glyph.appendGuideline(guideline)
 
     def _goToGlyph(self, glyphName):
         widget = self.parent()
@@ -128,10 +149,19 @@ class SelectionTool(BaseTool):
                     # TODO: somewhat arbitrary
                     if dist < 5 * scale:
                         return [prev, point], contour
-                elif point.segmentType == "curve":
+                elif point.segmentType in ("curve", "qcurve"):
                     if action == "insert":
                         continue
-                    bez = [contour.getPoint(index-3+i) for i in range(4)]
+                    if point.segmentType == "curve":
+                        bez = [contour.getPoint(index-3+i) for i in range(4)]
+                    else:
+                        bez = [point]
+                        i = 1
+                        while i < 2 or point.segmentType is None:
+                            point = contour.getPoint(index-i)
+                            bez.append(pt)
+                            i += 1
+                        bez.reverse()
                     if _pointWithinThreshold(pos.x(), pos.y(), bez, 5 * scale):
                         return bez, contour
         return None
@@ -156,7 +186,7 @@ class SelectionTool(BaseTool):
                 point.segmentType = "curve"
                 contour.releaseHeldNotifications()
                 return
-        elif point.segmentType != "curve":
+        elif point.segmentType not in ("curve", "qcurve"):
             return
         if action == "selectContour":
             contour.selected = not contour.selected
@@ -238,12 +268,13 @@ class SelectionTool(BaseTool):
         if ok:
             anchor.name = newAnchorName
 
-    def _reverse(self):
-        selectedContours = set()
-        for contour in self._glyph:
-            if contour.selection:
-                selectedContours.add(contour)
-        target = selectedContours or self._glyph
+    def _reverse(self, target=None):
+        if target is None:
+            selectedContours = set()
+            for contour in self._glyph:
+                if contour.selection:
+                    selectedContours.add(contour)
+            target = selectedContours or self._glyph
         for contour in target:
             contour.reverse()
 
@@ -257,24 +288,34 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         self._cachedPos = event.globalPos()
         menu = QMenu(widget)
-        menu.addAction(self.tr("Add Anchor…"), self._createAnchor)
-        menu.addAction(self.tr("Add Component…"), self._createComponent)
-        menu.addAction(self.tr("Reverse"), self._reverse)
         itemTuple = widget.itemAt(event.localPos())
+        targetContour = None
         if itemTuple is not None:
             item, parent = itemTuple
             if parent is not None and item.segmentType:
-                menu.addSeparator()
+                targetContour = [parent]
                 menu.addAction(self.tr("Set Start Point"),
                                lambda: self._setStartPoint(item, parent))
             elif isinstance(item, Component):
-                menu.addSeparator()
                 menu.addAction(self.tr("Go To Glyph"),
                                lambda: self._goToGlyph(item.baseGlyph))
-                menu.addAction(self.tr("Decompose Component"),
+                menu.addAction(self.tr("Decompose"),
                                lambda: self._glyph.decomposeComponent(item))
                 menu.addAction(self.tr("Decompose All"),
                                self._glyph.decomposeAllComponents)
+        if targetContour is not None:
+            reverseText = self.tr("Reverse Contour")
+        else:
+            # XXX: text and action shouldnt be decoupled
+            if self._glyph.selection:
+                reverseText = self.tr("Reverse Selected Contours")
+            else:
+                reverseText = self.tr("Reverse All Contours")
+        menu.addAction(reverseText, lambda: self._reverse([targetContour]))
+        menu.addSeparator()
+        menu.addAction(self.tr("Add Component…"), self._createComponent)
+        menu.addAction(self.tr("Add Anchor…"), self._createAnchor)
+        menu.addAction(self.tr("Add Guideline"), self._createGuideline)
         menu.exec_(self._cachedPos)
         self._cachedPos = None
 
@@ -305,30 +346,11 @@ class SelectionTool(BaseTool):
         elif key in arrowKeys:
             # TODO: prune
             self._glyph.prepareUndo()
-            delta = self._moveForEvent(event)
+            dx, dy = self._moveForEvent(event)
             # TODO: seems weird that glyph.selection and selected don't incl.
             # anchors and components while glyph.move does... see what glyphs
             # does
-            hadSelection = False
-            for anchor in self._glyph.anchors:
-                if anchor.selected:
-                    anchor.move(delta)
-                    hadSelection = True
-            for contour in self._glyph:
-                moveUISelection(contour, delta)
-                # XXX: shouldn't have to recalc this
-                if contour.selection:
-                    hadSelection = True
-            for component in self._glyph.components:
-                if component.selected:
-                    component.move(delta)
-                    hadSelection = True
-            image = self._glyph.image
-            if image.selected:
-                image.move(delta)
-                hadSelection = True
-            if not hadSelection:
-                event.ignore()
+            moveUIGlyphElements(self._glyph, dx, dy)
         elif key in navKeys:
             pack = self._getSelectedCandidatePoint()
             if pack is not None:
@@ -352,12 +374,7 @@ class SelectionTool(BaseTool):
         if self._itemTuple is not None:
             itemUnderMouse, parentContour = self._itemTuple
             if not (itemUnderMouse.selected or addToSelection):
-                for anchor in self._glyph.anchors:
-                    anchor.selected = False
-                for component in self._glyph.components:
-                    component.selected = False
-                self._glyph.selected = False
-                self._glyph.image.selected = False
+                unselectUIGlyphElements(self._glyph)
             itemUnderMouse.selected = True
             if parentContour is not None:
                 parentContour.postNotification(
@@ -375,12 +392,7 @@ class SelectionTool(BaseTool):
                 if addToSelection:
                     self._oldSelection = self._glyph.selection
                 else:
-                    for anchor in self._glyph.anchors:
-                        anchor.selected = False
-                    for component in self._glyph.components:
-                        component.selected = False
-                    self._glyph.selected = False
-                    self._glyph.image.selected = False
+                    unselectUIGlyphElements(self._glyph)
                 self._performSegmentClick(pos, action, segmentTuple)
             else:
                 self._shouldMove = True
@@ -419,17 +431,7 @@ class SelectionTool(BaseTool):
                                     canvasPos, self._origin)
             dx = canvasPos.x() - self._prevPos.x()
             dy = canvasPos.y() - self._prevPos.y()
-            for anchor in glyph.anchors:
-                if anchor.selected:
-                    anchor.move((dx, dy))
-            for contour in glyph:
-                moveUISelection(contour, (dx, dy))
-            for component in glyph.components:
-                if component.selected:
-                    component.move((dx, dy))
-            image = glyph.image
-            if image.selected:
-                image.move((dx, dy))
+            moveUIGlyphElements(glyph, dx, dy)
             self._prevPos = canvasPos
         else:
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
