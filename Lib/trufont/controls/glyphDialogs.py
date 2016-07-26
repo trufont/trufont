@@ -207,9 +207,9 @@ class RenameDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle(self.tr("Rename anchor…"))
+        self.setWindowTitle(self.tr("Rename…"))
 
-        nameLabel = QLabel(self.tr("Anchor name:"), self)
+        nameLabel = QLabel(self.tr("Name:"), self)
         self.nameEdit = QLineEdit(self)
         self.nameEdit.setFocus(True)
 
