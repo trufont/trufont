@@ -1,8 +1,9 @@
 from defcon import Color
 from defconQt.tools.drawing import drawTextAtPoint
-from PyQt5.QtCore import QPointF, Qt
+from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
+from PyQt5.QtWidgets import QApplication
 
 # ------
 # Colors
@@ -14,6 +15,12 @@ _defaultColors = dict(
     # -------
 
     background=QColor(Qt.white),
+
+    # Font
+    # ----
+
+    # guidelines
+    fontGuideline=QColor.fromRgbF(1, 0, 0, .5),
 
     # Glyph
     # -----
@@ -33,6 +40,8 @@ _defaultColors = dict(
     glyphAnchor=QColor(228, 96, 15, 200),
     # selection
     glyphSelection=QColor(165, 190, 216, 155),
+    # guidelines
+    glyphGuideline=QColor.fromRgbF(.3, .4, .85, .5),
 )
 
 
@@ -84,6 +93,117 @@ def drawGlyphWithAliasedLines(painter, glyph):
 # Font
 # ----
 
+# Guidelines
+
+
+def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
+                       drawText=True, color=None):
+    """
+    Draws the font guidelines of the Glyph_ *glyph* in the form of lines if
+    *drawLines* is true and text if *drawText* is true using QPainter_
+    *painter*.
+
+    *rect* specifies the rectangle which the lines will be drawn in (usually,
+    that of the glyph’s advance width).
+
+    .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
+    .. _QPainter: http://doc.qt.io/qt-5/qpainter.html
+    """
+    if not (drawLines or drawText):
+        return
+    font = glyph.font
+    if font is None:
+        return
+    if color is None:
+        color = defaultColor("fontGuideline")
+    _drawGuidelines(painter, font.guidelines, scale, rect, color=color)
+
+
+def drawGlyphGuidelines(painter, glyph, scale, rect, drawLines=True,
+                        drawText=True, color=None):
+    if not (drawLines or drawText):
+        return
+    if color is None:
+        color = defaultColor("glyphGuideline")
+    _drawGuidelines(painter, glyph.guidelines, scale, rect, color=color)
+
+
+def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
+                    drawText=True, color=None):
+    if not (drawLines or drawText):
+        return
+    xMin, yMin, width, height = rect
+    xMax = xMin + width
+    yMax = yMin + height
+    fontSize = 9
+    for line in guidelines:
+        color_ = color
+        if color_ is None:
+            if line.color:
+                color_ = colorToQColor(line.color)
+            else:
+                color_ = defaultColor("glyphGuideline")
+        painter.save()
+        painter.setPen(color)
+        line1 = None
+        if None not in (line.x, line.y):
+            if line.angle is not None:
+                # make an infinite line that intersects *(line.x, line.y)*
+                # 1. make horizontal line from *(line.x, line.y)* of length *diagonal*
+                diagonal = math.sqrt(width**2 + height**2)
+                line1 = QLineF(line.x, line.y, line.x + diagonal, line.y)
+                # 2. set the angle
+                # defcon guidelines are clockwise
+                line1.setAngle(line.angle)
+                # 3. reverse the line and set length to 2 * *diagonal*
+                line1.setPoints(line1.p2(), line1.p1())
+                line1.setLength(2 * diagonal)
+            else:
+                line1 = QLineF(xMin, line.y, xMax, line.y)
+        textX = 0
+        textY = 0
+        if drawLines:
+            if line1 is not None:
+                # line
+                drawLine(painter, line1.x1(), line1.y1(), line1.x2(), line1.y2())
+                # point
+                x, y = line.x, line.y
+                smoothWidth = 8 * scale
+                smoothHalf = smoothWidth / 2.0
+                painter.save()
+                pointPath = QPainterPath()
+                x -= smoothHalf
+                y -= smoothHalf
+                pointPath.addEllipse(x, y, smoothWidth, smoothWidth)
+                pen = QPen(color_)
+                pen.setWidthF(1 * scale)
+                painter.setPen(pen)
+                if line.selected:
+                    painter.fillPath(pointPath, color_)
+                painter.drawPath(pointPath)
+                painter.restore()
+            else:
+                if line.y is not None:
+                    drawLine(painter, xMin, line.y, xMax, line.y)
+                elif line.x is not None:
+                    drawLine(painter, line.x, yMin, line.x, yMax)
+        if drawText and line.name:
+            if line1 is not None:
+                textX = line.x - 6 * scale
+                textY = line.y - 6 * scale
+                xAlign = "center"
+            else:
+                if line.y is not None:
+                    textX = line.glyph.width + 6 * scale
+                    textY = line.y - (fontSize / 3.5) * scale
+                elif line.x is not None:
+                    textX = line.x + 6 * scale
+                    textY = 0
+                xAlign = "left"
+            drawTextAtPoint(
+                painter, line.name, textX, textY, scale, xAlign=xAlign)
+        painter.restore()
+
 # Image
 
 
@@ -116,6 +236,7 @@ def drawGlyphFillAndStroke(
         drawSelection=True, contourFillColor=None, contourStrokeColor=None,
         componentFillColor=None, componentStrokeColor=None,
         strokeWidth=1.0, partialAliasing=True, selectionColor=None):
+    strokeWidth /= QApplication.instance().devicePixelRatio()
     # get the layer color
     layer = glyph.layer
     layerColor = None

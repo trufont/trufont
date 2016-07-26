@@ -579,6 +579,17 @@ class GlyphCanvasWidget(GlyphWidget):
         else:
             super().drawGlyphLayer(painter, glyph, layerName)
 
+    def drawGuidelines(self, painter, glyph, layerName):
+        drawText = self._impliedPointSize > GlyphViewMinSizeForDetails
+        if self.drawingAttribute("showFontGuidelines", layerName):
+            drawing.drawFontGuidelines(
+                painter, glyph, self._inverseScale, self._drawingRect,
+                drawText=drawText)
+        if self.drawingAttribute("showGlyphGuidelines", layerName):
+            drawing.drawGlyphGuidelines(
+                painter, glyph, self._inverseScale, self._drawingRect,
+                drawText=drawText)
+
     def drawFillAndStroke(self, painter, glyph, layerName):
         if self._preview:
             contourFillColor = Qt.black
@@ -818,6 +829,8 @@ class GlyphCanvasWidget(GlyphWidget):
         # onCurve smooth
         smoothWidth = 8 * scale
         smoothHalf = smoothWidth / 2
+        # guideline pt
+        guidelineStrokeWidth = 1 * scale
 
         if not justOne:
             ret = dict(
@@ -877,6 +890,7 @@ class GlyphCanvasWidget(GlyphWidget):
                 y = guideline.y - smoothHalf
                 path = QPainterPath()
                 path.addEllipse(x, y, smoothWidth, smoothWidth)
+                path = _shapeFromPath(path, guidelineStrokeWidth)
                 if func(path, obj):
                     if justOne:
                         return (guideline, None)
