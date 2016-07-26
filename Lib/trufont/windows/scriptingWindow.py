@@ -279,30 +279,13 @@ class FileChooser(QWidget):
         if os.path.isfile(path):
             self.fileOpened.emit(path)
 
-    def getScriptsDirectory(self):
-        userPath = QSettings().value("scripting/path")
-        if userPath and os.path.exists(userPath):
-            return userPath
-
-        appDataFolder = QStandardPaths.standardLocations(
-            QStandardPaths.AppLocalDataLocation)[0]
-        scriptsFolder = os.path.normpath(os.path.join(
-            appDataFolder, "Scripts"))
-
-        if not os.path.exists(scriptsFolder):
-            try:
-                os.makedirs(scriptsFolder)
-            except OSError:
-                return os.path.expanduser("~")
-
-        return scriptsFolder
-
     def currentFolder(self):
         return self.explorerModel.rootPath()
 
     def setCurrentFolder(self, path=None):
         if path is None:
-            path = self.getScriptsDirectory()
+            app = QApplication.instance()
+            path = app.getScriptsDirectory()
         else:
             assert os.path.isdir(path)
         self.explorerModel.setRootPath(path)

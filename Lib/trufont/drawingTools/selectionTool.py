@@ -2,7 +2,7 @@ from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
-from defcon import Component
+from defcon import Component, Glyph, Guideline
 from fontTools.pens.basePen import decomposeQuadraticSegment
 from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
 from trufont.drawingTools.baseTool import BaseTool
@@ -86,11 +86,23 @@ class SelectionTool(BaseTool):
 
     def _goToGlyph(self, glyphName):
         widget = self.parent()
-        font = self._glyph.getParent()
+        font = self._glyph.font
         if glyphName in font:
             glyph = font[glyphName]
             glyphWindow = GlyphWindow(glyph, widget.parent())
             glyphWindow.show()
+
+    def _toggleGuideline(self, guideline):
+        glyph = self._glyph
+        font = glyph.font
+        if font is None:
+            return
+        if isinstance(guideline.getParent(), Glyph):
+            glyph.removeGuideline(guideline)
+            font.appendGuideline(guideline)
+        else:
+            font.removeGuideline(guideline)
+            glyph.appendGuideline(guideline)
 
     def _getSelectedCandidatePoint(self):
         """
@@ -303,6 +315,12 @@ class SelectionTool(BaseTool):
                                lambda: self._glyph.decomposeComponent(item))
                 menu.addAction(self.tr("Decompose All"),
                                self._glyph.decomposeAllComponents)
+            elif isinstance(item, Guideline):
+                if isinstance(item.getParent(), Glyph):
+                    text = self.tr("Make Global")
+                else:
+                    text = self.tr("Make Local")
+                menu.addAction(text, lambda: self._toggleGuideline(item))
         if targetContour is not None:
             reverseText = self.tr("Reverse Contour")
         else:
