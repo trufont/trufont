@@ -174,7 +174,7 @@ class SelectionTool(BaseTool):
                         i = 1
                         while i < 2 or point.segmentType is None:
                             point = contour.getPoint(index-i)
-                            bez.append(pt)
+                            bez.append(point)
                             i += 1
                         bez.reverse()
                     if _pointWithinThreshold(pos.x(), pos.y(), bez, 5 * scale):

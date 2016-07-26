@@ -2,7 +2,7 @@ from defconQt.controls.baseCodeEditor import (
     BaseCodeEditor, BaseCodeHighlighter, GotoLineDialog)
 from keyword import kwlist
 from PyQt5.QtCore import (
-    pyqtSignal, QDir, QSettings, QSize, QStandardPaths, Qt, QUrl)
+    pyqtSignal, QDir, QSettings, QSize, Qt, QUrl)
 from PyQt5.QtGui import (
     QColor, QDesktopServices, QKeySequence, QTextCharFormat, QTextCursor)
 from PyQt5.QtWidgets import (

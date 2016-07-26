@@ -4,6 +4,7 @@ from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
 from PyQt5.QtWidgets import QApplication
+import math
 
 # ------
 # Colors
@@ -149,7 +150,8 @@ def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
         if None not in (line.x, line.y):
             if line.angle is not None:
                 # make an infinite line that intersects *(line.x, line.y)*
-                # 1. make horizontal line from *(line.x, line.y)* of length *diagonal*
+                # 1. make horizontal line from *(line.x, line.y)* of length
+                # *diagonal*
                 diagonal = math.sqrt(width**2 + height**2)
                 line1 = QLineF(line.x, line.y, line.x + diagonal, line.y)
                 # 2. set the angle
@@ -165,7 +167,8 @@ def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
         if drawLines:
             if line1 is not None:
                 # line
-                drawLine(painter, line1.x1(), line1.y1(), line1.x2(), line1.y2())
+                drawLine(
+                    painter, line1.x1(), line1.y1(), line1.x2(), line1.y2())
                 # point
                 x, y = line.x, line.y
                 smoothWidth = 8 * scale
