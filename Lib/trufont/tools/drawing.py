@@ -189,7 +189,7 @@ def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
                     drawLine(painter, line.x, yMin, line.x, yMax)
         if drawText and line.name:
             if line1 is not None:
-                textX = line.x - 6 * scale
+                textX = line.x
                 textY = line.y - 6 * scale
                 xAlign = "center"
             else:
