@@ -208,6 +208,23 @@ def moveUIGlyphElements(glyph, dx, dy):
         image.move((dx, dy))
 
 
+def removeUIGlyphElements(glyph, preserveShape):
+    for anchor in glyph.anchors:
+        if anchor.selected:
+            glyph.removeAnchor(anchor)
+    for contour in reversed(glyph):
+        removeUISelection(contour, preserveShape)
+    for component in glyph.components:
+        if component.selected:
+            glyph.removeComponent(component)
+    for guideline in UIGlyphGuidelines(glyph):
+        if guideline.selected:
+            parent = guideline.getParent()
+            parent.removeGuideline(guideline)
+    if glyph.image.selected:
+        glyph.image = None
+
+
 def unselectUIGlyphElements(glyph):
     for anchor in glyph.anchors:
         anchor.selected = False

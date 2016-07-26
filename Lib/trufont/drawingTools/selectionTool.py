@@ -8,8 +8,8 @@ from trufont.controls.glyphDialogs import AddComponentDialog, RenameDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
-    deleteUISelection, maybeProjectUISmoothPointOffcurve, removeUISelection,
-    moveUIGlyphElements, unselectUIGlyphElements)
+    deleteUISelection, maybeProjectUISmoothPointOffcurve, moveUIGlyphElements,
+    removeUIGlyphElements, unselectUIGlyphElements)
 from trufont.windows.glyphWindow import GlyphWindow
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
@@ -60,6 +60,7 @@ class SelectionTool(BaseTool):
     def _createAnchor(self, *args):
         widget = self.parent()
         glyph = self._glyph
+        glyph.prepareUndo()
         pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
         # remove template anchors
         for anchor in glyph.anchors:
@@ -74,18 +75,22 @@ class SelectionTool(BaseTool):
 
     def _createComponent(self, *args):
         widget = self.parent()
-        newGlyph, ok = AddComponentDialog.getNewGlyph(widget, self._glyph)
+        glyph = self._glyph
+        glyph.prepareUndo()
+        newGlyph, ok = AddComponentDialog.getNewGlyph(widget, glyph)
         if ok and newGlyph is not None:
-            component = self._glyph.instantiateComponent()
+            component = glyph.instantiateComponent()
             component.baseGlyph = newGlyph.name
-            self._glyph.appendComponent(component)
+            glyph.appendComponent(component)
 
     def _createGuideline(self, *args):
         widget = self.parent()
+        glyph = self._glyph
+        glyph.prepareUndo()
         pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
         content = dict(x=pos.x(), y=pos.y())
-        guideline = self._glyph.instantiateGuideline(content)
-        self._glyph.appendGuideline(guideline)
+        guideline = glyph.instantiateGuideline(content)
+        glyph.appendGuideline(guideline)
 
     def _goToGlyph(self, glyphName):
         widget = self.parent()
@@ -353,16 +358,7 @@ class SelectionTool(BaseTool):
                 preserveShape = not event.modifiers() & Qt.ShiftModifier
                 # TODO: prune
                 glyph.prepareUndo()
-                for anchor in glyph.anchors:
-                    if anchor.selected:
-                        glyph.removeAnchor(anchor)
-                for contour in reversed(glyph):
-                    removeUISelection(contour, preserveShape)
-                for component in glyph.components:
-                    if component.selected:
-                        glyph.removeComponent(component)
-                if glyph.image.selected:
-                    glyph.image = None
+                removeUIGlyphElements(glyph, preserveShape)
         elif key in arrowKeys:
             # TODO: prune
             self._glyph.prepareUndo()
