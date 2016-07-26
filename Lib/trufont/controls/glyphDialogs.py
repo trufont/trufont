@@ -96,50 +96,6 @@ class GotoDialog(QDialog):
         return (newGlyph, result)
 
 
-class AddAnchorDialog(QDialog):
-
-    def __init__(self, pos=None, parent=None):
-        super().__init__(parent)
-        self.setWindowModality(Qt.WindowModal)
-        if pos is not None:
-            title = self.tr("Add anchor…")
-        else:
-            title = self.tr("Rename anchor…")
-        self.setWindowTitle(title)
-
-        anchorNameLabel = QLabel(self.tr("Anchor name:"), self)
-        self.anchorNameEdit = QLineEdit(self)
-        self.anchorNameEdit.setFocus(True)
-        if pos is not None:
-            anchorPositionLabel = QLabel(
-                self.tr("The anchor will be added at ({}, {}).")
-                .format(round(pos.x(), 2), round(pos.y(), 2)), self)
-
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-
-        layout = QGridLayout(self)
-        l = 0
-        layout.addWidget(anchorNameLabel, l, 0)
-        layout.addWidget(self.anchorNameEdit, l, 1, 1, 3)
-        if pos is not None:
-            l += 1
-            layout.addWidget(anchorPositionLabel, l, 0, 1, 4)
-        l += 1
-        layout.addWidget(buttonBox, l, 3)
-        self.setLayout(layout)
-
-    @classmethod
-    def getNewAnchorName(cls, parent, pos=None, name=None):
-        dialog = cls(pos, parent)
-        dialog.anchorNameEdit.setText(name)
-        result = dialog.exec_()
-        name = dialog.anchorNameEdit.text()
-        return (name, result)
-
-
 class AddComponentDialog(GotoDialog):
 
     def __init__(self, *args, **kwargs):
@@ -244,6 +200,40 @@ class LayerActionsDialog(QDialog):
             if checkBox.isChecked():
                 action = checkBox.text()
         return (newLayer, action, result)
+
+
+class RenameDialog(QDialog):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle(self.tr("Rename anchor…"))
+
+        nameLabel = QLabel(self.tr("Anchor name:"), self)
+        self.nameEdit = QLineEdit(self)
+        self.nameEdit.setFocus(True)
+
+        buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        layout = QGridLayout(self)
+        l = 0
+        layout.addWidget(nameLabel, l, 0)
+        layout.addWidget(self.nameEdit, l, 1, 1, 3)
+        l += 1
+        layout.addWidget(buttonBox, l, 3)
+        self.setLayout(layout)
+
+    @classmethod
+    def getNewName(cls, parent, name=None):
+        dialog = cls(parent)
+        dialog.nameEdit.setText(name)
+        dialog.nameEdit.selectAll()
+        result = dialog.exec_()
+        name = dialog.nameEdit.text()
+        return (name, result)
 
 # ---------------
 # Color generator

@@ -2,11 +2,10 @@ from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
-from defcon import Component, Glyph, Guideline
+from defcon import Anchor, Component, Glyph, Guideline
 from fontTools.pens.basePen import decomposeQuadraticSegment
-from trufont.controls.glyphDialogs import AddAnchorDialog, AddComponentDialog
+from trufont.controls.glyphDialogs import AddComponentDialog, RenameDialog
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.objects.defcon import TAnchor
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
     deleteUISelection, maybeProjectUISmoothPointOffcurve, removeUISelection,
@@ -60,14 +59,18 @@ class SelectionTool(BaseTool):
 
     def _createAnchor(self, *args):
         widget = self.parent()
+        glyph = self._glyph
         pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
-        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(widget, pos)
-        if ok:
-            anchor = self._glyph.instantiateAnchor()
-            anchor.x = pos.x()
-            anchor.y = pos.y()
-            anchor.name = newAnchorName
-            self._glyph.appendAnchor(anchor)
+        # remove template anchors
+        for anchor in glyph.anchors:
+            if anchor.name == "new anchor":
+                glyph.removeAnchor(anchor)
+        # add one at position
+        anchor = glyph.instantiateAnchor()
+        anchor.x = pos.x()
+        anchor.y = pos.y()
+        anchor.name = "new anchor"
+        glyph.appendAnchor(anchor)
 
     def _createComponent(self, *args):
         widget = self.parent()
@@ -273,12 +276,11 @@ class SelectionTool(BaseTool):
                 dy *= 10
         return (dx, dy)
 
-    def _renameAnchor(self, anchor):
+    def _renameItem(self, item):
         widget = self.parent()
-        newAnchorName, ok = AddAnchorDialog.getNewAnchorName(
-            widget, None, anchor.name)
+        newName, ok = RenameDialog.getNewName(widget, item.name)
         if ok:
-            anchor.name = newAnchorName
+            item.name = newName
 
     def _reverse(self, target=None):
         if target is None:
@@ -332,7 +334,7 @@ class SelectionTool(BaseTool):
         menu.addAction(reverseText, lambda: self._reverse(targetContour))
         menu.addSeparator()
         menu.addAction(self.tr("Add Component…"), self._createComponent)
-        menu.addAction(self.tr("Add Anchor…"), self._createAnchor)
+        menu.addAction(self.tr("Add Anchor"), self._createAnchor)
         menu.addAction(self.tr("Add Guideline"), self._createGuideline)
         menu.exec_(self._cachedPos)
         self._cachedPos = None
@@ -480,8 +482,8 @@ class SelectionTool(BaseTool):
         if self._itemTuple is not None:
             item, parent = self._itemTuple
             if parent is None:
-                if isinstance(item, TAnchor):
-                    self._renameAnchor(item)
+                if isinstance(item, (Anchor, Guideline)):
+                    self._renameItem(item)
             else:
                 point, contour = item, parent
                 if point.segmentType is not None:

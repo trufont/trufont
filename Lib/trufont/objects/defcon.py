@@ -438,7 +438,8 @@ class TAnchor(Anchor):
         super().__init__(*args, **kwargs)
         if "anchorDict" in kwargs:
             anchorDict = kwargs["anchorDict"]
-            self._selected = anchorDict.get("selected", False)
+            if anchorDict is not None:
+                self._selected = anchorDict.get("selected", False)
 
     def _get_selected(self):
         return self._selected
@@ -530,7 +531,8 @@ class TGuideline(Guideline):
         super().__init__(*args, **kwargs)
         if "guidelineDict" in kwargs:
             guidelineDict = kwargs["guidelineDict"]
-            self._selected = guidelineDict.get("selected", False)
+            if guidelineDict is not None:
+                self._selected = guidelineDict.get("selected", False)
 
     def _get_selected(self):
         return self._selected
@@ -554,7 +556,8 @@ class TImage(Image):
         super().__init__(*args, **kwargs)
         if "imageDict" in kwargs:
             imageDict = kwargs["imageDict"]
-            self._selected = imageDict.get("selected", False)
+            if imageDict is not None:
+                self._selected = imageDict.get("selected", False)
 
     def _get_selected(self):
         return self._selected
