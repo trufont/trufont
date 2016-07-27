@@ -592,17 +592,18 @@ class GlyphCanvasWidget(GlyphWidget):
 
     def drawFillAndStroke(self, painter, glyph, layerName):
         if self._preview:
-            contourFillColor = Qt.black
+            contourFillColor = componentFillColor = Qt.black
             drawSelection = False
             showFill = True
             showStroke = False
         else:
-            contourFillColor = None
+            contourFillColor = componentFillColor = None
             drawSelection = layerName is None
             showFill = self.drawingAttribute("showGlyphFill", layerName)
             showStroke = self.drawingAttribute("showGlyphStroke", layerName)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale, self._drawingRect,
+            componentFillColor=componentFillColor,
             contourFillColor=contourFillColor, drawFill=showFill,
             drawSelection=drawSelection, drawStroke=showStroke)
 
