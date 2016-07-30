@@ -197,7 +197,9 @@ def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
                 xAlign = "center"
             else:
                 if line.y is not None:
-                    textX = line.glyph.width + 6 * scale
+                    glyph = line.glyph
+                    width = glyph.width if glyph is not None else 0
+                    textX = width + 6 * scale
                     textY = line.y - (fontSize / 3.5) * scale
                 elif line.x is not None:
                     textX = line.x + 6 * scale
