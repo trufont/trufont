@@ -117,7 +117,7 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
         return
     if color is None:
         color = defaultColor("fontGuideline")
-    _drawGuidelines(painter, font.guidelines, scale, rect, color=color)
+    _drawGuidelines(painter, glyph, scale, rect, font.guidelines, color=color)
 
 
 def drawGlyphGuidelines(painter, glyph, scale, rect, drawLines=True,
@@ -126,10 +126,10 @@ def drawGlyphGuidelines(painter, glyph, scale, rect, drawLines=True,
         return
     if color is None:
         color = defaultColor("glyphGuideline")
-    _drawGuidelines(painter, glyph.guidelines, scale, rect, color=color)
+    _drawGuidelines(painter, glyph, scale, rect, glyph.guidelines, color=color)
 
 
-def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
+def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
                     drawText=True, color=None):
     if not (drawLines or drawText):
         return
@@ -197,9 +197,7 @@ def _drawGuidelines(painter, guidelines, scale, rect, drawLines=True,
                 xAlign = "center"
             else:
                 if line.y is not None:
-                    glyph = line.glyph
-                    width = glyph.width if glyph is not None else 0
-                    textX = width + 6 * scale
+                    textX = glyph.width + 6 * scale
                     textY = line.y - (fontSize / 3.5) * scale
                 elif line.x is not None:
                     textX = line.x + 6 * scale
