@@ -115,11 +115,14 @@ class SplitLinesFromPathQtPen(QtPen):
         self._curPos = (0, 0)
         self._initPos = None
 
-    def _moveTo(self, p):
-        super()._moveTo(p)
+    def _registerPoint(self, p):
         self._curPos = (p[0], p[1])
         if self._initPos is None:
             self._initPos = self._curPos
+
+    def _moveTo(self, p):
+        super()._moveTo(p)
+        self._registerPoint(p)
 
     def _lineTo(self, p):
         self.lines.append((self._curPos[0], self._curPos[1], p[0], p[1]))
@@ -127,9 +130,11 @@ class SplitLinesFromPathQtPen(QtPen):
 
     def _curveToOne(self, p1, p2, p3):
         super()._curveToOne(p1, p2, p3)
-        self._curPos = (p3[0], p3[1])
-        if self._initPos is None:
-            self._initPos = self._curPos
+        self._registerPoint(p3)
+
+    def _qCurveToOne(self, p1, p2):
+        super()._qCurveToOne(p1, p2)
+        self._registerPoint(p2)
 
     def _closePath(self):
         if self._initPos is not None and self._curPos != self._initPos:
