@@ -62,3 +62,15 @@ def useTabBar():
 
 def useCenteredButtons():
     return sys.platform == "darwin"
+
+# ----------
+# Stylesheet
+# ----------
+
+
+def appStyleSheet():
+    if sys.platform == "win32":
+        return "QStatusBar::item { border: none; }"
+    elif sys.platform == "darwin":
+        return "QToolTip { background-color: white; }"
+    return None

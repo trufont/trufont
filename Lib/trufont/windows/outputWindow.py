@@ -29,7 +29,10 @@ class OutputWindow(QMainWindow):
         statusBar.addPermanentWidget(clearOutputButton)
         statusBar.setSizeGripEnabled(False)
         if platformSpecific.needsTighterMargins():
-            statusBar.setContentsMargins(7, -10, 9, -12)
+            margins = (7, -10, 9, -12)
+        else:
+            margins = (4, -1, 5, 0)
+        statusBar.setContentsMargins(*margins)
 
         for channel in ("stdout", "stderr"):
             stream = OutputStream(channel, self)

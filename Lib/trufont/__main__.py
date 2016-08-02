@@ -3,7 +3,7 @@ from trufont import __version__, representationFactories
 from trufont.objects.application import Application
 from trufont.objects.extension import TExtension
 from trufont.resources import icons_db  # noqa
-from trufont.tools import errorReports
+from trufont.tools import errorReports, platformSpecific
 from trufont.windows.outputWindow import OutputWindow
 from PyQt5.QtCore import (
     Qt, QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
@@ -31,6 +31,7 @@ def main():
     app.setApplicationVersion(__version__)
     app.setWindowIcon(QIcon(":app.png"))
     app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    app.setStyleSheet(platformSpecific.appStyleSheet())
 
     # Install stream redirection
     app.outputWindow = OutputWindow()

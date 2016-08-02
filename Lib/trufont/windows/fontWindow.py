@@ -151,7 +151,10 @@ class FontWindow(BaseMainWindow):
         statusBar.addWidget(self.selectionLabel)
         statusBar.setSizeGripEnabled(False)
         if platformSpecific.needsTighterMargins():
-            statusBar.setContentsMargins(6, -4, 9, -3)
+            margins = (6, -4, 9, -3)
+        else:
+            margins = (2, 0, 8, 0)
+        statusBar.setContentsMargins(*margins)
 
         self.setFont_(font)
         if font is not None:

@@ -272,7 +272,7 @@ class FileChooser(QWidget):
         layout = QVBoxLayout(self)
         layout.addWidget(self.folderBox)
         layout.addWidget(self.explorerTree)
-        layout.setContentsMargins(5, 5, 0, 5)
+        layout.setContentsMargins(5, 5, 0, 0)
 
     def _fileOpened(self, modelIndex):
         path = self.explorerModel.filePath(modelIndex)
@@ -445,7 +445,10 @@ class ScriptingStatusBar(QStatusBar):
     def __init__(self, parent=None):
         super().__init__(parent)
         if platformSpecific.needsTighterMargins():
-            self.setContentsMargins(6, -10, 9, -12)
+            margins = (6, -10, 9, -12)
+        else:
+            margins = (2, -1, 5, 0)
+        self.setContentsMargins(*margins)
         self.setSizeGripEnabled(False)
         self.positionLabel = ClickLabel(self)
         self.indentLabel = IndentLabel(self)
