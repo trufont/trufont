@@ -8,12 +8,9 @@ from trufont.windows.outputWindow import OutputWindow
 from PyQt5.QtCore import (
     Qt, QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication
 import os
 import sys
-import traceback
-
-_showMessages = True
 
 
 def main():
@@ -36,7 +33,7 @@ def main():
     # Install stream redirection
     app.outputWindow = OutputWindow()
     # Exception handling
-    sys.excepthook = exceptionCallback
+    sys.excepthook = errorReports.exceptionCallback
 
     # Qt's translation for itself. May not be installed.
     qtTranslator = QTranslator()
@@ -96,26 +93,6 @@ def main():
         for fontPath in args:
             app.openFile(fontPath)
     sys.exit(app.exec_())
-
-
-def exceptionCallback(etype, value, tb):
-    global _showMessages
-    text = "TruFont has encountered a problem and must shutdown."
-    exc = traceback.format_exception(etype, value, tb)
-    exc_text = "".join(exc)
-    print(exc_text, file=sys.stderr)
-
-    if _showMessages:
-        messageBox = QMessageBox(QMessageBox.Critical, ":(", text)
-        messageBox.setStandardButtons(
-            QMessageBox.Ok | QMessageBox.Close | QMessageBox.Ignore)
-        messageBox.setDetailedText(exc_text)
-        messageBox.setInformativeText(str(value))
-        result = messageBox.exec_()
-        if result == QMessageBox.Close:
-            sys.exit(1)
-        elif result == QMessageBox.Ignore:
-            _showMessages = False
 
 if __name__ == "__main__":
     main()
