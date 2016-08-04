@@ -16,13 +16,12 @@ except:
 try:
     import defcon  # noqa
 except:
-    print("*** Warning: trufont requires defcon (the python3-ufo3 branch), "
-          "see:")
-    print("    https://github.com/trufont/defcon")
+    print("*** Warning: trufont requires defcon, see:")
+    print("    https://github.com/typesupply/defcon")
 
 setup(
     name="trufont",
-    version="0.4.0",
+    version="0.5.0",
     description="TruFont, a modular and cross-platform font editor.",
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
@@ -47,7 +46,7 @@ setup(
     platforms=["Linux", "Win32", "Mac OS X"],
     classifiers=[
         "Environment :: GUI",
-        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
         "Intended Audience :: Developers",
         "Topic :: Text Processing :: Fonts",
     ],
