@@ -84,8 +84,6 @@ class FontWindow(BaseMainWindow):
         app = QApplication.instance()
 
         fileMenu = menuBar.fetchMenu(Entries.File)
-        # TODO: should this be enabled by the app even on a local menu?
-        # maybe good to keep for the sake of clarity whatsoever...
         fileMenu.fetchAction(Entries.File_New)
         fileMenu.fetchAction(Entries.File_Open)
         fileMenu.fetchMenu(Entries.File_Open_Recent)
@@ -120,7 +118,9 @@ class FontWindow(BaseMainWindow):
         fontMenu.fetchAction(Entries.Font_Add_Glyphs, self.addGlyphs)
         fontMenu.fetchAction(Entries.Font_Sort, self.sortGlyphs)
 
-        menuBar.fetchMenu(Entries.Scripts)
+        scriptsMenu = menuBar.fetchMenu(Entries.Scripts)
+        # TODO: well except we want this at the bottom...
+        scriptsMenu.fetchAction(Entries.Scripts_Build_Extension)
 
         windowMenu = menuBar.fetchMenu(Entries.Window)
         windowMenu.fetchAction(Entries.Window_Inspector)
@@ -131,6 +131,12 @@ class FontWindow(BaseMainWindow):
         windowMenu.addSeparator()
         action = windowMenu.fetchAction(Entries.Window_Output)
         action.setEnabled(app.outputWindow is not None)
+
+        helpMenu = menuBar.fetchMenu(Entries.Help)
+        helpMenu.fetchAction(Entries.Help_Documentation)
+        helpMenu.fetchAction(Entries.Help_Report_An_Issue)
+        helpMenu.addSeparator()
+        helpMenu.fetchAction(Entries.Help_About)
 
         self._updateGlyphActions()
 

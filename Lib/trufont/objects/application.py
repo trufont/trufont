@@ -1,6 +1,6 @@
 from defcon.tools.notifications import NotificationCenter
 from PyQt5.Qt import PYQT_VERSION_STR, QT_VERSION_STR
-from PyQt5.QtCore import QEvent, QSize, QStandardPaths, Qt
+from PyQt5.QtCore import QEvent, QSize, QStandardPaths, Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (
     QAction, QApplication, QDialogButtonBox, QFileDialog, QMessageBox)
@@ -213,13 +213,14 @@ class Application(QApplication):
         # maybe add helper function that filters topLevelWidgets into windows
         # bc we need this in a few places
 
+        openAddress = lambda addr: QDesktopServices.openUrl(QUrl(addr))
         helpMenu = menuBar.fetchMenu(Entries.Help)
         helpMenu.fetchAction(
             Entries.Help_Documentation,
-            lambda: QDesktopServices.openUrl("http://trufont.github.io/"))
+            lambda: openAddress("http://trufont.github.io/"))
         helpMenu.fetchAction(
             Entries.Help_Report_An_Issue,
-            lambda: QDesktopServices.openUrl(
+            lambda: openAddress(
                 "https://github.com/trufont/trufont/issues/new"))
         helpMenu.addSeparator()
         helpMenu.fetchAction(Entries.Help_About, self.about)
@@ -231,9 +232,13 @@ class Application(QApplication):
             return
         # update menu
         if hasattr(window, "setupMenu"):
+            # TODO: convoluted. try to reduce the number of calls
             menuBar = self.fetchMenuBar(window)
             window.setupMenu(menuBar)
+            menuBar.setSpawnElementsHint(False)
             self.setupMenuBar(menuBar)
+            menuBar.setSpawnElementsHint(True)
+            window.setMenuBar(menuBar)
         else:
             self.setupMenuBar()
 
@@ -368,6 +373,10 @@ class Application(QApplication):
                     shortcut = entry.get("shortcut")
                     parentMenu.addAction(
                         menuName, getFunc(extension, menuPath), shortcut)
+        menu.addSeparator()
+        # TODO
+        action = menu.fetchAction(Entries.Scripts_Build_Extension)
+        action.setEnabled(False)
 
     # ----------------
     # Menu Bar entries

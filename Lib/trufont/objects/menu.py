@@ -1,5 +1,5 @@
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QMenu, QMenuBar
+from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMenuBar
 from trufont.tools import platformSpecific
 
 MAX_RECENT_FILES = 10
@@ -9,22 +9,31 @@ class MenuBar(QMenuBar):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._spawnElementsHint = True
 
-    def isGlobal(self):
-        return self.parent() is None
+    def shouldSpawnElements(self):
+        return self.parent() is None or self._spawnElementsHint
+
+    def spawnElementsHint(self):
+        return self._spawnElementsHint
+
+    def setSpawnElementsHint(self, value):
+        self._spawnElementsHint = value
 
     def fetchMenu(self, title):
         title = _trMenuString(title)
-        if self.isGlobal():
-            child = None
-            for child_ in self.children():
-                if not isinstance(child_, QMenu):
-                    continue
-                if child_.title() == title:
-                    child = child_
-            if child is not None:
-                return child
-        menu = Menu(title, self)
+        # cache lookup
+        child = None
+        for child_ in self.children():
+            if not isinstance(child_, QMenu):
+                continue
+            if child_.title() == title:
+                child = child_
+        if child is not None:
+            return child
+        # spawn
+        parent = self if self.shouldSpawnElements() else None
+        menu = Menu(title, parent)
         self.addMenu(menu)
         return menu
 
@@ -37,10 +46,10 @@ class MenuBar(QMenuBar):
 
 class Menu(QMenu):
 
-    def isGlobal(self):
+    def shouldSpawnElements(self):
         parent = self.parent()
         if parent is not None:
-            return parent.isGlobal()
+            return parent.shouldSpawnElements()
         return False
 
     def fetchAction(self, text, callback=None, shortcut=None):
@@ -48,13 +57,17 @@ class Menu(QMenu):
             shortcut = _shortcuts.get(text)
         text = _trMenuString(text)
         action = None
-        if self.isGlobal():
-            action = None
-            for action_ in self.actions():
-                if action_.text() == text:
-                    action = action_
+        # cache lookup
+        action = None
+        for action_ in self.actions():
+            if action_.text() == text:
+                action = action_
+        # spawn
         if action is None:
-            action = self.addAction(text)
+            action = QAction(text, self)
+            if self.shouldSpawnElements():
+                self.addAction(action)
+        # connect
         action.setEnabled(True)
         if callback is not None:
             action.triggered.connect(callback)
@@ -114,6 +127,7 @@ class Entries(object):
     Font_Sort = "&Sort…"
 
     Scripts = "&Scripts"
+    Scripts_Build_Extension = "&Build Extension…"
 
     # TODO: remove inspector and metrics
     Window = "&Window"
