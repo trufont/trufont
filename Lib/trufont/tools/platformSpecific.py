@@ -1,5 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
+import os
 import sys
 
 # -----------
@@ -49,8 +50,14 @@ def needsTighterMargins():
 
 
 def useGlobalMenuBar():
-    return sys.platform == "darwin"
-
+    if sys.platform == "darwin":
+        return True
+    elif sys.platform == "linux":
+        env = os.environ
+        if env.get("XDG_CURRENT_DESKTOP") == "Unity" and \
+                len(env.get("UBUNTU_MENUPROXY", "")) > 1:
+            return True
+    return False
 
 def mergeOpenAndImport():
     return sys.platform == "darwin"
