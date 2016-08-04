@@ -362,8 +362,7 @@ class Application(QApplication):
             addToMenu = extension.addToMenu
             if addToMenu:
                 if isinstance(addToMenu, list):
-                    parentMenu = menu.fetchMenu(
-                        extension.name or "")
+                    parentMenu = menu.addMenu(extension.name or "")
                 else:
                     addToMenu = [addToMenu]
                     parentMenu = menu

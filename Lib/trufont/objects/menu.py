@@ -32,9 +32,9 @@ class MenuBar(QMenuBar):
         if child is not None:
             return child
         # spawn
-        parent = self if self.shouldSpawnElements() else None
-        menu = Menu(title, parent)
-        self.addMenu(menu)
+        menu = Menu(title, self)
+        if self.shouldSpawnElements():
+            self.addMenu(menu)
         return menu
 
     def resetState(self):
