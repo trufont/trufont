@@ -74,6 +74,10 @@ def main():
             errorReports.showWarningException(e, msg)
             continue
         app.registerExtension(extension)
+    # load menu
+    if platformSpecific.useGlobalMenuBar():
+        menuBar = app.fetchMenuBar()  # noqa
+        app.setQuitOnLastWindowClosed(False)
     # process files
     args = parser.positionalArguments()
     if not args:

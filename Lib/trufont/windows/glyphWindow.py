@@ -6,6 +6,7 @@ from trufont.controls.glyphDialogs import (
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.drawingTools.removeOverlapButton import RemoveOverlapButton
 from trufont.objects import settings
+from trufont.objects.menu import Entries
 from trufont.tools import drawing, errorReports, platformSpecific
 from trufont.tools.uiMethods import deleteUISelection, UIGlyphGuidelines
 from PyQt5.QtCore import (
@@ -15,7 +16,7 @@ from PyQt5.QtGui import (
     QIcon, QImage, QImageReader, QKeySequence, QMouseEvent, QPainterPath,
     QPainterPathStroker, QTransform)
 from PyQt5.QtWidgets import (
-    QApplication, QComboBox, QMenu, QSizePolicy, QToolBar, QWidget)
+    QApplication, QComboBox, QSizePolicy, QToolBar, QWidget)
 import os
 import pickle
 
@@ -25,41 +26,7 @@ class GlyphWindow(BaseMainWindow):
     def __init__(self, glyph, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose, False)
-
-        menuBar = self.menuBar()
-        fileMenu = QMenu(self.tr("&File"), self)
-        fileMenu.addAction(
-            self.tr("&Save"), self.saveFile, QKeySequence.Save)
-        action = fileMenu.addAction(
-            self.tr("&Close"), self.close, platformSpecific.closeKeySequence())
-        menuBar.addMenu(fileMenu)
-        editMenu = QMenu(self.tr("&Edit"), self)
-        self._undoAction = editMenu.addAction(
-            self.tr("&Undo"), self.undo, QKeySequence.Undo)
-        self._redoAction = editMenu.addAction(
-            self.tr("&Redo"), self.redo, QKeySequence.Redo)
-        editMenu.addSeparator()
-        cutAction = editMenu.addAction(
-            self.tr("C&ut"), self.cutOutlines, QKeySequence.Cut)
-        copyAction = editMenu.addAction(
-            self.tr("&Copy"), self.copyOutlines, QKeySequence.Copy)
-        self._selectActions = (cutAction, copyAction)
-        editMenu.addAction(
-            self.tr("&Paste"), self.pasteOutlines, QKeySequence.Paste)
-        editMenu.addAction(
-            self.tr("Select &All"), self.selectAll, QKeySequence.SelectAll)
-        editMenu.addAction(self.tr("&Deselect"), self.deselect, "Ctrl+D")
-        menuBar.addMenu(editMenu)
-        glyphMenu = QMenu(self.tr("&Glyph"), self)
-        glyphMenu.addAction(
-            self.tr("&Next Glyph"), lambda: self.glyphOffset(1), "End")
-        glyphMenu.addAction(
-            self.tr("&Previous Glyph"), lambda: self.glyphOffset(-1), "Home")
-        glyphMenu.addAction(self.tr("&Go To…"), self.changeGlyph, "G")
-        glyphMenu.addSeparator()
-        self._layerAction = glyphMenu.addAction(
-            self.tr("&Layer Actions…"), self.layerActions, "L")
-        menuBar.addMenu(glyphMenu)
+        self.setUnifiedTitleAndToolBarOnMac(True)
 
         self.view = GlyphCanvasView(self)
         # create tools and buttons toolBars
@@ -86,23 +53,6 @@ class GlyphWindow(BaseMainWindow):
         self._layersToolBar.setMovable(False)
         self.addToolBar(self._layersToolBar)
 
-        viewMenu = self.createPopupMenu()
-        viewMenu.setTitle(self.tr("View"))
-        viewMenu.addSeparator()
-        action = viewMenu.addAction(
-            self.tr("Lock Toolbars"), self.lockToolBars)
-        viewMenu.addSeparator()
-        viewMenu.addAction(
-            self.tr("Zoom In"), lambda: self.view.zoom(1), QKeySequence.ZoomIn)
-        viewMenu.addAction(
-            self.tr("Zoom Out"), lambda: self.view.zoom(-1),
-            QKeySequence.ZoomOut)
-        viewMenu.addAction(
-            self.tr("Reset Zoom"), self.view.fitScaleBBox, "Ctrl+0")
-        action.setCheckable(True)
-        action.setChecked(True)
-        menuBar.addMenu(viewMenu)
-
         self.setGlyph(glyph)
         app = QApplication.instance()
         tools = app.drawingTools()
@@ -128,6 +78,45 @@ class GlyphWindow(BaseMainWindow):
     def writeSettings(self):
         # TODO: save current tool?
         settings.setGlyphWindowGeometry(self.saveGeometry())
+
+    def setupMenu(self, menuBar):
+        fileMenu = menuBar.fetchMenu(Entries.File)
+        fontWindow = self.parent()
+        if fontWindow is not None:
+            fileMenu.fetchAction(Entries.File_Save, fontWindow.saveFile)
+            fileMenu.fetchAction(Entries.File_Save_As, fontWindow.saveFileAs)
+        fileMenu.fetchAction(Entries.File_Close, self.close)
+        if fontWindow is not None:
+            fileMenu.fetchAction(Entries.File_Reload, fontWindow.reloadFile)
+
+        editMenu = menuBar.fetchMenu(Entries.Edit)
+        self._undoAction = editMenu.fetchAction(Entries.Edit_Undo, self.undo)
+        self._redoAction = editMenu.fetchAction(Entries.Edit_Redo, self.redo)
+        editMenu.addSeparator()
+        cutAction = editMenu.fetchAction(Entries.Edit_Cut, self.cutOutlines)
+        copyAction = editMenu.fetchAction(Entries.Edit_Copy, self.copyOutlines)
+        self._selectActions = (cutAction, copyAction)
+        editMenu.fetchAction(Entries.Edit_Paste, self.pasteOutlines)
+        editMenu.fetchAction(Entries.Edit_Select_All, self.selectAll)
+        editMenu.fetchAction(Entries.Edit_Find, self.changeGlyph)
+        # TODO: sort this out
+        # editMenu.fetchAction(self.tr("&Deselect"), self.deselect, "Ctrl+D")
+
+        # glyphMenu = menuBar.fetchMenu(self.tr("&Glyph"))
+        # self._layerAction = glyphMenu.fetchAction(
+        #     self.tr("&Layer Actions…"), self.layerActions, "L")
+
+        viewMenu = menuBar.fetchMenu(Entries.View)
+        viewMenu.fetchAction(Entries.View_Zoom_In, lambda: self.view.zoom(1))
+        viewMenu.fetchAction(Entries.View_Zoom_Out, lambda: self.view.zoom(-1))
+        viewMenu.fetchAction(Entries.View_Reset_Zoom, self.view.fitScaleBBox)
+        viewMenu.addSeparator()
+        viewMenu.fetchAction(
+            Entries.View_Next_Glyph, lambda: self.glyphOffset(1))
+        viewMenu.fetchAction(
+            Entries.View_Previous_Glyph, lambda: self.glyphOffset(-1))
+
+        self._updateUndoRedo()
 
     # ----------
     # Menu items
@@ -319,8 +308,8 @@ class GlyphWindow(BaseMainWindow):
             glyph.addObserver(
                 self, "_glyphSelectionChanged", "Glyph.SelectionChanged")
             undoManager = glyph.undoManager
-            undoManager.canUndoChanged.connect(self._undoAction.setEnabled)
-            undoManager.canRedoChanged.connect(self._redoAction.setEnabled)
+            undoManager.canUndoChanged.connect(self._setUndoEnabled)
+            undoManager.canRedoChanged.connect(self._setRedoEnabled)
             self._subscribeToFontAndLayerSet(glyph.font)
 
     def _unsubscribeFromGlyph(self, glyph):
@@ -328,8 +317,8 @@ class GlyphWindow(BaseMainWindow):
             glyph.removeObserver(self, "Glyph.NameChanged")
             glyph.removeObserver(self, "Glyph.SelectionChanged")
             undoManager = glyph.undoManager
-            undoManager.canUndoChanged.disconnect(self._undoAction.setEnabled)
-            undoManager.canRedoChanged.disconnect(self._redoAction.setEnabled)
+            undoManager.canUndoChanged.disconnect(self._setUndoEnabled)
+            undoManager.canRedoChanged.disconnect(self._setRedoEnabled)
             self._unsubscribeFromFontAndLayerSet(glyph.font)
 
     def _glyphNameChanged(self, notification):
@@ -380,11 +369,6 @@ class GlyphWindow(BaseMainWindow):
 
     # other updaters
 
-    def _updateUndoRedo(self):
-        glyph = self.view.glyph()
-        self._undoAction.setEnabled(glyph.canUndo())
-        self._redoAction.setEnabled(glyph.canRedo())
-
     def _updateSelection(self):
         def hasSelection():
             glyph = self.view.glyph()
@@ -398,9 +382,27 @@ class GlyphWindow(BaseMainWindow):
                 if component.selected:
                     return True
             return False
+
+        if not hasattr(self, "_selectActions"):
+            return
         hasSelection = hasSelection()
         for action in self._selectActions:
             action.setEnabled(hasSelection)
+
+    def _updateUndoRedo(self):
+        glyph = self.view.glyph()
+        self._setUndoEnabled(glyph.canUndo())
+        self._setRedoEnabled(glyph.canRedo())
+
+    def _setUndoEnabled(self, value):
+        if not hasattr(self, "_undoAction"):
+            return
+        self._undoAction.setEnabled(value)
+
+    def _setRedoEnabled(self, value):
+        if not hasattr(self, "_redoAction"):
+            return
+        self._redoAction.setEnabled(value)
 
     # --------------
     # Public Methods
@@ -469,6 +471,8 @@ class GlyphWindow(BaseMainWindow):
         comboBox.setCurrentText(glyph.layer.name)
         comboBox.addItem(self.tr("New layer…"), None)
         comboBox.blockSignals(False)
+        if not hasattr(self, "_layerAction"):
+            return
         self._layerAction.setEnabled(len(glyph.layerSet) > 1)
 
     def _setLayerBoxIndex(self, index):

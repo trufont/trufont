@@ -1,9 +1,8 @@
 from defconQt.controls.featureCodeEditor import FeatureCodeEditor
 from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from trufont.objects import settings
-from trufont.tools import platformSpecific
+from trufont.objects.menu import Entries
 
 
 class FontFeaturesWindow(QMainWindow):
@@ -17,14 +16,6 @@ class FontFeaturesWindow(QMainWindow):
         self.editor.setPlainText(self.font.features.text)
         self.editor.modificationChanged.connect(self.setWindowModified)
 
-        fileMenu = QMenu(self.tr("&File"), self)
-        fileMenu.addAction(self.tr("&Save…"), self.save, QKeySequence.Save)
-        fileMenu.addSeparator()
-        fileMenu.addAction(self.tr("&Reload From Disk"), self.reload)
-        fileMenu.addAction(
-            self.tr("&Close"), self.close, platformSpecific.closeKeySequence())
-        self.menuBar().addMenu(fileMenu)
-
         self.updateWindowTitle()
         self.setCentralWidget(self.editor)
 
@@ -37,6 +28,13 @@ class FontFeaturesWindow(QMainWindow):
 
     def writeSettings(self):
         settings.setFontFeaturesWindowGeometry(self.saveGeometry())
+
+    def setupMenu(self, menuBar):
+        fileMenu = menuBar.fetchMenu(Entries.File)
+        fileMenu.fetchAction(Entries.File_Save, self.save)
+        fileMenu.addSeparator()
+        fileMenu.fetchAction(Entries.File_Reload, self.reload)
+        fileMenu.fetchAction(Entries.File_Close, self.close)
 
     def updateWindowTitle(self, title=None, font=None):
         if title is None:

@@ -4,13 +4,14 @@ from keyword import kwlist
 from PyQt5.QtCore import (
     pyqtSignal, QDir, QSettings, QSize, Qt, QUrl)
 from PyQt5.QtGui import (
-    QColor, QDesktopServices, QKeySequence, QTextCharFormat, QTextCursor)
+    QColor, QDesktopServices, QTextCharFormat, QTextCursor)
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QFileDialog, QFileSystemModel, QMainWindow, QMenu,
     QMessageBox, QPushButton, QSplitter, QStatusBar, QTreeView, QWidget,
     QVBoxLayout)
 from trufont.controls.clickLabel import ClickLabel
 from trufont.objects import settings
+from trufont.objects.menu import Entries
 from trufont.tools import platformSpecific
 from trufont.windows.outputWindow import OutputEdit, OutputStream
 import os
@@ -22,20 +23,6 @@ class ScriptingWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
-        fileMenu = QMenu(self.tr("&File"), self)
-        fileMenu.addAction(self.tr("&New…"), self.newFile, QKeySequence.New)
-        fileMenu.addAction(
-            self.tr("&Open…"), self.openFile, QKeySequence.Open)
-        fileMenu.addAction(self.tr("&Save"), self.saveFile, QKeySequence.Save)
-        fileMenu.addAction(
-            self.tr("Save &As…"), self.saveFileAs, QKeySequence.SaveAs)
-        fileMenu.addSeparator()
-        fileMenu.addAction(self.tr("&Run…"), self.runScript, "Ctrl+R")
-        fileMenu.addSeparator()
-        fileMenu.addAction(
-            self.tr("&Close"), self.close, platformSpecific.closeKeySequence())
-        self.menuBar().addMenu(fileMenu)
 
         self.editor = PythonEditor(self)
         self.fileChooser = FileChooser(self)
@@ -88,6 +75,15 @@ class ScriptingWindow(QMainWindow):
         splitter = self.centralWidget()
         settings.setScriptingWindowHSplitterSizes(splitter.sizes())
         settings.setScriptingWindowVSplitterSizes(self.vSplitter.sizes())
+
+    def setupMenu(self, menuBar):
+        fileMenu = menuBar.fetchMenu(Entries.File)
+        fileMenu.fetchAction(Entries.File_New)
+        fileMenu.fetchAction(Entries.File_Open)
+        fileMenu.fetchAction(Entries.File_Save, self.saveFile)
+        fileMenu.fetchAction(Entries.File_Save_As, self.saveFileAs)
+        fileMenu.addSeparator()
+        fileMenu.fetchAction(Entries.File_Close, self.close)
 
     @property
     def currentPath(self):

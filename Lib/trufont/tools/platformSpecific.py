@@ -1,18 +1,14 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication
 import sys
 
 # -----------
 # File dialog
 # -----------
 
-_ufoFileFormat = QApplication.translate("File dialog", "UFO Fonts {}")
 
-if sys.platform == "darwin":
-    fileFormat = "(*.ufo)"
-else:
-    fileFormat = "(metainfo.plist)"
+def treatPackageAsFile():
+    return sys.platform == "darwin"
 
 # -------------
 # Key sequences
@@ -47,6 +43,22 @@ def isDeleteEvent(event):
 def needsTighterMargins():
     return sys.platform == "darwin"
 
+# --------
+# Menu bar
+# --------
+
+
+def useGlobalMenuBar():
+    return sys.platform == "darwin"
+
+
+def mergeOpenAndImport():
+    return sys.platform == "darwin"
+
+
+def windowCommandsInMenu():
+    return sys.platform == "darwin"
+
 # -------
 # ToolBar
 # -------
@@ -58,6 +70,10 @@ def useTabBar():
 # -----------
 # Message box
 # -----------
+
+
+def showAppIconInDialog():
+    return sys.platform == "darwin"
 
 
 def useCenteredButtons():

@@ -1,37 +1,24 @@
 from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.windows.baseWindows import BaseMainWindow
-from trufont import __version__
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
 from trufont.objects import settings
 from trufont.objects.defcon import TFont
+from trufont.objects.menu import Entries
 from trufont.tools import errorReports, platformSpecific
 from trufont.windows.fontFeaturesWindow import FontFeaturesWindow
 from trufont.windows.fontInfoWindow import FontInfoWindow
 from trufont.windows.glyphWindow import GlyphWindow
 from trufont.windows.groupsWindow import GroupsWindow
 from trufont.windows.metricsWindow import MetricsWindow
-from trufont.windows.inspectorWindow import InspectorWindow
-from trufont.windows.scriptingWindow import ScriptingWindow
 from trufont.windows.settingsWindow import SettingsWindow
 from PyQt5.QtCore import QEvent, QMimeData, QSize, Qt
-from PyQt5.QtGui import QCursor, QIcon, QKeySequence, QPixmap
+from PyQt5.QtGui import QCursor, QKeySequence
 from PyQt5.QtWidgets import (
-    QAction, QApplication, QDialogButtonBox, QFileDialog, QLabel, QMenu,
-    QMessageBox, QSlider, QToolTip)
+    QApplication, QFileDialog, QLabel, QMenu, QMessageBox, QSlider, QStyle,
+    QTabWidget, QToolTip)
 from collections import OrderedDict
 import os
 import pickle
-import platform
-import subprocess
-
-try:
-    gitShortHash = subprocess.check_output(
-        ['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL
-    ).decode()
-except:
-    gitShortHash = ""
-
-MAX_RECENT_FILES = 6
 
 
 class FontWindow(BaseMainWindow):
@@ -45,91 +32,6 @@ class FontWindow(BaseMainWindow):
         self._featuresWindow = None
         self._metricsWindow = None
         self._groupsWindow = None
-
-        app = QApplication.instance()
-        menuBar = self.menuBar()
-        fileMenu = QMenu(self.tr("&File"), self)
-        fileMenu.addAction(self.tr("&New…"), self.newFile, QKeySequence.New)
-        fileMenu.addAction(
-            self.tr("&Open…"), self.openFile, QKeySequence.Open)
-        # recent files
-        self.recentFilesMenu = QMenu(self.tr("Open &Recent"), self)
-        for i in range(MAX_RECENT_FILES):
-            action = QAction(self.recentFilesMenu)
-            action.setVisible(False)
-            action.triggered.connect(self.openRecentFile)
-            self.recentFilesMenu.addAction(action)
-        self.updateRecentFiles()
-        fileMenu.addMenu(self.recentFilesMenu)
-        fileMenu.addAction(self.tr("&Import…"), self.importFile)
-        fileMenu.addSeparator()
-        fileMenu.addAction(self.tr("&Save"), self.saveFile, QKeySequence.Save)
-        fileMenu.addAction(
-            self.tr("Save &As…"), self.saveFileAs, QKeySequence.SaveAs)
-        fileMenu.addAction(self.tr("&Export…"), self.exportFile)
-        fileMenu.addAction(self.tr("&Reload From Disk"), self.reloadFile)
-        fileMenu.addAction(self.tr("E&xit"), self.close, QKeySequence.Quit)
-        menuBar.addMenu(fileMenu)
-
-        editMenu = QMenu(self.tr("&Edit"), self)
-        self._undoAction = editMenu.addAction(
-            self.tr("&Undo"), self.undo, QKeySequence.Undo)
-        self._redoAction = editMenu.addAction(
-            self.tr("&Redo"), self.redo, QKeySequence.Redo)
-        editMenu.addSeparator()
-        self.markColorMenu = QMenu(self.tr("&Flag Color"), self)
-        self.updateMarkColors()
-        editMenu.addMenu(self.markColorMenu)
-        cut = editMenu.addAction(self.tr("C&ut"), self.cut, QKeySequence.Cut)
-        copy = editMenu.addAction(
-            self.tr("&Copy"), self.copy, QKeySequence.Copy)
-        copyComponent = editMenu.addAction(
-            self.tr("Copy &As Component"), self.copyAsComponent, "Ctrl+Alt+C")
-        paste = editMenu.addAction(
-            self.tr("&Paste"), self.paste, QKeySequence.Paste)
-        self._clipboardActions = (cut, copy, copyComponent, paste)
-        editMenu.addSeparator()
-        editMenu.addAction(self.tr("&Settings…"), self.settings)
-        menuBar.addMenu(editMenu)
-
-        fontMenu = QMenu(self.tr("&Font"), self)
-        fontMenu.addAction(
-            self.tr("&Add Glyphs…"), self.addGlyphs, "Ctrl+G")
-        fontMenu.addAction(
-            self.tr("Font &Info"), self.fontInfo, "Ctrl+Alt+I")
-        fontMenu.addAction(
-            self.tr("Font &Features"), self.fontFeatures, "Ctrl+Alt+F")
-        fontMenu.addSeparator()
-        fontMenu.addAction(self.tr("&Sort…"), self.sortGlyphs)
-        menuBar.addMenu(fontMenu)
-
-        pythonMenu = QMenu(self.tr("&Python"), self)
-        pythonMenu.addAction(
-            self.tr("&Scripting Window"), self.scripting, "Ctrl+Alt+R")
-        pythonMenu.addAction(
-            self.tr("&Output Window"), self.outputWindow, "Ctrl+Alt+O")
-        menuBar.addMenu(pythonMenu)
-
-        self._scriptsMenu = QMenu(self.tr("Scripts"), self)
-        self._addExtensions(app.extensions())
-        menuBar.addMenu(self._scriptsMenu)
-
-        windowMenu = QMenu(self.tr("&Windows"), self)
-        action = windowMenu.addAction(
-            self.tr("&Inspector"), self.inspector, "Ctrl+I")
-        # XXX: we're getting duplicate shortcut when we spawn a new window...
-        action.setShortcutContext(Qt.ApplicationShortcut)
-        windowMenu.addAction(
-            self.tr("&Metrics Window"), self.metrics, "Ctrl+Alt+S")
-        windowMenu.addAction(
-            self.tr("&Groups Window"), self.groups, "Ctrl+Alt+G")
-        menuBar.addMenu(windowMenu)
-
-        helpMenu = QMenu(self.tr("&Help"), self)
-        helpMenu.addAction(self.tr("&About"), self.about)
-        helpMenu.addAction(
-            self.tr("About &Qt"), QApplication.instance().aboutQt)
-        menuBar.addMenu(helpMenu)
 
         self.glyphCellView = FontCellView(self)
         self.glyphCellView.glyphActivated.connect(self._glyphActivated)
@@ -146,6 +48,7 @@ class FontWindow(BaseMainWindow):
         self.cellSizeSlider.sliderReleased.connect(self.writeSettings)
         self.cellSizeSlider.valueChanged.connect(self._sliderCellSizeChanged)
         self.selectionLabel = QLabel(self)
+
         statusBar = self.statusBar()
         statusBar.addPermanentWidget(self.cellSizeSlider)
         statusBar.addWidget(self.selectionLabel)
@@ -157,16 +60,9 @@ class FontWindow(BaseMainWindow):
         statusBar.setContentsMargins(*margins)
 
         self.setFont_(font)
-        if font is not None:
-            self.setCurrentFile(font.path)
 
-        app.dispatcher.addObserver(
-            self, "_preferencesChanged", "preferencesChanged")
+        app = QApplication.instance()
         app.dispatcher.addObserver(self, "_fontSaved", "fontSaved")
-        app.dispatcher.addObserver(
-            self, "_extensionRegistered", "extensionRegistered")
-        # TODO: extensionUnregistered
-        self._updateGlyphActions()
 
         self.setCentralWidget(self.glyphCellView)
         self.setWindowTitle()
@@ -184,6 +80,60 @@ class FontWindow(BaseMainWindow):
     def writeSettings(self):
         settings.setFontWindowGeometry(self.saveGeometry())
         settings.setGlyphCellSize(self.cellSizeSlider.value())
+
+    def setupMenu(self, menuBar):
+        app = QApplication.instance()
+
+        fileMenu = menuBar.fetchMenu(Entries.File)
+        # TODO: should this be enabled by the app even on a local menu?
+        # maybe good to keep for the sake of clarity whatsoever...
+        fileMenu.fetchAction(Entries.File_New)
+        fileMenu.fetchAction(Entries.File_Open)
+        fileMenu.fetchMenu(Entries.File_Open_Recent)
+        # TODO
+        # if not platformSpecific.mergeOpenAndImport():
+        fileMenu.fetchAction(Entries.File_Import, self.importFile)
+        fileMenu.addSeparator()
+        fileMenu.fetchAction(Entries.File_Save, self.saveFile)
+        fileMenu.fetchAction(Entries.File_Save_As, self.saveFileAs)
+        fileMenu.fetchAction(Entries.File_Reload, self.reloadFile)
+        fileMenu.addSeparator()
+        fileMenu.fetchAction(Entries.File_Export, self.exportFile)
+        fileMenu.fetchAction(Entries.File_Exit)
+
+        editMenu = menuBar.fetchMenu(Entries.Edit)
+        self._undoAction = editMenu.fetchAction(Entries.Edit_Undo, self.undo)
+        self._redoAction = editMenu.fetchAction(Entries.Edit_Redo, self.redo)
+        editMenu.addSeparator()
+        cut = editMenu.fetchAction(Entries.Edit_Cut, self.cut)
+        copy = editMenu.fetchAction(Entries.Edit_Copy, self.copy)
+        copyComponent = editMenu.fetchAction(
+            Entries.Edit_Copy_As_Component, self.copyAsComponent)
+        paste = editMenu.fetchAction(Entries.Edit_Paste, self.paste)
+        self._clipboardActions = (cut, copy, copyComponent, paste)
+        editMenu.addSeparator()
+        editMenu.fetchAction(Entries.Edit_Settings, self.settings)
+
+        fontMenu = menuBar.fetchMenu(Entries.Font)
+        fontMenu.fetchAction(Entries.Font_Font_Info, self.fontInfo)
+        fontMenu.fetchAction(Entries.Font_Font_Features, self.fontFeatures)
+        fontMenu.addSeparator()
+        fontMenu.fetchAction(Entries.Font_Add_Glyphs, self.addGlyphs)
+        fontMenu.fetchAction(Entries.Font_Sort, self.sortGlyphs)
+
+        menuBar.fetchMenu(Entries.Scripts)
+
+        windowMenu = menuBar.fetchMenu(Entries.Window)
+        windowMenu.fetchAction(Entries.Window_Inspector)
+        windowMenu.addSeparator()
+        windowMenu.fetchAction(Entries.Window_Groups, self.groups)
+        windowMenu.fetchAction(Entries.Window_Metrics, self.metrics)
+        windowMenu.fetchAction(Entries.Window_Scripting)
+        windowMenu.addSeparator()
+        action = windowMenu.fetchAction(Entries.Window_Output)
+        action.setEnabled(app.outputWindow is not None)
+
+        self._updateGlyphActions()
 
     # --------------
     # Custom methods
@@ -240,13 +190,6 @@ class FontWindow(BaseMainWindow):
         path = notification.data["path"]
         self.setCurrentFile(path)
         self.setWindowModified(False)
-
-    def _extensionRegistered(self, notification):
-        extension = notification.data["extension"]
-        self._addExtensions([extension])
-
-    def _preferencesChanged(self, notification):
-        self.updateMarkColors()
 
     # widgets
 
@@ -336,46 +279,6 @@ class FontWindow(BaseMainWindow):
 
     # File
 
-    def newFile(self):
-        QApplication.instance().newFile()
-
-    def openFile(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("Open File"), '',
-            platformSpecific.fileFormat
-        )
-        if path:
-            QApplication.instance().openFile(path)
-
-    def openRecentFile(self):
-        fontPath = self.sender().toolTip()
-        QApplication.instance().openFile(fontPath)
-
-    def saveFile(self, path=None, ufoFormatVersion=3):
-        if path is None and self._font.path is None:
-            self.saveFileAs()
-        else:
-            if path is None:
-                path = self._font.path
-            self._font.save(path, ufoFormatVersion)
-
-    def saveFileAs(self):
-        fileFormats = OrderedDict([
-            (self.tr("UFO Font version 3 {}").format("(*.ufo)"), 3),
-            (self.tr("UFO Font version 2 {}").format("(*.ufo)"), 2),
-        ])
-        # TODO: switch to directory on platforms that need it
-        dialog = QFileDialog(
-            self, self.tr("Save File"), None, ";;".join(fileFormats.keys()))
-        dialog.setAcceptMode(QFileDialog.AcceptSave)
-        ok = dialog.exec_()
-        if ok:
-            nameFilter = dialog.selectedNameFilter()
-            path = dialog.selectedFiles()[0]
-            self.saveFile(path, fileFormats[nameFilter])
-            self.setWindowTitle()
-        # return ok
-
     def importFile(self):
         # TODO: systematize this
         fileFormats = (
@@ -402,15 +305,30 @@ class FontWindow(BaseMainWindow):
             window = FontWindow(font)
             window.show()
 
-    def exportFile(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, self.tr("Export File"), None,
-            self.tr("OpenType PS font {}").format("(*.otf)"))
-        if path:
-            try:
-                self._font.export(path)
-            except Exception as e:
-                errorReports.showCriticalException(e)
+    def saveFile(self, path=None, ufoFormatVersion=3):
+        if path is None and self._font.path is None:
+            self.saveFileAs()
+        else:
+            if path is None:
+                path = self._font.path
+            self._font.save(path, ufoFormatVersion)
+
+    def saveFileAs(self):
+        fileFormats = OrderedDict([
+            (self.tr("UFO Font version 3 {}").format("(*.ufo)"), 3),
+            (self.tr("UFO Font version 2 {}").format("(*.ufo)"), 2),
+        ])
+        # TODO: switch to directory on platforms that need it
+        dialog = QFileDialog(
+            self, self.tr("Save File"), None, ";;".join(fileFormats.keys()))
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        ok = dialog.exec_()
+        if ok:
+            nameFilter = dialog.selectedNameFilter()
+            path = dialog.selectedFiles()[0]
+            self.saveFile(path, fileFormats[nameFilter])
+            self.setWindowTitle()
+        # return ok
 
     def reloadFile(self):
         font = self._font
@@ -424,6 +342,16 @@ class FontWindow(BaseMainWindow):
         font.reloadGlyphs(font.keys())
         self.setWindowModified(False)
 
+    def exportFile(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, self.tr("Export File"), None,
+            self.tr("OpenType PS font {}").format("(*.otf)"))
+        if path:
+            try:
+                self._font.export(path)
+            except Exception as e:
+                errorReports.showCriticalException(e)
+
     # Edit
 
     def undo(self):
@@ -433,15 +361,6 @@ class FontWindow(BaseMainWindow):
     def redo(self):
         glyph = self.glyphCellView.lastSelectedGlyph()
         glyph.redo()
-
-    def markColor(self):
-        color = self.sender().data()
-        if color is not None:
-            color = color.getRgbF()
-        glyphs = self.glyphCellView.glyphs()
-        for index in self.glyphCellView.selection():
-            glyph = glyphs[index]
-            glyph.markColor = color
 
     def cut(self):
         self.copy()
@@ -548,39 +467,15 @@ class FontWindow(BaseMainWindow):
         if ok:
             self._font.sortDescriptor = sortDescriptor
 
-    # Python
+    # Window
 
-    def scripting(self):
-        app = QApplication.instance()
-        if not hasattr(app, 'scriptingWindow'):
-            app.scriptingWindow = ScriptingWindow()
-            app.scriptingWindow.show()
-        elif app.scriptingWindow.isVisible():
-            app.scriptingWindow.raise_()
+    def groups(self):
+        # TODO: see up here
+        if self._groupsWindow is not None and self._groupsWindow.isVisible():
+            self._groupsWindow.raise_()
         else:
-            app.scriptingWindow.show()
-
-    def outputWindow(self):
-        app = QApplication.instance()
-        if app.outputWindow.isVisible():
-            app.outputWindow.raise_()
-        else:
-            app.outputWindow.show()
-
-    # Windows
-
-    def inspector(self):
-        app = QApplication.instance()
-        if app.inspectorWindow is None:
-            app.inspectorWindow = InspectorWindow()
-            app.inspectorWindow.show()
-        elif app.inspectorWindow.isVisible():
-            # TODO: do this only if the widget is user-visible, otherwise the
-            # key press feels as if it did nothing
-            # toggle
-            app.inspectorWindow.close()
-        else:
-            app.inspectorWindow.show()
+            self._groupsWindow = GroupsWindow(self._font, self)
+            self._groupsWindow.show()
 
     def metrics(self):
         # TODO: see up here
@@ -596,117 +491,11 @@ class FontWindow(BaseMainWindow):
             glyphs = self.glyphCellView.glyphsForIndexes(selection)
             self._metricsWindow.setGlyphs(glyphs)
 
-    def groups(self):
-        # TODO: see up here
-        if self._groupsWindow is not None and self._groupsWindow.isVisible():
-            self._groupsWindow.raise_()
-        else:
-            self._groupsWindow = GroupsWindow(self._font, self)
-            self._groupsWindow.show()
-
-    # About
-
-    def about(self):
-        name = QApplication.applicationName()
-        domain = QApplication.organizationDomain()
-        caption = self.tr(
-            "<h3>About {n}</h3>"
-            "<p>{n} is a cross-platform, modular typeface design "
-            "application.</p>").format(n=name)
-        text = self.tr(
-            "<p>{} is built on top of "
-            "<a href='http://ts-defcon.readthedocs.org/en/ufo3/'>defcon</a> "
-            "and includes scripting support "
-            "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>"
-            "<p>Version {} {} – Python {}.").format(
-            name, __version__, gitShortHash, platform.python_version())
-        if domain:
-            text += self.tr("<br>See <a href='http://{d}'>{d}</a> for more "
-                            "information.</p>").format(d=domain)
-        else:
-            text += "</p>"
-        # This duplicates much of QMessageBox.about(), but it has no way to
-        # setInformativeText()...
-        msgBox = QMessageBox(self)
-        msgBox.setAttribute(Qt.WA_DeleteOnClose)
-        icon = msgBox.windowIcon()
-        size = icon.actualSize(QSize(64, 64))
-        msgBox.setIconPixmap(icon.pixmap(size))
-        msgBox.setWindowTitle(self.tr("About {}").format(name))
-        msgBox.setText(caption)
-        msgBox.setInformativeText(text)
-        if platformSpecific.useCenteredButtons():
-            buttonBox = msgBox.findChild(QDialogButtonBox)
-            buttonBox.setCenterButtons(True)
-        msgBox.show()
-
     # update methods
 
-    def setCurrentFile(self, path):
-        if path is None:
-            return
-        path = os.path.abspath(path)
-        recentFiles = settings.recentFiles()
-        if path in recentFiles:
-            recentFiles.remove(path)
-        recentFiles.insert(0, path)
-        while len(recentFiles) > MAX_RECENT_FILES:
-            del recentFiles[-1]
-        settings.setRecentFiles(recentFiles)
-        for window in QApplication.topLevelWidgets():
-            if isinstance(window, FontWindow):
-                window.updateRecentFiles()
-
-    def updateRecentFiles(self):
-        recentFiles = settings.recentFiles()
-        count = min(len(recentFiles), MAX_RECENT_FILES)
-        actions = self.recentFilesMenu.actions()
-        for index, recentFile in enumerate(recentFiles[:count]):
-            action = actions[index]
-            shortName = os.path.basename(recentFile.rstrip(os.sep))
-
-            action.setText(shortName)
-            action.setToolTip(recentFile)
-            action.setVisible(True)
-        for index in range(count, MAX_RECENT_FILES):
-            actions[index].setVisible(False)
-
-        self.recentFilesMenu.setEnabled(len(recentFiles))
-
-    def updateMarkColors(self):
-        entries = settings.readMarkColors()
-        self.markColorMenu.clear()
-        pixmap = QPixmap(24, 24)
-        none = self.markColorMenu.addAction("None", self.markColor)
-        none.setData(None)
-        for color, name in entries:
-            action = self.markColorMenu.addAction(name, self.markColor)
-            pixmap.fill(color)
-            action.setIcon(QIcon(pixmap))
-            action.setData(color)
-
-    def _addExtensions(self, extensions):
-        def getFunc(ext, path):
-            # need a stack frame here to return a unique lambda for each run
-            return lambda: ext.run(path)
-
-        for extension in extensions:
-            # XXX: wrap this in try block or validate() beforehand?
-            addToMenu = extension.addToMenu
-            if addToMenu:
-                if isinstance(addToMenu, list):
-                    parentMenu = self._scriptsMenu.addMenu(
-                        extension.name or "")
-                else:
-                    parentMenu = self._scriptsMenu
-                for entry in addToMenu:
-                    menuName = entry.get("name")
-                    menuPath = entry.get("path")
-                    shortcut = entry.get("shortcut")
-                    parentMenu.addAction(
-                        menuName, getFunc(extension, menuPath), shortcut)
-
     def _updateGlyphActions(self):
+        if not hasattr(self, "_undoAction"):
+            return
         currentGlyph = self.glyphCellView.lastSelectedGlyph()
         # disconnect eventual signal of previous glyph
         self._undoAction.disconnect()
@@ -726,7 +515,6 @@ class FontWindow(BaseMainWindow):
         # and other actions
         for action in self._clipboardActions:
             action.setEnabled(currentGlyph is not None)
-        self.markColorMenu.setEnabled(currentGlyph is not None)
 
     # ----------
     # Qt methods
