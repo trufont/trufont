@@ -59,6 +59,7 @@ def useGlobalMenuBar():
             return True
     return False
 
+
 def mergeOpenAndImport():
     return sys.platform == "darwin"
 

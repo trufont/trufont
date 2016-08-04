@@ -7,7 +7,7 @@ from trufont.drawingTools.baseTool import BaseTool
 from trufont.drawingTools.removeOverlapButton import RemoveOverlapButton
 from trufont.objects import settings
 from trufont.objects.menu import Entries
-from trufont.tools import drawing, errorReports, platformSpecific
+from trufont.tools import drawing, errorReports
 from trufont.tools.uiMethods import deleteUISelection, UIGlyphGuidelines
 from PyQt5.QtCore import (
     QBuffer, QByteArray, QEvent, QIODevice, QMimeData, QRectF,

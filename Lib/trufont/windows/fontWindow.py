@@ -14,8 +14,7 @@ from trufont.windows.settingsWindow import SettingsWindow
 from PyQt5.QtCore import QEvent, QMimeData, QSize, Qt
 from PyQt5.QtGui import QCursor, QKeySequence
 from PyQt5.QtWidgets import (
-    QApplication, QFileDialog, QLabel, QMenu, QMessageBox, QSlider, QStyle,
-    QTabWidget, QToolTip)
+    QApplication, QFileDialog, QLabel, QMessageBox, QSlider, QToolTip)
 from collections import OrderedDict
 import os
 import pickle
