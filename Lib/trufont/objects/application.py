@@ -375,7 +375,7 @@ class Application(QApplication):
                         menuName, getFunc(extension, menuPath), shortcut)
         menu.addSeparator()
         # TODO
-        action = menu.fetchAction(Entries.Scripts_Build_Extension)
+        action = menu.addAction(self.tr(Entries.Scripts_Build_Extension))
         action.setEnabled(False)
 
     # ----------------

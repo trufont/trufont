@@ -118,9 +118,7 @@ class FontWindow(BaseMainWindow):
         fontMenu.fetchAction(Entries.Font_Add_Glyphs, self.addGlyphs)
         fontMenu.fetchAction(Entries.Font_Sort, self.sortGlyphs)
 
-        scriptsMenu = menuBar.fetchMenu(Entries.Scripts)
-        # TODO: well except we want this at the bottom...
-        scriptsMenu.fetchAction(Entries.Scripts_Build_Extension)
+        menuBar.fetchMenu(Entries.Scripts)
 
         windowMenu = menuBar.fetchMenu(Entries.Window)
         windowMenu.fetchAction(Entries.Window_Inspector)
