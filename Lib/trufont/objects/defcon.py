@@ -89,6 +89,8 @@ class TFont(Font):
         )
         app.postNotification("fontWillExtract", data)
         extractor.extractUFO(path, self, fileFormat)
+        for glyph in self:
+            glyph.dirty = False
 
     def save(self, path=None, formatVersion=None,
              removeUnreferencedImages=False, progressBar=None):

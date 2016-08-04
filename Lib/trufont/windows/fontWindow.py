@@ -243,11 +243,16 @@ class FontWindow(BaseMainWindow):
         font = self._font
         glyphOrder = font.glyphOrder
         if glyphOrder:
+            glyphCount = 0
             glyphs = []
             for glyphName in glyphOrder:
                 if glyphName in font:
-                    glyphs.append(font[glyphName])
-            if len(glyphs) < len(font):
+                    glyph = font[glyphName]
+                    glyphCount += 1
+                else:
+                    glyph = font.newStandardGlyph(glyphName, asTemplate=True)
+                glyphs.append(glyph)
+            if glyphCount < len(font):
                 # if some glyphs in the font are not present in the glyph
                 # order, loop again to add them at the end
                 for glyph in font:

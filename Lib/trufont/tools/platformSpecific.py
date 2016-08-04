@@ -52,7 +52,7 @@ def needsTighterMargins():
 def useGlobalMenuBar():
     if sys.platform == "darwin":
         return True
-    elif sys.platform == "linux":
+    elif sys.platform.startswith("linux"):
         env = os.environ
         if env.get("XDG_CURRENT_DESKTOP") == "Unity" and \
                 len(env.get("UBUNTU_MENUPROXY", "")) > 1:

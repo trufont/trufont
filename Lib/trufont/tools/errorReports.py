@@ -39,6 +39,7 @@ def _showException(e, kind, message):
     if ret == QMessageBox.Close:
         sys.exit(1)
 
+
 def showCriticalException(e, message=None):
     _showException(e, QMessageBox.Critical, message)
 
