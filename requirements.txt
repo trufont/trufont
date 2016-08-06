@@ -1,10 +1,10 @@
 setuptools>=18.0
 -e git+https://github.com/behdad/fonttools.git#egg=fonttools
 -e git+https://github.com/unified-font-object/ufoLib.git#egg=ufoLib
--e git+https://github.com/typesupply/defcon.git@ufo3#egg=defcon
+-e git+https://github.com/typesupply/defcon.git#egg=defcon
 -e git+https://github.com/adrientetar/defconQt.git#egg=defconQt
---find-links https://github.com/typemytype/booleanOperations/releases
-booleanOperations==0.4
--e git+https://github.com/typesupply/extractor.git@ufo3#egg=extractor
+--find-links https://github.com/typemytype/booleanOperations/releases/latest
+booleanOperations
+-e git+https://github.com/typesupply/extractor.git#egg=extractor
 -e git+https://github.com/googlei18n/ufo2ft.git#egg=ufo2ft
 husl
