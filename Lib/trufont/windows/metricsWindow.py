@@ -104,7 +104,7 @@ class MetricsWindow(BaseWindow):
     # widget
 
     def _glyphActivated(self, glyph):
-        glyphWindow = GlyphWindow(glyph, self)
+        glyphWindow = GlyphWindow(glyph, self.parent())
         glyphWindow.show()
 
     # ----------
