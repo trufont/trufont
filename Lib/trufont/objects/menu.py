@@ -70,7 +70,7 @@ class Menu(QMenu):
         # connect
         action.setEnabled(True)
         if callback is not None:
-            action.triggered.connect(callback)
+            action.triggered.connect(lambda: callback())
         action.setShortcut(QKeySequence(shortcut))
         return action
 

@@ -190,8 +190,6 @@ class FontWindow(BaseMainWindow):
     def _fontSaved(self, notification):
         if notification.data["font"] != self._font:
             return
-        path = notification.data["path"]
-        self.setCurrentFile(path)
         self.setWindowModified(False)
 
     # widgets

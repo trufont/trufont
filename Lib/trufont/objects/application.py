@@ -213,15 +213,15 @@ class Application(QApplication):
         # maybe add helper function that filters topLevelWidgets into windows
         # bc we need this in a few places
 
-        openAddress = lambda addr: QDesktopServices.openUrl(QUrl(addr))
         helpMenu = menuBar.fetchMenu(Entries.Help)
         helpMenu.fetchAction(
             Entries.Help_Documentation,
-            lambda: openAddress("http://trufont.github.io/"))
+            lambda: QDesktopServices.openUrl(
+                QUrl("http://trufont.github.io/")))
         helpMenu.fetchAction(
             Entries.Help_Report_An_Issue,
-            lambda: openAddress(
-                "https://github.com/trufont/trufont/issues/new"))
+            lambda: QDesktopServices.openUrl(
+                QUrl("https://github.com/trufont/trufont/issues/new")))
         helpMenu.addSeparator()
         helpMenu.fetchAction(Entries.Help_About, self.about)
 

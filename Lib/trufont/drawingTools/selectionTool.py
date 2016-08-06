@@ -97,7 +97,7 @@ class SelectionTool(BaseTool):
         font = self._glyph.font
         if glyphName in font:
             glyph = font[glyphName]
-            glyphWindow = GlyphWindow(glyph, widget.parent())
+            glyphWindow = GlyphWindow(glyph, widget.window().parent())
             glyphWindow.show()
 
     def _toggleGuideline(self, guideline):
