@@ -1,12 +1,13 @@
 from defconQt import representationFactories as baseRepresentationFactories
 from trufont import __version__, representationFactories
+from trufont.objects import settings
 from trufont.objects.application import Application
 from trufont.objects.extension import TExtension
 from trufont.resources import icons_db  # noqa
 from trufont.tools import errorReports, platformSpecific
 from trufont.windows.outputWindow import OutputWindow
 from PyQt5.QtCore import (
-    Qt, QCommandLineParser, QSettings, QTranslator, QLocale, QLibraryInfo)
+    Qt, QCommandLineParser, QTranslator, QLocale, QLibraryInfo)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 import os
