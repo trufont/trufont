@@ -504,6 +504,8 @@ class Application(QApplication):
             buttonBox = msgBox.findChild(QDialogButtonBox)
             buttonBox.setCenterButtons(True)
         msgBox.show()
+        # TODO: do this more elegantly? we need it with global menu bar
+        self._msgBox = msgBox
 
     # ------------
     # Recent files
