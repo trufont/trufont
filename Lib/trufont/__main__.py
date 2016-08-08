@@ -76,22 +76,21 @@ def main():
         app.registerExtension(extension)
     # load menu
     if platformSpecific.useGlobalMenuBar():
-        menuBar = app.fetchMenuBar()  # noqa
+        app.fetchMenuBar()
         app.setQuitOnLastWindowClosed(False)
     # process files
     args = parser.positionalArguments()
     if not args:
         fontPath = None
         # maybe load recent file
-        settings = QSettings()
-        loadRecentFile = settings.value("misc/loadRecentFile", False, bool)
+        loadRecentFile = settings.loadRecentFile()
         if loadRecentFile:
-            recentFiles = settings.value("core/recentFiles", [], type=str)
+            recentFiles = settings.recentFiles()
             if len(recentFiles) and os.path.exists(recentFiles[0]):
                 fontPath = recentFiles[0]
                 app.openFile(fontPath)
         # otherwise, create a new file
-        if fontPath is None:
+        if fontPath is None and platformSpecific.shouldSpawnDocument():
             app.newFile()
     else:
         for fontPath in args:

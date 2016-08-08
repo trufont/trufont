@@ -162,7 +162,7 @@ class Application(QApplication):
     # Menu Bar
     # --------
 
-    def fetchMenuBar(self, parent=None):
+    def fetchMenuBar(self, window=None):
         if platformSpecific.useGlobalMenuBar():
             try:
                 self._menuBar
@@ -170,7 +170,9 @@ class Application(QApplication):
                 self._menuBar = globalMenuBar()
             self._menuBar.resetState()
             return self._menuBar
-        return MenuBar(parent)
+        menuBar = MenuBar(window)
+        window.setMenuBar(menuBar)
+        return menuBar
 
     def setupMenuBar(self, menuBar=None):
         if menuBar is None:
@@ -238,7 +240,6 @@ class Application(QApplication):
             menuBar.setSpawnElementsHint(False)
             self.setupMenuBar(menuBar)
             menuBar.setSpawnElementsHint(True)
-            window.setMenuBar(menuBar)
         else:
             self.setupMenuBar()
 

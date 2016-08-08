@@ -67,6 +67,14 @@ def mergeOpenAndImport():
 def windowCommandsInMenu():
     return sys.platform == "darwin"
 
+# -----------
+# Main window
+# -----------
+
+
+def shouldSpawnDocument():
+    return sys.platform != "darwin"
+
 # -------
 # ToolBar
 # -------
