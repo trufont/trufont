@@ -40,10 +40,7 @@ class Application(QApplication):
         self._extensions = []
         self.dispatcher = NotificationCenter()
         self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")
-        # TODO: see about filtering this into windowChanged
-        # except if we're going to use tabs with changing menu, then it might
-        # be convenient to no filter out (no additional signal has to be sent)
-        self.focusChanged.connect(self._focusWidgetChanged)
+        self.focusWindowChanged.connect(self._focusWindowChanged)
         self.GL2UV = None
         self.inspectorWindow = None
         self.outputWindow = None
@@ -52,7 +49,7 @@ class Application(QApplication):
     # Event handling
     # --------------
 
-    def _focusWidgetChanged(self):
+    def _focusWindowChanged(self):
         # update menu bar
         self.updateMenuBar()
         # update main window
