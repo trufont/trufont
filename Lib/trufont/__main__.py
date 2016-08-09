@@ -58,6 +58,10 @@ def main():
         "Command-line parser", "files"), QApplication.translate(
         "Command-line parser", "The UFO files to open."))
     parser.process(app)
+    # load menu
+    if platformSpecific.useGlobalMenuBar():
+        app.fetchMenuBar()
+        app.setQuitOnLastWindowClosed(False)
     # bootstrap extensions
     folder = app.getExtensionsDirectory()
     for file in os.listdir(folder):
@@ -75,10 +79,6 @@ def main():
             errorReports.showWarningException(e, msg)
             continue
         app.registerExtension(extension)
-    # load menu
-    if platformSpecific.useGlobalMenuBar():
-        app.fetchMenuBar()
-        app.setQuitOnLastWindowClosed(False)
     # process files
     args = parser.positionalArguments()
     if not args:
@@ -91,8 +91,14 @@ def main():
                 fontPath = recentFiles[0]
                 app.openFile(fontPath)
         # otherwise, create a new file
-        if fontPath is None and platformSpecific.shouldSpawnDocument():
-            app.newFile()
+        if fontPath is None:
+            if platformSpecific.shouldSpawnDocument():
+                app.newFile()
+            else:
+                # HACK: on OSX we may want to trigger native QMenuBar display
+                # without opening any window. Since Qt infers new menu bar on
+                # focus change, fire the signal.
+                app.focusWindowChanged.emit(None)
     else:
         for fontPath in args:
             app.openFile(fontPath)

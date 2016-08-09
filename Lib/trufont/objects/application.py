@@ -229,12 +229,7 @@ class Application(QApplication):
 
     def updateMenuBar(self):
         window = self.activeWindow()
-        if window is None:
-            self.setupMenuBar()
-            return
-        # update menu
-        if hasattr(window, "setupMenu"):
-            # TODO: convoluted. try to reduce the number of calls
+        if window is not None and hasattr(window, "setupMenu"):
             menuBar = self.fetchMenuBar(window)
             window.setupMenu(menuBar)
             menuBar.setSpawnElementsHint(False)
