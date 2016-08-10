@@ -7,7 +7,8 @@ from PyQt5.QtGui import (
     QColor, QDesktopServices, QTextCharFormat, QTextCursor)
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QFileDialog, QFileSystemModel, QMainWindow, QMenu,
-    QPushButton, QSplitter, QStatusBar, QTreeView, QWidget, QVBoxLayout)
+    QMessageBox, QPushButton, QSplitter, QStatusBar, QTreeView, QWidget,
+    QVBoxLayout)
 from trufont.controls.clickLabel import ClickLabel
 from trufont.controls.closeMessageBox import CloseMessageBox
 from trufont.objects import settings
