@@ -7,9 +7,9 @@ from PyQt5.QtGui import (
     QColor, QDesktopServices, QTextCharFormat, QTextCursor)
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QFileDialog, QFileSystemModel, QMainWindow, QMenu,
-    QMessageBox, QPushButton, QSplitter, QStatusBar, QTreeView, QWidget,
-    QVBoxLayout)
+    QPushButton, QSplitter, QStatusBar, QTreeView, QWidget, QVBoxLayout)
 from trufont.controls.clickLabel import ClickLabel
+from trufont.controls.closeMessageBox import CloseMessageBox
 from trufont.objects import settings
 from trufont.objects.menu import Entries
 from trufont.tools import platformSpecific
@@ -188,20 +188,10 @@ class ScriptingWindow(QMainWindow):
         else:
             event.ignore()
 
-    # TODO: somehow duplicates fontView
     def _maybeSaveBeforeExit(self):
         if self.isWindowModified():
             currentFile = self.windowTitle()[3:]
-            body = self.tr("Do you want to save the changes you made "
-                           "to “{}”?").format(currentFile)
-            closeDialog = QMessageBox(
-                QMessageBox.Question, None, body,
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
-                self)
-            closeDialog.setInformativeText(
-                self.tr("Your changes will be lost if you don’t save them."))
-            closeDialog.setModal(True)
-            ret = closeDialog.exec_()
+            ret = CloseMessageBox.getCloseDocument(self, currentFile)
             if ret == QMessageBox.Save:
                 self.saveFile()
                 return True

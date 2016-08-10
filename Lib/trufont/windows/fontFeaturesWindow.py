@@ -1,6 +1,7 @@
 from defconQt.controls.featureCodeEditor import FeatureCodeEditor
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QMessageBox
+from trufont.controls.closeMessageBox import CloseMessageBox
 from trufont.objects import settings
 from trufont.objects.menu import Entries
 
@@ -75,22 +76,9 @@ class FontFeaturesWindow(QMainWindow):
 
     resizeEvent = moveEvent
 
-    # TODO: maybe bring up to the code editor widget?
     def closeEvent(self, event):
         if self.editor.document().isModified():
-            name = QApplication.applicationName()
-            closeDialog = QMessageBox(
-                QMessageBox.Question,
-                name,
-                self.tr("Save your changes?"),
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
-                self
-            )
-            closeDialog.setInformativeText(
-                self.tr("Your changes will be lost if you don’t save them.")
-            )
-            closeDialog.setModal(True)
-            ret = closeDialog.exec_()
+            ret = CloseMessageBox.getCloseDocument(self)
             if ret == QMessageBox.Save:
                 self.save()
                 event.accept()

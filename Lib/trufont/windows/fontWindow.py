@@ -1,5 +1,6 @@
 from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.windows.baseWindows import BaseMainWindow
+from trufont.controls.closeMessageBox import CloseMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
 from trufont.objects import settings
 from trufont.objects.defcon import TFont
@@ -163,16 +164,7 @@ class FontWindow(BaseMainWindow):
     def maybeSaveBeforeExit(self):
         if self._font.dirty:
             currentFont = self.windowTitle()[3:]
-            body = self.tr("Do you want to save the changes you made "
-                           "to “{}”?").format(currentFont)
-            closeDialog = QMessageBox(
-                QMessageBox.Question, None, body,
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
-                self)
-            closeDialog.setInformativeText(
-                self.tr("Your changes will be lost if you don’t save them."))
-            closeDialog.setModal(True)
-            ret = closeDialog.exec_()
+            ret = CloseMessageBox.getCloseDocument(self, currentFont)
             if ret == QMessageBox.Save:
                 self.saveFile()
                 return True
