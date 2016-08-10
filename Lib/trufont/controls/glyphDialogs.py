@@ -16,7 +16,7 @@ class GotoDialog(QDialog):
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle(self.tr("Go to…"))
         self.font = currentGlyph.font
-        self._sortedGlyphs = self.font.unicodeData.sortGlyphNames(
+        self._sortedGlyphNames = self.font.unicodeData.sortGlyphNames(
             self.font.keys(), self.alphabetical)
 
         layout = QGridLayout(self)
@@ -50,7 +50,7 @@ class GotoDialog(QDialog):
         l += 1
         layout.addWidget(buttonBox, l, 0, 1, 6)
         self.setLayout(layout)
-        self.updateGlyphList(True)
+        self.updateGlyphList()
 
     def lineEvent(self, event):
         if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
@@ -69,19 +69,21 @@ class GotoDialog(QDialog):
         else:
             QLineEdit.keyPressEvent(self.glyphEdit, event)
 
-    def updateGlyphList(self, select):
+    def updateGlyphList(self):
+        beginsWith = self.beginsWithBox.isChecked()
         self.glyphList.clear()
         if not self.glyphEdit.isModified():
-            self.glyphList.addItems(self._sortedGlyphs)
-        text = self.glyphEdit.text()
-        if select:
-            glyphs = [glyph for glyph in self._sortedGlyphs
-                      if glyph.startswith(text)]
+            self.glyphList.addItems(self._sortedGlyphNames)
         else:
-            glyphs = [glyph for glyph in self._sortedGlyphs if text in glyph]
-        self.glyphList.addItems(glyphs)
-        if select:
-            self.glyphList.setCurrentRow(0)
+            text = self.glyphEdit.text()
+            if beginsWith:
+                glyphs = [glyphName for glyphName in self._sortedGlyphNames
+                          if glyphName and glyphName.startswith(text)]
+            else:
+                glyphs = [glyphName for glyphName in self._sortedGlyphNames
+                          if glyphName and text in glyphName]
+            self.glyphList.addItems(glyphs)
+        self.glyphList.setCurrentRow(0)
 
     @classmethod
     def getNewGlyph(cls, parent, currentGlyph):

@@ -243,6 +243,7 @@ class FileChooser(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # TODO: migrate to FolderComboBox?
         self.folderBox = QComboBox(self)
         self.explorerTree = FileTreeView(self)
         self.explorerTree.doubleClickCallback = self._fileOpened
