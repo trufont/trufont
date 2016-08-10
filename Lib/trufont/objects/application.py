@@ -407,7 +407,7 @@ class Application(QApplication):
             window = FontWindow(font)
         except Exception as e:
             msg = self.tr(
-                "There was an issue when opening the font at {}.".format(
+                "There was an issue opening the font at {}.".format(
                     path))
             errorReports.showCriticalException(e, msg)
             return
@@ -449,9 +449,8 @@ class Application(QApplication):
         # TODO: don't store, spawn window each time instead
         # or have tabs?
         if not hasattr(self, '_scriptingWindow'):
-            scriptingWindow = ScriptingWindow()
-            scriptingWindow.show()
-        elif self._scriptingWindow.isVisible():
+            self._scriptingWindow = ScriptingWindow()
+        if self._scriptingWindow.isVisible():
             self._scriptingWindow.raise_()
         else:
             self._scriptingWindow.show()
