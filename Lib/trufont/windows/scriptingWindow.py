@@ -4,7 +4,7 @@ from keyword import kwlist
 from PyQt5.QtCore import (
     pyqtSignal, QDir, QSettings, QSize, Qt, QUrl)
 from PyQt5.QtGui import (
-    QColor, QDesktopServices, QTextCharFormat, QTextCursor)
+    QColor, QDesktopServices, QKeySequence, QTextCharFormat, QTextCursor)
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QFileDialog, QFileSystemModel, QMainWindow, QMenu,
     QMessageBox, QPushButton, QSplitter, QStatusBar, QTreeView, QWidget,
@@ -56,6 +56,8 @@ class ScriptingWindow(QMainWindow):
         statusBar.positionClicked.connect(self.gotoLine)
         statusBar.clearButtonClicked.connect(self.outputEdit.clear)
         statusBar.runButtonClicked.connect(self.runScript)
+        gotoLineShortcut = QShortcut(QKeySequence("Ctrl+G"), self)
+        gotoLineShortcut.activated.connect(self.gotoLine)
 
         self.readSettings()
 
@@ -441,6 +443,7 @@ class ScriptingStatusBar(QStatusBar):
         self.indentLabel = IndentLabel(self)
         self.clearButton = QPushButton(self.tr("Clear"), self)
         self.runButton = QPushButton(self.tr("Run"), self)
+        self.runButton.setShortcut("Ctrl+R")
 
         self.addWidget(self.positionLabel)
         self.addPermanentWidget(self.indentLabel)
