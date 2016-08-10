@@ -6,11 +6,11 @@ _showMessages = True
 
 
 def showCriticalException(e, message=None):
-    _showException(e, QMessageBox.Critical, message)
+    _prepareException(e, QMessageBox.Critical, message)
 
 
 def showWarningException(e, message=None):
-    _showException(e, QMessageBox.Warning, message)
+    _prepareException(e, QMessageBox.Warning, message)
 
 
 def exceptionCallback(etype, value, tb):
@@ -42,4 +42,4 @@ def _displayException(etype, value, tb, kind, title, message):
 
 def _prepareException(e, kind, message):
     title = e.__class__.__name__
-    _dispException(e.__class__, e, e.__traceback__, kind, title, message)
+    _displayException(e.__class__, e, e.__traceback__, kind, title, message)
