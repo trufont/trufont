@@ -12,6 +12,7 @@ from trufont.windows.glyphWindow import GlyphWindow
 from trufont.windows.groupsWindow import GroupsWindow
 from trufont.windows.metricsWindow import MetricsWindow
 from trufont.windows.settingsWindow import SettingsWindow
+from ufoLib.glifLib import readGlyphFromString
 from PyQt5.QtCore import QEvent, QMimeData, QSize, Qt
 from PyQt5.QtGui import QCursor, QKeySequence
 from PyQt5.QtWidgets import (
@@ -397,6 +398,7 @@ class FontWindow(BaseMainWindow):
         clipboard.setMimeData(mimeData)
 
     def paste(self):
+        # TODO: refactor copy/paste code somewhere
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
         if mimeData.hasFormat("application/x-trufont-glyph-data"):
@@ -409,6 +411,20 @@ class FontWindow(BaseMainWindow):
                     # XXX: prune
                     glyph.prepareUndo()
                     glyph.deserialize(pickled)
+        elif mimeData.hasText():
+            selection = self.glyphCellView.selection()
+            if len(selection) == 1:
+                glyph = self.glyphCellView.glyphsForIndexes(selection)[0]
+                otherGlyph = glyph.__class__()
+                text = mimeData.text()
+                try:
+                    readGlyphFromString(
+                        text, otherGlyph, otherGlyph.getPointPen())
+                except:
+                    return
+                glyph.prepareUndo()
+                glyph.clear()
+                otherGlyph.drawPoints(glyph.getPointPen())
 
     def settings(self):
         if self._settingsWindow is not None and \
