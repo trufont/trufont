@@ -36,7 +36,7 @@ class FontInfoWindow(QDialog):
         self.tabWidget.addNamedTab(PostScriptTab(self.font))
 
         buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
 
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)

@@ -512,10 +512,16 @@ class FontWindow(BaseMainWindow):
             return
         currentGlyph = self.glyphCellView.lastSelectedGlyph()
         # disconnect eventual signal of previous glyph
-        self._undoAction.disconnect()
-        self._undoAction.triggered.connect(self.undo)
-        self._redoAction.disconnect()
-        self._redoAction.triggered.connect(self.redo)
+        objects = (
+            (self._undoAction, self.undo),
+            (self._redoAction, self.redo),
+        )
+        for action, slot in objects:
+            try:
+                action.disconnect()
+            except:
+                pass
+            action.triggered.connect(slot)
         # now update status
         if currentGlyph is None:
             self._undoAction.setEnabled(False)
