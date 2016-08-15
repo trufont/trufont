@@ -11,6 +11,7 @@ from trufont.drawingTools.rulerTool import RulerTool
 from trufont.drawingTools.knifeTool import KnifeTool
 from trufont.windows.fontWindow import FontWindow
 from trufont.windows.inspectorWindow import InspectorWindow
+from trufont.windows.extensionBuilderWindow import ExtensionBuilderWindow
 from trufont.windows.scriptingWindow import ScriptingWindow
 from trufont.objects import settings
 from trufont.objects.defcon import TFont
@@ -366,9 +367,8 @@ class Application(QApplication):
                     parentMenu.addAction(
                         menuName, getFunc(extension, menuPath), shortcut)
         menu.addSeparator()
-        # TODO
-        action = menu.addAction(self.tr(Entries.Scripts_Build_Extension))
-        action.setEnabled(False)
+        menu.addAction(
+            self.tr(Entries.Scripts_Build_Extension), self.extensionBuilder)
 
     # ----------------
     # Menu Bar entries
@@ -417,6 +417,18 @@ class Application(QApplication):
     def openRecentFile(self):
         fontPath = self.sender().toolTip()
         self.openFile(fontPath)
+
+    # Scripts
+
+    def extensionBuilder(self):
+        # TODO: don't store, spawn window each time instead
+        # or have tabs?
+        if not hasattr(self, '_extensionBuilderWindow'):
+            self._extensionBuilderWindow = ExtensionBuilderWindow()
+        if self._extensionBuilderWindow.isVisible():
+            self._extensionBuilderWindow.raise_()
+        else:
+            self._extensionBuilderWindow.show()
 
     # Window
 

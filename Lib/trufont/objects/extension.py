@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from PyQt5.QtGui import QImageReader, QPixmap
 from PyQt5.QtWidgets import QApplication
 from ufoLib import _getPlist, UFOLibError, writePlistAtomically
@@ -91,13 +92,15 @@ class TExtension(object):
         return self._info
 
     def _get_tfVersion(self):
-        # TODO: do it like defcon.Color, Version type
         if self.tfVersionMajor is None:
             return None
-        return (self.tfVersionMajor, self.tfVersionMinor, self.tfVersionPatch)
+        return Version(
+            (self.tfVersionMajor, self.tfVersionMinor, self.tfVersionPatch))
 
     def _set_tfVersion(self, value):
-        if value is None:
+        if value is not None:
+            value = Version(value)
+        else:
             value = (None, None, None)
         self.tfVersionMajor, self.tfVersionMinor, self.tfVersionPatch = value
 
@@ -108,10 +111,13 @@ class TExtension(object):
     def _get_version(self):
         if self.versionMajor is None:
             return None
-        return (self.versionMajor, self.versionMinor, self.versionPatch)
+        return Version(
+            (self.versionMajor, self.versionMinor, self.versionPatch))
 
     def _set_version(self, value):
-        if value is None:
+        if value is not None:
+            value = Version(value)
+        else:
             value = (None, None, None)
         self.versionMajor, self.versionMinor, self.versionPatch = value
 
@@ -130,7 +136,8 @@ class TExtension(object):
 
     @libPath.setter
     def libPath(self, path):
-        assert os.path.isfolder(path)
+        if path is not None:
+            assert os.path.isdir(path)
         self._libPath = path
 
     @property
@@ -139,7 +146,8 @@ class TExtension(object):
 
     @resourcesPath.setter
     def resourcesPath(self, path):
-        assert os.path.isfolder(path)
+        if path is not None:
+            assert os.path.isdir(path)
         self._resourcesPath = path
 
     def save(self, path=None, pycOnly=False):
@@ -318,3 +326,40 @@ class TExtensionWriter(object):
 
     def writeResources(self, path):
         pass
+
+
+class Version(str):
+
+    def __new__(self, value):
+        # convert from sequence
+        if isinstance(value, Sequence):
+            assert len(value) == 3
+            value = ".".join(str(num) for num in value)
+        return super().__new__(Version, value)
+
+    def __iter__(self):
+        return iter(_stringToSequence(self))
+
+    def _get_major(self):
+        return _stringToSequence(self)[0]
+
+    major = property(_get_major, "The major component.")
+
+    def _get_minor(self):
+        return _stringToSequence(self)[1]
+
+    minor = property(_get_minor, "The minor component.")
+
+    def _get_patch(self):
+        return _stringToSequence(self)[2]
+
+    patch = property(_get_patch, "The patch component.")
+
+
+def _stringToSequence(value):
+    major, minor, patch = [i.strip() for i in value.split(".")]
+    value = []
+    for component in (major, minor, patch):
+        v = int(component)
+        value.append(v)
+    return value
