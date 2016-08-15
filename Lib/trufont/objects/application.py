@@ -13,6 +13,7 @@ from trufont.windows.fontWindow import FontWindow
 from trufont.windows.inspectorWindow import InspectorWindow
 from trufont.windows.extensionBuilderWindow import ExtensionBuilderWindow
 from trufont.windows.scriptingWindow import ScriptingWindow
+from trufont.windows.settingsWindow import SettingsWindow
 from trufont.objects import settings
 from trufont.objects.defcon import TFont
 from trufont.objects.menu import (
@@ -191,6 +192,9 @@ class Application(QApplication):
         recentFilesMenu = fileMenu.fetchMenu(Entries.File_Open_Recent)
         self.updateRecentFiles(recentFilesMenu)
         fileMenu.fetchAction(Entries.File_Exit, self.exit)
+
+        editMenu = menuBar.fetchMenu(Entries.Edit)
+        editMenu.fetchAction(Entries.Edit_Settings, self.settings)
 
         scriptsMenu = menuBar.fetchMenu(Entries.Scripts)
         self.updateExtensions(scriptsMenu)
@@ -417,6 +421,16 @@ class Application(QApplication):
     def openRecentFile(self):
         fontPath = self.sender().toolTip()
         self.openFile(fontPath)
+
+    # Edit
+
+    def settings(self):
+        if hasattr(self, '_settingsWindow') and \
+                self._settingsWindow.isVisible():
+            self._settingsWindow.raise_()
+        else:
+            self._settingsWindow = SettingsWindow()
+            self._settingsWindow.show()
 
     # Scripts
 

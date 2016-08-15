@@ -11,7 +11,6 @@ from trufont.windows.fontInfoWindow import FontInfoWindow
 from trufont.windows.glyphWindow import GlyphWindow
 from trufont.windows.groupsWindow import GroupsWindow
 from trufont.windows.metricsWindow import MetricsWindow
-from trufont.windows.settingsWindow import SettingsWindow
 from ufoLib.glifLib import readGlyphFromString
 from PyQt5.QtCore import QEvent, QMimeData, QSize, Qt
 from PyQt5.QtGui import QCursor, QKeySequence
@@ -111,7 +110,7 @@ class FontWindow(BaseMainWindow):
         paste = editMenu.fetchAction(Entries.Edit_Paste, self.paste)
         self._clipboardActions = (cut, copy, copyComponent, paste)
         editMenu.addSeparator()
-        editMenu.fetchAction(Entries.Edit_Settings, self.settings)
+        editMenu.fetchAction(Entries.Edit_Settings)
 
         fontMenu = menuBar.fetchMenu(Entries.Font)
         fontMenu.fetchAction(Entries.Font_Font_Info, self.fontInfo)
@@ -425,14 +424,6 @@ class FontWindow(BaseMainWindow):
                 glyph.prepareUndo()
                 glyph.clear()
                 otherGlyph.drawPoints(glyph.getPointPen())
-
-    def settings(self):
-        if self._settingsWindow is not None and \
-                self._settingsWindow.isVisible():
-            self._settingsWindow.raise_()
-        else:
-            self._settingsWindow = SettingsWindow(self)
-            self._settingsWindow.show()
 
     # Font
 
