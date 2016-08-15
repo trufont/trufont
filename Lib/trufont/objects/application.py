@@ -52,10 +52,14 @@ class Application(QApplication):
     # --------------
 
     def _focusWindowChanged(self):
+        window = self.activeWindow()
+        # trash unwanted calls
+        if hasattr(self, "_focusWindow") and window == self._focusWindow:
+            return
+        self._focusWindow = window
         # update menu bar
         self.updateMenuBar()
         # update main window
-        window = self.activeWindow()
         if window is None:
             return
         while True:
