@@ -3,7 +3,6 @@ from defconQt.windows.baseWindows import BaseMainWindow
 from trufont.controls.closeMessageBox import CloseMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
 from trufont.objects import settings
-from trufont.objects.defcon import TFont
 from trufont.objects.menu import Entries
 from trufont.tools import errorReports, platformSpecific
 from trufont.windows.fontFeaturesWindow import FontFeaturesWindow

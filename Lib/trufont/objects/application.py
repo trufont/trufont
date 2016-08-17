@@ -388,7 +388,7 @@ class Application(QApplication):
         self._openFile(path, importFile=platformSpecific.mergeOpenAndImport())
 
     def importFile(self):
-        self._openFile(path, openFile=False, importFile=True)
+        self._openFile(openFile=False, importFile=True)
 
     def _openFile(self, path=None, openFile=True, importFile=False):
         if not path:
