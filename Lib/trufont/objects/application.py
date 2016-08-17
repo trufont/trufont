@@ -186,10 +186,6 @@ class Application(QApplication):
                 return
             menuBar.resetState()
         activeWindow = self.activeWindow()
-        # XXX: on local menu bar, entries shouldnt be activated if they werent
-        # fetched by local
-        # in that case, maybe return a parentless action, that isnt added to
-        # the menu
         fileMenu = menuBar.fetchMenu(Entries.File)
         fileMenu.fetchAction(Entries.File_New, self.newFile)
         fileMenu.fetchAction(Entries.File_Open, self.openFile)
@@ -483,6 +479,9 @@ class Application(QApplication):
         fontPath = self.sender().toolTip()
         self.openFile(fontPath)
 
+    def clearRecentFiles(self):
+        settings.setRecentFiles([])
+
     # Edit
 
     def settings(self):
@@ -612,6 +611,15 @@ class Application(QApplication):
                 menu.addAction(action)
             action.setVisible(False)
             action.triggered.connect(self.openRecentFile)
+        try:
+            actions[MAX_RECENT_FILES]
+        except IndexError:
+            menu.addSeparator()
+            action = QAction(menu)
+            action.setText(self.tr("Clear Menu"))
+            action.triggered.connect(self.clearRecentFiles)
+            menu.addAction(action)
+
         # fill
         actions = menu.actions()
         recentFiles = settings.recentFiles()
