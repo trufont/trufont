@@ -82,26 +82,24 @@ def main():
     # process files
     args = parser.positionalArguments()
     if not args:
-        fontPath = None
         # maybe load recent file
         loadRecentFile = settings.loadRecentFile()
         if loadRecentFile:
             recentFiles = settings.recentFiles()
             if len(recentFiles) and os.path.exists(recentFiles[0]):
-                fontPath = recentFiles[0]
-                app.openFile(fontPath)
-        # otherwise, create a new file
-        if fontPath is None:
-            if platformSpecific.shouldSpawnDocument():
-                app.newFile()
-            else:
-                # HACK: on OSX we may want to trigger native QMenuBar display
-                # without opening any window. Since Qt infers new menu bar on
-                # focus change, fire the signal.
-                app.focusWindowChanged.emit(None)
+                app.openFile(recentFiles[0])
     else:
         for fontPath in args:
             app.openFile(fontPath)
+    # if we did not open a font, spawn new font or go headless
+    if not app.allFonts():
+        if platformSpecific.shouldSpawnDocument():
+            app.newFile()
+        else:
+            # HACK: on OSX we may want to trigger native QMenuBar display
+            # without opening any window. Since Qt infers new menu bar on
+            # focus change, fire the signal.
+            app.focusWindowChanged.emit(None)
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
