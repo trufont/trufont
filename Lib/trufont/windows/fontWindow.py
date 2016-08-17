@@ -89,7 +89,7 @@ class FontWindow(BaseMainWindow):
         fileMenu.fetchAction(Entries.File_Open)
         fileMenu.fetchMenu(Entries.File_Open_Recent)
         if not platformSpecific.mergeOpenAndImport():
-            fileMenu.fetchAction(Entries.File_Import, self.importFile)
+            fileMenu.fetchAction(Entries.File_Import)
         fileMenu.addSeparator()
         fileMenu.fetchAction(Entries.File_Save, self.saveFile)
         fileMenu.fetchAction(Entries.File_Save_As, self.saveFileAs)
