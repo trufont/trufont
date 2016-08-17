@@ -192,9 +192,8 @@ def globalMenuBar():
     fileMenu.fetchAction(Entries.File_Open)
     fileMenu.fetchMenu(Entries.File_Open_Recent)
     # no-op, caller will maintain this
-    # TODO
-    # if not platformSpecific.mergeOpenAndImport():
-    fileMenu.fetchAction(Entries.File_Import)
+    if not platformSpecific.mergeOpenAndImport():
+        fileMenu.fetchAction(Entries.File_Import)
     fileMenu.addSeparator()
     fileMenu.fetchAction(Entries.File_Save)
     fileMenu.fetchAction(Entries.File_Save_As)

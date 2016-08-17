@@ -88,9 +88,8 @@ class FontWindow(BaseMainWindow):
         fileMenu.fetchAction(Entries.File_New)
         fileMenu.fetchAction(Entries.File_Open)
         fileMenu.fetchMenu(Entries.File_Open_Recent)
-        # TODO
-        # if not platformSpecific.mergeOpenAndImport():
-        fileMenu.fetchAction(Entries.File_Import, self.importFile)
+        if not platformSpecific.mergeOpenAndImport():
+            fileMenu.fetchAction(Entries.File_Import, self.importFile)
         fileMenu.addSeparator()
         fileMenu.fetchAction(Entries.File_Save, self.saveFile)
         fileMenu.fetchAction(Entries.File_Save_As, self.saveFileAs)
@@ -276,32 +275,6 @@ class FontWindow(BaseMainWindow):
     # ------------
 
     # File
-
-    def importFile(self):
-        # TODO: systematize this
-        fileFormats = (
-            self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
-            self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
-            self.tr("ttx Font file {}").format("(*.ttx)"),
-            self.tr("WOFF Font file {}").format("(*.woff)"),
-            self.tr("All supported files {}").format(
-                "(*.otf *.pfa *.pfb *.ttf *.ttx *.woff)"),
-            self.tr("All files {}").format("(*.*)"),
-        )
-
-        path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("Import File"), None,
-            ";;".join(fileFormats), fileFormats[-2])
-
-        if path:
-            font = TFont()
-            try:
-                font.extract(path)
-            except Exception as e:
-                errorReports.showCriticalException(e)
-                return
-            window = FontWindow(font)
-            window.show()
 
     def saveFile(self, path=None, ufoFormatVersion=3):
         if path is None and self._font.path is None:

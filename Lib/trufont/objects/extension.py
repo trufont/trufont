@@ -150,17 +150,17 @@ class TExtension(object):
             assert os.path.isdir(path)
         self._resourcesPath = path
 
-    def save(self, path=None, pycOnly=False):
+    def save(self, path=None):
         # fetch path
-        if path is None:
-            path = self._path
-        if path is None:
-            raise ValueError("Cannot save to non-existent path.")
+        if path is None or path == self._path:
+            return
         # write
         writer = TExtensionWriter(path)
-        writer.writeLib(self._libPath)
+        writer.writeLib(
+            os.path.join(self._path, self._libPath or LIB_PATH))
         writer.writeInfo(self._info)
-        writer.writeResources(self._resourcesPath)
+        writer.writeResources(
+            os.path.join(self._path, self._resourcesPath or RESOURCES_PATH))
         # done
         self._path = path
 
@@ -175,7 +175,12 @@ class TExtension(object):
 
     def install(self):
         app = QApplication.instance()
-        folder = app.getExtensionsDirectory()
+        if self._path is not None:
+            fileName = os.path.basename(self._path)
+        else:
+            fileName = self.name or "Extension" + ".tfExt"
+        folder = os.path.join(
+            app.getExtensionsDirectory(), fileName)
         self.save(folder)
         app.registerExtension(self)
 
@@ -267,6 +272,7 @@ class TExtensionWriter(object):
 
     def __init__(self, path):
         self._path = path
+        self._makeDirectory()
 
     def _writePlist(self, fileName, data):
         """
@@ -294,11 +300,8 @@ class TExtensionWriter(object):
             os.makedirs(path)
         return path
 
-    def writeLib(self, path):
-        if path in (None, LIB_PATH):
-            return
+    def writeLib(self, origPath):
         canonicalPath = os.path.join(self._path, LIB_PATH)
-        newPath = os.path.join(self._path, path)
         # cleanup existing script dir
         if os.path.exists(canonicalPath):
             try:
@@ -307,7 +310,7 @@ class TExtensionWriter(object):
                 raise UFOLibError("Couldn't delete existing script folder.")
         # move in
         try:
-            shutil.copytree(newPath, canonicalPath)
+            shutil.copytree(origPath, canonicalPath)
         except:
             raise UFOLibError(
                 "Couldn't copy script files to the script folder.")
@@ -324,7 +327,7 @@ class TExtensionWriter(object):
         # write file
         self._writePlist(INFO_FILENAME, infoData)
 
-    def writeResources(self, path):
+    def writeResources(self, origPath):
         pass
 
 

@@ -16,6 +16,7 @@ from trufont.windows.scriptingWindow import ScriptingWindow
 from trufont.windows.settingsWindow import SettingsWindow
 from trufont.objects import settings
 from trufont.objects.defcon import TFont
+from trufont.objects.extension import TExtension
 from trufont.objects.menu import (
     Entries, MAX_RECENT_FILES, globalMenuBar, MenuBar)
 from trufont.tools import errorReports, glyphList, platformSpecific
@@ -388,22 +389,78 @@ class Application(QApplication):
         window.show()
 
     def openFile(self, path=None):
-        if not path:
-            fileFormat = self.tr("UFO Fonts {}")
-            if platformSpecific.treatPackageAsFile():
-                ext = "(*.ufo)"
-            else:
-                ext = "(metainfo.plist)"
+        self._openFile(path, importFile=platformSpecific.mergeOpenAndImport())
 
+    def importFile(self):
+        self._openFile(path, openFile=False, importFile=True)
+
+    def _openFile(self, path=None, openFile=True, importFile=False):
+        if not path:
+            fileFormats = []
+            supportedFiles = ""
+            if openFile:
+                packageAsFile = platformSpecific.treatPackageAsFile()
+                if packageAsFile:
+                    ufoFormat = "*.ufo"
+                    tfExtFormat = "*.tfExt"
+                else:
+                    ufoFormat = "metainfo.plist"
+                    tfExtFormat = "info.plist"
+                fileFormats.extend([
+                    self.tr("UFO Fonts {}").format("(%s)" % ufoFormat),
+                    self.tr("TruFont Extension {}").format(
+                        "(%s)" % tfExtFormat)
+                ])
+                supportedFiles += ufoFormat + " " + tfExtFormat + " "
+            if importFile:
+                # TODO: systematize this
+                fileFormats.extend([
+                    self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
+                    self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
+                    self.tr("ttx Font file {}").format("(*.ttx)"),
+                    self.tr("WOFF Font file {}").format("(*.woff)"),
+                ])
+                supportedFiles += "*.otf *.pfa *.pfb *.ttf *.ttx *.woff"
+            fileFormats.extend([
+                self.tr("All supported files {}").format(
+                    "(%s)" % supportedFiles.rstrip()),
+                self.tr("All files {}").format("(*.*)"),
+            ])
+            title = self.tr(
+                "Open File") if openFile else self.tr("Import File")
             path, _ = QFileDialog.getOpenFileName(
-                self.activeWindow(), self.tr("Open File"), '',
-                fileFormat.format(ext)
-            )
+                self.activeWindow(), title, None, ";;".join(fileFormats),
+                fileFormats[-2])
             if not path:
                 return
+        # sanitize
+        path = os.path.normpath(path)
         if ".plist" in path:
             path = os.path.dirname(path)
-        path = os.path.normpath(path)
+        ext = os.path.splitext(path)[1]
+        if ext == ".ufo":
+            self._loadUFO(path)
+        elif ext == ".tfExt":
+            self._loadExt(path)
+        else:
+            self._loadBinary(path)
+
+    def _loadBinary(self, path):
+        font = TFont()
+        try:
+            font.extract(path)
+        except Exception as e:
+            errorReports.showCriticalException(e)
+            return
+        window = FontWindow(font)
+        window.show()
+
+    def _loadExt(self, path):
+        # TODO: put version check in place
+        e = TExtension(path)
+        e.install()
+
+    def _loadUFO(self, path):
         for widget in self.topLevelWidgets():
             if isinstance(widget, FontWindow):
                 font = widget.font_()
