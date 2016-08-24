@@ -156,8 +156,10 @@ class TExtension(object):
             return
         # write
         writer = TExtensionWriter(path)
-        writer.writeLib(
-            os.path.join(self._path, self._libPath or LIB_PATH))
+        libPath = self._libPath
+        if libPath is None and self._path is not None:
+            libPath = os.path.join(self._path, LIB_PATH)
+        writer.writeLib(libPath)
         writer.writeInfo(self._info)
         writer.writeResources(
             os.path.join(self._path, self._resourcesPath or RESOURCES_PATH))
@@ -301,6 +303,8 @@ class TExtensionWriter(object):
         return path
 
     def writeLib(self, origPath):
+        if origPath is None:
+            return
         canonicalPath = os.path.join(self._path, LIB_PATH)
         # cleanup existing script dir
         if os.path.exists(canonicalPath):
