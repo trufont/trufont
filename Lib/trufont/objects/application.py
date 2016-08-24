@@ -251,7 +251,7 @@ class Application(QApplication):
             if isinstance(widget, FontWindow):
                 font = widget.font_()
                 fonts.append(font)
-        return
+        return fonts
 
     def currentFont(self):
         # might be None when closing all windows with scripting window open
