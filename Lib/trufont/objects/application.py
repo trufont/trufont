@@ -174,8 +174,10 @@ class Application(QApplication):
                 self._menuBar = globalMenuBar()
             self._menuBar.resetState()
             return self._menuBar
-        menuBar = MenuBar(window)
-        window.setMenuBar(menuBar)
+        menuBar = window.menuBar()
+        if not isinstance(menuBar, MenuBar):
+            menuBar = MenuBar(window)
+            window.setMenuBar(menuBar)
         return menuBar
 
     def setupMenuBar(self, menuBar=None):
