@@ -64,6 +64,8 @@ class MetricsWindow(BaseWindow):
 
         self.updateWindowTitle(font=font)
 
+        self.readSettings()
+
     def readSettings(self):
         geometry = settings.metricsWindowGeometry()
         if geometry:
