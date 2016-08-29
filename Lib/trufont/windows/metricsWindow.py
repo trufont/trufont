@@ -74,7 +74,7 @@ class MetricsWindow(BaseWindow):
 
     def updateWindowTitle(self, title=None, font=None):
         if title is None:
-            title = self.tr("Metrics Window")
+            title = self.tr("Metrics")
         if font is not None:
             title = "%s – %s %s" % (
                 title, font.info.familyName, font.info.styleName)

@@ -75,7 +75,7 @@ class GroupsWindow(QWidget):
 
     def updateWindowTitle(self, title=None, font=None):
         if title is None:
-            title = self.tr("Groups Window")
+            title = self.tr("Groups")
         if font is not None:
             title = "%s – %s %s" % (
                 title, font.info.familyName, font.info.styleName)

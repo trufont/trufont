@@ -23,7 +23,7 @@ class OutputWindow(QMainWindow):
         clearOutputButton.clicked.connect(self.outputEdit.clear)
 
         self.setCentralWidget(self.outputEdit)
-        self.setWindowTitle(self.tr("Output Window"))
+        self.setWindowTitle(self.tr("Output"))
         statusBar = self.statusBar()
         statusBar.addWidget(self.wrapLinesBox)
         statusBar.addPermanentWidget(clearOutputButton)
