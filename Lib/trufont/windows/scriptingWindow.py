@@ -81,8 +81,8 @@ class ScriptingWindow(QMainWindow):
 
     def setupMenu(self, menuBar):
         fileMenu = menuBar.fetchMenu(Entries.File)
-        fileMenu.fetchAction(Entries.File_New)
-        fileMenu.fetchAction(Entries.File_Open)
+        fileMenu.fetchAction(Entries.File_New, self.newFile)
+        fileMenu.fetchAction(Entries.File_Open, self.openFile)
         fileMenu.fetchAction(Entries.File_Save, self.saveFile)
         fileMenu.fetchAction(Entries.File_Save_As, self.saveFileAs)
         fileMenu.addSeparator()

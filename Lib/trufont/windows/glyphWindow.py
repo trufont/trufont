@@ -2,7 +2,7 @@ from defconQt.controls.glyphView import (
     GlyphView, GlyphViewMinSizeForDetails, GlyphWidget)
 from defconQt.windows.baseWindows import BaseMainWindow
 from trufont.controls.glyphDialogs import (
-    GotoDialog, AddLayerDialog, LayerActionsDialog)
+    AddLayerDialog, FindDialog, LayerActionsDialog)
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.drawingTools.removeOverlapButton import RemoveOverlapButton
 from trufont.objects import settings
@@ -142,7 +142,7 @@ class GlyphWindow(BaseMainWindow):
 
     def changeGlyph(self):
         glyph = self.view.glyph()
-        newGlyph, ok = GotoDialog.getNewGlyph(self, glyph)
+        newGlyph, ok = FindDialog.getNewGlyph(self, glyph)
         if ok and newGlyph is not None:
             self.setGlyph(newGlyph)
 

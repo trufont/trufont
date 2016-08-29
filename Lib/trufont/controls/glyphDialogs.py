@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
 from trufont.tools.colorGenerator import ColorGenerator
 
 
-class GotoDialog(QDialog):
+class FindDialog(QDialog):
     alphabetical = [
         dict(type="alphabetical", allowPseudoUnicode=True)
     ]
@@ -14,7 +14,7 @@ class GotoDialog(QDialog):
     def __init__(self, currentGlyph, parent=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle(self.tr("Go to…"))
+        self.setWindowTitle(self.tr("Find…"))
         self.font = currentGlyph.font
         self._sortedGlyphNames = self.font.unicodeData.sortGlyphNames(
             self.font.keys(), self.alphabetical)
@@ -98,7 +98,7 @@ class GotoDialog(QDialog):
         return (newGlyph, result)
 
 
-class AddComponentDialog(GotoDialog):
+class AddComponentDialog(FindDialog):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
