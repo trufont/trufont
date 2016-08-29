@@ -75,6 +75,9 @@ class ScriptingWindow(QMainWindow):
 
     def writeSettings(self):
         settings.setScriptingWindowGeometry(self.saveGeometry())
+        # splitters don't report a correct size until the window is visible
+        if not self.isVisible():
+            return
         splitter = self.centralWidget()
         settings.setScriptingWindowHSplitterSizes(splitter.sizes())
         settings.setScriptingWindowVSplitterSizes(self.vSplitter.sizes())
