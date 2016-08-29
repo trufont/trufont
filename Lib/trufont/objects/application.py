@@ -189,8 +189,11 @@ class Application(QApplication):
             menuBar.resetState()
         activeWindow = self.activeWindow()
         fileMenu = menuBar.fetchMenu(Entries.File)
-        fileMenu.fetchAction(Entries.File_New, self.newFile)
-        fileMenu.fetchAction(Entries.File_Open, self.openFile)
+        # HACK: scripting window has its own New/Open;
+        # figure out how to do this without explicit blacklist.
+        if not isinstance(activeWindow, ScriptingWindow):
+            fileMenu.fetchAction(Entries.File_New, self.newFile)
+            fileMenu.fetchAction(Entries.File_Open, self.openFile)
         # TODO: maybe move save in there and add save all and close
         recentFilesMenu = fileMenu.fetchMenu(Entries.File_Open_Recent)
         self.updateRecentFiles(recentFilesMenu)
