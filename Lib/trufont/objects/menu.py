@@ -69,6 +69,10 @@ class Menu(QMenu):
                 self.addAction(action)
         # connect
         action.setEnabled(True)
+        try:
+            action.triggered.disconnect()
+        except TypeError:
+            pass
         if callback is not None:
             action.triggered.connect(lambda: callback())
         action.setShortcut(QKeySequence(shortcut))
@@ -81,10 +85,6 @@ class Menu(QMenu):
         # TODO: reset submenus too?
         for action in self.actions():
             action.setEnabled(False)
-            try:
-                action.triggered.disconnect()
-            except TypeError:
-                pass
 
 
 class Entries(object):
