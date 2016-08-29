@@ -112,7 +112,7 @@ class MetricsWindow(BaseWindow):
     # ----------
 
     def sizeHint(self):
-        return QSize(800, 650)
+        return QSize(1150, 630)
 
     def moveEvent(self, event):
         self.writeSettings()

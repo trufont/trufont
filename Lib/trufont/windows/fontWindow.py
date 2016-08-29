@@ -44,7 +44,6 @@ class FontWindow(BaseMainWindow):
         self.cellSizeSlider.setMinimum(32)
         self.cellSizeSlider.setMaximum(116)
         self.cellSizeSlider.setFixedWidth(.9 * self.cellSizeSlider.width())
-        self.cellSizeSlider.sliderReleased.connect(self.writeSettings)
         self.cellSizeSlider.valueChanged.connect(self._sliderCellSizeChanged)
         self.selectionLabel = QLabel(self)
 
@@ -67,6 +66,7 @@ class FontWindow(BaseMainWindow):
         self.setWindowTitle()
 
         self.readSettings()
+        self.cellSizeSlider.sliderReleased.connect(self.writeSettings)
 
     def readSettings(self):
         geometry = settings.fontWindowGeometry()

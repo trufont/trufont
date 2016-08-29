@@ -50,8 +50,6 @@ class ScriptingWindow(QMainWindow):
             lambda: statusBar.setPosition(self.sender().textCursor()))
         statusBar.setIndent(self.editor.indent())
         self.editor.indentChanged.connect(statusBar.setIndent)
-        splitter.splitterMoved.connect(self.writeSettings)
-        self.vSplitter.splitterMoved.connect(self.writeSettings)
         statusBar.indentModified.connect(self.editor.setIndent)
         statusBar.positionClicked.connect(self.gotoLine)
         statusBar.clearButtonClicked.connect(self.outputEdit.clear)
@@ -60,6 +58,8 @@ class ScriptingWindow(QMainWindow):
         gotoLineShortcut.activated.connect(self.gotoLine)
 
         self.readSettings()
+        splitter.splitterMoved.connect(self.writeSettings)
+        self.vSplitter.splitterMoved.connect(self.writeSettings)
 
     def readSettings(self):
         geometry = settings.scriptingWindowGeometry()
