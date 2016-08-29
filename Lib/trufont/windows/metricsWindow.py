@@ -6,7 +6,7 @@ from trufont.objects import settings
 from trufont.objects.defcon import TGlyph
 from trufont.resources import icons_db  # noqa
 from trufont.windows.glyphWindow import GlyphWindow
-from PyQt5.QtCore import pyqtSignal, QEvent, QSize, QStandardPaths, Qt
+from PyQt5.QtCore import pyqtSignal, QEvent, QSize, QSizeF, QStandardPaths, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QCursor, QIcon, QIntValidator, QPainter, QPalette)
 from PyQt5.QtPrintSupport import QPrinter
@@ -390,10 +390,11 @@ class MetricsLineWidget(GlyphLineWidget):
                 QStandardPaths.DesktopLocation)
             path = os.path.join(desktop[0], "metricsWindow.pdf")
 
-        printer = QPrinter()
-        # printer.setFullPage(True)
+        printer = QPrinter(QPrinter.ScreenResolution)
         printer.setOutputFileName(path)
         printer.setOutputFormat(QPrinter.PdfFormat)
+        printer.setFullPage(True)
+        printer.setPaperSize(QSizeF(self.size()), QPrinter.DevicePixel)
 
         painter = QPainter()
         painter.begin(printer)
@@ -725,7 +726,7 @@ class MetricsTable(QTableWidget):
     def sizeHint(self):
         # http://stackoverflow.com/a/7216486/2037879
         height = sum(self.rowHeight(k) for k in range(self.rowCount()))
-        height += self.horizontalScrollBar().sizeHint().height()
+        height += self.horizontalScrollBar().height()
         margins = self.contentsMargins()
         height += margins.top() + margins.bottom()
         return QSize(self.width(), height)
