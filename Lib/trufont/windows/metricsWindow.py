@@ -42,6 +42,9 @@ class MetricsWindow(BaseWindow):
         self.toolbar.glyphsChanged.connect(self.table.setGlyphs)
         self.toolbar.pointSizeChanged.connect(self.lineView.setPointSize)
         self.toolbar.settingsChanged.connect(self.lineView.setSettings)
+        self.toolbar.settingsChanged.connect(self._kerningVisibilityChanged)
+        self.toolbar.settingsChanged.connect(
+            lambda s: self.table.setKerningEnabled(s["showKerning"]))
         self.lineView.glyphActivated.connect(self._glyphActivated)
         self.lineView.pointSizeModified.connect(self.toolbar.setPointSize)
         self.lineView.selectionModified.connect(self.table.setCurrentGlyph)
@@ -106,8 +109,19 @@ class MetricsWindow(BaseWindow):
     # widget
 
     def _glyphActivated(self, glyph):
+        # TODO: parent should be self. make glyphWindow independent of its
+        # parent
         glyphWindow = GlyphWindow(glyph, self.parent())
         glyphWindow.show()
+
+    def _kerningVisibilityChanged(self, settings):
+        if settings["showKerning"] == self.lineView.applyKerning():
+            return
+        # if showKerning was triggered, it won't apply until we pipe the glyphs
+        # again. do so
+        # TODO: lineView should deal with this on its own
+        glyphs = self.table.glyphs()
+        self.lineView.setGlyphRecords(glyphs)
 
     # ----------
     # Qt methods
@@ -233,7 +247,7 @@ class MetricsToolBar(QToolBar):
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px")
         self.toolsMenu = QMenu(self)
         self._showKerning = self.toolsMenu.addAction(
-            self.tr("Show Kerning"), self._kerningVisibilityChanged)
+            self.tr("Show Kerning"), self._controlsTriggered)
         self._showKerning.setCheckable(True)
         self._showMetrics = self.toolsMenu.addAction(
             self.tr("Show Metrics"), self._controlsTriggered)
@@ -298,12 +312,6 @@ class MetricsToolBar(QToolBar):
             wrapLines=self._wrapLines.isChecked(),
         )
         self.settingsChanged.emit(params)
-
-    def _kerningVisibilityChanged(self):
-        self._controlsTriggered()
-        # if showKerning was triggered, it won't apply until we pipe the glyphs
-        # again. do so
-        self._textChanged()
 
     def _sliderLineHeightChanged(self, value):
         QToolTip.showText(QCursor.pos(), str(value / 100), self)
@@ -544,10 +552,13 @@ class MetricsTable(QTableWidget):
     selectedIndexChanged = pyqtSignal(object)
 
     def __init__(self, parent=None):
-        super().__init__(4, 1, parent)
+        super().__init__(5, 1, parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self.setItemDelegate(MetricsTableItemDelegate(self))
-        data = [None, self.tr("Width"), self.tr("Left"), self.tr("Right")]
+        data = [
+            None, self.tr("Width"), self.tr("Left"), self.tr("Right"),
+            self.tr("Kerning")
+        ]
         # Don't grey-out disabled cells
         palette = self.palette()
         fgColor = palette.color(QPalette.Text)
@@ -556,13 +567,16 @@ class MetricsTable(QTableWidget):
         for index, title in enumerate(data):
             item = MetricsTableItem(title)
             item.setFlags(Qt.NoItemFlags)
+            item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.setItem(index, 0, item)
         # let's use this one column to compute the width of others
-        self._cellWidth = .5 * self.columnWidth(0)
-        self.setColumnWidth(0, self._cellWidth)
+        columnWidth = self.columnWidth(0)
+        self._cellWidth = .5 * columnWidth
+        self.setColumnWidth(0, .55 * columnWidth)
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
         self._coloredColumn = None
+        self._kerningEnabled = False
 
         # always show a scrollbar to fix layout
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -620,6 +634,12 @@ class MetricsTable(QTableWidget):
             glyph.leftMargin = item
         elif row == 3:
             glyph.rightMargin = item
+        elif row == 4:
+            prevIndex = col - 2
+            if prevIndex >= 0 and glyph.font is not None:
+                prevGlyph = self._glyphs[prevIndex]
+                kerning = glyph.font.kerning
+                kerning.write(prevGlyph, glyph, item)
         # defcon callbacks do the update
 
     def _itemChanged(self, current, previous):
@@ -649,6 +669,18 @@ class MetricsTable(QTableWidget):
         self._subscribeToGlyphs(self._glyphs)
         self.updateCells(False)
 
+    def kerningEnabled(self):
+        return self._kerningEnabled
+
+    def setKerningEnabled(self, value):
+        if value == self._kerningEnabled:
+            return
+        self._kerningEnabled = value
+        for i in range(self.columnCount()):
+            item = self.item(4, i)
+            self.closePersistentEditor(item)
+        self.updateCells()
+
     def updateCells(self, keepColor=True):
         self.blockSignals(True)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -663,7 +695,7 @@ class MetricsTable(QTableWidget):
     def colorColumn(self, column):
         emptyBrush = QBrush(Qt.NoBrush)
         selectionColor = QColor(235, 235, 235)
-        for i in range(4):
+        for i in range(self.rowCount()):
             if self._coloredColumn is not None:
                 item = self.item(i, self._coloredColumn)
                 # cached column might be invalid if user input deleted it
@@ -704,15 +736,32 @@ class MetricsTable(QTableWidget):
             # item.setTextAlignment(Qt.AlignCenter)
             return item
 
+        def getKern(previousGlyph, glyph):
+            if previousGlyph is None:
+                return ""
+            font = glyph.font
+            if font is None:
+                return 0
+            kerning = font.kerning
+            if kerning is None:
+                return 0
+            return kerning.find(previousGlyph, glyph)
+
         self._coloredColumn = None
         self.setColumnCount(len(self._glyphs) + 1)
+        prevGlyph = None
         for index, glyph in enumerate(self._glyphs):
             # TODO: see about allowing glyph name edit here
             self.setItem(0, index + 1, metricsTableItem(glyph.name, True))
             self.setItem(1, index + 1, metricsTableItem(glyph.width))
             self.setItem(2, index + 1, metricsTableItem(glyph.leftMargin))
             self.setItem(3, index + 1, metricsTableItem(glyph.rightMargin))
+            kValue = getKern(prevGlyph, glyph)
+            kDisabled = not (index and self._kerningEnabled)
+            # TODO: grey out cells when disabled
+            self.setItem(4, index + 1, metricsTableItem(kValue, kDisabled))
             self.setColumnWidth(index + 1, self._cellWidth)
+            prevGlyph = glyph
 
     # ----------
     # Qt methods

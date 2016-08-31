@@ -1,6 +1,7 @@
 from booleanOperations.booleanGlyph import BooleanGlyph
 from defcon import (
-    Font, Layer, Glyph, Contour, Point, Anchor, Component, Guideline, Image)
+    Font, Layer, Glyph, Groups, Kerning, Contour, Point, Anchor, Component,
+    Guideline, Image)
 from defcon.objects.base import BaseObject
 from fontTools.misc.transform import Identity
 from PyQt5.QtCore import pyqtSignal, QObject
@@ -24,6 +25,8 @@ class TFont(Font):
             ("glyphImageClass", TImage),
             ("guidelineClass", TGuideline),
             ("layerClass", TLayer),
+            ("groupsClass", TGroups),
+            ("kerningClass", TKerning),
         )
         for attr, defaultClass in attrs:
             if attr not in kwargs:
@@ -274,6 +277,28 @@ class TGlyph(Glyph):
 
     dirty = property(BaseObject._get_dirty, _set_dirty)
 
+    def _get_side1KerningGroup(self):
+        font = self.font
+        if font is None:
+            return
+        groups = font.groups
+        return groups.side1GroupForGlyphName(self.name)
+
+    side1KerningGroup = property(
+        _get_side1KerningGroup,
+        doc="The left side kerning group of the glyph.")
+
+    def _get_side2KerningGroup(self):
+        font = self.font
+        if font is None:
+            return
+        groups = font.groups
+        return groups.side2GroupForGlyphName(self.name)
+
+    side2KerningGroup = property(
+        _get_side2KerningGroup,
+        doc="The right side kerning group of the glyph.")
+
     def autoUnicodes(self):
         app = QApplication.instance()
         if app.GL2UV is not None:
@@ -359,6 +384,109 @@ class TGlyph(Glyph):
             component.snap(base)
         for anchor in self.anchors:
             anchor.snap(base)
+
+
+class TKerning(Kerning):
+
+    def find(self, firstGlyph, secondGlyph):
+        first = firstGlyph.name
+        second = secondGlyph.name
+        firstGroup = firstGlyph.side2KerningGroup
+        secondGroup = secondGlyph.side1KerningGroup
+        # make an ordered list of pairs to look up
+        pairs = [
+            (first, second),
+            (first, secondGroup),
+            (firstGroup, second),
+            (firstGroup, secondGroup)
+        ]
+        # look up the pairs and return any matches
+        for pair in pairs:
+            if pair in self:
+                return self[pair]
+        return 0
+
+    def write(self, firstGlyph, secondGlyph, value):
+        first = firstGlyph.name
+        second = secondGlyph.name
+        firstGroup = firstGlyph.side2KerningGroup
+        secondGroup = secondGlyph.side1KerningGroup
+        pairs = [
+            (first, second),
+            (first, secondGroup),
+            (firstGroup, second),
+            (firstGroup, secondGroup)
+        ]
+        for pair in pairs:
+            if pair in self:
+                self[pair] = value
+                return
+        self[pairs[3 if firstGroup and secondGroup else 0]] = value
+
+
+class TGroups(Groups):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _bootstrapGroupsCache(self):
+        self._buildGroupsCache()
+        # TODO: removeObserver
+        self.addObserver(self, "_groupSet", "Groups.GroupSet")
+        self.addObserver(self, "_groupDeleted", "Groups.GroupDeleted")
+        self.addObserver(self, "_buildGroupsCache", "Groups.Cleared")
+        self.addObserver(self, "_buildGroupsCache", "Groups.Updated")
+
+    def _buildGroupsCache(self, *_):
+        self._side1Groups = dict()
+        self._side2Groups = dict()
+        for group in self.keys():
+            if group.startswith("public.kern1."):
+                stor = self._side1Groups
+            elif group.startswith("public.kern2."):
+                stor = self._side2Groups
+            else:
+                continue
+            for glyphName in self[group]:
+                if glyphName is None:
+                    continue
+                stor[glyphName] = group
+
+    def _groupSet(self, notification):
+        group = notification.data["key"]
+        if group.startswith("public.kern1."):
+            stor = self._side1Groups
+        elif group.startswith("public.kern2"):
+            stor = self._side2Groups
+        else:
+            return
+        oldValue = set(notification.data["oldValue"])
+        value = set(notification.data["value"])
+        for delName in oldValue - value:
+            del stor[delName]
+        for addName in value - oldValue:
+            if addName is None:
+                continue
+            stor[addName] = group
+
+    def _groupDeleted(self, notification):
+        group = notification["key"]
+        if not group.startswith("public.kern"):
+            return
+        for stor in (self._side1Groups, self._side2Groups):
+            for glyphName, group_ in stor.items():
+                if group_ == group:
+                    del stor[glyphName]
+
+    def side1GroupForGlyphName(self, glyphName):
+        if not hasattr(self, "_side1Groups"):
+            self._bootstrapGroupsCache()
+        return self._side1Groups.get(glyphName)
+
+    def side2GroupForGlyphName(self, glyphName):
+        if not hasattr(self, "_side2Groups"):
+            self._bootstrapGroupsCache()
+        return self._side2Groups.get(glyphName)
 
 
 class TContour(Contour):
