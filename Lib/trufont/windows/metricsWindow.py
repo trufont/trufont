@@ -42,7 +42,6 @@ class MetricsWindow(BaseWindow):
         self.toolbar.glyphsChanged.connect(self.table.setGlyphs)
         self.toolbar.pointSizeChanged.connect(self.lineView.setPointSize)
         self.toolbar.settingsChanged.connect(self.lineView.setSettings)
-        self.toolbar.settingsChanged.connect(self._kerningVisibilityChanged)
         self.toolbar.settingsChanged.connect(
             lambda s: self.table.setKerningEnabled(s["showKerning"]))
         self.lineView.glyphActivated.connect(self._glyphActivated)
@@ -113,15 +112,6 @@ class MetricsWindow(BaseWindow):
         # parent
         glyphWindow = GlyphWindow(glyph, self.parent())
         glyphWindow.show()
-
-    def _kerningVisibilityChanged(self, settings):
-        if settings["showKerning"] == self.lineView.applyKerning():
-            return
-        # if showKerning was triggered, it won't apply until we pipe the glyphs
-        # again. do so
-        # TODO: lineView should deal with this on its own
-        glyphs = self.table.glyphs()
-        self.lineView.setGlyphRecords(glyphs)
 
     # ----------
     # Qt methods
@@ -247,7 +237,7 @@ class MetricsToolBar(QToolBar):
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px")
         self.toolsMenu = QMenu(self)
         self._showKerning = self.toolsMenu.addAction(
-            self.tr("Show Kerning"), self._controlsTriggered)
+            self.tr("Show Kerning"), self._kerningVisibilityChanged)
         self._showKerning.setCheckable(True)
         self._showMetrics = self.toolsMenu.addAction(
             self.tr("Show Metrics"), self._controlsTriggered)
@@ -312,6 +302,12 @@ class MetricsToolBar(QToolBar):
             wrapLines=self._wrapLines.isChecked(),
         )
         self.settingsChanged.emit(params)
+
+    def _kerningVisibilityChanged(self):
+        self._controlsTriggered()
+        # if showKerning was triggered, it won't apply until we pipe the glyphs
+        # again. do so
+        self._textChanged()
 
     def _sliderLineHeightChanged(self, value):
         QToolTip.showText(QCursor.pos(), str(value / 100), self)
