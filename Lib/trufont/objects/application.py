@@ -197,6 +197,8 @@ class Application(QApplication):
         # TODO: maybe move save in there and add save all and close
         recentFilesMenu = fileMenu.fetchMenu(Entries.File_Open_Recent)
         self.updateRecentFiles(recentFilesMenu)
+        if not platformSpecific.mergeOpenAndImport():
+            fileMenu.fetchAction(Entries.File_Import, self.importFile)
         fileMenu.fetchAction(Entries.File_Exit, self.exit)
 
         editMenu = menuBar.fetchMenu(Entries.Edit)
