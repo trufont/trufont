@@ -3,8 +3,7 @@ setuptools>=18.0
 -e git+https://github.com/unified-font-object/ufoLib.git#egg=ufoLib
 -e git+https://github.com/typesupply/defcon.git#egg=defcon
 -e git+https://github.com/trufont/defconQt.git#egg=defconQt
---find-links https://github.com/typemytype/booleanOperations/releases/latest
-booleanOperations
 -e git+https://github.com/typesupply/extractor.git#egg=extractor
 -e git+https://github.com/googlei18n/ufo2ft.git#egg=ufo2ft
+booleanOperations>=0.5.1
 husl
