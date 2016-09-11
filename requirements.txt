@@ -1,4 +1,3 @@
-setuptools>=18.0
 -e git+https://github.com/behdad/fonttools.git#egg=fonttools
 -e git+https://github.com/unified-font-object/ufoLib.git#egg=ufoLib
 -e git+https://github.com/typesupply/defcon.git#egg=defcon
