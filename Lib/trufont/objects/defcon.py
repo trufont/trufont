@@ -7,7 +7,6 @@ from fontTools.misc.transform import Identity
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
 from trufont.objects import settings
-import extractor
 import fontTools
 import math
 
@@ -84,6 +83,7 @@ class TFont(Font):
         return glyph
 
     def extract(self, path):
+        import extractor
         fileFormat = extractor.extractFormat(path)
         app = QApplication.instance()
         data = dict(
