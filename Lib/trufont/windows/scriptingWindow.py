@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
     QMessageBox, QPushButton, QShortcut, QSplitter, QStatusBar, QTreeView,
     QWidget, QVBoxLayout)
 from trufont.controls.clickLabel import ClickLabel
-from trufont.controls.closeMessageBox import CloseMessageBox
+from trufont.controls.fileMessageBoxes import CloseMessageBox
 from trufont.objects import settings
 from trufont.objects.menu import Entries
 from trufont.tools import platformSpecific
@@ -177,6 +177,8 @@ class ScriptingWindow(QMainWindow):
     # ----------
 
     def setWindowTitle(self, title):
+        if platformSpecific.appNameInTitle():
+            title += " – TruFont"
         super().setWindowTitle("[*]{}".format(title))
 
     def sizeHint(self):

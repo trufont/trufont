@@ -199,7 +199,8 @@ class Application(QApplication):
         self.updateRecentFiles(recentFilesMenu)
         if not platformSpecific.mergeOpenAndImport():
             fileMenu.fetchAction(Entries.File_Import, self.importFile)
-        fileMenu.fetchAction(Entries.File_Exit, self.exit)
+        fileMenu.fetchAction(Entries.File_Save_All, self.saveAll)
+        fileMenu.fetchAction(Entries.File_Exit, self.closeAll)
 
         editMenu = menuBar.fetchMenu(Entries.Edit)
         editMenu.fetchAction(Entries.Edit_Settings, self.settings)
@@ -387,7 +388,7 @@ class Application(QApplication):
     # ----------------
 
     def newFile(self):
-        font = TFont.newStandardFont()
+        font = TFont.new()
         window = FontWindow(font)
         window.show()
 
@@ -488,6 +489,21 @@ class Application(QApplication):
 
     def clearRecentFiles(self):
         settings.setRecentFiles([])
+
+    def saveAll(self):
+        for widget in self.topLevelWidgets():
+            if isinstance(widget, FontWindow):
+                widget.saveFile()
+
+    def closeAll(self):
+        for widget in self.topLevelWidgets():
+            if isinstance(widget, FontWindow):
+                widget.close()
+        # loop again to see if user kept font windows open
+        for widget in self.topLevelWidgets():
+            if isinstance(widget, FontWindow):
+                return
+        self.quit()
 
     # Edit
 

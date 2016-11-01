@@ -1,7 +1,7 @@
 from defconQt.controls.featureCodeEditor import FeatureCodeEditor
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
-from trufont.controls.closeMessageBox import CloseMessageBox
+from trufont.controls.fileMessageBoxes import CloseMessageBox
 from trufont.objects import settings
 from trufont.objects.menu import Entries
 
@@ -32,9 +32,9 @@ class FontFeaturesWindow(QMainWindow):
 
     def setupMenu(self, menuBar):
         fileMenu = menuBar.fetchMenu(Entries.File)
-        fileMenu.fetchAction(Entries.File_Save, self.save)
+        fileMenu.fetchAction(Entries.File_Save, self.saveFile)
         fileMenu.addSeparator()
-        fileMenu.fetchAction(Entries.File_Reload, self.reload)
+        fileMenu.fetchAction(Entries.File_Reload, self.reloadFile)
         fileMenu.fetchAction(Entries.File_Close, self.close)
 
     def updateWindowTitle(self, title=None, font=None):
@@ -42,7 +42,7 @@ class FontFeaturesWindow(QMainWindow):
             title = self.tr("Font Features")
         if font is None:
             font = self.font
-        text = self.tr("{0} - {1} {2}").format(
+        text = self.tr("{0} – {1} {2}").format(
             title, font.info.familyName, font.info.styleName)
         self.setWindowTitle("[*]" + text)
 
@@ -57,10 +57,10 @@ class FontFeaturesWindow(QMainWindow):
     # Menu methods
     # ------------
 
-    def save(self):
+    def saveFile(self):
         self.editor.write(self.font.features)
 
-    def reload(self):
+    def reloadFile(self):
         self.font.reloadFeatures()
         self.editor.setPlainText(self.font.features.text)
 
@@ -80,7 +80,7 @@ class FontFeaturesWindow(QMainWindow):
         if self.editor.document().isModified():
             ret = CloseMessageBox.getCloseDocument(self)
             if ret == QMessageBox.Save:
-                self.save()
+                self.saveFile()
                 event.accept()
             elif ret == QMessageBox.Discard:
                 event.accept()

@@ -103,8 +103,8 @@ class AddComponentDialog(FindDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle(self.tr("Add component…"))
-        self._sortedGlyphs.remove(args[0].name)
-        self.updateGlyphList(False)
+        self._sortedGlyphNames.remove(args[0].name)
+        self.updateGlyphList()
 
 
 class AddLayerDialog(QDialog):

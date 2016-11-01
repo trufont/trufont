@@ -1,6 +1,6 @@
 from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.windows.baseWindows import BaseMainWindow
-from trufont.controls.closeMessageBox import CloseMessageBox
+from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
 from trufont.objects import settings
 from trufont.objects.menu import Entries
@@ -26,7 +26,6 @@ class FontWindow(BaseMainWindow):
         super().__init__(parent)
         self._font = None
 
-        self._settingsWindow = None
         self._infoWindow = None
         self._featuresWindow = None
         self._metricsWindow = None
@@ -63,7 +62,7 @@ class FontWindow(BaseMainWindow):
         app.dispatcher.addObserver(self, "_fontSaved", "fontSaved")
 
         self.setCentralWidget(self.glyphCellView)
-        self.setWindowTitle()
+        self.updateWindowTitle()
 
         self.readSettings()
         self.cellSizeSlider.sliderReleased.connect(self.writeSettings)
@@ -92,6 +91,7 @@ class FontWindow(BaseMainWindow):
         fileMenu.addSeparator()
         fileMenu.fetchAction(Entries.File_Save, self.saveFile)
         fileMenu.fetchAction(Entries.File_Save_As, self.saveFileAs)
+        fileMenu.fetchAction(Entries.File_Save_All)
         fileMenu.fetchAction(Entries.File_Reload, self.reloadFile)
         fileMenu.addSeparator()
         fileMenu.fetchAction(Entries.File_Export, self.exportFile)
@@ -159,10 +159,16 @@ class FontWindow(BaseMainWindow):
         font.addObserver(
             self, "_sortDescriptorChanged", "Font.SortDescriptorChanged")
 
+    def fontTitle(self):
+        if self._font is None:
+            return None
+        if self._font.path is not None:
+            return os.path.basename(self._font.path.rstrip(os.sep))
+        return self.tr("Untitled.ufo")
+
     def maybeSaveBeforeExit(self):
         if self._font.dirty:
-            currentFont = self.windowTitle()[3:]
-            ret = CloseMessageBox.getCloseDocument(self, currentFont)
+            ret = CloseMessageBox.getCloseDocument(self, self.fontTitle())
             if ret == QMessageBox.Save:
                 self.saveFile()
                 return True
@@ -170,6 +176,13 @@ class FontWindow(BaseMainWindow):
                 return True
             return False
         return True
+
+    def updateWindowTitle(self, title=None):
+        if title is None:
+            title = self.fontTitle()
+        if platformSpecific.appNameInTitle():
+            title += " – TruFont"
+        self.setWindowTitle("[*]{}".format(title))
 
     # -------------
     # Notifications
@@ -241,7 +254,7 @@ class FontWindow(BaseMainWindow):
                     glyph = font[glyphName]
                     glyphCount += 1
                 else:
-                    glyph = font.newStandardGlyph(glyphName, asTemplate=True)
+                    glyph = font.get(glyphName, asTemplate=True)
                 glyphs.append(glyph)
             if glyphCount < len(font):
                 # if some glyphs in the font are not present in the glyph
@@ -297,12 +310,15 @@ class FontWindow(BaseMainWindow):
             nameFilter = dialog.selectedNameFilter()
             path = dialog.selectedFiles()[0]
             self.saveFile(path, fileFormats[nameFilter])
-            self.setWindowTitle()
+            self.updateWindowTitle()
         # return ok
 
     def reloadFile(self):
         font = self._font
-        if font.path is None:
+        # TODO: add font.binaryPath
+        if not font.dirty or font.path is None:
+            return
+        if not ReloadMessageBox.getReloadDocument(self, self.fontTitle()):
             return
         font.reloadInfo()
         font.reloadKerning()
@@ -310,7 +326,7 @@ class FontWindow(BaseMainWindow):
         font.reloadFeatures()
         font.reloadLib()
         font.reloadGlyphs(font.keys())
-        self.setWindowModified(False)
+        font.dirty = False
 
     def exportFile(self):
         path, _ = QFileDialog.getSaveFileName(
@@ -427,7 +443,7 @@ class FontWindow(BaseMainWindow):
         if ok:
             sortFont = params.pop("sortFont")
             for name in newGlyphNames:
-                glyph = self._font.newStandardGlyph(name, **params)
+                glyph = self._font.get(name, **params)
                 if glyph is not None:
                     glyphs.append(glyph)
             self.glyphCellView.setGlyphs(glyphs)
@@ -482,7 +498,7 @@ class FontWindow(BaseMainWindow):
         for action, slot in objects:
             try:
                 action.disconnect()
-            except:
+            except TypeError:
                 pass
             action.triggered.connect(slot)
         # now update status
@@ -549,14 +565,6 @@ class FontWindow(BaseMainWindow):
             if lastSelectedGlyph is not None:
                 app.setCurrentGlyph(lastSelectedGlyph)
         return super().event(event)
-
-    def setWindowTitle(self, title=None):
-        if title is None:
-            if self._font.path is not None:
-                title = os.path.basename(self._font.path.rstrip(os.sep))
-            else:
-                title = self.tr("Untitled.ufo")
-        super().setWindowTitle("[*]{}".format(title))
 
 
 class FontCellWidget(GlyphCellWidget):
