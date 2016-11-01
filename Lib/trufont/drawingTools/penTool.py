@@ -92,7 +92,9 @@ class PenTool(BaseTool):
         contour.insertPoint(index, pt.__class__((secondX, secondY)))
         # add the first of two offCurves
         if self._stashedOffCurve is not None:
-            contour.insertPoint(index, self._stashedOffCurve)
+            offCurve, onSmooth = self._stashedOffCurve
+            otherPt.smooth = index - 1 and onSmooth
+            contour.insertPoint(index, offCurve)
             self._stashedOffCurve = None
         else:
             firstX = otherPt.x + round(.35 * (pt.x - otherPt.x))
@@ -125,11 +127,10 @@ class PenTool(BaseTool):
             self._shouldMoveOnCurve = False
 
     def mousePressEvent(self, event):
-        self._origin = canvasPos = event.localPos()
-        x, y = canvasPos.x(), canvasPos.y()
+        self._origin = event.localPos()
         widget = self.parent()
         candidate = self._getSelectedCandidatePoint()
-        itemTuple = widget.itemAt(canvasPos)
+        itemTuple = widget.itemAt(self._origin)
         self._glyph.prepareUndo()
         # if we clicked on an item, see if we should join the current contour
         if itemTuple is not None:
@@ -141,7 +142,8 @@ class PenTool(BaseTool):
                     item.segmentType = "line"
                 else:
                     parent.removePoint(lastPoint)
-                    self._stashedOffCurve = lastPoint
+                    self._stashedOffCurve = (lastPoint, parent[-1].smooth)
+                    parent[-1].smooth = False
                 item.segmentType = "line"
                 item.selected = True
                 item.smooth = False
@@ -150,6 +152,8 @@ class PenTool(BaseTool):
                 candidate.dirty = True
                 self._targetContour = candidate
                 return
+        canvasPos = event.pos()
+        x, y = canvasPos.x(), canvasPos.y()
         # otherwise, add a point to current contour if applicable
         if candidate is not None:
             contour = candidate
@@ -157,11 +161,12 @@ class PenTool(BaseTool):
             lastPoint.selected = False
             if event.modifiers() & Qt.ShiftModifier:
                 pos = self.clampToOrigin(
-                    canvasPos, QPointF(lastPoint.x, lastPoint.y))
+                    self._origin, QPointF(lastPoint.x, lastPoint.y)).toPoint()
                 x, y = pos.x(), pos.y()
             if not lastPoint.segmentType:
                 contour.removePoint(lastPoint)
-                self._stashedOffCurve = lastPoint
+                self._stashedOffCurve = (lastPoint, contour[-1].smooth)
+                contour[-1].smooth = False
             pointType = "line"
         # or create a new one
         else:
@@ -181,7 +186,7 @@ class PenTool(BaseTool):
         if contour is None:
             return
         # we don't make any check here, mousePressEvent did it for us
-        pos = event.localPos()
+        pos = event.pos()
         # selected point
         pt = contour[-1]
         if not contour.open:
@@ -191,18 +196,18 @@ class PenTool(BaseTool):
         if pt.segmentType and not self._shouldMoveOnCurve:
             # don't make a curve until enough distance is reached
             widget = self.parent()
-            rect = QRectF(self._origin, pos)
+            rect = QRectF(self._origin, event.localPos())
             widgetRect = widget.mapRectFromCanvas(rect)
             if (widgetRect.bottomRight() - widgetRect.topLeft(
                     )).manhattanLength() < 10:
                 return
             # go
+            onSmooth = not event.modifiers() & Qt.AltModifier
             pt.selected = False
-            pt.smooth = not event.modifiers() & Qt.AltModifier
+            pt.smooth = len(contour) > 1 and onSmooth
             contour.holdNotifications()
-            if pt.segmentType == "line":
+            if pt.segmentType == "line" and onSmooth:
                 self._coerceSegmentToCurve(contour, pt, pos)
-            # TODO: defer this if Alt is pressed
             elif pt.smooth and contour.open:
                 # if there's a curve segment behind, we need to update the
                 # offCurve's position to inverse
@@ -225,7 +230,7 @@ class PenTool(BaseTool):
                 onCurve = contour[0]
             if event.modifiers() & Qt.ShiftModifier:
                 pos = self.clampToOrigin(
-                    pos, QPointF(onCurve.x, onCurve.y))
+                    event.localPos(), QPointF(onCurve.x, onCurve.y)).toPoint()
             if self._shouldMoveOnCurve:
                 dx = pos.x() - pt.x
                 dy = pos.y() - pt.y

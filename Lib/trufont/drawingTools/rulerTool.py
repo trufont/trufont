@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QLineF, QPointF, Qt
-from PyQt5.QtGui import QPainterPath
+from PyQt5.QtGui import QColor, QPainterPath
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import drawing
@@ -22,65 +22,68 @@ class RulerTool(BaseTool):
     def mousePressEvent(self, event):
         pos = self.magnetPos(event.localPos())
         x, y = pos.x(), pos.y()
-        path = QPainterPath()
-        path.moveTo(x, y)
-        path.lineTo(x + 1, y)
-        path.lineTo(x + 1, y + 1)
-        path.closeSubpath()
-        text = "0"
-        self._rulerObject = (path, text)
+        line = QLineF(x, y, x, y)
+        self._rulerObject = (line, "0", "0.0º")
+        self.parent().update()
 
     def mouseMoveEvent(self, event):
-        path, text = self._rulerObject
-        baseElem = path.elementAt(0)
+        if self._rulerObject is None:
+            return
+        line, _, _ = self._rulerObject
         canvasPos = event.localPos()
-        if event.modifiers() & Qt.ShiftModifier:
-            basePos = QPointF(baseElem.x, baseElem.y)
-            canvasPos = self.clampToOrigin(canvasPos, basePos)
+        # magnet before clamping to axis
         canvasPos = self.magnetPos(canvasPos)
-        x, y = canvasPos.x(), canvasPos.y()
-        path.setElementPositionAt(1, x, baseElem.y)
-        path.setElementPositionAt(2, x, y)
-        path.setElementPositionAt(3, baseElem.x, baseElem.y)
-        line = QLineF(baseElem.x, baseElem.y, x, y)
-        l = line.length()
+        if event.modifiers() & Qt.ShiftModifier:
+            canvasPos = self.clampToOrigin(canvasPos, line.p1())
+        line.setP2(canvasPos)
+        d = str(round(line.length(), 1))
         # angle() doesnt go by trigonometric direction. Weird.
-        # TODO: maybe split in positive/negative 180s (ff)
-        a = 360 - line.angle()
-        line.setP2(QPointF(x, baseElem.y))
-        h = line.length()
-        line.setP1(QPointF(x, y))
-        v = line.length()
-        text = "%d\n↔ %d\n↕ %d\nα %dº" % (l, h, v, a)
-        self._rulerObject = (path, text)
+        angle = line.angle()
+        angle = 360 * (angle >= 180) - angle
+        a = "{}º".format(round(angle, 1))
+        self._rulerObject = (line, d, a)
         self.parent().update()
 
     def mouseReleaseEvent(self, event):
         # double click calls release twice
         if self._rulerObject is None:
             return
-        text = self._rulerObject[1]
-        if text == "0":
+        line = self._rulerObject[0]
+        if not line.length():
             # delete no-op ruler
             self.toolDisabled()
 
     # custom painting
 
     def paint(self, painter):
+        widget = self.parent()
+        scale = widget.inverseScale()
+        # metrics
         if self._rulerObject is not None:
-            path, text = self._rulerObject
-            painter.drawPath(path)
-            baseElem = path.elementAt(0)
-            cursorElem = path.elementAt(2)
-            # work out text alignment
-            # we need to find out which quadrant the ruler is operating in
-            xAlign, yAlign = "left", "bottom"
-            dx = cursorElem.x - baseElem.x
+            line, d, a = self._rulerObject
+            origin = line.p1()
+            cursor = line.p2()
+            sz = 8 * scale
+            color = QColor(140, 193, 255, 170)
+
+            # line
+            painter.save()
+            painter.setPen(color)
+            drawing.drawLine(
+                painter, origin.x(), origin.y(), cursor.x(), cursor.y(), scale)
+            path = QPainterPath()
+            path.addEllipse(origin.x() - sz / 2, origin.y() - sz / 2, sz, sz)
+            path.addEllipse(cursor.x() - sz / 2, cursor.y() - sz / 2, sz, sz)
+            painter.fillPath(path, color)
+            painter.restore()
+            # text
+            xAlign = yAlign = "center"
+            pos = (origin + cursor) / 2
+            drawing.drawTextAtPoint(
+                painter, d, pos.x(), pos.y(), scale, xAlign, yAlign)
+            xAlign, yAlign = "left", "top"
+            dx = cursor.x() - origin.x()
             if dx < 0:
                 xAlign = "right"
-            dy = cursorElem.y - baseElem.y
-            if dy <= 0:
-                yAlign = "top"
             drawing.drawTextAtPoint(
-                painter, text, cursorElem.x, baseElem.y,
-                self.parent()._inverseScale, xAlign, yAlign)
+                painter, a, cursor.x(), cursor.y(), scale, xAlign, yAlign)

@@ -2,7 +2,7 @@
 UI-constrained point management methods.
 """
 from trufont.tools import bezierMath
-from PyQt5.QtCore import QLineF
+from PyQt5.QtCore import QLineF, QPointF
 import itertools
 import math
 
@@ -10,28 +10,36 @@ import math
 def _getOffCurveSiblingPoints(contour, point):
     index = contour.index(point)
     pts = []
+    # edge-cases: open contour boundaries and 3 offCurves+ qCurve segment
+    shouldMoveAnyway = False
+    onlyOffCurves = True
     for d in (-1, 1):
         sibling = contour.getPoint(index + d)
+        if sibling.segmentType is not None:
+            onlyOffCurves = False
         if sibling.selected:
             continue
         if sibling.segmentType is not None:
             sSibling = contour.getPoint(index + 2 * d)
             curPts = (sibling, sSibling)
             if contour.open and any(pt == contour[0] for pt in curPts):
+                shouldMoveAnyway = True
                 continue
             pts.append(curPts)
-    return pts
+    if onlyOffCurves:
+        shouldMoveAnyway = True
+    return pts, shouldMoveAnyway
 
 
-def maybeProjectUISmoothPointOffcurve(contour, onCurve):
+def maybeProjectUISmoothPointOffcurve(contour, onCurve, delta):
     if not onCurve.smooth:
         return
     index = contour.index(onCurve)
     if contour.open and index in (0, len(contour) - 1):
         return
     offCurve, otherPoint = None, None
-    for delta in (-1, 1):
-        pt = contour.getPoint(index + delta)
+    for d in (-1, 1):
+        pt = contour.getPoint(index + d)
         if pt.segmentType is None:
             if offCurve is not None:
                 return
@@ -39,47 +47,50 @@ def maybeProjectUISmoothPointOffcurve(contour, onCurve):
         else:
             if otherPoint is not None:
                 return
-            otherPoint = pt
+            px, py = pt.x, pt.y
+            if d == 1:
+                # this point hasn't been moved yet. add the delta
+                dx, dy = delta
+                px += dx
+                py += dy
+            otherPoint = (px, py)
     if None not in (offCurve, otherPoint):
-        # target angle: take the other onCurve's angle and add pi
-        dy, dx = otherPoint.y - onCurve.y, otherPoint.x - onCurve.x
-        angle = math.atan2(dy, dx) + math.pi
-        # subtract the offCurve's angle
-        dy, dx = offCurve.y - onCurve.y, offCurve.x - onCurve.x
-        angle -= math.atan2(dy, dx)
-        c, s = math.cos(angle), math.sin(angle)
-        # rotate by our newly found angle
-        # http://stackoverflow.com/a/2259502
-        offCurve.x -= onCurve.x
-        offCurve.y -= onCurve.y
-        nx = offCurve.x * c - offCurve.y * s
-        ny = offCurve.x * s + offCurve.y * c
-        offCurve.x = nx + onCurve.x
-        offCurve.y = ny + onCurve.y
-        contour.dirty = True
+        px, py = otherPoint
+        rotateUIPointAroundRefLine(px, py, onCurve.x, onCurve.y, offCurve)
+
+
+def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
+    """
+    Given three points p1, p2, pt this rotates pt around p2 such that p1,p2 and p1,pt
+    are collinear.
+    """
+    line = QLineF(pt.x, pt.y, x2, y2)
+    p2p_l = line.length()
+    line.setP1(QPointF(x1, y1))
+    p1p2_l = line.length()
+    if not p1p2_l:
+        return
+    line.setLength(p1p2_l + p2p_l)
+    pt.x = line.x2()
+    pt.y = line.y2()
 
 
 def moveUIPoint(contour, point, delta):
     if point.segmentType is None:
         # point is an offCurve. Get its sibling onCurve and the other
         # offCurve.
-        siblings = _getOffCurveSiblingPoints(contour, point)
+        siblings, shouldMoveAnyway = _getOffCurveSiblingPoints(contour, point)
         # if an onCurve is selected, the offCurve will move along with it
-        if not siblings:
+        if not (siblings or shouldMoveAnyway):
             return
         point.move(delta)
         for onCurve, otherPoint in siblings:
-            if not onCurve.smooth:
+            if not onCurve.smooth or otherPoint.selected:
                 continue
             # if the onCurve is smooth, we need to either...
-            if otherPoint.segmentType is None and not otherPoint.selected:
+            if otherPoint.segmentType is None:
                 # keep the other offCurve inline
-                line = QLineF(point.x, point.y, onCurve.x, onCurve.y)
-                otherLine = QLineF(
-                    onCurve.x, onCurve.y, otherPoint.x, otherPoint.y)
-                line.setLength(line.length() + otherLine.length())
-                otherPoint.x = line.x2()
-                otherPoint.y = line.y2()
+                rotateUIPointAroundRefLine(point.x, point.y, onCurve.x, onCurve.y, otherPoint)
             else:
                 # keep point in tangency with onCurve -> otherPoint segment,
                 # i.e. do an orthogonal projection
@@ -104,7 +115,7 @@ def moveUIPoint(contour, point, delta):
                             otherPt.segmentType != "move" and otherPt.selected:
                         continue
                 pt.move(delta)
-                maybeProjectUISmoothPointOffcurve(contour, point)
+                maybeProjectUISmoothPointOffcurve(contour, point, delta)
     contour.dirty = True
 
 
