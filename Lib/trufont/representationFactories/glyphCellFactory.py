@@ -1,6 +1,7 @@
 from defconQt.representationFactories.glyphCellFactory import (
     GlyphCellFactoryDrawingController, GlyphCellHeaderHeight,
     GlyphCellMinHeightForHeader, GlyphCellMinHeightForMetrics)
+from defconQt.tools import platformSpecific
 from PyQt5.QtCore import Qt
 
 
@@ -39,7 +40,7 @@ class TFGlyphCellFactoryDrawingController(GlyphCellFactoryDrawingController):
     def drawCellForeground(self, painter, rect):
         if self.shouldDrawTemplate and self.glyph.template:
             painter.save()
-            font = painter.font()
+            font = platformSpecific.otherUIFont()
             font.setPointSize(.425 * self.height)
             painter.setFont(font)
             painter.setPen(Qt.lightGray)

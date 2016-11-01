@@ -33,13 +33,13 @@ class TFont(Font):
         super().__init__(*args, **kwargs)
 
     @classmethod
-    def newStandardFont(cls):
+    def new(cls):
         font = cls()
         font.info.unitsPerEm = 1000
         font.info.ascender = 750
-        font.info.descender = -250
-        font.info.capHeight = 750
+        font.info.capHeight = 700
         font.info.xHeight = 500
+        font.info.descender = -250
 
         defaultGlyphSet = settings.defaultGlyphSet()
         if defaultGlyphSet:
@@ -49,7 +49,7 @@ class TFont(Font):
                 glyphNames = glyphSets[defaultGlyphSet]
             if glyphNames is not None:
                 for name in glyphNames:
-                    font.newStandardGlyph(name, asTemplate=True)
+                    font.get(name, asTemplate=True)
         font.dirty = False
 
         app = QApplication.instance()
@@ -58,29 +58,8 @@ class TFont(Font):
 
         return font
 
-    # TODO: maybe take this out of the class
-    def newStandardGlyph(self, name, override=False, addUnicode=True,
-                         asTemplate=False, markColor=None, width=500):
-        if not override:
-            if name in self:
-                return None
-        glyph = self.newGlyph(name)
-        if asTemplate:
-            glyph.disableNotifications()
-        glyph.width = width
-        if addUnicode:
-            glyph.autoUnicodes()
-        glyph.template = asTemplate
-        if asTemplate:
-            glyph.dirty = False
-            glyph.enableNotifications()
-        glyph.markColor = markColor
-
-        app = QApplication.instance()
-        data = dict(glyph=glyph)
-        app.postNotification("newGlyphCreated", data)
-
-        return glyph
+    def get(self, name, **kwargs):
+        return self._glyphSet.get(name, **kwargs)
 
     def extract(self, path):
         import extractor
@@ -138,21 +117,21 @@ class TFont(Font):
     def _get_sortDescriptor(self):
         # TODO: I'd use defcon sortDescriptor but there is no hard
         # standard for glyphList
-        value = self.lib.get("com.trufont.sortDescriptor", None)
+        value = self.lib.get("com.typesupply.defcon.sortDescriptor", None)
         if value is not None:
             value = list(value)
         return value
 
     def _set_sortDescriptor(self, value):
-        oldValue = self.lib.get("com.trufont.sortDescriptor")
+        oldValue = self.lib.get("com.typesupply.defcon.sortDescriptor")
         if oldValue == value:
             return
         if value is None or len(value) == 0:
             value = None
-            if "com.trufont.sortDescriptor" in self.lib:
-                del self.lib["com.trufont.sortDescriptor"]
+            if "com.typesupply.defcon.sortDescriptor" in self.lib:
+                del self.lib["com.typesupply.defcon.sortDescriptor"]
         else:
-            self.lib["com.trufont.sortDescriptor"] = value
+            self.lib["com.typesupply.defcon.sortDescriptor"] = value
         self.postNotification("Font.SortDescriptorChanged",
                               data=dict(oldValue=oldValue, newValue=value))
 
@@ -161,6 +140,30 @@ class TFont(Font):
 
 
 class TLayer(Layer):
+
+    # TODO: maybe take this out of the class
+    def get(self, name, override=False, addUnicode=True,
+                         asTemplate=False, markColor=None, width=600):
+        if not override:
+            if name in self:
+                return None
+        glyph = self.newGlyph(name)
+        if asTemplate:
+            glyph.disableNotifications()
+        glyph.width = width
+        if addUnicode:
+            glyph.autoUnicodes()
+        glyph.template = asTemplate
+        if asTemplate:
+            glyph.dirty = False
+            glyph.enableNotifications()
+        glyph.markColor = markColor
+
+        app = QApplication.instance()
+        data = dict(glyph=glyph)
+        app.postNotification("newGlyphCreated", data)
+
+        return glyph
 
     def saveGlyph(self, glyph, glyphSet, saveAs=False):
         if not glyph.template:
@@ -470,7 +473,7 @@ class TGroups(Groups):
             stor[addName] = group
 
     def _groupDeleted(self, notification):
-        group = notification["key"]
+        group = notification.data["key"]
         if not group.startswith("public.kern"):
             return
         for stor in (self._side1Groups, self._side2Groups):

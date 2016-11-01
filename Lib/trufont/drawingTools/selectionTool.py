@@ -141,22 +141,42 @@ class SelectionTool(BaseTool):
         raise IndexError
 
     def _moveOnCurveAlongHandles(self, contour, pt, x, y):
-        # TODO: offCurves
-        if pt.segmentType is not None and pt.smooth and len(contour) >= 3:
+        ret = False
+        if pt.segmentType is not None:
+            if pt.smooth and len(contour) >= 3:
+                index = contour.index(pt)
+                prevCP = contour.getPoint(index - 1)
+                nextCP = contour.getPoint(index + 1)
+                # we need at least one offCurve so that it makes sense
+                # slide the onCurve around
+                if prevCP.segmentType is None or nextCP.segmentType is None:
+                    projX, projY, _ = bezierMath.lineProjection(
+                        prevCP.x, prevCP.y, nextCP.x, nextCP.y, x, y, False)
+                    # short-circuit UIMove because we're only moving this point
+                    pt.x = projX
+                    pt.y = projY
+                    ret = True
+            else:
+                # non-smooth onCurve we just move, not moving any other point
+                pt.x = x
+                pt.y = y
+                ret = True
+        else:
             index = contour.index(pt)
-            prevCP = contour.getPoint(index - 1)
-            nextCP = contour.getPoint(index + 1)
-            # we need at least one offCurve so that it makes sense
-            # slide the onCurve around
-            if prevCP.segmentType is None or nextCP.segmentType is None:
-                projX, projY, _ = bezierMath.lineProjection(
-                    prevCP.x, prevCP.y, nextCP.x, nextCP.y, x, y, False)
-                # short-circuit UIMove because we're only moving this point
-                pt.x = projX
-                pt.y = projY
-                contour.dirty = True
-                return True
-        return False
+            onCurve = None
+            for delta in (-1, 1):
+                pt_ = contour.getPoint(index + delta)
+                if pt_.segmentType is not None:
+                    onCurve = pt_
+            if onCurve is not None:
+                # keep new pt tangent to onCurve -> pt segment,
+                # i.e. do an orthogonal projection
+                pt.x, pt.y, _ = bezierMath.lineProjection(
+                    onCurve.x, onCurve.y, pt.x, pt.y, x, y, False)
+                ret = True
+        if ret:
+            contour.dirty = True
+        return ret
 
     def _findSegmentUnderMouse(self, pos, action=None):
         scale = self.parent().inverseScale()
@@ -167,7 +187,7 @@ class SelectionTool(BaseTool):
                     dist = bezierMath.lineDistance(
                         prev.x, prev.y, point.x, point.y, pos.x(), pos.y())
                     # TODO: somewhat arbitrary
-                    if dist < 5 * scale:
+                    if dist <= 3 * scale:
                         return [prev, point], contour
                 elif point.segmentType in ("curve", "qcurve"):
                     if action == "insert":
@@ -378,6 +398,19 @@ class SelectionTool(BaseTool):
                 newPoint.selected = True
                 contour.postNotification(
                     notification="Contour.SelectionChanged")
+        elif key == Qt.Key_Return:
+            changed = False
+            for contour in self._glyph:
+                for index, point in enumerate(contour):
+                    if point.segmentType is not None:
+                        if all(contour.getPoint(
+                                index + d).segmentType for d in (-1, 1)):
+                            continue
+                        if not changed:
+                            self._glyph.prepareUndo()
+                            changed = True
+                        point.smooth = not point.smooth
+                    contour.dirty = True
 
     def mousePressEvent(self, event):
         if event.button() & Qt.RightButton:
@@ -411,14 +444,14 @@ class SelectionTool(BaseTool):
                     unselectUIGlyphElements(self._glyph)
                 self._performSegmentClick(pos, action, segmentTuple)
             else:
-                self._shouldMove = True
+                self._shouldMove = self._shouldPrepareUndo = True
         widget.update()
 
     def mouseMoveEvent(self, event):
-        canvasPos = event.localPos()
         glyph = self._glyph
         widget = self.parent()
         if self._shouldMove or self._itemTuple is not None:
+            canvasPos = event.pos()
             if self._shouldPrepareUndo:
                 self._glyph.prepareUndo()
                 self._shouldPrepareUndo = False
@@ -450,6 +483,7 @@ class SelectionTool(BaseTool):
             moveUIGlyphElements(glyph, dx, dy)
             self._prevPos = canvasPos
         else:
+            canvasPos = event.localPos()
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
             items = widget.items(self._rubberBandRect)
             points = set(items["points"])
@@ -483,6 +517,10 @@ class SelectionTool(BaseTool):
             else:
                 point, contour = item, parent
                 if point.segmentType is not None:
+                    index = contour.index(point)
+                    if all(contour.getPoint(index + d).segmentType for d in (
+                            -1, 1)):
+                        return
                     self._glyph.prepareUndo()
                     point.smooth = not point.smooth
                     contour.dirty = True

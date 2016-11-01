@@ -1,3 +1,11 @@
+"""
+Windows that want to plug-in their own menu entries must implement
+
+- setupMenu(menuBar)
+- menuBar()
+- setMenuBar(menuBar)
+
+"""
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMenuBar
 from trufont.tools import platformSpecific
@@ -97,7 +105,7 @@ class Entries(object):
     File_Save_As = "Save &As…"
     File_Save_All = "Save A&ll"
     File_Close = "&Close"
-    File_Reload = "&Revert to Saved"
+    File_Reload = "&Revert"
     File_Export = "&Export…"
     File_Exit = "E&xit"
 
@@ -214,8 +222,8 @@ def globalMenuBar():
     editMenu.fetchAction(Entries.Edit_Paste)
     editMenu.fetchAction(Entries.Edit_Clear)
     editMenu.fetchAction(Entries.Edit_Select_All)
-    editMenu.addSeparator()
     editMenu.fetchAction(Entries.Edit_Find)
+    editMenu.addSeparator()
     editMenu.fetchAction(Entries.Edit_Settings)
     menuBar.addMenu(editMenu)
 

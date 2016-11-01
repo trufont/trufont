@@ -72,6 +72,12 @@ def windowCommandsInMenu():
 # -----------
 
 
+def appNameInTitle():
+    if sys.platform == "darwin":
+        return False
+    return True
+
+
 def shouldSpawnDocument():
     return sys.platform != "darwin"
 

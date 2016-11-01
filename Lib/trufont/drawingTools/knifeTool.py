@@ -3,7 +3,7 @@ from PyQt5.QtCore import QLineF, Qt
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.tools import bezierMath
+from trufont.tools import bezierMath, drawing
 
 
 class KnifeTool(BaseTool):
@@ -34,6 +34,8 @@ class KnifeTool(BaseTool):
         self._knifeLine = QLineF(canvasPos, canvasPos)
 
     def mouseMoveEvent(self, event):
+        if self._knifeLine is None:
+            return
         line = self._knifeLine
         pos = event.localPos()
         widget = self.parent()
@@ -88,7 +90,14 @@ class KnifeTool(BaseTool):
     # custom painting
 
     def paint(self, painter):
-        if self._knifeLine is not None and self._knifeLine.length():
-            painter.drawLine(self._knifeLine)
+        line = self._knifeLine
+        if line is not None and line.length():
+            painter.save()
+            pen = painter.pen()
+            pen.setWidth(0)
+            painter.setPen(pen)
+            drawing.drawLine(
+                painter, line.x1(), line.y1(), line.x2(), line.y2())
             if self._knifeDots is not None:
                 painter.drawPath(self._knifeDots)
+            painter.restore()

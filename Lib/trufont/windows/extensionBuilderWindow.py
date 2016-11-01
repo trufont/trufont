@@ -1,5 +1,5 @@
 from defconQt.controls.listView import ListView
-from PyQt5.QtCore import QRegularExpression
+from PyQt5.QtCore import QRegularExpression, QSize
 from PyQt5.QtGui import QRegularExpressionValidator
 from PyQt5.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
@@ -137,3 +137,10 @@ class ExtensionBuilderWindow(QDialog):
         model = self.addScriptsView.model()
         for i in range(len(elements)):
             self.addScriptsView.openPersistentEditor(model.index(i, 0))
+
+    # ----------
+    # Qt methods
+    # ----------
+
+    def sizeHint(self):
+        return QSize(580, 480)

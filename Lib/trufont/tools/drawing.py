@@ -58,15 +58,16 @@ def defaultColor(name):
 # ----------
 
 
-def drawLine(painter, x1, y1, x2, y2, lineWidth=1.0):
+def drawLine(painter, x1, y1, x2, y2, lineWidth=0):
     painter.save()
-    turnOffAntiAliasing = x1 == x2 or y1 == y2
-    if turnOffAntiAliasing:
-        painter.setRenderHint(QPainter.Antialiasing, False)
-        if lineWidth == 1.0:
-            # cosmetic pen
-            lineWidth = 0
     pen = painter.pen()
+    if x1 == x2 or y1 == y2:
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        # antialiased drawing blend a little in color with the background
+        # reduce alpha before drawing aliased
+        color = pen.color()
+        color.setAlphaF(.9 * color.alphaF())
+        pen.setColor(color)
     pen.setWidthF(lineWidth)
     painter.setPen(pen)
     painter.drawLine(QPointF(x1, y1), QPointF(x2, y2))
@@ -78,14 +79,11 @@ def drawGlyphWithAliasedLines(painter, glyph):
         "TruFont.SplitLinesQPainterPath")
     painter.drawPath(curvePath)
     painter.save()
-    # antialiased drawing blend a little in color with the background
-    # reduce alpha before drawing aliased
     pen = painter.pen()
     color = pen.color()
-    color.setAlphaF(.75 * color.alphaF())
+    color.setAlphaF(.9 * color.alphaF())
     pen.setColor(color)
     painter.setPen(pen)
-    # TODO: maybe switch to QLineF for this repr
     for x1, y1, x2, y2 in lines:
         drawLine(painter, x1, y1, x2, y2, painter.pen().widthF())
     painter.restore()
@@ -130,13 +128,13 @@ def drawGlyphGuidelines(painter, glyph, scale, rect, drawLines=True,
 
 
 def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
-                    drawText=True, color=None):
+                    drawText=True, drawSelection=True, color=None):
     if not (drawLines or drawText):
         return
     xMin, yMin, width, height = rect
     xMax = xMin + width
     yMax = yMin + height
-    fontSize = 9
+    fontSize = painter.font().pointSize()
     for line in guidelines:
         color_ = color
         if color_ is None:
@@ -181,7 +179,7 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
                 pen = QPen(color_)
                 pen.setWidthF(1 * scale)
                 painter.setPen(pen)
-                if line.selected:
+                if drawSelection and line.selected:
                     painter.fillPath(pointPath, color_)
                 painter.drawPath(pointPath)
                 painter.restore()
@@ -210,7 +208,8 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
 # Image
 
 
-def drawGlyphImage(painter, glyph, scale, rect, selectionColor=None):
+def drawGlyphImage(
+        painter, glyph, scale, rect, drawSelection=True, selectionColor=None):
     image = glyph.image
     pixmap = image.getRepresentation("defconQt.QPixmap")
     if pixmap is None:
@@ -224,9 +223,9 @@ def drawGlyphImage(painter, glyph, scale, rect, selectionColor=None):
     painter.scale(1, -1)
     painter.drawPixmap(0, 0, pixmap)
     painter.restore()
-    if image.selected:
+    if drawSelection and image.selected:
         pen = QPen(selectionColor)
-        pen.setWidthF(5.0 * scale)
+        pen.setWidthF(3.5 * scale)
         painter.setPen(pen)
         painter.drawRect(pixmap.rect())
     painter.restore()
@@ -271,7 +270,7 @@ def drawGlyphFillAndStroke(
     # selection
     if drawSelection:
         pen = QPen(selectionColor)
-        pen.setWidthF(5.0 * scale)
+        pen.setWidthF(3.5 * scale)
         painter.setPen(pen)
         painter.drawPath(selectionPath)
     # stroke
