@@ -4,7 +4,6 @@ UI-constrained point management methods.
 from trufont.tools import bezierMath
 from PyQt5.QtCore import QLineF, QPointF
 import itertools
-import math
 
 
 def _getOffCurveSiblingPoints(contour, point):
@@ -61,8 +60,8 @@ def maybeProjectUISmoothPointOffcurve(contour, onCurve, delta):
 
 def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
     """
-    Given three points p1, p2, pt this rotates pt around p2 such that p1,p2 and p1,pt
-    are collinear.
+    Given three points p1, p2, pt this rotates pt around p2 such that p1,p2 and
+    p1,pt are collinear.
     """
     line = QLineF(pt.x, pt.y, x2, y2)
     p2p_l = line.length()
@@ -90,7 +89,8 @@ def moveUIPoint(contour, point, delta):
             # if the onCurve is smooth, we need to either...
             if otherPoint.segmentType is None:
                 # keep the other offCurve inline
-                rotateUIPointAroundRefLine(point.x, point.y, onCurve.x, onCurve.y, otherPoint)
+                rotateUIPointAroundRefLine(
+                    point.x, point.y, onCurve.x, onCurve.y, otherPoint)
             else:
                 # keep point in tangency with onCurve -> otherPoint segment,
                 # i.e. do an orthogonal projection

@@ -46,7 +46,7 @@ class TabTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, methodName)
 
     def setUp(self):
-        self.font = TFont.newStandardFont()
+        self.font = TFont.new()
 
         self.mainWindow = FontWindow(self.font)
         self.mainWindow.fontInfo()
@@ -361,7 +361,7 @@ class GeneralTabTest(TabTestCase):
         self.checkIntegerFloat("descender", -250)
 
     def test_capHeight(self):
-        self.checkIntegerFloat("capHeight", 750)
+        self.checkIntegerFloat("capHeight", 700)
 
     def test_xHeight(self):
         self.checkIntegerFloat("xHeight", 500)

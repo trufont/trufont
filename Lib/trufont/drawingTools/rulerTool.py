@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QLineF, QPointF, Qt
+from PyQt5.QtCore import QLineF, Qt
 from PyQt5.QtGui import QColor, QPainterPath
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
@@ -24,7 +24,6 @@ class RulerTool(BaseTool):
         x, y = pos.x(), pos.y()
         line = QLineF(x, y, x, y)
         self._rulerObject = (line, "0", "0.0º")
-        self.parent().update()
 
     def mouseMoveEvent(self, event):
         if self._rulerObject is None:
