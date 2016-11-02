@@ -30,7 +30,7 @@ def _getOffCurveSiblingPoints(contour, point):
     return pts, shouldMoveAnyway
 
 
-def maybeProjectUISmoothPointOffcurve(contour, onCurve, delta):
+def maybeProjectUISmoothPointOffcurve(contour, onCurve, delta=None):
     if not onCurve.smooth:
         return
     index = contour.index(onCurve)
@@ -47,7 +47,7 @@ def maybeProjectUISmoothPointOffcurve(contour, onCurve, delta):
             if otherPoint is not None:
                 return
             px, py = pt.x, pt.y
-            if d == 1:
+            if d == 1 and delta is not None:
                 # this point hasn't been moved yet. add the delta
                 dx, dy = delta
                 px += dx

@@ -30,7 +30,6 @@ class GlyphWindow(BaseMainWindow):
 
         self.view = GlyphCanvasView(self)
         # create tools and buttons toolBars
-        # TODO: switch to ButtonToolBar
         self._tools = []
         self._toolsToolBar = QToolBar(self.tr("Tools"), self)
         self._toolsToolBar.setMovable(False)

@@ -141,11 +141,11 @@ class TFont(Font):
 
 class TLayer(Layer):
 
-    # TODO: maybe take this out of the class
-    def get(self, name, override=False, addUnicode=True,
-                         asTemplate=False, markColor=None, width=600):
+    def get(self, name, override=False, addUnicode=True, asTemplate=False,
+            markColor=None, width=600):
         if not override:
             if name in self:
+                # TODO: return the glyph here (change dependant code)
                 return None
         glyph = self.newGlyph(name)
         if asTemplate:
