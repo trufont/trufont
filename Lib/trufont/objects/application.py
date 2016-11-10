@@ -194,7 +194,6 @@ class Application(QApplication):
         if not isinstance(activeWindow, ScriptingWindow):
             fileMenu.fetchAction(Entries.File_New, self.newFile)
             fileMenu.fetchAction(Entries.File_Open, self.openFile)
-        # TODO: maybe move save in there and add save all and close
         recentFilesMenu = fileMenu.fetchMenu(Entries.File_Open_Recent)
         self.updateRecentFiles(recentFilesMenu)
         if not platformSpecific.mergeOpenAndImport():
@@ -400,6 +399,7 @@ class Application(QApplication):
 
     def _openFile(self, path=None, openFile=True, importFile=False):
         if not path:
+            # formats
             fileFormats = []
             supportedFiles = ""
             if openFile:
@@ -415,7 +415,7 @@ class Application(QApplication):
                     self.tr("TruFont Extension {}").format(
                         "(%s)" % tfExtFormat)
                 ])
-                supportedFiles += ufoFormat + " " + tfExtFormat + " "
+                supportedFiles += "{} {} ".format(ufoFormat, tfExtFormat)
             if importFile:
                 # TODO: systematize this
                 fileFormats.extend([
@@ -430,13 +430,32 @@ class Application(QApplication):
                     "(%s)" % supportedFiles.rstrip()),
                 self.tr("All files {}").format("(*.*)"),
             ])
-            title = self.tr(
-                "Open File") if openFile else self.tr("Import File")
-            path, _ = QFileDialog.getOpenFileName(
-                self.activeWindow(), title, None, ";;".join(fileFormats),
-                fileFormats[-2])
-            if not path:
+            # dialog
+            importKey = importFile and not openFile
+            state = settings.openFileDialogState(
+                ) if not importKey else settings.importFileDialogState()
+            directory = None if state else QStandardPaths.standardLocations(
+                QStandardPaths.DocumentsLocation)[0]
+            title = self.tr("Open File") if openFile else self.tr("Import File")
+            dialog = QFileDialog(
+                self.activeWindow(), title, directory, ";;".join(fileFormats))
+            if state:
+                dialog.restoreState(state)
+            dialog.setAcceptMode(QFileDialog.AcceptOpen)
+            dialog.setFileMode(QFileDialog.ExistingFile)
+            dialog.setNameFilter(fileFormats[-2])
+            ret = dialog.exec_()
+            # save current directory
+            # TODO: should open w/o file chooser also update current dir?
+            state = dialog.saveState()
+            if importKey:
+                settings.setImportFileDialogState(directory)
+            else:
+                settings.setOpenFileDialogState(directory)
+            # cancelled?
+            if not ret:
                 return
+            path = dialog.selectedFiles()[0]
         # sanitize
         path = os.path.normpath(path)
         if ".plist" in path:
@@ -450,6 +469,12 @@ class Application(QApplication):
             self._loadBinary(path)
 
     def _loadBinary(self, path):
+        for widget in self.topLevelWidgets():
+            if isinstance(widget, FontWindow):
+                font = widget.font_()
+                if font is not None and font.binaryPath == path:
+                    widget.raise_()
+                    return
         font = TFont()
         try:
             font.extract(path)
@@ -458,6 +483,7 @@ class Application(QApplication):
             return
         window = FontWindow(font)
         window.show()
+        self.setCurrentFile(font.binaryPath)
 
     def _loadExt(self, path):
         # TODO: put version check in place

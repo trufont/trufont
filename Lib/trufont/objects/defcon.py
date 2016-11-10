@@ -32,6 +32,12 @@ class TFont(Font):
                 kwargs[attr] = defaultClass
         super().__init__(*args, **kwargs)
 
+    @property
+    def binaryPath(self):
+        if hasattr(self, "_binaryPath"):
+            return self._binaryPath
+        return None
+
     @classmethod
     def new(cls):
         font = cls()
@@ -73,6 +79,8 @@ class TFont(Font):
         extractor.extractUFO(path, self, fileFormat)
         for glyph in self:
             glyph.dirty = False
+        self.dirty = False
+        self._binaryPath = path
 
     def save(self, path=None, formatVersion=None,
              removeUnreferencedImages=False, progressBar=None):
@@ -90,7 +98,7 @@ class TFont(Font):
         app.postNotification("fontSaved", data)
 
     def export(self, path, format="otf"):
-        if format != "otf":
+        if format not in ("otf", "ttf"):
             raise ValueError("unknown format: %s")
         missingAttrs = []
         for attr in ("familyName", "styleName", "unitsPerEm", "ascender",
@@ -107,8 +115,9 @@ class TFont(Font):
             format=format,
             path=path,
         )
+        rpr = "TruFont.QuadraticTTFont" if format == "ttf" else "TruFont.TTFont"
         app.postNotification("fontWillExport", data)
-        otf = self.getRepresentation("TruFont.TTFont")
+        otf = self.getRepresentation(rpr)
         otf.save(path)
         app.postNotification("fontExported", data)
 

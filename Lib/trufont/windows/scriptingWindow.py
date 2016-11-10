@@ -99,9 +99,10 @@ class ScriptingWindow(QMainWindow):
     def currentPath(self, currentPath):
         self._currentPath = currentPath
         if self._currentPath is None:
-            self.setWindowTitle(self.tr("Untitled.py"))
+            title = self.tr("Untitled")
         else:
-            self.setWindowTitle(os.path.basename(self._currentPath))
+            title = os.path.basename(self._currentPath)
+        self.setWindowTitle(title)
 
     def newFile(self):
         if not self._maybeSaveBeforeExit():
@@ -135,15 +136,20 @@ class ScriptingWindow(QMainWindow):
 
     # TODO: why not use simple dialogs?
     def _ioDialog(self, mode):
+        state = settings.scriptingFileDialogState()
         if mode == QFileDialog.AcceptOpen:
             title = self.tr("Open File")
         else:
             title = self.tr("Save File")
-        dialog = QFileDialog(self, title, None, self.tr("Python file (*.py)"))
+        dialog = QFileDialog(
+            self, title, directory, self.tr("Python file (*.py)"))
+        if state:
+            dialog.restoreState(state)
         dialog.setAcceptMode(mode)
         dialog.setDirectory(self.fileChooser.currentFolder())
         dialog.setFileMode(QFileDialog.ExistingFile)
         ok = dialog.exec_()
+        settings.setScriptingWindowFileDialogState(state)
         if ok:
             return dialog.selectedFiles()[0]
         return None

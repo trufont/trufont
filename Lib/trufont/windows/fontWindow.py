@@ -11,7 +11,7 @@ from trufont.windows.glyphWindow import GlyphWindow
 from trufont.windows.groupsWindow import GroupsWindow
 from trufont.windows.metricsWindow import MetricsWindow
 from ufoLib.glifLib import readGlyphFromString
-from PyQt5.QtCore import QEvent, QMimeData, QSize, Qt
+from PyQt5.QtCore import QEvent, QMimeData, QSize, QStandardPaths, Qt
 from PyQt5.QtGui import QCursor, QKeySequence
 from PyQt5.QtWidgets import (
     QApplication, QFileDialog, QLabel, QMessageBox, QSlider, QToolTip)
@@ -58,11 +58,8 @@ class FontWindow(BaseMainWindow):
 
         self.setFont_(font)
 
-        app = QApplication.instance()
-        app.dispatcher.addObserver(self, "_fontSaved", "fontSaved")
-
         self.setCentralWidget(self.glyphCellView)
-        self.updateWindowTitle()
+        self.setWindowTitle(self.fontTitle())
 
         self.readSettings()
         self.cellSizeSlider.sliderReleased.connect(self.writeSettings)
@@ -162,9 +159,10 @@ class FontWindow(BaseMainWindow):
     def fontTitle(self):
         if self._font is None:
             return None
-        if self._font.path is not None:
-            return os.path.basename(self._font.path.rstrip(os.sep))
-        return self.tr("Untitled.ufo")
+        path = self._font.path or self._font.binaryPath
+        if path is not None:
+            return os.path.basename(path.rstrip(os.sep))
+        return self.tr("Untitled")
 
     def maybeSaveBeforeExit(self):
         if self._font.dirty:
@@ -177,23 +175,9 @@ class FontWindow(BaseMainWindow):
             return False
         return True
 
-    def updateWindowTitle(self, title=None):
-        if title is None:
-            title = self.fontTitle()
-        if platformSpecific.appNameInTitle():
-            title += " – TruFont"
-        self.setWindowTitle("[*]{}".format(title))
-
     # -------------
     # Notifications
     # -------------
-
-    # app
-
-    def _fontSaved(self, notification):
-        if notification.data["font"] != self._font:
-            return
-        self.setWindowModified(False)
 
     # widgets
 
@@ -301,40 +285,76 @@ class FontWindow(BaseMainWindow):
             (self.tr("UFO Font version 3 {}").format("(*.ufo)"), 3),
             (self.tr("UFO Font version 2 {}").format("(*.ufo)"), 2),
         ])
-        # TODO: switch to directory on platforms that need it
+        state = settings.saveFileDialogState()
+        path = self._font.path or self._font.binaryPath
+        if path:
+            directory = os.path.dirname(path)
+        else:
+            directory = None if state else QStandardPaths.standardLocations(
+                QStandardPaths.DocumentsLocation)[0]
+        # TODO: switch to directory dlg on platforms that need it
         dialog = QFileDialog(
-            self, self.tr("Save File"), None, ";;".join(fileFormats.keys()))
+            self, self.tr("Save File"), directory,
+            ";;".join(fileFormats.keys()))
+        if state:
+            dialog.restoreState(state)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
+        if directory:
+            dialog.setDirectory(directory)
         ok = dialog.exec_()
+        settings.setSaveFileDialogState(dialog.saveState())
         if ok:
             nameFilter = dialog.selectedNameFilter()
             path = dialog.selectedFiles()[0]
             self.saveFile(path, fileFormats[nameFilter])
-            self.updateWindowTitle()
+            self.setWindowTitle(self.fontTitle())
         # return ok
 
     def reloadFile(self):
         font = self._font
-        # TODO: add font.binaryPath
-        if not font.dirty or font.path is None:
+        path = font.path or font.binaryPath
+        if not font.dirty or path is None:
             return
         if not ReloadMessageBox.getReloadDocument(self, self.fontTitle()):
             return
-        font.reloadInfo()
-        font.reloadKerning()
-        font.reloadGroups()
-        font.reloadFeatures()
-        font.reloadLib()
-        font.reloadGlyphs(font.keys())
-        font.dirty = False
+        if font.path is not None:
+            font.reloadInfo()
+            font.reloadKerning()
+            font.reloadGroups()
+            font.reloadFeatures()
+            font.reloadLib()
+            font.reloadGlyphs(font.keys())
+            font.dirty = False
+        else:
+            # TODO: we should do this in-place
+            font_ = font.__class__().new()
+            font_.extract(font.binaryPath)
+            self.setFont_(font_)
 
     def exportFile(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, self.tr("Export File"), None,
-            self.tr("OpenType PS font {}").format("(*.otf)"))
-        if path:
+        fileFormats = [
+            (self.tr("PostScript OT font {}").format("(*.otf)")),
+            (self.tr("TrueType OT font {}").format("(*.ttf)")),
+        ]
+        state = settings.exportFileDialogState()
+        # TODO: font.path as default?
+        # TODO: store per-font export path in lib
+        directory = None if state else QStandardPaths.standardLocations(
+            QStandardPaths.DocumentsLocation)[0]
+        dialog = QFileDialog(
+            self, self.tr("Export File"), directory,
+            ";;".join(fileFormats))
+        if state:
+            dialog.restoreState(state)
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        ok = dialog.exec_()
+        settings.setExportFileDialogState(dialog.saveState())
+        if ok:
+            fmt = "ttf" if dialog.selectedNameFilter(
+                ) == formats[1] else "otf"
+            path = dialog.selectedFiles()[0]
             try:
-                self._font.export(path)
+                self._font.export(path, fmt)
             except Exception as e:
                 errorReports.showCriticalException(e)
 
@@ -519,6 +539,11 @@ class FontWindow(BaseMainWindow):
     # Qt methods
     # ----------
 
+    def setWindowTitle(self, title):
+        if platformSpecific.appNameInTitle():
+            title += " – TruFont"
+        super().setWindowTitle("[*]{}".format(title))
+
     def sizeHint(self):
         return QSize(860, 590)
 
@@ -549,7 +574,6 @@ class FontWindow(BaseMainWindow):
             self._font.removeObserver(self, "Font.Changed")
             app = QApplication.instance()
             app.dispatcher.removeObserver(self, "preferencesChanged")
-            app.dispatcher.removeObserver(self, "fontSaved")
             event.accept()
         else:
             event.ignore()

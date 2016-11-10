@@ -232,6 +232,46 @@ def setMetricsWindowComboBoxItems(items):
     setValue("metricsWindow/comboBoxItems", items)
 
 
+def importFileDialogState():
+    return value("core/importFileDialogState", type=QByteArray)
+
+
+def setImportFileDialogState(state):
+    setValue("core/importFileDialogState", state)
+
+
+def openFileDialogState():
+    return value("core/openFileDialogState", type=QByteArray)
+
+
+def setOpenFileDialogState(state):
+    setValue("core/openFileDialogState", state)
+
+
+def saveFileDialogState():
+    return value("core/saveFileDialogState", type=QByteArray)
+
+
+def setSaveFileDialogState(state):
+    setValue("core/saveFileDialogState", state)
+
+
+def exportFileDialogState():
+    return value("core/exportFileDialogState", type=QByteArray)
+
+
+def setExportFileDialogState(state):
+    setValue("core/exportFileDialogState", state)
+
+
+def scriptingFileDialogState():
+    return value("scriptingWindow/fileDialogState", type=QByteArray)
+
+
+def setScriptingFileDialogState(state):
+    setValue("scriptingWindow/fileDialogState", state)
+
+
 def loadRecentFile():
     return value("misc/loadRecentFile")
 
