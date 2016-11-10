@@ -142,7 +142,7 @@ class ScriptingWindow(QMainWindow):
         else:
             title = self.tr("Save File")
         dialog = QFileDialog(
-            self, title, directory, self.tr("Python file (*.py)"))
+            self, title, None, self.tr("Python file (*.py)"))
         if state:
             dialog.restoreState(state)
         dialog.setAcceptMode(mode)
