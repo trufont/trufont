@@ -115,9 +115,9 @@ class TFont(Font):
             format=format,
             path=path,
         )
-        rpr = "TruFont.QuadraticTTFont" if format == "ttf" else "TruFont.TTFont"
+        rp = "TruFont.QuadraticTTFont" if format == "ttf" else "TruFont.TTFont"
         app.postNotification("fontWillExport", data)
-        otf = self.getRepresentation(rpr)
+        otf = self.getRepresentation(rp)
         otf.save(path)
         app.postNotification("fontExported", data)
 

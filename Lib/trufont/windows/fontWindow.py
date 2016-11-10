@@ -351,7 +351,7 @@ class FontWindow(BaseMainWindow):
         settings.setExportFileDialogState(dialog.saveState())
         if ok:
             fmt = "ttf" if dialog.selectedNameFilter(
-                ) == formats[1] else "otf"
+                ) == fileFormats[1] else "otf"
             path = dialog.selectedFiles()[0]
             try:
                 self._font.export(path, fmt)

@@ -436,7 +436,8 @@ class Application(QApplication):
                 ) if not importKey else settings.importFileDialogState()
             directory = None if state else QStandardPaths.standardLocations(
                 QStandardPaths.DocumentsLocation)[0]
-            title = self.tr("Open File") if openFile else self.tr("Import File")
+            title = self.tr(
+                "Open File") if openFile else self.tr("Import File")
             dialog = QFileDialog(
                 self.activeWindow(), title, directory, ";;".join(fileFormats))
             if state:
