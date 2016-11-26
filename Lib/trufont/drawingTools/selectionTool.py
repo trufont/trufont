@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QPainter, QPainterPath
+from PyQt5.QtGui import QPalette, QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from defcon import Anchor, Component, Glyph, Guideline
@@ -534,20 +534,29 @@ class SelectionTool(BaseTool):
     def paint(self, painter):
         if self._rubberBandRect is None:
             return
-        widget = self.parent()
-        # okay, OS-native rubber band does not support painting with
-        # floating-point coordinates
-        # paint directly on the widget with unscaled context
-        widgetOrigin = widget.mapFromCanvas(self._rubberBandRect.bottomLeft())
-        widgetMove = widget.mapFromCanvas(self._rubberBandRect.topRight())
-        option = QStyleOptionRubberBand()
-        option.initFrom(widget)
-        option.opaque = False
-        option.rect = QRectF(widgetOrigin, widgetMove).toRect()
-        option.shape = QRubberBand.Rectangle
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, False)
-        painter.resetTransform()
-        widget.style().drawControl(
-            QStyle.CE_RubberBand, option, painter, widget)
-        painter.restore()
+        # TODO: maybe extract this to drawRubberBand
+        if platformSpecific.needsCustomRubberBand():
+            highlight = widget.palette().color(QPalette.Active, QPalette.Highlight)
+            painter.save()
+            painter.setBrush(highlight)
+            painter.setPen(highlight.darker(120))
+            painter.drawRect(option.rect)
+            painter.restore()
+        else:
+            widget = self.parent()
+            # okay, OS-native rubber band does not support painting with
+            # floating-point coordinates
+            # paint directly on the widget with unscaled context
+            widgetOrigin = widget.mapFromCanvas(self._rubberBandRect.bottomLeft())
+            widgetMove = widget.mapFromCanvas(self._rubberBandRect.topRight())
+            option = QStyleOptionRubberBand()
+            option.initFrom(widget)
+            option.opaque = False
+            option.rect = QRectF(widgetOrigin, widgetMove).toRect()
+            option.shape = QRubberBand.Rectangle
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing, False)
+            painter.resetTransform()
+            widget.style().drawControl(
+                QStyle.CE_RubberBand, option, painter, widget)
+            painter.restore()
