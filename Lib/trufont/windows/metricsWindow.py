@@ -142,6 +142,7 @@ class MetricsWindow(BaseWindow):
             self.toolbar.closeEvent(event)
             self.lineView.closeEvent(event)
 
+
 # -------------------
 # Text to glyph names
 # -------------------

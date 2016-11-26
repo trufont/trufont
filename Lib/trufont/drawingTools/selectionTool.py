@@ -534,22 +534,24 @@ class SelectionTool(BaseTool):
     def paint(self, painter):
         if self._rubberBandRect is None:
             return
+        widget = self.parent()
+        rect = self._rubberBandRect
         # TODO: maybe extract this to drawRubberBand
         if platformSpecific.needsCustomRubberBand():
-            highlight = widget.palette().color(QPalette.Active, QPalette.Highlight)
+            highlight = widget.palette(
+                ).color(QPalette.Active, QPalette.Highlight)
             painter.save()
             painter.setBrush(highlight)
             painter.setPen(highlight.darker(120))
-            painter.fillRect(option.rect)
-            painter.drawRect(option.rect)
+            painter.fillRect(rect)
+            painter.drawRect(rect)
             painter.restore()
         else:
-            widget = self.parent()
             # okay, OS-native rubber band does not support painting with
             # floating-point coordinates
             # paint directly on the widget with unscaled context
-            widgetOrigin = widget.mapFromCanvas(self._rubberBandRect.bottomLeft())
-            widgetMove = widget.mapFromCanvas(self._rubberBandRect.topRight())
+            widgetOrigin = widget.mapFromCanvas(rect.bottomLeft())
+            widgetMove = widget.mapFromCanvas(rect.topRight())
             option = QStyleOptionRubberBand()
             option.initFrom(widget)
             option.opaque = False
