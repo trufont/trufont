@@ -540,6 +540,7 @@ class SelectionTool(BaseTool):
             painter.save()
             painter.setBrush(highlight)
             painter.setPen(highlight.darker(120))
+            painter.fillRect(option.rect)
             painter.drawRect(option.rect)
             painter.restore()
         else:
