@@ -46,6 +46,8 @@ def maybeProjectUISmoothPointOffcurve(contour, onCurve, delta=None):
         else:
             if otherPoint is not None:
                 return
+            if pt.selected and onCurve.selected:
+                return
             px, py = pt.x, pt.y
             if d == 1 and delta is not None:
                 # this point hasn't been moved yet. add the delta
