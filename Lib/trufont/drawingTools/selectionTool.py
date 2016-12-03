@@ -541,9 +541,10 @@ class SelectionTool(BaseTool):
             highlight = widget.palette(
                 ).color(QPalette.Active, QPalette.Highlight)
             painter.save()
-            painter.setBrush(highlight)
+            painter.setRenderHint(QPainter.Antialiasing, False)
             painter.setPen(highlight.darker(120))
-            painter.fillRect(rect)
+            highlight.setAlphaF(.35)
+            painter.setBrush(highlight)
             painter.drawRect(rect)
             painter.restore()
         else:
