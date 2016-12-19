@@ -1,23 +1,6 @@
 #!/usr/bin/env python
-from setuptools import setup
+from setuptools import setup, find_packages
 
-try:
-    import fontTools  # noqa
-except:
-    print("*** Warning: trufont requires fontTools, see:")
-    print("    https://github.com/behdad/fonttools/")
-
-try:
-    import ufoLib  # noqa
-except:
-    print("*** Warning: trufont requires ufoLib, see:")
-    print("    https://github.com/unified-font-object/ufoLib")
-
-try:
-    import defcon  # noqa
-except:
-    print("*** Warning: trufont requires defcon, see:")
-    print("    https://github.com/typesupply/defcon")
 
 setup(
     name="trufont",
@@ -27,28 +10,37 @@ setup(
     author_email="adri-from-59@hotmail.fr",
     url="http://trufont.github.io",
     license="GNU LGPL v3/GNU GPL v3",
-    packages=[
-        "trufont",
-        "trufont.controls",
-        "trufont.drawingTools",
-        "trufont.objects",
-        "trufont.representationFactories",
-        "trufont.resources",
-        "trufont.tools",
-        "trufont.windows",
-    ],
+    package_dir={"": "Lib"},
+    packages=find_packages("Lib"),
     entry_points={
         "gui_scripts": [
             "trufont =  trufont.__main__:main"
         ]
     },
-    package_dir={"": "Lib"},
+    install_requires=[
+        "pyqt5>=5.5.0",
+        "fonttools>=3.3.1",
+        "ufoLib>=2.0.0",
+        "defcon>=0.2.0",
+        "defconQt>=0.2.0",
+        "ufo-extractor>=0.2.0",
+        "ufo2ft>=0.3.1",
+        "booleanOperations>=0.6.4",
+        "husl",
+    ],
     platforms=["Linux", "Win32", "Mac OS X"],
     classifiers=[
-        "Environment :: GUI",
+        "Development Status :: 4 - Beta",
+        "Environment :: X11 Applications :: Qt",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.5",
         "Intended Audience :: Developers",
         "Topic :: Text Processing :: Fonts",
+        'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],
     test_suite="tests",
 )
