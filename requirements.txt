@@ -1,8 +1,9 @@
--e git+https://github.com/behdad/fonttools.git#egg=fonttools
--e git+https://github.com/unified-font-object/ufoLib.git#egg=ufoLib
--e git+https://github.com/typesupply/defcon.git#egg=defcon
--e git+https://github.com/trufont/defconQt.git#egg=defconQt
--e git+https://github.com/typesupply/extractor.git#egg=extractor
--e git+https://github.com/googlei18n/ufo2ft.git#egg=ufo2ft
-booleanOperations>=0.5.1
-husl
+pyqt5==5.7.0
+fonttools==3.3.1
+ufoLib==2.0.0
+defcon==0.2.0
+defconQt==0.2.0
+ufo-extractor==0.2.0
+ufo2ft==0.3.1
+booleanOperations==0.6.4
+husl==4.0.3
