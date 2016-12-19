@@ -1,4 +1,9 @@
+include README.rst
 include INSTALL.md
 include LICENSE.GPLv3
 include LICENSE.LGPLv3
-recursive-include Lib *.py
+include COPYRIGHT
+
+include requirements.txt
+
+recursive-include tests *.py

@@ -1,31 +1,33 @@
 matrix:
   include:
-    - sudo: required
+    - os: linux
       dist: trusty
+      sudo: false
+      language: python
+      python: 3.5
       env:
         - DISPLAY=:99.0
         - LIBOVERLAY_SCROLLBAR=0
-    - language: generic
-      os: osx
+    - os: osx
+      language: generic
 
 before_install:
-  # on OSX, we use homebrew to install python 3.5.1
+  # on OSX, we use homebrew to install python 3.5.2
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update || brew update; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if test $(brew list | grep -q 'python3'); then brew upgrade python3; else brew install python3; fi; fi
-  - python3.5 -m pip install --user --upgrade pip virtualenv
-  # we need libegl1-mesa for Qt/plugins/platforms/libqxcb.so to load properly
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get --yes --force-yes install libegl1-mesa; fi
-  # create virtual environment
-  - python3.5 -m virtualenv .env
-  - source .env/bin/activate
-  - python --version
+  # check environment
+  - echo $PATH
+  - which python3
+  - pip3 --version
+  - pip3 list
   # install requirements
-  - pip install pyqt5 flake8 pytest
-  - python -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
-  - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
-  - pip install -r requirements.txt
+  - pip3 install --upgrade pip setuptools wheel
+  - pip3 install --upgrade -r dev-requirements.txt -r requirements.txt
+  # print PyQt5 and SIP versions
+  - python3 -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
+  - python3 -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
 install:
-  - pip install -v .
+  - pip3 install -v .
 before_script:
   # on Linux, we run "headless" tests with xvfb (X Virtual Framebuffer)
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -e /etc/init.d/xvfb start; fi
@@ -33,4 +35,4 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi 
 script:
   - flake8 --config=setup.cfg Lib/trufont
-  - py.test -v -r a tests/
+  - pytest
