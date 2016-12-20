@@ -2,10 +2,14 @@
 from setuptools import setup, find_packages
 
 
+with open('README.rst', 'r', encoding="utf-8") as f:
+    long_description = f.read()
+
 setup(
     name="trufont",
     version="0.5.0",
     description="TruFont, a modular and cross-platform font editor.",
+    long_description=long_description,
     author="Adrien Tétar",
     author_email="adri-from-59@hotmail.fr",
     url="http://trufont.github.io",
