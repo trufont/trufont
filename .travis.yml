@@ -36,3 +36,27 @@ before_script:
 script:
   - flake8 --config=setup.cfg Lib/trufont
   - pytest
+
+deploy:
+  # deploy sdist and wheel packages to PyPI on tags
+  - provider: pypi
+    server: https://upload.pypi.org/legacy/
+    on:
+      repo: trufont/trufont
+      tags: true
+      all_branches: true
+      python: 3.5
+    user: anthrotype
+    password:
+      secure: M/9CZvaOp6q61GpRTGur4XmWomTs+2d89k89Fk7tPH0zedQ0czEKzNu0UFCWLhvGa+cCvYj0fWOUIaoLngfxqgAHBovAKXryRdPgJIoBp2XOTJiSbHWoGOitzxQPrsxtK1H9HgaPCaKiey1Gbh5/GhA/PCJfzW6ZhU0PZ5QIF6l3xj1dtyRjXia87KxUIxNuRgLwiY0Mu6lM70qNdbAGKoXWm5vcIv+ne1KCS4O5e0Uztp2Sftb022Z9AT5wBEGlDPtZjMt3xNhY0FDZaj+fciynIr/KwEOSemU+fK50KoDQe4RXpOvQWoiQKafxBtcI/eCmw0ENYYTmzeypsqu3QM7iYrGBnYeruRrRsxnjI592Pm1kbATzJdg2sm2S8X4ZryfanlwuAjTvEqIwNY3nsvf8MJi7FLI5REYsf3DBTyEUKjpJJ1M8OzihLell5hPGl85GxxxWR+2VPW4V/pYShDaGQxL26fx41PLAKr7KOh6c00/iy+nsSDyQXo/JBPmzCbsM2KQWa8kPoP4jDSiy4vhHaN0t6E6kPya9ZlzCxSd20J147zja3vfw547Aira9BdHOIsTy13+gk4kZhinbb88jQSAvq/6YpBN0dNYNl2FlGt7C4p5MLc1jYrbbqPVS11Vin5CF1Iq7mBQmxDqf7pul44ylL8kLDFH6La9yP6Y=
+    distributions: sdist bdist_wheel
+    skip_upload_docs: true
+  # also create a Github Release with the current tag
+  - provider: releases
+    api_key:
+      secure: A/a0IpTz1lCcrASVwriV0iLBNe8Q2gMQYOPS+8QHjS9O1R/hCL42CNc5h10zHN1zPrl19Rkocm4bEQIm1ExFqCF384dSv13LOlELX62fnDy8+rGRh7LysCPCEpk9PCngt8H4rtCXPJPE4P3guVfLLjWOCbT3vFm2IgwOTSOKARSfx2y4Akfas8w42zDqzsXCw1eMD0yGs6PIeqsJfEx3BBHjNvs7ikV6dZMAO1OaakQDdKIyPzQXiHAzJ0U5CZL46oVlXIHeqsO3yFXH/sxFNH1uPbK7stZy0Q/6WHB9a0dnDwR2QFMa8jaaAJItgeC3ppoWq4rMaybamvWUREzcI3XRLGuJwYWRZNTVjMKjasgmY0scWmtEwFsZxr9IBRjftq1jsBwp1pPW2NwE0uFmhkJJDua7fZ9qpnzvG+BVN7+u4+GtAu1l7SWWYde8WAXC3IKYY7kpgu14STAAGlOguvR/s1d1yx2vrj4jZoALsQRGjuhPv9twW6b1RPmHFupuiX2a3qbd3cm/LuTbSC9nPQn0NPdQ5kx6xodoEpZgh7IDcrIMG7tzG0VxtYiwTlJZVbAMBdTMojmZyRTq4+timVwsKMkBZid1ITbvimUnO6ycV77GYXPNoZQWkeKgtsR4VBPdDyI2/e9trrqAYqDIb+5zEpkJMBCc6wZZbYcmZo8=
+    on:
+      repo: trufont/trufont
+      tags: true
+      all_branches: true
+      python: 3.5
