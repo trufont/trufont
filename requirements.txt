@@ -1,7 +1,7 @@
 pyqt5==5.7.0
 fonttools==3.4.0
 ufoLib==2.0.0
-defcon==0.2.0
+defcon==0.2.1
 defconQt==0.2.0
 ufo-extractor==0.2.0
 ufo2ft==0.3.1
