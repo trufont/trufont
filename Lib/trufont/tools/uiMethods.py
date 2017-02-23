@@ -2,6 +2,7 @@
 UI-constrained point management methods.
 """
 from trufont.tools import bezierMath
+from trufont.tools.UIMove_ng import UIMove
 from PyQt5.QtCore import QLineF, QPointF
 import itertools
 
@@ -30,10 +31,10 @@ def _getOffCurveSiblingPoints(contour, point):
     return pts, shouldMoveAnyway
 
 
-def maybeProjectUISmoothPointOffcurve(contour, onCurve, delta=None):
+def maybeProjectUISmoothPointOffcurve(contour, index, delta=None):
+    onCurve = contour[index]
     if not onCurve.smooth:
         return
-    index = contour.index(onCurve)
     if contour.open and index in (0, len(contour) - 1):
         return
     offCurve, otherPoint = None, None
@@ -117,13 +118,8 @@ def moveUIPoint(contour, point, delta):
                             otherPt.segmentType != "move" and otherPt.selected:
                         continue
                 pt.move(delta)
-                maybeProjectUISmoothPointOffcurve(contour, point, delta)
+                maybeProjectUISmoothPointOffcurve(contour, index, delta)
     contour.dirty = True
-
-
-def moveUISelection(contour, delta):
-    for point in contour.selection:
-        moveUIPoint(contour, point, delta)
 
 
 def deleteUISelection(glyph):
@@ -203,12 +199,12 @@ def UIGlyphGuidelines(glyph):
     return guidelines
 
 
-def moveUIGlyphElements(glyph, dx, dy):
+def moveUIGlyphElements(glyph, dx, dy, slidePoints=False):
     for anchor in glyph.anchors:
         if anchor.selected:
             anchor.move((dx, dy))
     for contour in glyph:
-        moveUISelection(contour, (dx, dy))
+        UIMove(contour, (dx, dy), slidePoints=slidePoints)
     for component in glyph.components:
         if component.selected:
             component.move((dx, dy))

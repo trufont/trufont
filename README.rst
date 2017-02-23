@@ -3,8 +3,6 @@
 TruFont
 =======
 
-.. figure:: https://raw.githubusercontent.com/trufont/trufont/master/misc/fontView.png
-
 `TruFont <https://trufont.github.io>`__ is a font-editing application
 written with Python3, ufoLib, defcon and PyQt5.
 

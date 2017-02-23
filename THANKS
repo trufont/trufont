@@ -1,0 +1,16 @@
+The TruFont project uses the following libraries:
+
+– booleanOperations by Frederik Berlaen
+– cu2qu by James Godfrey-Kittle and Behdad Esfahbod
+– defcon by Tal Leming
+– defconQt by Adrien Tétar
+– extractor by Tal Leming
+– fonttools by Just van Rossum, Behdad Esfahbod & al.
+– hsluv by Alexei Boronine
+– ufoLib by Tal Leming, Erik van Blokland and Just van Rossum
+– ufo2ft by Tal Leming and James Godfrey-Kittle
+
+Thanks to Jean-Baptiste Morizot and Jérémy Landes-Nones for making the
+app icon.
+
+Cheers to the scene, and in particular the TruFont community!

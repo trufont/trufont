@@ -1,7 +1,31 @@
+from PyQt5.QtCore import Qt
 from defconQt.representationFactories.glyphViewFactory import (
     OnlyComponentsQtPen)
+from fontTools.misc.transform import Transform
 from fontTools.pens.qtPen import QtPen
-from PyQt5.QtCore import Qt
+from ufoLib.pointPen import PointToSegmentPen
+
+# -------------------
+# selected components
+# -------------------
+
+
+def SelectedComponentsQPainterPathFactory(glyph):
+    pen = OnlyComponentsQtPen(glyph.layer)
+    pointPen = PointToSegmentPen(pen)
+    selectedPen = OnlyComponentsQtPen(glyph.layer)
+    selectedPointPen = PointToSegmentPen(selectedPen)
+    originPts = []
+    for component in glyph.components:
+        if component.selected:
+            component.drawPoints(selectedPointPen)
+            t = Transform(*component.transformation)
+            originPts.append(t.transformPoint((0, 0)))
+        else:
+            component.drawPoints(pointPen)
+    pen.path.setFillRule(Qt.WindingFill)
+    selectedPen.path.setFillRule(Qt.WindingFill)
+    return (pen.path, selectedPen.path, originPts)
 
 # --------------
 # component path
@@ -83,16 +107,13 @@ def FilterSelectionFactory(glyph):
     for component in glyph.components:
         if component.selected:
             component.drawPoints(pen)
+    # XXX: guidelines, images?
     return copyGlyph
 
 
-def FilterSelectionQPainterPathFactory(glyph):
+def SelectedContoursQPainterPathFactory(glyph):
     copyGlyph = glyph.getRepresentation("TruFont.FilterSelection")
     path = copyGlyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-    for component in glyph.components:
-        if component.selected:
-            cPath = component.getRepresentation("TruFont.QPainterPath")
-            path.addPath(cPath)
     return path
 
 # --------------------

@@ -15,9 +15,8 @@ class FindDialog(QDialog):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle(self.tr("Find…"))
-        self.font = currentGlyph.font
-        self._sortedGlyphNames = self.font.unicodeData.sortGlyphNames(
-            self.font.keys(), self.alphabetical)
+        self._sortedGlyphNames = currentGlyph.font.unicodeData.sortGlyphNames(
+            currentGlyph.layer.keys(), self.alphabetical)
 
         layout = QGridLayout(self)
         self.glyphLabel = QLabel(self.tr("Glyph:"), self)
@@ -93,8 +92,8 @@ class FindDialog(QDialog):
         newGlyph = None
         if currentItem is not None:
             newGlyphName = currentItem.text()
-            if newGlyphName in dialog.font:
-                newGlyph = dialog.font[newGlyphName]
+            if newGlyphName in currentGlyph.layer:
+                newGlyph = currentGlyph.layer[newGlyphName]
         return (newGlyph, result)
 
 

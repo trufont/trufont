@@ -1,4 +1,5 @@
 from fontTools.misc import bezierTools
+from fontTools.pens.basePen import decomposeQuadraticSegment
 from math import sqrt
 
 # TODO: curve distance
@@ -45,7 +46,7 @@ def lineDistance(x1, y1, x2, y2, x, y):
 # intersections
 
 
-def curveIntersections(p1, p2, p3, p4, x1, y1, x2, y2):
+def curveIntersections(x1, y1, x2, y2, p1, p2, p3, p4):
     """
     Computes intersection between a cubic spline and a line segment.
     Adapted from: https://www.particleincell.com/2013/cubic-line-intersection/
@@ -67,20 +68,69 @@ def curveIntersections(p1, p2, p3, p4, x1, y1, x2, y2):
 
     sol = []
     for t in r:
+        if t < 0 or t > 1:
+            continue
         s0 = a[0] * t ** 3 + b[0] * t ** 2 + c[0] * t + d[0]
         s1 = a[1] * t ** 3 + b[1] * t ** 2 + c[1] * t + d[1]
         if (x2 - x1) != 0:
             s = (s0 - x1) / (x2 - x1)
         else:
             s = (s1 - y1) / (y2 - y1)
-        if not (t < 0 or t > 1 or s < 0 or s > 1):
+        if s < 0 or s > 1:
+            continue
+        sol.append((s0, s1, t))
+    return sol
+
+
+def qcurveIntersections(x1, y1, x2, y2, *pts):
+    """
+    Computes intersection between a cubic spline and a line segment.
+    Adapted from: https://www.particleincell.com/2013/cubic-line-intersection/
+
+    Takes four defcon points describing curve and four scalars describing line
+    parameters.
+    """
+
+    sol = []
+
+    # PACK for fontTools
+    points = []
+    for pt in pts:
+        points.append((pt.x, pt.y))
+
+    p1 = (pts[0].x, pts[0].y)
+    for p2, p3 in decomposeQuadraticSegment(points[1:]):
+        bx, by = (y1 - y2), (x2 - x1)
+        m = x1 * y2 - x2 * y1
+        a, b, c = bezierTools.calcQuadraticParameters(p1, p2, p3)
+
+        # prepare for next turn
+        p1 = p3
+
+        pc0 = bx * a[0] - by * a[1]
+        pc1 = (bx * b[0] + by * b[1]) / pc0
+        pc2 = (bx * c[0] + by * c[1] + m) / pc0
+        r = bezierTools.solveQuadratic(pc0, pc1, pc2)
+
+        for t in r:
+            if t < 0 or t > 1:
+                continue
+            s0 = a[0] * (1 - t) ** 2 + b[0] * 2 * t * (1 - t) + c[0] * t ** 2
+            s1 = a[1] * (1 - t) ** 2 + b[1] * 2 * t * (1 - t) + c[1] * t ** 2
+            if (x2 - x1) != 0:
+                s = (s0 - x1) / (x2 - x1)
+            else:
+                s = (s1 - y1) / (y2 - y1)
+            if s < 0 or s > 1:
+                continue
             sol.append((s0, s1, t))
     return sol
 
 
 def lineIntersection(x1, y1, x2, y2, x3, y3, x4, y4):
     """
-    Computes intersection point of two lines if any.
+    Computes intersection point of two lines if any, and the t value on p1p2
+    (attn: if you want to use the t value order your segments accordingly!)
     Adapted from Andre LaMothe, "Tricks of the Windows Game Programming Gurus".
     G. Bach, http://stackoverflow.com/a/1968345
 

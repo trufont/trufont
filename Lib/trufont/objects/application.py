@@ -1,16 +1,13 @@
 from defcon.tools.notifications import NotificationCenter
-from PyQt5.Qt import PYQT_VERSION_STR, QT_VERSION_STR
-from PyQt5.QtCore import QEvent, QSize, QStandardPaths, Qt, QUrl
+from PyQt5.QtCore import QEvent, QStandardPaths, Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtWidgets import (
-    QAction, QApplication, QDialogButtonBox, QFileDialog, QMessageBox)
-from trufont import __version__
+from PyQt5.QtWidgets import QAction, QApplication, QFileDialog
+from trufont.controls.aboutDialog import AboutDialog
 from trufont.drawingTools.selectionTool import SelectionTool
 from trufont.drawingTools.penTool import PenTool
 from trufont.drawingTools.rulerTool import RulerTool
 from trufont.drawingTools.knifeTool import KnifeTool
 from trufont.windows.fontWindow import FontWindow
-from trufont.windows.inspectorWindow import InspectorWindow
 from trufont.windows.extensionBuilderWindow import ExtensionBuilderWindow
 from trufont.windows.scriptingWindow import ScriptingWindow
 from trufont.windows.settingsWindow import SettingsWindow
@@ -21,15 +18,6 @@ from trufont.objects.menu import (
     Entries, MAX_RECENT_FILES, globalMenuBar, MenuBar)
 from trufont.tools import errorReports, glyphList, platformSpecific
 import os
-import platform
-import subprocess
-
-try:
-    gitShortHash = subprocess.check_output(
-        ['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL
-    ).decode()
-except:
-    gitShortHash = ""
 
 
 class Application(QApplication):
@@ -39,13 +27,13 @@ class Application(QApplication):
         self._currentGlyph = None
         self._currentMainWindow = None
         self._launched = False
-        self._drawingTools = [SelectionTool, PenTool, RulerTool, KnifeTool]
+        self._drawingTools = [
+            SelectionTool, PenTool, KnifeTool, RulerTool]
         self._extensions = []
         self.dispatcher = NotificationCenter()
         self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")
         self.focusWindowChanged.connect(self._focusWindowChanged)
         self.GL2UV = None
-        self.inspectorWindow = None
         self.outputWindow = None
 
     # --------------
@@ -204,6 +192,9 @@ class Application(QApplication):
         editMenu = menuBar.fetchMenu(Entries.Edit)
         editMenu.fetchAction(Entries.Edit_Settings, self.settings)
 
+        viewMenu = menuBar.fetchMenu(Entries.View)
+        self.updateDrawingAttributes(viewMenu)
+
         scriptsMenu = menuBar.fetchMenu(Entries.Scripts)
         self.updateExtensions(scriptsMenu)
 
@@ -216,7 +207,6 @@ class Application(QApplication):
                 Entries.Window_Minimize_All, self.minimizeAll)
             windowMenu.fetchAction(
                 Entries.Window_Zoom, lambda: self.zoom(activeWindow))
-        windowMenu.fetchAction(Entries.Window_Inspector, self.inspector)
         windowMenu.fetchAction(Entries.Window_Scripting, self.scripting)
         if self.outputWindow is not None:
             windowMenu.fetchAction(
@@ -282,7 +272,10 @@ class Application(QApplication):
             "CurrentFont": self.currentFont,
             "CurrentGlyph": self.currentGlyph,
             "events": self.dispatcher,
+            "registerExtension": self.registerExtension,
+            "unregisterExtension": self.unregisterExtension,
             "registerTool": self.registerTool,
+            "unregisterTool": self.unregisterTool,
             "OpenMetricsWindow": self.openMetricsWindow,
             "qApp": self,
         }
@@ -570,17 +563,6 @@ class Application(QApplication):
         else:
             window.showMaximized()
 
-    def inspector(self):
-        if self.inspectorWindow is None:
-            self.inspectorWindow = InspectorWindow()
-        if self.inspectorWindow.isVisible():
-            # TODO: do this only if the widget is user-visible, otherwise the
-            # key press feels as if it did nothing
-            # toggle
-            self.inspectorWindow.close()
-        else:
-            self.inspectorWindow.show()
-
     def scripting(self):
         # TODO: don't store, spawn window each time instead
         # or have tabs?
@@ -597,42 +579,7 @@ class Application(QApplication):
     # Help
 
     def about(self):
-        name = self.applicationName()
-        domain = self.organizationDomain()
-        caption = self.tr(
-            "<h3>About {n}</h3>"
-            "<p>{n} is a cross-platform, modular typeface design "
-            "application.</p>").format(n=name)
-        text = self.tr(
-            "<p>{} is built on top of "
-            "<a href='http://ts-defcon.readthedocs.org/en/ufo3/'>defcon</a> "
-            "and includes scripting support "
-            "with a <a href='http://robofab.com/'>robofab</a>-like API.</p>"
-            "<p>Running on Qt {} (PyQt {}).</p>"
-            "<p>Version {} {} – Python {}.").format(
-            name, QT_VERSION_STR, PYQT_VERSION_STR, __version__, gitShortHash,
-            platform.python_version())
-        if domain:
-            text += self.tr("<br>See <a href='http://{d}'>{d}</a> for more "
-                            "information.</p>").format(d=domain)
-        else:
-            text += "</p>"
-        # This duplicates much of QMessageBox.about(), but it has no way to
-        # setInformativeText()...
-        msgBox = QMessageBox(self.activeWindow())
-        msgBox.setAttribute(Qt.WA_DeleteOnClose)
-        icon = msgBox.windowIcon()
-        size = icon.actualSize(QSize(64, 64))
-        msgBox.setIconPixmap(icon.pixmap(size))
-        msgBox.setWindowTitle(self.tr("About {}").format(name))
-        msgBox.setText(caption)
-        msgBox.setInformativeText(text)
-        if platformSpecific.useCenteredButtons():
-            buttonBox = msgBox.findChild(QDialogButtonBox)
-            buttonBox.setCenterButtons(True)
-        msgBox.show()
-        # TODO: do this more elegantly? we need it with global menu bar
-        self._msgBox = msgBox
+        AboutDialog(self.activeWindow()).exec_()
 
     # ------------
     # Recent files
@@ -685,3 +632,39 @@ class Application(QApplication):
             actions[index].setVisible(False)
 
         menu.setEnabled(len(recentFiles))
+        # TODO: put recent files in dock on OSX
+        # import sys
+        # if sys.platform == "darwin":
+        #     menu.setAsDockMenu()
+
+    # ------------------
+    # Drawing attributes
+    # ------------------
+
+    def setDrawingAttribute(self):
+        sender = self.sender()
+        drawingAttributes = settings.drawingAttributes()
+        checked = sender.isChecked()
+        for attr in sender.data():
+            drawingAttributes[attr] = checked
+        settings.setDrawingAttributes(drawingAttributes)
+        self.postNotification("preferencesChanged")
+
+    def updateDrawingAttributes(self, menu):
+        drawingAttributes = settings.drawingAttributes()
+        elements = [
+            (Entries.View_Show_Points, (
+                "showGlyphOnCurvePoints", "showGlyphOffCurvePoints")),
+            (Entries.View_Show_Metrics, (
+                "showGlyphMetrics", "showFontVerticalMetrics",
+                "showFontPostscriptBlues")),
+            (Entries.View_Show_Images, ("showGlyphImage",)),
+            (Entries.View_Show_Guidelines, (
+                "showGlyphGuidelines", "showFontGuidelines")),
+        ]
+        for entry, attrs in elements:
+            action = menu.fetchAction(entry)
+            action.setCheckable(True)
+            action.setChecked(drawingAttributes.get(attrs[0], True))
+            action.setData(attrs)
+            action.triggered.connect(self.setDrawingAttribute)

@@ -149,7 +149,7 @@ class ScriptingWindow(QMainWindow):
         dialog.setDirectory(self.fileChooser.currentFolder())
         dialog.setFileMode(QFileDialog.ExistingFile)
         ok = dialog.exec_()
-        settings.setScriptingWindowFileDialogState(state)
+        settings.setScriptingFileDialogState(state)
         if ok:
             return dialog.selectedFiles()[0]
         return None

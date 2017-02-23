@@ -1,12 +1,32 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools.uiMethods import moveUIPoint
 
+_path = QPainterPath()
+_path.moveTo(6.05, 22.5)
+_path.lineTo(11.84, 15.59)
+_path.cubicTo(11.65, 15.31, 11.47, 14.82, 11.47, 14.34)
+_path.cubicTo(11.47, 12.92, 12.58, 11.9, 13.85, 11.9)
+_path.cubicTo(15.21, 11.91, 16.27, 12.95, 16.27, 14.34)
+_path.cubicTo(16.27, 15.58, 15.26, 16.72, 13.87, 16.72)
+_path.cubicTo(13.57, 16.72, 13.19, 16.65, 12.94, 16.53)
+_path.lineTo(7.16, 23.43)
+_path.lineTo(7.74, 23.92)
+_path.cubicTo(7.74, 23.92, 17.62, 20.39, 19.35, 18.33)
+_path.cubicTo(21.25, 16.06, 21.37, 13.19, 19.67, 10.61)
+_path.lineTo(22.85, 6.83)
+_path.lineTo(19.67, 4.17)
+_path.lineTo(16.5, 7.95)
+_path.cubicTo(13.66, 6.72, 10.84, 7.32, 8.92, 9.58)
+_path.cubicTo(7.27, 11.52, 5.47, 22.01, 5.47, 22.01)
+_path.closeSubpath()
+
 
 class PenTool(BaseTool):
+    icon = _path
     name = QApplication.translate("PenTool", "Pen")
-    iconPath = ":curve.svg"
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -22,6 +42,7 @@ class PenTool(BaseTool):
         glyph = self._glyph
         glyph.removeObserver(self, "Glyph.SelectionChanged")
         self._cleanupTrailingOffcurve()
+        assert not self._shouldMoveOnCurve
 
     # notifications
 
@@ -40,6 +61,7 @@ class PenTool(BaseTool):
                 # TODO(meta): should we emit selection changed if deleted point
                 # was selected?
                 contour.removePoint(point)
+                contour[-1].smooth = False
 
     def _getSelectedCandidatePoint(self):
         """
@@ -106,14 +128,23 @@ class PenTool(BaseTool):
         contour.releaseHeldNotifications()
 
     def _updateOnCurveSmoothness(self, event):
-        if self._targetContour is not None:
-            if len(self._targetContour) < 2:
+        contour = self._targetContour
+        if contour is not None:
+            if len(contour) < 2:
                 return
-            pt = self._targetContour[-1]
+            pt = contour[-1]
             if pt.selected:
-                onCurve = self._targetContour[-2]
-                onCurve.smooth = not event.modifiers() & Qt.AltModifier
-                self._targetContour.dirty = True
+                # grab the onCurve. if not the previous point, it's the one
+                # before it
+                if pt.segmentType is None:
+                    pt = contour[-2]
+                    # this shouldn't happen, but guard whatsoever
+                    if pt.segmentType is None:
+                        return
+                    if pt == contour[0]:
+                        return
+                pt.smooth = not event.modifiers() & Qt.AltModifier
+                contour.dirty = True
 
     # events
 
@@ -127,26 +158,30 @@ class PenTool(BaseTool):
             self._shouldMoveOnCurve = False
 
     def mousePressEvent(self, event):
+        if event.button() != Qt.LeftButton:
+            super().mousePressEvent(event)
+            return
         self._origin = event.localPos()
         widget = self.parent()
         candidate = self._getSelectedCandidatePoint()
-        itemTuple = widget.itemAt(self._origin)
+        mouseItem = widget.itemAt(self._origin)
         self._glyph.prepareUndo()
         # if we clicked on an item, see if we should join the current contour
-        if itemTuple is not None:
-            item, parent = itemTuple
-            if parent and parent == candidate and not parent.index(item):
+        if isinstance(mouseItem, tuple):
+            contour, index = mouseItem
+            if contour == candidate and not index:
+                point = contour[index]
                 lastPoint = candidate[-1]
                 lastPoint.selected = False
                 if lastPoint.segmentType is not None:
-                    item.segmentType = "line"
+                    point.segmentType = "line"
                 else:
-                    parent.removePoint(lastPoint)
-                    self._stashedOffCurve = (lastPoint, parent[-1].smooth)
-                    parent[-1].smooth = False
-                item.segmentType = "line"
-                item.selected = True
-                item.smooth = False
+                    contour.removePoint(lastPoint)
+                    self._stashedOffCurve = (lastPoint, contour[-1].smooth)
+                    contour[-1].smooth = False
+                point.segmentType = "line"
+                point.selected = True
+                point.smooth = False
                 candidate.postNotification(
                     notification="Contour.SelectionChanged")
                 candidate.dirty = True
@@ -182,6 +217,9 @@ class PenTool(BaseTool):
         self._targetContour = contour
 
     def mouseMoveEvent(self, event):
+        if not event.buttons() & Qt.LeftButton:
+            super().mouseMoveEvent(event)
+            return
         contour = self._targetContour
         if contour is None:
             return
@@ -247,6 +285,9 @@ class PenTool(BaseTool):
             contour.dirty = True
 
     def mouseReleaseEvent(self, event):
-        self._shouldMoveOnCurve = False
-        self._stashedOffCurve = None
-        self._targetContour = None
+        if event.button() == Qt.LeftButton:
+            self._shouldMoveOnCurve = False
+            self._stashedOffCurve = None
+            self._targetContour = None
+        else:
+            super().mouseReleaseEvent(event)

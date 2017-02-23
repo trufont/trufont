@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QPalette, QPainter, QPainterPath
+from PyQt5.QtGui import QColor, QPainter, QPalette, QPainterPath
 from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from defcon import Anchor, Component, Glyph, Guideline
@@ -8,12 +8,23 @@ from trufont.controls.glyphDialogs import AddComponentDialog, RenameDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
-    deleteUISelection, maybeProjectUISmoothPointOffcurve, moveUIGlyphElements,
-    removeUIGlyphElements, unselectUIGlyphElements)
-from trufont.windows.glyphWindow import GlyphWindow
+    maybeProjectUISmoothPointOffcurve, moveUIGlyphElements,
+    unselectUIGlyphElements)
+
+from trufont.tools.UIMove_ng import UIMove
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
+
+_path = QPainterPath()
+_path.moveTo(15.33, 4.18)
+_path.lineTo(12.36, 11.2)
+_path.lineTo(8.37, 7.46)
+_path.lineTo(8.37, 23.87)
+_path.lineTo(20.85, 12.05)
+_path.lineTo(15.33, 12.05)
+_path.lineTo(18.17, 5.36)
+_path.closeSubpath()
 
 
 def _pointWithinThreshold(x, y, curve, eps):
@@ -44,12 +55,13 @@ def _pointWithinThreshold(x, y, curve, eps):
 
 
 class SelectionTool(BaseTool):
+    icon = _path
     name = QApplication.translate("SelectionTool", "Selection")
-    iconPath = ":cursor.svg"
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._itemTuple = None
+        self._mouseItem = None
+        self._oldPath = None
         self._oldSelection = set()
         self._rubberBandRect = None
         self._shouldMove = False
@@ -57,7 +69,7 @@ class SelectionTool(BaseTool):
 
     # helpers
 
-    def _createAnchor(self, *args):
+    def _createAnchor(self, *_):
         widget = self.parent()
         glyph = self._glyph
         glyph.prepareUndo()
@@ -73,7 +85,7 @@ class SelectionTool(BaseTool):
         anchor.name = "new anchor"
         glyph.appendAnchor(anchor)
 
-    def _createComponent(self, *args):
+    def _createComponent(self, *_):
         widget = self.parent()
         glyph = self._glyph
         glyph.prepareUndo()
@@ -83,7 +95,7 @@ class SelectionTool(BaseTool):
             component.baseGlyph = newGlyph.name
             glyph.appendComponent(component)
 
-    def _createGuideline(self, *args):
+    def _createGuideline(self, *_):
         widget = self.parent()
         glyph = self._glyph
         glyph.prepareUndo()
@@ -97,8 +109,10 @@ class SelectionTool(BaseTool):
         font = self._glyph.font
         if glyphName in font:
             glyph = font[glyphName]
-            glyphWindow = GlyphWindow(glyph, widget.window().parent())
-            glyphWindow.show()
+            # XXX: coupling. we need currentFontWindow() or font.window
+            # or windowForFont()?
+            fontWindow = widget.parent().parent().parent().parent()
+            fontWindow.openGlyphTab(glyph)
 
     def _toggleGuideline(self, guideline):
         glyph = self._glyph
@@ -131,52 +145,6 @@ class SelectionTool(BaseTool):
         if len(candidates) == 1:
             return next(iter(candidates))
         return None
-
-    def _getOffCurveSiblingPoint(self, contour, point):
-        index = contour.index(point)
-        for d in (-1, 1):
-            sibling = contour.getPoint(index + d)
-            if sibling.segmentType is not None:
-                return sibling
-        raise IndexError
-
-    def _moveOnCurveAlongHandles(self, contour, pt, x, y):
-        ret = False
-        if pt.segmentType is not None:
-            if pt.smooth and len(contour) >= 3:
-                index = contour.index(pt)
-                prevCP = contour.getPoint(index - 1)
-                nextCP = contour.getPoint(index + 1)
-                # we need at least one offCurve so that it makes sense
-                # slide the onCurve around
-                if prevCP.segmentType is None or nextCP.segmentType is None:
-                    projX, projY, _ = bezierMath.lineProjection(
-                        prevCP.x, prevCP.y, nextCP.x, nextCP.y, x, y, False)
-                    # short-circuit UIMove because we're only moving this point
-                    pt.x = projX
-                    pt.y = projY
-                    ret = True
-            else:
-                # non-smooth onCurve we just move, not moving any other point
-                pt.x = x
-                pt.y = y
-                ret = True
-        else:
-            index = contour.index(pt)
-            onCurve = None
-            for delta in (-1, 1):
-                pt_ = contour.getPoint(index + delta)
-                if pt_.segmentType is not None:
-                    onCurve = pt_
-            if onCurve is not None:
-                # keep new pt tangent to onCurve -> pt segment,
-                # i.e. do an orthogonal projection
-                pt.x, pt.y, _ = bezierMath.lineProjection(
-                    onCurve.x, onCurve.y, pt.x, pt.y, x, y, False)
-                ret = True
-        if ret:
-            contour.dirty = True
-        return ret
 
     def _findSegmentUnderMouse(self, pos, action=None):
         scale = self.parent().inverseScale()
@@ -215,7 +183,7 @@ class SelectionTool(BaseTool):
         prev, point = segment[0], segment[-1]
         if point.segmentType == "line":
             if action == "insert":
-                index = contour.index(point)
+                index = contour.index(point) or len(contour)
                 self._glyph.prepareUndo()
                 contour.holdNotifications()
                 for i, t in enumerate((.35, .65)):
@@ -239,46 +207,47 @@ class SelectionTool(BaseTool):
                     return index - 1
             return None
 
-        if self._itemTuple is None:
+        if self._mouseItem is None or not isinstance(self._mouseItem, tuple):
             return
-        item, parent = self._itemTuple
-        if parent is None or not (item.segmentType and parent.open):
+        contour, index = self._mouseItem
+        point = contour[index]
+        if not (point.segmentType and contour.open):
             return
-        ptIndex = getAtEdge(parent, item)
-        if ptIndex is None:
+        if index not in (0, len(contour)-1):
             return
         widget = self.parent()
         items = widget.itemsAt(pos)
-        for point, contour in zip(items["points"], items["contours"]):
-            if point == item or not (point.segmentType and contour.open):
+        for c, i in items["points"]:
+            p = c[i]
+            if p == point or not (p.segmentType and c.open):
                 continue
-            otherIndex = getAtEdge(contour, point)
-            if otherIndex is None:
+            if i not in (0, len(c)-1):
                 continue
-            if parent != contour:
+            if c != contour:
                 # TODO: blacklist single onCurve contours
                 # Note reverse uses different point objects
                 # TODO: does it have to work this way?
-                if not ptIndex:
-                    parent.reverse()
-                if otherIndex == -1:
+                # update: I think frederik changed that in master defcon
+                if not index:
                     contour.reverse()
-                dragPoint = parent[-1]
-                parent.removePoint(dragPoint)
-                contour[0].segmentType = dragPoint.segmentType
-                contour.drawPoints(parent)
-                glyph = contour.glyph
-                glyph.removeContour(contour)
-                parent.dirty = True
-            else:
-                if item.segmentType == "move":
-                    item.x = point.x
-                    item.y = point.y
-                    contour.removePoint(point)
-                else:
-                    contour.removePoint(item)
-                contour[0].segmentType = "line"
+                if i == -1:
+                    c.reverse()
+                dragPoint = contour[-1]
+                contour.removePoint(dragPoint)
+                c[0].segmentType = dragPoint.segmentType
+                c.drawPoints(contour)
+                glyph = c.glyph
+                glyph.removeContour(c)
                 contour.dirty = True
+            else:
+                if point.segmentType == "move":
+                    point.x = p.x
+                    point.y = p.y
+                    c.removePoint(p)
+                else:
+                    c.removePoint(point)
+                c[0].segmentType = "line"
+                c.dirty = True
             return
 
     def _moveForEvent(self, event):
@@ -305,6 +274,7 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         newName, ok = RenameDialog.getNewName(widget, item.name)
         if ok:
+            self._glyph.prepareUndo()
             item.name = newName
 
     def _reverse(self, target=None):
@@ -314,27 +284,33 @@ class SelectionTool(BaseTool):
                 if contour.selection:
                     selectedContours.add(contour)
             target = selectedContours or self._glyph
+        if not target:
+            return
+        self._glyph.prepareUndo()
         for contour in target:
             contour.reverse()
 
-    def _setStartPoint(self, point, contour):
-        index = contour.index(point)
+    def _setStartPoint(self, contour, index):
+        if not index:
+            return
+        self._glyph.prepareUndo()
         contour.setStartPoint(index)
 
-    # actions
+    # events
 
-    def showContextMenu(self, event):
+    def contextMenuEvent(self, event):
         widget = self.parent()
         self._cachedPos = event.globalPos()
         menu = QMenu(widget)
-        itemTuple = widget.itemAt(event.localPos())
+        item = widget.itemAt(event.localPos())
         targetContour = None
-        if itemTuple is not None:
-            item, parent = itemTuple
-            if parent is not None and item.segmentType:
-                targetContour = [parent]
-                menu.addAction(self.tr("Set Start Point"),
-                               lambda: self._setStartPoint(item, parent))
+        if item is not None:
+            if isinstance(item, tuple):
+                contour, index = item
+                targetContour = contour
+                if True or contour[index].segmentType is not None:  # XXX
+                    menu.addAction(self.tr("Set Start Point"),
+                                   lambda: self._setStartPoint(contour, index))
             elif isinstance(item, Component):
                 menu.addAction(self.tr("Go To Glyph"),
                                lambda: self._goToGlyph(item.baseGlyph))
@@ -348,45 +324,38 @@ class SelectionTool(BaseTool):
                 else:
                     text = self.tr("Make Local")
                 menu.addAction(text, lambda: self._toggleGuideline(item))
-        if targetContour is not None:
-            reverseText = self.tr("Reverse Contour")
-        else:
-            # XXX: text and action shouldnt be decoupled
-            if self._glyph.selection:
-                reverseText = self.tr("Reverse Selected Contours")
+        if len(self._glyph):
+            if targetContour is not None:
+                reverseText = self.tr("Reverse Contour")
+                target = [targetContour]
             else:
-                reverseText = self.tr("Reverse All Contours")
-        menu.addAction(reverseText, lambda: self._reverse(targetContour))
-        menu.addSeparator()
-        menu.addAction(self.tr("Add Component…"), self._createComponent)
+                # XXX: text and action shouldnt be decoupled
+                if self._glyph.selection:
+                    reverseText = self.tr("Reverse Selected Contours")
+                else:
+                    reverseText = self.tr("Reverse All Contours")
+                target = None
+            menu.addAction(reverseText, lambda: self._reverse(target))
+            menu.addSeparator()
+        if len(self._glyph.layer) > 1:
+            menu.addAction(self.tr("Add Component…"), self._createComponent)
         menu.addAction(self.tr("Add Anchor"), self._createAnchor)
         menu.addAction(self.tr("Add Guideline"), self._createGuideline)
         menu.exec_(self._cachedPos)
         self._cachedPos = None
 
-    # events
-
     def keyPressEvent(self, event):
         key = event.key()
-        if platformSpecific.isDeleteEvent(event):
-            glyph = self._glyph
-            # TODO: fuse more the two methods, they're similar and delete is
-            # Cut except not putting in the clipboard
-            if event.modifiers() & Qt.AltModifier:
-                deleteUISelection(glyph)
-            else:
-                preserveShape = not event.modifiers() & Qt.ShiftModifier
-                # TODO: prune
-                glyph.prepareUndo()
-                removeUIGlyphElements(glyph, preserveShape)
-        elif key in arrowKeys:
+        # XXX: this shouldn't be tool-specific!
+        if key in arrowKeys:
             # TODO: prune
             self._glyph.prepareUndo()
-            dx, dy = self._moveForEvent(event)
-            # TODO: seems weird that glyph.selection and selected don't incl.
-            # anchors and components while glyph.move does... see what glyphs
-            # does
-            moveUIGlyphElements(self._glyph, dx, dy)
+            delta = self._moveForEvent(event)
+            modifiers = event.modifiers()
+            slidePoints = modifiers & Qt.AltModifier
+            for contour in self._glyph:
+                UIMove(contour, delta, slidePoints=slidePoints)
+        # TODO: nav shouldn't be specific to this tool
         elif key in navKeys:
             pack = self._getSelectedCandidatePoint()
             if pack is not None:
@@ -413,20 +382,24 @@ class SelectionTool(BaseTool):
                     contour.dirty = True
 
     def mousePressEvent(self, event):
-        if event.button() & Qt.RightButton:
-            self.showContextMenu(event)
+        if event.button() != Qt.LeftButton:
+            super().mousePressEvent(event)
             return
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ControlModifier
         self._origin = self._prevPos = pos = self.magnetPos(event.localPos())
-        self._itemTuple = widget.itemAt(self._origin)
-        if self._itemTuple is not None:
-            itemUnderMouse, parentContour = self._itemTuple
-            if not (itemUnderMouse.selected or addToSelection):
+        self._mouseItem = widget.itemAt(self._origin)
+        if self._mouseItem is not None:
+            item = self._mouseItem
+            contour = None
+            if isinstance(item, tuple):
+                contour, i = item
+                item = contour[i]
+            if not (item.selected or addToSelection):
                 unselectUIGlyphElements(self._glyph)
-            itemUnderMouse.selected = True
-            if parentContour is not None:
-                parentContour.postNotification(
+            item.selected = True
+            if contour is not None:
+                contour.postNotification(
                     notification="Contour.SelectionChanged")
             self._shouldPrepareUndo = True
         else:
@@ -445,48 +418,53 @@ class SelectionTool(BaseTool):
                 self._performSegmentClick(pos, action, segmentTuple)
             else:
                 self._shouldMove = self._shouldPrepareUndo = True
+        if self._shouldPrepareUndo:
+            self._oldPath = self._glyph.getRepresentation(
+                "defconQt.NoComponentsQPainterPath")
         widget.update()
 
     def mouseMoveEvent(self, event):
+        if not event.buttons() & Qt.LeftButton:
+            super().mouseMoveEvent(event)
+            return
         glyph = self._glyph
         widget = self.parent()
-        if self._shouldMove or self._itemTuple is not None:
+        if self._shouldMove or self._mouseItem is not None:
             canvasPos = event.pos()
             if self._shouldPrepareUndo:
                 self._glyph.prepareUndo()
                 self._shouldPrepareUndo = False
             modifiers = event.modifiers()
-            if self._itemTuple is not None:
-                # Alt: move point along handles
-                if modifiers & Qt.AltModifier and len(glyph.selection) == 1:
-                    item, parent = self._itemTuple
-                    if parent is not None:
-                        x, y = canvasPos.x(), canvasPos.y()
-                        didMove = self._moveOnCurveAlongHandles(
-                            parent, item, x, y)
-                        if didMove:
-                            return
-                # Shift: clamp pos on axis
-                elif modifiers & Qt.ShiftModifier:
-                        item, parent = self._itemTuple
-                        if parent is not None:
-                            if item.segmentType is None:
-                                onCurve = self._getOffCurveSiblingPoint(
-                                    parent, item)
-                                canvasPos = self.clampToOrigin(
-                                    canvasPos, QPointF(onCurve.x, onCurve.y))
-                            else:
-                                canvasPos = self.clampToOrigin(
-                                    canvasPos, self._origin)
+            if modifiers & Qt.ShiftModifier:
+                # we clamp to the mouseDownPos, unless we have a
+                # single offCurve in which case we clamp it against
+                # its parent
+                canvasPos = self.clampToOrigin(canvasPos, self._origin)
+                if isinstance(self._mouseItem, tuple):
+                    selection = glyph.selection
+                    if len(selection) == 1:
+                        c, i = self._mouseItem
+                        p_ = c[i]
+                        if p_.segmentType is None:
+                            for d in (-1, 1):
+                                p__ = c[i+d]
+                                if p__.segmentType is not None:
+                                    canvasPos = self.clampToOrigin(
+                                        canvasPos, QPointF(p__.x, p__.y))
+                                    p_.x = canvasPos.x()
+                                    p_.y = canvasPos.y()
+                                    c.dirty = True
+                                    return
             dx = canvasPos.x() - self._prevPos.x()
             dy = canvasPos.y() - self._prevPos.y()
-            moveUIGlyphElements(glyph, dx, dy)
+            slidePoints = modifiers & Qt.AltModifier
+            moveUIGlyphElements(glyph, dx, dy, slidePoints=slidePoints)
             self._prevPos = canvasPos
         else:
             canvasPos = event.localPos()
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
             items = widget.items(self._rubberBandRect)
-            points = set(items["points"])
+            points = set(c[i] for c, i in items["points"])
             if event.modifiers() & Qt.ControlModifier:
                 points ^= self._oldSelection
             # TODO: fine-tune this more, maybe add optional args to items...
@@ -499,25 +477,25 @@ class SelectionTool(BaseTool):
         widget.update()
 
     def mouseReleaseEvent(self, event):
-        self._maybeJoinContour(event.localPos())
-        self._itemTuple = None
-        self._oldSelection = set()
-        self._rubberBandRect = None
-        self._shouldMove = False
-        self.parent().update()
+        if event.button() == Qt.LeftButton:
+            self._maybeJoinContour(event.localPos())
+            self._mouseItem = None
+            self._oldPath = None
+            self._oldSelection = set()
+            self._rubberBandRect = None
+            self._shouldMove = False
+            self.parent().update()
+        else:
+            super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         widget = self.parent()
-        self._itemTuple = widget.itemAt(self._origin)
-        if self._itemTuple is not None:
-            item, parent = self._itemTuple
-            if parent is None:
-                if isinstance(item, (Anchor, Guideline)):
-                    self._renameItem(item)
-            else:
-                point, contour = item, parent
+        self._mouseItem = item = widget.itemAt(self._origin)
+        if item is not None:
+            if isinstance(item, tuple):
+                contour, index = item
+                point = contour[index]
                 if point.segmentType is not None:
-                    index = contour.index(point)
                     if all(contour.getPoint(index + d).segmentType for d in (
                             -1, 1)):
                         return
@@ -525,11 +503,24 @@ class SelectionTool(BaseTool):
                     point.smooth = not point.smooth
                     contour.dirty = True
                     # if we have one offCurve, make it tangent
-                    maybeProjectUISmoothPointOffcurve(contour, point)
+                    maybeProjectUISmoothPointOffcurve(contour, index)
+            elif isinstance(item, (Anchor, Guideline)):
+                self._renameItem(item)
         else:
             self._performSegmentClick(event.localPos(), "selectContour")
 
     # custom painting
+
+    def paintBackground(self, painter):
+        if self._oldPath is not None:
+            # XXX: honor partialAliasing
+            painter.save()
+            pen = painter.pen()
+            pen.setColor(QColor(210, 210, 210))
+            pen.setWidth(0)
+            painter.setPen(pen)
+            painter.drawPath(self._oldPath)
+            painter.restore()
 
     def paint(self, painter):
         if self._rubberBandRect is None:

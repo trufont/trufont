@@ -1,5 +1,8 @@
-from defcon import Color
-from defconQt.tools.drawing import drawTextAtPoint
+from defconQt.tools import platformSpecific
+from defconQt.tools.drawing import (
+    colorToQColor, drawTextAtPoint, ellipsePath, lozengePath, rectanglePath,
+    trianglePath)
+from fontTools.misc.transform import Identity
 from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
@@ -27,31 +30,35 @@ _defaultColors = dict(
     # -----
 
     # contour fill
-    glyphContourFill=QColor.fromRgbF(.85, .85, .85, .5),
+    glyphContourFill=QColor.fromRgbF(.95, .95, .95, .3),
     # contour stroke
-    glyphContourStroke=QColor.fromRgbF(0, 0, 0, 1),
+    glyphContourStroke=QColor(34, 34, 34),
     # component fill
-    glyphComponentFill=QColor.fromRgbF(0, 0, 0, .4),
+    glyphComponentFill=QColor(90, 90, 90, 135),
     # component stroke
     glyphComponentStroke=QColor.fromRgbF(0, 0, 0, 1),
     # points
     glyphOnCurvePoints=QColor(4, 100, 166, 190),
-    glyphOtherPoints=QColor.fromRgbF(.6, .6, .6, 1),
+    glyphOnCurveSmoothPoints=QColor(41, 172, 118, 190),
+    glyphOffCurvePoints=QColor(116, 116, 116),
+    glyphOtherPoints=QColor(140, 140, 140, 240),
     # anchors
-    glyphAnchor=QColor(228, 96, 15, 200),
+    glyphAnchor=QColor(178, 102, 76, 200),
     # selection
-    glyphSelection=QColor(165, 190, 216, 155),
+    glyphSelection=QColor(145, 170, 196, 155),
     # guidelines
     glyphGuideline=QColor.fromRgbF(.3, .4, .85, .5),
+    # marker
+    glyphBluesMarker=QColor(235, 191, 202, 225),
+
+    # grid
+    gridColor=QColor(220, 220, 220),
 )
-
-
-def colorToQColor(color):
-    return QColor.fromRgbF(*Color(color))
 
 
 def defaultColor(name):
     return _defaultColors[name]
+
 
 # ----------
 # Primitives
@@ -63,7 +70,7 @@ def drawLine(painter, x1, y1, x2, y2, lineWidth=0):
     pen = painter.pen()
     if x1 == x2 or y1 == y2:
         painter.setRenderHint(QPainter.Antialiasing, False)
-        # antialiased drawing blend a little in color with the background
+        # antialiased drawing blends a little in color with the background
         # reduce alpha before drawing aliased
         color = pen.color()
         color.setAlphaF(.9 * color.alphaF())
@@ -78,15 +85,8 @@ def drawGlyphWithAliasedLines(painter, glyph):
     curvePath, lines = glyph.getRepresentation(
         "TruFont.SplitLinesQPainterPath")
     painter.drawPath(curvePath)
-    painter.save()
-    pen = painter.pen()
-    color = pen.color()
-    color.setAlphaF(.9 * color.alphaF())
-    pen.setColor(color)
-    painter.setPen(pen)
     for x1, y1, x2, y2 in lines:
-        drawLine(painter, x1, y1, x2, y2, painter.pen().widthF())
-    painter.restore()
+        drawLine(painter, x1, y1, x2, y2)
 
 # ----
 # Font
@@ -134,7 +134,6 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
     xMin, yMin, width, height = rect
     xMax = xMin + width
     yMax = yMin + height
-    fontSize = painter.font().pointSize()
     for line in guidelines:
         color_ = color
         if color_ is None:
@@ -195,6 +194,7 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
                 xAlign = "center"
             else:
                 if line.y is not None:
+                    fontSize = painter.font().pointSize()
                     textX = glyph.width + 6 * scale
                     textY = line.y - (fontSize / 3.5) * scale
                 elif line.x is not None:
@@ -235,9 +235,32 @@ def drawGlyphImage(
 
 def drawGlyphFillAndStroke(
         painter, glyph, scale, rect, drawFill=True, drawStroke=True,
-        drawSelection=True, contourFillColor=None, contourStrokeColor=None,
-        componentFillColor=None, componentStrokeColor=None,
-        strokeWidth=1.0, partialAliasing=True, selectionColor=None):
+        drawSelection=True, drawComponentsFill=True, contourFillColor=None,
+        contourStrokeColor=None, componentFillColor=None,
+        componentStrokeColor=None, strokeWidth=0, partialAliasing=True,
+        selectionColor=None):
+    if glyph.template:
+        if glyph.unicode is None:
+            return
+        text = chr(glyph.unicode)
+        font = glyph.font
+        height = 750
+        if font is not None and font.info.ascender:
+            height = font.info.ascender
+        painter.save()
+        font = platformSpecific.otherUIFont()
+        font.setPointSize(height)
+        painter.setFont(font)
+        color = QColor(Qt.lightGray)
+        color.setAlphaF(.4)
+        painter.setPen(color)
+        metrics = painter.fontMetrics()
+        xOffset = - (metrics.width(text) - glyph.width) / 2
+        painter.translate(xOffset, 0)
+        painter.scale(1, -1)
+        painter.drawText(0, 0, text)
+        painter.restore()
+        return
     strokeWidth /= QApplication.instance().devicePixelRatio()
     # get the layer color
     layer = glyph.layer
@@ -248,27 +271,50 @@ def drawGlyphFillAndStroke(
         selectionColor = defaultColor("glyphSelection")
     # get the paths
     contourPath = glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
-    componentPath = glyph.getRepresentation(
-        "defconQt.OnlyComponentsQPainterPath")
-    selectionPath = glyph.getRepresentation(
-        "TruFont.FilterSelectionQPainterPath")
+    componentPath, selectedComponentPath, originPts = glyph.getRepresentation(
+        "TruFont.SelectedComponentsQPainterPath")
     painter.save()
     # fill
+    # contours
     if drawFill:
-        # contours
-        if contourFillColor is None and layerColor is not None:
-            contourFillColor = layerColor
-        elif contourFillColor is None and layerColor is None:
-            contourFillColor = defaultColor("glyphContourFill")
+        if contourFillColor is None:
+            if layerColor is not None:
+                contourFillColor = layerColor
+            else:
+                contourFillColor = defaultColor("glyphContourFill")
         painter.fillPath(contourPath, QBrush(contourFillColor))
     # components
-    if componentFillColor is None and layerColor is not None:
-        componentFillColor = layerColor
-    elif componentFillColor is None and layerColor is None:
-        componentFillColor = defaultColor("glyphComponentFill")
-    painter.fillPath(componentPath, QBrush(componentFillColor))
+    if drawComponentsFill:
+        if componentFillColor is None:
+            if layerColor is not None:
+                componentFillColor = layerColor
+            else:
+                componentFillColor = defaultColor("glyphComponentFill")
+        selectedComponentFillColor = QColor(componentFillColor)
+        selectedComponentFillColor.setRed(0)
+        selectedComponentFillColor.setGreen(0)
+        selectedComponentFillColor.setBlue(0)
+        painter.fillPath(componentPath, QBrush(componentFillColor))
+        if drawSelection:
+            painter.fillPath(
+                selectedComponentPath, QBrush(selectedComponentFillColor))
+        else:
+            painter.fillPath(
+                selectedComponentPath, QBrush(componentFillColor))
+        # components origin
+        # TODO: make this a parameter, disable on sizes < MinDetails
+        painter.save()
+        pen = QPen(componentFillColor)
+        pen.setWidth(0)
+        painter.setPen(pen)
+        for x, y in originPts:
+            painter.drawLine(x, y + 5 * scale, x, y)
+            painter.drawLine(x, y, x + 4.5 * scale, y)
+        painter.restore()
     # selection
     if drawSelection:
+        selectionPath = glyph.getRepresentation(
+            "TruFont.SelectedContoursQPainterPath")
         pen = QPen(selectionColor)
         pen.setWidthF(3.5 * scale)
         painter.setPen(pen)
@@ -276,10 +322,11 @@ def drawGlyphFillAndStroke(
     # stroke
     if drawStroke:
         # work out the color
-        if contourStrokeColor is None and layerColor is not None:
-            contourStrokeColor = layerColor
-        elif contourStrokeColor is None and layerColor is None:
-            contourStrokeColor = defaultColor("glyphContourStroke")
+        if contourStrokeColor is None:
+            if layerColor is not None:
+                contourStrokeColor = layerColor
+            else:
+                contourStrokeColor = defaultColor("glyphContourStroke")
         # contours
         pen = QPen(contourStrokeColor)
         pen.setWidthF(strokeWidth * scale)
@@ -302,115 +349,181 @@ def drawGlyphFillAndStroke(
 def drawGlyphPoints(
         painter, glyph, scale, rect,
         drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
-        drawCoordinates=False, drawSelection=True, onCurveColor=None,
+        drawCoordinates=False, drawSelection=True, drawBluesMarkers=True,
+        onCurveColor=None, onCurveSmoothColor=None, offCurveColor=None,
         otherColor=None, backgroundColor=None):
     if onCurveColor is None:
-        layer = glyph.layer
-        if layer is not None and layer.color is not None:
-            onCurveColor = colorToQColor(layer.color)
-        else:
-            onCurveColor = defaultColor("glyphOnCurvePoints")
+        onCurveColor = defaultColor("glyphOnCurvePoints")
+    if onCurveSmoothColor is None:
+        onCurveSmoothColor = defaultColor("glyphOnCurveSmoothPoints")
+    if offCurveColor is None:
+        offCurveColor = defaultColor("glyphOffCurvePoints")
     if otherColor is None:
         otherColor = defaultColor("glyphOtherPoints")
     if backgroundColor is None:
         backgroundColor = defaultColor("background")
+    bluesMarkerColor = defaultColor("glyphBluesMarker")
+    notchColor = defaultColor("glyphContourStroke").lighter(200)
     # get the outline data
     outlineData = glyph.getRepresentation("defconQt.OutlineInformation")
     points = []
-    # start points
-    if drawStartPoints and outlineData["startPoints"]:
-        startWidth = startHeight = 15 * scale
-        startHalf = startWidth / 2.0
-        path = QPainterPath()
-        for point, angle in outlineData["startPoints"]:
-            x, y = point
-            if angle is not None:
-                path.moveTo(x, y)
-                path.arcTo(x - startHalf, y - startHalf, startWidth,
-                           startHeight, 180 - angle, 180)
-                path.closeSubpath()
-            else:
-                path.addEllipse(
-                    x - startHalf, y - startHalf, startWidth, startHeight)
-        startPointColor = QColor(otherColor)
-        aF = startPointColor.alphaF()
-        startPointColor.setAlphaF(aF * .3)
-        painter.fillPath(path, startPointColor)
+    # blue zones markers
+    if drawBluesMarkers:
+        font = glyph.font
+        blues = []
+        if font.info.postscriptBlueValues:
+            blues += font.info.postscriptBlueValues
+        if font.info.postscriptOtherBlues:
+            blues += font.info.postscriptOtherBlues
+        if blues:
+            blues_ = set(blues)
+            size = 13 * scale
+            selectedSize = 15 * scale
+            snapSize = 17 * scale
+            selectedSnapSize = 20 * scale
+            painter.save()
+            pen = painter.pen()
+            pen.setColor(QColor(255, 255, 255, 125))
+            pen.setWidth(0)
+            painter.setPen(pen)
+            for point in outlineData["onCurvePoints"]:
+                x, y = point["point"]
+                # TODO: we could add a non-overlapping interval tree special
+                # cased for borders
+                selected = drawSelection and point.get("selected")
+                if selected:
+                    size_ = selectedSize
+                    snapSize_ = selectedSnapSize
+                else:
+                    size_ = size
+                    snapSize_ = snapSize
+                for yMin, yMax in zip(blues[::2], blues[1::2]):
+                    if not (y >= yMin and y <= yMax):
+                        continue
+                    # if yMin > 0 and y == yMin or yMin <= 0 and y == yMax:
+                    if y in blues_:
+                        path = lozengePath(x, y, snapSize_)
+                    else:
+                        path = ellipsePath(x, y, size_)
+                    painter.fillPath(path, bluesMarkerColor)
+                    painter.drawPath(path)
+            painter.restore()
     # handles
     if drawOffCurves and outlineData["offCurvePoints"]:
         painter.save()
         painter.setPen(otherColor)
-        for pt1, pt2 in outlineData["bezierHandles"]:
-            x1, y1 = pt1
-            x2, y2 = pt2
-            # TODO: should lineWidth account scale by default
-            drawLine(painter, x1, y1, x2, y2, 1.0 * scale)
+        for x1, y1, x2, y2 in outlineData["bezierHandles"]:
+            drawLine(painter, x1, y1, x2, y2)
         painter.restore()
     # on curve
     if drawOnCurves and outlineData["onCurvePoints"]:
-        width = 7 * scale
-        half = width / 2.0
-        smoothWidth = 8 * scale
-        smoothHalf = smoothWidth / 2.0
+        size = 6.5 * scale
+        selectedSize = 8.5 * scale
+        smoothSize = 8 * scale
+        selectedSmoothSize = 10 * scale
+        startSize = 7 * scale
+        selectedStartSize = 9 * scale
+        loneStartSize = 12 * scale
+        selectedLoneStartSize = 14 * scale
         painter.save()
-        path = QPainterPath()
-        selectedPath = QPainterPath()
+        notchPath = QPainterPath()
+        paths = (QPainterPath(), QPainterPath())
+        smoothPaths = (QPainterPath(), QPainterPath())
         for point in outlineData["onCurvePoints"]:
             x, y = point["point"]
             points.append((x, y))
-            pointPath = QPainterPath()
-            if point["smooth"]:
-                x -= smoothHalf
-                y -= smoothHalf
-                pointPath.addEllipse(x, y, smoothWidth, smoothWidth)
+            # notch
+            if "smoothAngle" in point:
+                angle = point["smoothAngle"]
+                t = Identity.rotate(angle)
+                x1, y1 = t.transformPoint((-1.35 * scale, 0))
+                x2, y2 = -x1, -y1
+                x1 += x
+                y1 += y
+                x2 += x
+                y2 += y
+                notchPath.moveTo(x1, y1)
+                notchPath.lineTo(x2, y2)
+            # points
+            selected = drawSelection and point.get("selected")
+            if selected:
+                size_ = selectedSize
+                smoothSize_ = selectedSmoothSize
+                startSize_ = selectedStartSize
+                loneStartSize_ = selectedLoneStartSize
             else:
-                x -= half
-                y -= half
-                pointPath.addRect(x, y, width, width)
-            if drawSelection and point["selected"]:
-                selectedPath.addPath(pointPath)
-            path.addPath(pointPath)
-        pen = QPen(onCurveColor)
-        pen.setWidthF(1.5 * scale)
-        painter.setPen(pen)
+                size_ = size
+                smoothSize_ = smoothSize
+                startSize_ = startSize
+                loneStartSize_ = loneStartSize
+            if drawStartPoints and "startPointAngle" in point:
+                angle = point["startPointAngle"]
+                if angle is not None:
+                    pointPath = trianglePath(x, y, startSize_, angle)
+                else:
+                    pointPath = ellipsePath(x, y, loneStartSize_)
+            elif point["smooth"]:
+                pointPath = ellipsePath(x, y, smoothSize_)
+            else:
+                pointPath = rectanglePath(x, y, size_)
+            # store the path
+            if point["smooth"]:
+                smoothPaths[selected].addPath(pointPath)
+            else:
+                paths[selected].addPath(pointPath)
+        path, selectedPath = paths
+        smoothPath, selectedSmoothPath = smoothPaths
+        # fill
+        selectedPath.setFillRule(Qt.WindingFill)
+        selectedSmoothPath.setFillRule(Qt.WindingFill)
         painter.fillPath(selectedPath, onCurveColor)
+        painter.fillPath(selectedSmoothPath, onCurveSmoothColor)
+        # stroke
+        pen = QPen(onCurveColor)
+        pen.setWidthF(1.2 * scale)
+        painter.setPen(pen)
         painter.drawPath(path)
+        pen.setColor(onCurveSmoothColor)
+        painter.setPen(pen)
+        painter.drawPath(smoothPath)
+        # notch
+        pen.setColor(notchColor)
+        pen.setWidth(0)
+        painter.setPen(pen)
+        painter.drawPath(notchPath)
         painter.restore()
     # off curve
     if drawOffCurves and outlineData["offCurvePoints"]:
-        # lines
         # points
-        offWidth = 5 * scale
-        offHalf = offWidth / 2.0
+        offSize = 4.25 * scale
+        selectedOffSize = 6.75 * scale
         path = QPainterPath()
         selectedPath = QPainterPath()
+        selectedPath.setFillRule(Qt.WindingFill)
         for point in outlineData["offCurvePoints"]:
             x, y = point["point"]
-            points.append((x, y))
-            pointPath = QPainterPath()
-            x -= offHalf
-            y -= offHalf
-            pointPath.addEllipse(x, y, offWidth, offWidth)
-            if drawSelection and point["selected"]:
+            selected = drawSelection and point.get("selected")
+            if selected:
+                offSize_ = selectedOffSize
+            else:
+                offSize_ = offSize
+            pointPath = ellipsePath(x, y, offSize_)
+            if selected:
                 selectedPath.addPath(pointPath)
             else:
                 path.addPath(pointPath)
-        pen = QPen(otherColor)
-        pen.setWidthF(3.0 * scale)
+        pen = QPen(offCurveColor)
+        pen.setWidthF(2.5 * scale)
         painter.save()
         painter.setPen(pen)
         painter.drawPath(path)
         painter.fillPath(path, QBrush(backgroundColor))
-        painter.drawPath(selectedPath)
-        painter.fillPath(selectedPath, QBrush(otherColor))
+        painter.fillPath(selectedPath, QBrush(offCurveColor.lighter(135)))
         painter.restore()
     # coordinates
     if drawCoordinates:
-        otherColor = QColor(otherColor)
-        otherColor.setAlphaF(otherColor.alphaF() * .6)
         painter.save()
         painter.setPen(otherColor)
-        # TODO: decision + color
         font = painter.font()
         font.setPointSize(7)
         painter.setFont(font)
@@ -418,7 +531,7 @@ def drawGlyphPoints(
             posX = x
             # TODO: We use + here because we align on top. Consider abstracting
             # yOffset.
-            posY = y + 3
+            posY = y + 6 * scale
             x = round(x, 1)
             if int(x) == x:
                 x = int(x)
@@ -434,43 +547,58 @@ def drawGlyphPoints(
 
 
 def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
-                     drawSelection=True, drawText=True, color=None,
-                     selectionColor=None):
+                     drawSelection=True, drawText=True, color=None):
     if not glyph.anchors:
         return
     if color is None:
         color = defaultColor("glyphAnchor")
-    if selectionColor is None:
-        selectionColor = defaultColor("glyphSelection")
     fallbackColor = color
-    anchorSize = 6 * scale
-    anchorHalfSize = anchorSize / 2
+    anchorSize = 9 * scale
+    selectedAnchorSize = 11 * scale
     for anchor in glyph.anchors:
         if anchor.color is not None:
             color = colorToQColor(anchor.color)
         else:
             color = fallbackColor
-        x = anchor.x
-        y = anchor.y
+        x, y = anchor.x, anchor.y
         name = anchor.name
         painter.save()
         if drawAnchors:
-            path = QPainterPath()
-            path.addEllipse(x - anchorHalfSize, y - anchorHalfSize,
-                            anchorSize, anchorSize)
-            painter.fillPath(path, color)
             if drawSelection and anchor.selected:
-                pen = QPen(selectionColor)
-                pen.setWidthF(5.0 * scale)
-                painter.setPen(pen)
-                painter.drawPath(path)
-        if drawText and name:
+                size = selectedAnchorSize
+            else:
+                size = anchorSize
+            path = lozengePath(x, y, size)
+            painter.fillPath(path, color)
+        if drawText and name and drawSelection and anchor.selected:
             painter.setPen(color)
             # TODO: we're using + before we shift to top, ideally this should
             # be abstracted w drawTextAtPoint taking a dy parameter that will
             # offset the drawing region from origin regardless of whether we
             # are aligning to top or bottom.
-            y += 3 * scale
+            y += 6 * scale
             drawTextAtPoint(painter, name, x, y, scale,
                             xAlign="center", yAlign="top")
         painter.restore()
+
+# Grid
+
+
+def drawGrid(painter, scale, rect, color=None):
+    if color is None:
+        color = defaultColor("gridColor")
+    xMin, yMin, width, height = rect
+    xMax = x = round(xMin + width)
+    yMax = y = round(yMin + height)
+    xMin, yMin = int(xMin), int(yMin)
+    painter.save()
+    pen = QPen(color)
+    pen.setWidth(0)
+    painter.setPen(pen)
+    while x > xMin:
+        painter.drawLine(x, yMin, x, yMax)
+        x -= 1
+    while y > yMin:
+        painter.drawLine(xMin, y, xMax, y)
+        y -= 1
+    painter.restore()

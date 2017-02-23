@@ -3,7 +3,8 @@ from trufont.representationFactories.glyphCellFactory import (
     TFGlyphCellFactory)
 from trufont.representationFactories.glyphViewFactory import (
     ComponentQPainterPathFactory, FilterSelectionFactory,
-    FilterSelectionQPainterPathFactory, SplitLinesQPainterPathFactory)
+    SelectedContoursQPainterPathFactory, SelectedComponentsQPainterPathFactory,
+    SplitLinesQPainterPathFactory)
 from trufont.representationFactories.openTypeFactory import (
     TTFontFactory, QuadraticTTFontFactory)
 
@@ -13,12 +14,15 @@ _fontFactories = {
 }
 # TODO: fine-tune the destructive notifications
 _glyphFactories = {
+    "TruFont.SelectedComponentsQPainterPath": (
+        SelectedComponentsQPainterPathFactory,
+        ("Glyph.Changed", "Glyph.SelectionChanged")),
     "TruFont.SplitLinesQPainterPath": (
         SplitLinesQPainterPathFactory, None),
     "TruFont.FilterSelection": (
         FilterSelectionFactory, ("Glyph.Changed", "Glyph.SelectionChanged")),
-    "TruFont.FilterSelectionQPainterPath": (
-        FilterSelectionQPainterPathFactory,
+    "TruFont.SelectedContoursQPainterPath": (
+        SelectedContoursQPainterPathFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged")),
     "TruFont.GlyphCell": (
         TFGlyphCellFactory, None),

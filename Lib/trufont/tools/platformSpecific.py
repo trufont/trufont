@@ -116,7 +116,12 @@ def needsCustomRubberBand():
 
 def appStyleSheet():
     if sys.platform == "win32":
-        return "QStatusBar::item { border: none; }"
+        return "QStatusBar::item { border: none; } QWidget { \
+            font-family: 'Segoe UI', sans-serif; font-size: 9pt; }"
     elif sys.platform == "darwin":
         return "QToolTip { background-color: white; }"
     return None
+
+
+def topBackground():
+    return sys.platform == "win32"

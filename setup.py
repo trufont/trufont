@@ -7,7 +7,7 @@ with open('README.rst', 'r', encoding="utf-8") as f:
 
 setup(
     name="trufont",
-    version="0.5.0",
+    version="0.6.0.dev0",
     description="TruFont, a modular and cross-platform font editor.",
     long_description=long_description,
     author="Adrien Tétar",

@@ -5,7 +5,6 @@ from defconQt.windows.baseWindows import BaseWindow
 from trufont.objects import settings
 from trufont.objects.defcon import TGlyph
 from trufont.resources import icons_db  # noqa
-from trufont.windows.glyphWindow import GlyphWindow
 from PyQt5.QtCore import pyqtSignal, QEvent, QSize, QSizeF, QStandardPaths, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QCursor, QIcon, QIntValidator, QPainter, QPalette)
@@ -108,10 +107,10 @@ class MetricsWindow(BaseWindow):
     # widget
 
     def _glyphActivated(self, glyph):
-        # TODO: parent should be self. make glyphWindow independent of its
-        # parent
-        glyphWindow = GlyphWindow(glyph, self.parent())
-        glyphWindow.show()
+        fontWindow = self.parent() or self._fontWindow
+        if fontWindow is not None:
+            fontWindow.openGlyphTab(glyph)
+            fontWindow.raise_()
 
     # ----------
     # Qt methods

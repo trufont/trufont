@@ -2,12 +2,12 @@ from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.controls.listView import ListView
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from trufont.controls.glyphStackWidget import GlyphStackWidget
-from trufont.objects import settings
+from trufont.objects import icons, settings
 from trufont.tools import platformSpecific
 from PyQt5.QtCore import pyqtSignal, QSize, Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
-    QGridLayout, QPushButton, QRadioButton, QWidget)
+    QGridLayout, QPushButton, QRadioButton, QSizePolicy, QWidget)
 import bisect
 
 _leftGroupPrefix = "public.kern1"
@@ -34,9 +34,13 @@ class GroupsWindow(QWidget):
 
         self.stackWidget = GlyphStackWidget(self)
 
-        self.addGroupButton = QPushButton("+", self)
+        self.addGroupButton = QPushButton(self)
+        self.addGroupButton.setIcon(icons.icon("i_plus"))
+        self.addGroupButton.setToolTip(self.tr("Add group"))
         self.addGroupButton.clicked.connect(self._groupAdd)
-        self.removeGroupButton = QPushButton("−", self)
+        self.removeGroupButton = QPushButton(self)
+        self.removeGroupButton.setIcon(icons.icon("i_minus"))
+        self.removeGroupButton.setToolTip(self.tr("Remove group"))
         self.removeGroupButton.clicked.connect(self._groupDeleted)
         if not groups:
             self.removeGroupButton.setEnabled(False)
@@ -50,15 +54,18 @@ class GroupsWindow(QWidget):
         self.groupCellView.glyphsDropped.connect(self._glyphsDropped)
         self.groupCellView.selectionDeleted.connect(self._selectionDeleted)
 
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
         layout = QGridLayout(self)
-        layout.addWidget(self.groupsListView, 0, 0, 5, 4)
-        layout.addWidget(self.stackWidget, 0, 4, 5, 4)
+        layout.addWidget(self.groupsListView, 0, 0, 5, 3)
+        layout.addWidget(self.stackWidget, 0, 3, 5, 4)
         layout.addWidget(self.addGroupButton, 5, 0)
-        layout.addWidget(self.removeGroupButton, 5, 3)
-        layout.addWidget(self.alignLeftBox, 5, 4)
-        layout.addWidget(self.alignRightBox, 5, 7)
-        layout.addWidget(self.groupCellView, 6, 0, 4, 8)
-        # TODO: calib this more
+        layout.addWidget(self.removeGroupButton, 5, 1)
+        layout.addWidget(spacer, 5, 2)
+        layout.addWidget(self.alignLeftBox, 5, 3)
+        layout.addWidget(self.alignRightBox, 5, 6)
+        layout.addWidget(self.groupCellView, 6, 0, 4, 7)
         layout.setColumnStretch(4, 1)
         self.setLayout(layout)
 
@@ -166,6 +173,7 @@ class GroupsWindow(QWidget):
         if name is None:
             return
         del self._font.groups[name]
+        self.removeGroupButton.setEnabled(len(self._font.groups))
 
     def _selectionDeleted(self, selection):
         name = self.groupsListView.currentValue()

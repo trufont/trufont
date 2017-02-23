@@ -1,21 +1,46 @@
-from PyQt5.QtCore import QObject
-from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QObject, Qt
+from PyQt5.QtGui import QColor, QCursor, QPainter, QPixmap, QPainterPath
+from PyQt5.QtWidgets import QApplication, QGraphicsDropShadowEffect
+from defconQt.tools.drawing import applyEffectToPixmap
+
+_path = QPainterPath()
+_path.moveTo(9, 7.3)
+_path.lineTo(9, 24)
+_path.lineTo(21, 12)
+_path.lineTo(16.3, 12)
+_path.lineTo(18.6, 6.6)
+_path.lineTo(14.85, 5)
+_path.lineTo(12.5, 10.7)
+_path.closeSubpath()
+
+path = QPainterPath()
+path.moveTo(10, 9.75)
+path.lineTo(12.8, 12.5)
+path.lineTo(15.3, 6.5)
+path.lineTo(17.2, 7.3)
+path.lineTo(14.75, 13.1)
+path.lineTo(18.5, 13.1)
+path.lineTo(10, 21.5)
+path.closeSubpath()
 
 
 class BaseTool(QObject):
+    icon = QPainterPath()
     name = QApplication.translate("BaseTool", "Tool")
-    cursor = QCursor()
-    iconPath = None
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    @property
+    def cursor(self):
+        # TODO: cache?
+        return self.makeCursor(_path, path, 10, 1)
 
     def toolActivated(self):
         pass
 
     def toolDisabled(self):
         pass
+
+    def drawingAttribute(self, attr, layerName):
+        return None
 
     @property
     def _glyph(self):
@@ -44,15 +69,42 @@ class BaseTool(QObject):
 
     def magnetPos(self, pos):
         widget = self.parent()
-        itemTuple = widget.itemAt(pos)
-        if itemTuple is not None:
-            itemUnderMouse, parent = itemTuple
-            if parent is not None:
-                pos.setX(itemUnderMouse.x)
-                pos.setY(itemUnderMouse.y)
+        mouseItem = widget.itemAt(pos)
+        if isinstance(mouseItem, tuple):
+            contour, index = mouseItem
+            point = contour[index]
+            pos.setX(point.x)
+            pos.setY(point.y)
+        # TODO: also clamp to (0, 0) and (glyph.width, 0), conditionally?
         return pos
 
+    def makeCursor(self, whitePath, blackPath, x, y):
+        pixmap = QPixmap(24, 24)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(0, pixmap.height())
+        painter.scale(1, -1)
+        painter.fillPath(whitePath, Qt.white)
+        painter.end()
+        effect = QGraphicsDropShadowEffect()
+        effect.setColor(QColor.fromRgbF(0, 0, 0, .3))
+        effect.setBlurRadius(4)
+        effect.setOffset(0, 1)
+        pixmap = applyEffectToPixmap(pixmap, effect)
+        painter.begin(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(0, pixmap.height())
+        painter.scale(1, -1)
+        painter.fillPath(blackPath, Qt.black)
+        painter.end()
+        return QCursor(pixmap, x, y)
+
     # events
+
+    def contextMenuEvent(self, event):
+        pass
 
     def keyPressEvent(self, event):
         pass
@@ -61,18 +113,33 @@ class BaseTool(QObject):
         pass
 
     def mousePressEvent(self, event):
-        pass
+        if event.button() == Qt.MidButton:
+            self._panOrigin = event.globalPos()
 
     def mouseMoveEvent(self, event):
-        pass
+        if hasattr(self, "_panOrigin"):
+            pos = event.globalPos()
+            scrollArea = self.parent().scrollArea()
+            delta = pos - self._panOrigin
+
+            hSB = scrollArea.horizontalScrollBar()
+            hSB.setValue(hSB.value() - delta.x())
+            vSB = scrollArea.verticalScrollBar()
+            vSB.setValue(vSB.value() - delta.y())
+
+            self._panOrigin = pos
 
     def mouseReleaseEvent(self, event):
-        pass
+        if hasattr(self, "_panOrigin"):
+            del self._panOrigin
 
     def mouseDoubleClickEvent(self, event):
         pass
 
     # custom painting
+
+    def paintBackground(self, painter):
+        pass
 
     def paint(self, painter):
         pass

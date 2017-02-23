@@ -5,9 +5,9 @@ from PyQt5.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog,
     QDialogButtonBox, QFileDialog, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMenu, QPlainTextEdit, QPushButton,
-    QSplitter, QVBoxLayout, QWidget)
+    QSizePolicy, QSplitter, QVBoxLayout, QWidget)
 from trufont.controls.nameTabWidget import NameTabWidget
-from trufont.objects import settings
+from trufont.objects import icons, settings
 
 
 class SettingsWindow(QDialog):
@@ -78,28 +78,32 @@ class GlyphSetTab(QWidget):
         splitter = QSplitter(self)
         splitter.addWidget(self.glyphSetList)
         splitter.addWidget(self.glyphSetContents)
-        self.addGlyphSetButton = QPushButton("+", self)
+        self.addGlyphSetButton = QPushButton(self)
+        self.addGlyphSetButton.setIcon(icons.icon("i_plus"))
         self.addGlyphSetButton.clicked.connect(lambda: self.addGlyphSet())
-        self.removeGlyphSetButton = QPushButton("−", self)
+        self.removeGlyphSetButton = QPushButton(self)
+        self.removeGlyphSetButton.setIcon(icons.icon("i_minus"))
         self.removeGlyphSetButton.clicked.connect(self.removeGlyphSet)
         self.importButton = QPushButton(self.tr("Import"), self)
         importMenu = QMenu(self)
         importMenu.addAction(
-            self.tr("Import from current font"), self.importFromCurrentFont)
+            self.tr("Import from Current Font"), self.importFromCurrentFont)
         self.importButton.setMenu(importMenu)
         self.glyphListBox = QCheckBox(self.tr("Glyph list path:"), self)
         self.glyphListEdit = QLineEdit(self)
         self.glyphListEdit.setReadOnly(True)
         self.glyphListButton = QPushButton(self.tr("Browse…"), self)
         self.glyphListButton.clicked.connect(self.getGlyphList)
-        # TODO: find correct solution for this and maybe make a widget w
-        # setSizesToText()
-        # http://stackoverflow.com/a/19502467/2037879
-        textWidth = self.glyphListButton.fontMetrics().boundingRect(
-            self.glyphListButton.text()).width() + 16
-        self.glyphListButton.setMaximumWidth(textWidth)
         self.glyphListBox.toggled.connect(self.glyphListEdit.setEnabled)
         self.glyphListBox.toggled.connect(self.glyphListButton.setEnabled)
+
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.addWidget(self.addGlyphSetButton)
+        buttonsLayout.addWidget(self.removeGlyphSetButton)
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        buttonsLayout.addWidget(spacer)
+        buttonsLayout.addWidget(self.importButton)
 
         firstLayout = QGridLayout()
         l = 0
@@ -108,13 +112,11 @@ class GlyphSetTab(QWidget):
         l += 1
         firstLayout.addWidget(splitter, l, 0, 1, 6)
         l += 1
-        firstLayout.addWidget(self.addGlyphSetButton, l, 0)
-        firstLayout.addWidget(self.removeGlyphSetButton, l, 1)
-        firstLayout.addWidget(self.importButton, l, 2)
+        firstLayout.addLayout(buttonsLayout, l, 0, 1, 3)
         secondLayout = QHBoxLayout()
-        secondLayout.addWidget(self.glyphListBox, 0)
-        secondLayout.addWidget(self.glyphListEdit, 1)
-        secondLayout.addWidget(self.glyphListButton, 2)
+        secondLayout.addWidget(self.glyphListBox)
+        secondLayout.addWidget(self.glyphListEdit)
+        secondLayout.addWidget(self.glyphListButton)
         mainLayout = QVBoxLayout(self)
         mainLayout.addLayout(firstLayout)
         mainLayout.addLayout(secondLayout)
@@ -239,19 +241,24 @@ class MetricsWindowTab(QWidget):
         self.inputTextLabel = QLabel(self.tr("Default text:"), self)
         self.inputTextList = QListWidget(self)
         self.inputTextList.setDragDropMode(QAbstractItemView.InternalMove)
-        self.addItemButton = QPushButton("+", self)
+        self.addItemButton = QPushButton(self)
+        self.addItemButton.setIcon(icons.icon("i_plus"))
         self.addItemButton.clicked.connect(self.addItem)
-        self.removeItemButton = QPushButton("−", self)
+        self.removeItemButton = QPushButton(self)
+        self.removeItemButton.setIcon(icons.icon("i_minus"))
         self.removeItemButton.clicked.connect(self.removeItem)
 
-        layout = QGridLayout(self)
-        l = 0
-        layout.addWidget(self.inputTextLabel, l, 0, 1, 3)
-        l += 1
-        layout.addWidget(self.inputTextList, l, 0, 1, 3)
-        l += 1
-        layout.addWidget(self.addItemButton, l, 0)
-        layout.addWidget(self.removeItemButton, l, 1)
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.addWidget(self.addItemButton)
+        buttonsLayout.addWidget(self.removeItemButton)
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        buttonsLayout.addWidget(spacer)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.inputTextLabel)
+        layout.addWidget(self.inputTextList)
+        layout.addLayout(buttonsLayout)
         self.setLayout(layout)
 
         self.readSettings()
@@ -299,24 +306,29 @@ class MiscTab(QWidget):
         self.markColorView.setList([])
         self.markColorView.setHeaderLabels(
             (self.tr("Color"), self.tr("Name")))
-        self.addItemButton = QPushButton("+", self)
+        self.addItemButton = QPushButton(self)
+        self.addItemButton.setIcon(icons.icon("i_plus"))
         self.addItemButton.clicked.connect(self.addItem)
-        self.removeItemButton = QPushButton("−", self)
+        self.removeItemButton = QPushButton(self)
+        self.removeItemButton.setIcon(icons.icon("i_minus"))
         self.removeItemButton.clicked.connect(self.removeItem)
 
         self.loadRecentFileBox = QCheckBox(
             self.tr("Load most recent file on start"), self)
 
-        layout = QGridLayout(self)
-        l = 0
-        layout.addWidget(self.markColorLabel, l, 0, 1, 3)
-        l += 1
-        layout.addWidget(self.markColorView, l, 0, 1, 3)
-        l += 1
-        layout.addWidget(self.addItemButton, l, 0)
-        layout.addWidget(self.removeItemButton, l, 1)
-        l += 1
-        layout.addWidget(self.loadRecentFileBox, l, 0, 1, 3)
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.setSizeConstraint(QHBoxLayout.SetMinimumSize)
+        buttonsLayout.addWidget(self.addItemButton)
+        buttonsLayout.addWidget(self.removeItemButton)
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        buttonsLayout.addWidget(spacer)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.markColorLabel)
+        layout.addWidget(self.markColorView)
+        layout.addLayout(buttonsLayout)
+        layout.addWidget(self.loadRecentFileBox)
         self.setLayout(layout)
 
         self.readSettings()

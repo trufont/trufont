@@ -1,4 +1,4 @@
-from husl import husl_to_rgb
+from hsluv import hsluv_to_rgb
 from PyQt5.QtGui import QColor
 import random
 
@@ -25,7 +25,7 @@ class ColorGenerator:
         hue = 360 * cls.seed
         sat = random.uniform(cls.minS, cls.maxS)
         lum = random.uniform(cls.minL, cls.maxL)
-        return husl_to_rgb(hue, sat, lum)
+        return hsluv_to_rgb([hue, sat, lum])
 
     @classmethod
     def getQColor(cls):

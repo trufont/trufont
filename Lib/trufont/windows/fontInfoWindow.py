@@ -17,6 +17,7 @@ from trufont.objects import settings
 
 def TransparentScrollArea(parent=None):
     scrollArea = QScrollArea(parent)
+    scrollArea.setFrameShape(scrollArea.NoFrame)
     scrollArea.setStyleSheet(".QScrollArea { background: transparent; }")
     scrollArea.viewport().setStyleSheet(
         ".QWidget { background: transparent; }")

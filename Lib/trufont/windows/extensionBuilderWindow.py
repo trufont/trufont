@@ -3,7 +3,7 @@ from PyQt5.QtCore import QRegularExpression, QSize
 from PyQt5.QtGui import QRegularExpressionValidator
 from PyQt5.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
-    QFrame, QLabel, QLineEdit, QVBoxLayout)
+    QFrame, QLabel, QLineEdit, QSizePolicy, QVBoxLayout)
 from trufont.controls.folderComboBox import FolderComboBox
 from trufont.objects.extension import TExtension
 import os
@@ -44,7 +44,11 @@ class ExtensionBuilderWindow(QDialog):
         layout.addRow(HLine(self))
 
         self.resourcesRootBox = FolderComboBox(self)
+        self.resourcesRootBox.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.scriptRootBox = FolderComboBox(self)
+        self.scriptRootBox.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.scriptRootBox.currentFolderModified.connect(self.updateView)
         layout.addRow(self.tr("Resources root:"), self.resourcesRootBox)
         layout.addRow(self.tr("Script root:"), self.scriptRootBox)

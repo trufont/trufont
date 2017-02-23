@@ -45,7 +45,8 @@ _latinDefaultGlyphNames = \
      "tildecomb", "uni0327", "quoteleft", "quoteright", "minus"]
 
 _fallbackValues = {
-    "fontWindow/glyphCellSize": 68,
+    "fontWindow/glyphCellSize": 86,
+    "fontWindow/propertiesHidden": False,
     "metricsWindow/comboBoxItems": _metricsWindowComboBoxItems,
     "misc/loadRecentFile": False,
     "outputWindow/wrapLines": False,
@@ -73,6 +74,7 @@ def value(key, fallback=None, type=None):
 
 
 def setValue(key, value):
+    # TODO: send preferencesChanged here?
     settings = QSettings()
     settings.setValue(key, value)
 
@@ -119,12 +121,25 @@ def setGlyphCellSize(cellSize):
     setValue("fontWindow/glyphCellSize", cellSize)
 
 
-def glyphWindowGeometry():
-    return value("glyphWindow/geometry", type=QByteArray)
+def removeGlyphCellSize():
+    settings = QSettings()
+    settings.remove("fontWindow/glyphCellSize")
 
 
-def setGlyphWindowGeometry(geometry):
-    setValue("glyphWindow/geometry", geometry)
+def propertiesHidden():
+    return value("fontWindow/propertiesHidden")
+
+
+def setPropertiesHidden(value):
+    setValue("fontWindow/propertiesHidden", value)
+
+
+def drawingAttributes():
+    return value("fontWindow/drawingAttributes", type=dict)
+
+
+def setDrawingAttributes(drawingAttributes):
+    setValue("fontWindow/drawingAttributes", drawingAttributes)
 
 
 def groupsWindowGeometry():
@@ -133,14 +148,6 @@ def groupsWindowGeometry():
 
 def setGroupsWindowGeometry(geometry):
     setValue("groupsWindow/geometry", geometry)
-
-
-def inspectorWindowGeometry():
-    return value("inspectorWindow/geometry", type=QByteArray)
-
-
-def setInspectorWindowGeometry(geometry):
-    setValue("inspectorWindow/geometry", geometry)
 
 
 def metricsWindowGeometry():

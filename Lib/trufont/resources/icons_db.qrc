@@ -1,19 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/">
 	<file>app.png</file>
-	<file>cursor.svg</file>
-	<file>curve.svg</file>
-	<file>cutter.svg</file>
-	<file>format-horizontal-align-center.svg</file>
-	<file>format-horizontal-align-left.svg</file>
-	<file>format-horizontal-align-right.svg</file>
-	<file>format-vertical-align-bottom.svg</file>
-	<file>format-vertical-align-center.svg</file>
-	<file>format-vertical-align-top.svg</file>
-	<file>ruler.svg</file>
 	<file>settings.svg</file>
-	<file>swap-vertical.svg</file>
-	<file>swap.svg</file>
-	<file>union.svg</file>
 </qresource>
 </RCC>

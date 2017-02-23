@@ -118,6 +118,7 @@ class Entries(object):
     Edit_Paste = "&Paste"
     Edit_Clear = "Cl&ear"
     Edit_Select_All = "&Select All"
+    Edit_Deselect = "&Deselect"
     Edit_Find = "&Find…"
     Edit_Settings = "&Settings…"
 
@@ -125,8 +126,16 @@ class Entries(object):
     View_Zoom_In = "Zoom &In"
     View_Zoom_Out = "Zoom &Out"
     View_Reset_Zoom = "&Reset Zoom"
+    View_Next_Tab = "&Next Tab"
+    View_Previous_Tab = "&Previous Tab"
     View_Next_Glyph = "&Next Glyph"
     View_Previous_Glyph = "&Previous Glyph"
+    View_Layer_Up = "Layer &Up"
+    View_Layer_Down = "Layer &Down"
+    View_Show_Points = "Show P&oints"
+    View_Show_Metrics = "Show &Metrics"
+    View_Show_Images = "Show &Images"
+    View_Show_Guidelines = "Show &Guidelines"
 
     Font = "F&ont"
     Font_Font_Info = "Font &Info"
@@ -137,16 +146,16 @@ class Entries(object):
     Scripts = "&Scripts"
     Scripts_Build_Extension = "&Build Extension…"
 
-    # TODO: remove inspector and metrics
+    # TODO: remove metrics
     Window = "&Window"
     Window_Minimize = "&Minimize"
     Window_Minimize_All = "Minimize &All"
     Window_Zoom = "&Zoom"
-    Window_Inspector = "&Inspector"
     Window_Groups = "&Groups"
     Window_Kerning = "&Kerning"
     Window_Metrics = "M&etrics"
     Window_Scripting = "&Scripting"
+    Window_Properties = "&Properties"
     Window_Output = "&Output"
 
     Help = "&Help"
@@ -171,24 +180,32 @@ _shortcuts = {
     Entries.Edit_Copy_As_Component: "Ctrl+Alt+C",
     Entries.Edit_Paste: QKeySequence.Paste,
     Entries.Edit_Select_All: QKeySequence.SelectAll,
+    Entries.Edit_Deselect: "Ctrl+D",
     Entries.Edit_Find: QKeySequence.Find,
 
     Entries.View_Zoom_In: QKeySequence.ZoomIn,
     Entries.View_Zoom_Out: QKeySequence.ZoomOut,
     Entries.View_Reset_Zoom: "Ctrl+0",
+    Entries.View_Next_Tab: QKeySequence.NextChild,
+    Entries.View_Previous_Tab: QKeySequence.PreviousChild,
     Entries.View_Next_Glyph: "End",
     Entries.View_Previous_Glyph: "Home",
+    Entries.View_Layer_Up: "Ctrl+Shift+Up",
+    Entries.View_Layer_Down: "Ctrl+Shift+Down",
+    Entries.View_Show_Points: "Ctrl+Shift+N",
+    Entries.View_Show_Metrics: "Ctrl+Shift+M",
+    Entries.View_Show_Guidelines: "Ctrl+Shift+G",
 
     Entries.Font_Font_Info: "Ctrl+Alt+I",
     Entries.Font_Font_Features: "Ctrl+Alt+F",
     Entries.Font_Add_Glyphs: "Ctrl+G",
 
     Entries.Window_Minimize: "Ctrl+M",
-    Entries.Window_Inspector: "Ctrl+I",
     Entries.Window_Groups: "Ctrl+Alt+G",
     Entries.Window_Kerning: "Ctrl+Alt+K",
     Entries.Window_Metrics: "Ctrl+Alt+S",
     Entries.Window_Scripting: "Ctrl+Alt+R",
+    Entries.Window_Properties: "Ctrl+Alt+P",
     Entries.Window_Output: "Ctrl+Alt+O",
 }
 
@@ -222,6 +239,7 @@ def globalMenuBar():
     editMenu.fetchAction(Entries.Edit_Paste)
     editMenu.fetchAction(Entries.Edit_Clear)
     editMenu.fetchAction(Entries.Edit_Select_All)
+    # editMenu.fetchAction(Entries.Edit_Deselect)
     editMenu.fetchAction(Entries.Edit_Find)
     editMenu.addSeparator()
     editMenu.fetchAction(Entries.Edit_Settings)
@@ -232,8 +250,17 @@ def globalMenuBar():
     viewMenu.fetchAction(Entries.View_Zoom_Out)
     viewMenu.fetchAction(Entries.View_Reset_Zoom)
     viewMenu.addSeparator()
+    viewMenu.fetchAction(Entries.View_Next_Tab)
+    viewMenu.fetchAction(Entries.View_Previous_Tab)
     viewMenu.fetchAction(Entries.View_Next_Glyph)
     viewMenu.fetchAction(Entries.View_Previous_Glyph)
+    viewMenu.fetchAction(Entries.View_Layer_Up)
+    viewMenu.fetchAction(Entries.View_Layer_Down)
+    viewMenu.addSeparator()
+    viewMenu.fetchAction(Entries.View_Show_Points)
+    viewMenu.fetchAction(Entries.View_Show_Metrics)
+    viewMenu.fetchAction(Entries.View_Show_Images)
+    viewMenu.fetchAction(Entries.View_Show_Guidelines)
 
     fontMenu = menuBar.fetchMenu(Entries.Font)
     fontMenu.fetchAction(Entries.Font_Font_Info)
@@ -251,12 +278,11 @@ def globalMenuBar():
         windowMenu.fetchAction(Entries.Window_Minimize_All)
         windowMenu.fetchAction(Entries.Window_Zoom)
         windowMenu.addSeparator()
-    windowMenu.fetchAction(Entries.Window_Inspector)
-    windowMenu.addSeparator()
     windowMenu.fetchAction(Entries.Window_Groups)
     windowMenu.fetchAction(Entries.Window_Kerning)
     windowMenu.fetchAction(Entries.Window_Metrics)
     windowMenu.fetchAction(Entries.Window_Scripting)
+    windowMenu.fetchAction(Entries.Window_Properties)
     windowMenu.addSeparator()
     windowMenu.fetchAction(Entries.Window_Output)
 
