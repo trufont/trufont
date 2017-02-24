@@ -121,7 +121,3 @@ def appStyleSheet():
     elif sys.platform == "darwin":
         return "QToolTip { background-color: white; }"
     return None
-
-
-def topBackground():
-    return sys.platform == "win32"

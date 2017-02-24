@@ -256,8 +256,7 @@ class ShellWidget(QWidget):
         metrics = self.fontMetrics()
 
         # init
-        if platformSpecific.topBackground():
-            painter.fillRect(event.rect(), Qt.white)
+        painter.fillRect(event.rect(), Qt.white)
         # tabs
         self._closeRects = {}
         self._tabsRects = {}
