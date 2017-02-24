@@ -30,7 +30,7 @@ setup(
         "ufo-extractor>=0.2.0",
         "ufo2ft>=0.3.2",
         "booleanOperations>=0.6.4",
-        "husl",
+        "hsluv",
     ],
     platforms=["Linux", "Win32", "Mac OS X"],
     classifiers=[
