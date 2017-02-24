@@ -85,68 +85,14 @@ def UIMove(contour, delta, clampToMouseDownDelta=None, interpolatePoints=False,
     if not didMove:
         return
     # second pass: constrain
-    """
-    secondPrevForClamp = None
-    onCurveClampDelta = None
-    coordsForIerp = None
-    secondPrevForIerp = None
-    """
     secondPrevForSliding = None
     secondPrevForRotation = None
     prev = contour[-1]
     for point in contour:
-        """
-        # clamp off to on or on to its mouseDown pos
-        if onCurveClampDelta is not None:
-            dx, dy = onCurveClampDelta
-            skip = prev.segmentType == "move"
-            for pt in (secondPrevForClamp, point)[skip:]:
-                if pt.segmentType is None:  # XXX: test this, was a bug
-                    pt.x += dx
-                    pt.y += dy
-        elif secondPrevForClamp is not None:
-            skip = prev.segmentType == "move"
-            for pt in (secondPrevForClamp, point)[skip:]:
-                if pt.segmentType is None and pt.selected:
-                    clampUIPointToOrigin(prev.x, prev.y, pt)
-        secondPrevForClamp = onCurveClampDelta = None
-        if clampToMouseDownDelta and point.segmentType is not None:
-            if point.selected:
-                # TODO: we don't need to recalc this for all points
-                dx, dy = map(operator.add, clampToMouseDownDelta, delta)
-                rx, ry = point.x, point.y
-                clampUIPointToOrigin(point.x - dx, point.y - dy, point)
-                onCurveClampDelta = (point.x - rx, point.y - ry)
-            secondPrevForClamp = prev
-        # interpolate points
-        # XXX: qcurve 3+ pts hazard!
-        # XXX: this won't work with a curve segment split off/off at contour
-        # boundary
-        if point.segmentType is not None and secondPrevForIerp is not None:
-            # XXX: we need percents BEFORE MOVE!!
-            # add preprocessing steps!
-            p1, p2, p3 = secondPrevForIerp, prev, point
-            tx, ty = coordsForIerp[-2:]
-            tx, ty = tx - p3.x, ty - p3.y
-            ax, ay = (p2.x - p3.x) / tx, (p2.y - p3.y) / ty
-            bx, by = (p1.x - p3.x) / tx, (p1.y - p3.y) / ty
-            if len(coordsForIerp) > 2: # OR LINE SEGMENT!
-                # apply coordinates
-
-                coordsForIerp = secondPrevForIerp = None
-            else:
-                coordsForIerp = [p2, ax, ay, p1, bx, by, p3.x, p3.y]
-        if interpolatePoints and point.segmentType is None and \
-                secondPrevForIerp is not None:
-            if coordsForIerp is not None:
-                coordsForIerp.extend([prev.x, prev.y])
-            else:
-                coordsForIerp = (prev.x, prev.y)
-            secondPrevForIerp = point
-        """
         # slide points
-        if secondPrevForSliding is not None and (point.segmentType is None or
-                    secondPrevForSliding.segmentType is None):
+        if secondPrevForSliding is not None and (
+                point.segmentType is None or
+                secondPrevForSliding.segmentType is None):
             p1, p2, p3 = secondPrevForSliding, prev, point
             if p2.selected and p2.segmentType != "move":
                 if p1.selected or p3.selected:
@@ -173,8 +119,9 @@ def UIMove(contour, delta, clampToMouseDownDelta=None, interpolatePoints=False,
         if slidePoints and point.segmentType is not None:
             secondPrevForSliding = prev
         # rotation/projection across smooth onCurve
-        if secondPrevForRotation is not None and (point.segmentType is None or
-                    secondPrevForRotation.segmentType is None):
+        if secondPrevForRotation is not None and (
+                point.segmentType is None or
+                secondPrevForRotation.segmentType is None):
             p1, p2, p3 = secondPrevForRotation, prev, point
             if p2.selected:
                 if p1.segmentType is None:

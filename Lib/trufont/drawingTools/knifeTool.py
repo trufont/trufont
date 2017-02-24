@@ -119,7 +119,7 @@ class KnifeTool(BaseTool):
         # TODO: optimize
         if cutContours:
             newPts = set(pt for contour in self._glyph for pt in contour
-                    if pt.segmentType) - oldPts
+                         if pt.segmentType) - oldPts
             del oldPts
             distances = dict()
             for point in newPts:
