@@ -7,10 +7,10 @@ from defconQt.controls.glyphCellView import GlyphCellView
 from defconQt.windows.baseWindows import BaseWindow
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
-from trufont.controls.fontStatusBar import FontStatusBar
 from trufont.controls.glyphCanvasView import GlyphCanvasView
 from trufont.controls.glyphDialogs import FindDialog
 from trufont.controls.propertiesView import PropertiesView
+from trufont.controls.statusBar import StatusBar
 from trufont.controls.tabWidget import TabWidget
 from trufont.controls.toolBar import ToolBar
 from trufont.objects import settings
@@ -84,7 +84,7 @@ class FontWindow(BaseWindow):
         self.propertiesView = PropertiesView(self)
         self.propertiesView.hide()
 
-        self.statusBar = FontStatusBar()
+        self.statusBar = StatusBar()
         self.statusBar.setMinimumSize(32)
         self.statusBar.setMaximumSize(128)
         self.statusBar.sizeChanged.connect(self._sizeChanged)
@@ -355,17 +355,17 @@ class FontWindow(BaseWindow):
         self._updateGlyphActions()
         # update slider
         if self.isGlyphTab():
-            lo, hi = 600, 12000
+            lo, hi, unit = 600, 12000, " pt"
             widget = self.stackWidget.currentWidget()
             size = widget.pointSize()
         else:
-            lo, hi = 32, 128
+            lo, hi, unit = 32, 128, None
             size = self.glyphCellView.cellSize()[0]
         self.statusBar.setMinimumSize(lo)
         self.statusBar.setMaximumSize(hi)
         self.statusBar.setSize(size)
-        # XXX: coupling
-        self.statusBar.selectionLabel.setVisible(not self.isGlyphTab())
+        self.statusBar.setUnit(unit)
+        self.statusBar.setTextVisible(not self.isGlyphTab())
         # update and connect setCurrentTool
         try:
             self.toolBar.currentToolChanged.disconnect()

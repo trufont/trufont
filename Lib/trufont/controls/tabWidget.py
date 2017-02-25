@@ -47,7 +47,8 @@ class TabWidget(QWidget):
     def removeTab(self, index):
         del self._tabs[index]
         if self._currentTab >= index:
-            if self._currentTab == index and self._currentTab < len(self._tabs):
+            if self._currentTab == index and self._currentTab < len(
+                    self._tabs):
                 pass
             elif self._tabs:
                 self._currentTab -= 1
@@ -101,8 +102,10 @@ class TabWidget(QWidget):
 
     def _recalcTextWidth(self):
         count = len(self._tabs)
-        maxTextWidth = self.width() - count * (2 * sidePadding) - (count - 1) * spacing
-        maxTextWidth -= (count - self._heroFirstTab) * (crossMargin + crossSize)
+        maxTextWidth = self.width() - count * (2 * sidePadding) - (
+            count - 1) * spacing
+        maxTextWidth -= (count - self._heroFirstTab) * (
+            crossMargin + crossSize)
         oneWidth = maxTextWidth / count
         oneWidthInt = int(oneWidth)
         if oneWidthInt >= 148:
@@ -204,16 +207,7 @@ class TabWidget(QWidget):
 
             # background
             textColor = QColor(72, 72, 72)
-            if isHeroFirstTab:
-                if index == currentTab:
-                    fillColor = QColor(18, 104, 179)
-                elif index == self._hoverTab:
-                    fillColor = QColor(41, 140, 225)
-                else:
-                    fillColor = QColor(25, 121, 202)
-                if fillColor.lightness() < 156:
-                    textColor = Qt.white
-            elif index == currentTab:
+            if index == currentTab:
                 fillColor = tabFillColor
             elif index == self._hoverTab:
                 fillColor = hoverFillColor
