@@ -129,7 +129,7 @@ class AboutDialog(QDialog):
     def authors(self):
         for line in gitShortLog.splitlines():
             elem = line.split("\t")[1]
-            if not elem or elem.startswith("=?"):
+            if not elem or elem.startswith("=?") or elem.endswith("bot"):
                 continue
             yield elem
 
