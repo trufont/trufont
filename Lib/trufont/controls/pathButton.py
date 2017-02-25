@@ -73,7 +73,7 @@ class PathButton(QAbstractButton):
             painter.restore()
         if self._stroke:
             pen = painter.pen()
-            pen.setColor(Qt.black)
+            pen.setColor(self._color)
             pen.setWidth(0)
             painter.setPen(pen)
             painter.drawPath(self._path)

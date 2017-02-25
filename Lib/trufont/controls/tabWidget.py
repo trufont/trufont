@@ -129,8 +129,7 @@ class TabWidget(QWidget):
                 if QRect(*rect).contains(event.pos()):
                     index = recordIndex
             if index is not None:
-                QToolTip.showText(event.globalPos(
-                            ), self._tabs[index])
+                QToolTip.showText(event.globalPos(), self._tabs[index])
             else:
                 QToolTip.hideText()
                 event.ignore()

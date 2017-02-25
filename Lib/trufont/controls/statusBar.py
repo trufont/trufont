@@ -15,12 +15,12 @@ _plusPath = QPainterPath(_minPath)
 _plusPath.moveTo(6, 1)
 _plusPath.lineTo(6, 11)
 
-_minPath.translate(5, 6)
-_plusPath.translate(5, 6)
+_minPath.translate(5, 7)
+_plusPath.translate(5, 7)
 
 def Button():
     btn = PathButton()
-    btn.setColor(QColor(123, 123, 123))
+    btn.setColor(QColor(126, 126, 126))
     btn.setHoverColor(QColor(210, 210, 210))
     btn.setSize(QSize(23, 25))
     return btn
@@ -47,11 +47,9 @@ class StatusBar(QWidget):
         minusButton.pressed.connect(self._sizeOffset)
         self.sizeEdit = QSpinBox(self)
         self.sizeEdit.setButtonSymbols(QSpinBox.NoButtons)
-        self.sizeEdit.setFixedWidth(52)
+        self.sizeEdit.setFixedWidth(56)
         self.sizeEdit.setFrame(False)
-        editor = self.sizeEdit.lineEdit()
-        editor.setAlignment(Qt.AlignCenter)
-        editor.setStyleSheet("color: #252525")
+        self.sizeEdit.lineEdit().setAlignment(Qt.AlignCenter)
         plusButton = Button()
         plusButton.setPath(_plusPath, fill=False, stroke=True)
         plusButton.setProperty("delta", 10)
@@ -66,6 +64,7 @@ class StatusBar(QWidget):
         layout.addWidget(self.sizeEdit)
         layout.addWidget(plusButton)
         layout.setContentsMargins(15, 0, 15, 0)
+        layout.setSpacing(0)
 
         self.sizeChanged = self.sizeEdit.valueChanged
 
