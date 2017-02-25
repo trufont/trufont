@@ -2,7 +2,7 @@ from PyQt5.QtCore import QEvent, QMimeData, QSize, QStandardPaths, Qt
 from PyQt5.QtGui import QColor, QKeySequence, QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QApplication, QFileDialog, QHBoxLayout, QMessageBox, QShortcut,
-    QStackedWidget, QVBoxLayout)
+    QStackedWidget, QVBoxLayout, QWidget)
 from defconQt.controls.glyphCellView import GlyphCellView
 from defconQt.windows.baseWindows import BaseWindow
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
@@ -42,6 +42,22 @@ _path.lineTo(23, 18)
 _path.lineTo(23, 20)
 _path.lineTo(5, 20)
 _path.closeSubpath()
+
+
+class PageWidget(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(1)
+
+    def addWidget(self, widget):
+        self.layout().addWidget(widget)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(event.rect(), QColor(235, 235, 235))
 
 
 class FontWindow(BaseWindow):
@@ -103,8 +119,10 @@ class FontWindow(BaseWindow):
         layout.addWidget(self.toolBar)
         vLayout = QVBoxLayout()
         vLayout.addWidget(self.tabWidget)
-        vLayout.addWidget(self.stackWidget)
-        vLayout.addWidget(self.statusBar)
+        pageWidget = PageWidget()
+        pageWidget.addWidget(self.stackWidget)
+        pageWidget.addWidget(self.statusBar)
+        vLayout.addWidget(pageWidget)
         layout.addLayout(vLayout)
         layout.addWidget(self.propertiesView)
         layout.setContentsMargins(0, 2, 0, 0)

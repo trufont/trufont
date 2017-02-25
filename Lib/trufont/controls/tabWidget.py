@@ -124,10 +124,16 @@ class TabWidget(QWidget):
 
     def event(self, event):
         if event.type() == QEvent.ToolTip:
+            index = None
             for recordIndex, rect in self._tabsRects.items():
                 if QRect(*rect).contains(event.pos()):
-                    QToolTip.showText(event.globalPos(
-                        ), self._tabs[recordIndex])
+                    index = recordIndex
+            if index is not None:
+                QToolTip.showText(event.globalPos(
+                            ), self._tabs[index])
+            else:
+                QToolTip.hideText()
+                event.ignore()
             return True
         return super().event(event)
 

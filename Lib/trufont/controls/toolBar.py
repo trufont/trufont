@@ -1,60 +1,7 @@
-from PyQt5.QtCore import pyqtSignal, QSize, Qt
+from PyQt5.QtCore import pyqtSignal, QSize
 from PyQt5.QtGui import QColor, QKeySequence, QPainter
-from PyQt5.QtWidgets import QAbstractButton, QSizePolicy, QVBoxLayout, QWidget
-
-
-class PathButton(QAbstractButton):
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._color = QColor(90, 90, 90)
-        self._path = None
-        self._size = QSize(24, 24)
-
-    def color(self):
-        return self._color
-
-    def setColor(self, color):
-        self._color = color
-        self.update()
-
-    def path(self):
-        return self._path
-
-    def setPath(self, path):
-        self._path = path
-        self.update()
-
-    def size(self):
-        return self._size
-
-    def setSize(self, size):
-        self._size = size
-        self.adjustSize()
-
-    # ----------
-    # Qt methods
-    # ----------
-
-    def paintEvent(self, event):
-        if self._path is None:
-            return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        size = QSize(28, 28)  # self._size  XXX
-        target = event.rect().size()
-        if not size.isNull() and (size.width(
-                ) > target.width() or size.height() > target.height()):
-            sz = size.scaled(target, Qt.KeepAspectRatio)
-            width, height = sz.width(
-                ) / size.width(), sz.height() / size.height()
-            painter.scale(width, height)
-        painter.translate(0, target.height())
-        painter.scale(1, -1)
-        painter.fillPath(self._path, self._color)
-
-    def sizeHint(self):
-        return self._size
+from PyQt5.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
+from trufont.controls.pathButton import PathButton
 
 
 class ToolBar(QWidget):
@@ -111,7 +58,7 @@ class ToolBar(QWidget):
             else:
                 color = self._color
             btn.setColor(color)
-            btn.setPath(tool.icon)
+            btn.setPath(tool.icon, QSize(28, 28))
             text = tool.name
             if tool.shortcut is not None:
                 text = "{} ({})".format(text, tool.shortcut)

@@ -1,13 +1,37 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QColor, QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QSpinBox, QSizePolicy, QWidget)
+from trufont.controls.pathButton import PathButton
 from trufont.objects import icons
+
+__all__ = ["StatusBar"]
+
+_minPath = QPainterPath()
+_minPath.moveTo(1, 6)
+_minPath.lineTo(11, 6)
+
+_plusPath = QPainterPath(_minPath)
+_plusPath.moveTo(6, 1)
+_plusPath.lineTo(6, 11)
+
+_minPath.translate(5, 6)
+_plusPath.translate(5, 6)
+
+def Button():
+    btn = PathButton()
+    btn.setColor(QColor(123, 123, 123))
+    btn.setHoverColor(QColor(210, 210, 210))
+    btn.setSize(QSize(23, 25))
+    return btn
 
 
 class StatusBar(QWidget):
     """
     Use the *sizeChanged* signal for size changes.
+
+    TODO: specify only isFontTab/isGlyphTab and put the details
+    in the widget internals
     """
 
     def __init__(self, parent=None):
@@ -16,9 +40,9 @@ class StatusBar(QWidget):
 
         self.statusLabel = QLabel(self)
 
-        minusButton = QPushButton()
-        minusButton.setFlat(True)
-        minusButton.setIcon(icons.icon("i_minus"))
+        minusButton = Button()
+        # TODO: make fill/stroke a separate property?
+        minusButton.setPath(_minPath, fill=False, stroke=True)
         minusButton.setProperty("delta", -10)
         minusButton.pressed.connect(self._sizeOffset)
         self.sizeEdit = QSpinBox(self)
@@ -28,9 +52,8 @@ class StatusBar(QWidget):
         editor = self.sizeEdit.lineEdit()
         editor.setAlignment(Qt.AlignCenter)
         editor.setStyleSheet("color: #252525")
-        plusButton = QPushButton()
-        plusButton.setFlat(True)
-        plusButton.setIcon(icons.icon("i_plus"))
+        plusButton = Button()
+        plusButton.setPath(_plusPath, fill=False, stroke=True)
         plusButton.setProperty("delta", 10)
         plusButton.pressed.connect(self._sizeOffset)
 
@@ -42,7 +65,7 @@ class StatusBar(QWidget):
         layout.addWidget(minusButton)
         layout.addWidget(self.sizeEdit)
         layout.addWidget(plusButton)
-        layout.setContentsMargins(21, 5, 21, 5)
+        layout.setContentsMargins(15, 0, 15, 0)
 
         self.sizeChanged = self.sizeEdit.valueChanged
 
