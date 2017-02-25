@@ -6,7 +6,6 @@ __all__ = ["TabWidget"]
 
 sidePadding = 9
 spacing = 2
-tabPadding = 1
 topPadding = bottomPadding = 5
 crossMargin = sidePadding
 crossSize = 7
@@ -21,8 +20,6 @@ cross.lineTo(9.63, 0.38)
 class TabWidget(QWidget):
     """
     # TODO: RTL support?
-    # TODO: need a sound toolbar API: tools, placement, scope
-    #      look into QToolBar, QAction
     """
     currentTabChanged = pyqtSignal(int)
     tabRemoved = pyqtSignal(int)
@@ -33,33 +30,37 @@ class TabWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
 
         self._currentTab = None
+        self._autoHide = True
         self._heroFirstTab = False
         self._hoverClose = None
         self._hoverTab = None
         self._tabs = []
+        self._firstOffset = 0
         self._textWidth = 148
 
     def addTab(self, name, parent=None):
         self._tabs.append(name)
         self._recalcTextWidth()
+        self._updateVisibility()
         self.update()
 
     def removeTab(self, index):
         del self._tabs[index]
         if self._currentTab >= index:
-            if self._tabs:
+            if self._currentTab == index and self._currentTab < len(self._tabs):
+                pass
+            elif self._tabs:
                 self._currentTab -= 1
             else:
                 self._currentTab = None
             self.currentTabChanged.emit(self._currentTab)
-        if len(self._tabs) <= self._heroFirstTab:
-            self._currentTool = None
         self.tabRemoved.emit(index)
         # XXX: somewhat hackish, we have no way to compute new rects except
         # post-repaint
         # idea: reuse rects but translate by removed tab width after tab index
         self._hoverClose = None
         self._recalcTextWidth()
+        self._updateVisibility()
         self.update()
 
     def setTabName(self, index, name):
@@ -80,6 +81,13 @@ class TabWidget(QWidget):
         self.currentTabChanged.emit(self._currentTab)
         self.update()
 
+    def autoHide(self):
+        return self._autoHide
+
+    def setAutoHide(self, value):
+        self._autoHide = value
+        self._updateVisibility()
+
     def heroFirstTab(self):
         return self._heroFirstTab
 
@@ -93,21 +101,30 @@ class TabWidget(QWidget):
 
     def _recalcTextWidth(self):
         count = len(self._tabs)
-        maxTextWidth = self.width() - count * (
-            2 * sidePadding + crossMargin + crossSize) - (count - 1) * spacing
-        self._textWidth = min(round(maxTextWidth / count), 148)
-        # TODO: heroFirstTab is not accounted for
+        maxTextWidth = self.width() - count * (2 * sidePadding) - (count - 1) * spacing
+        maxTextWidth -= (count - self._heroFirstTab) * (crossMargin + crossSize)
+        oneWidth = maxTextWidth / count
+        oneWidthInt = int(oneWidth)
+        if oneWidthInt >= 148:
+            self._textWidth = 148
+            self._firstOffset = 0
+        else:
+            self._textWidth = oneWidthInt
+            self._firstOffset = maxTextWidth - oneWidthInt * count
+
+    def _updateVisibility(self):
+        self.setVisible(len(self._tabs) > 1)
 
     # ----------
     # Qt methods
     # ----------
 
     def event(self, event):
-        if False and event.type() == QEvent.ToolTip:
-            for recordIndex, rect in self._toolsRects.items():
+        if event.type() == QEvent.ToolTip:
+            for recordIndex, rect in self._tabsRects.items():
                 if QRect(*rect).contains(event.pos()):
                     QToolTip.showText(event.globalPos(
-                        ), self._toolsClasses[recordIndex].name)
+                        ), self._tabs[recordIndex])
             return True
         return super().event(event)
 
@@ -178,6 +195,8 @@ class TabWidget(QWidget):
             isHeroFirstTab = not index and self._heroFirstTab
             isClosable = not isHeroFirstTab
             textWidth = self._textWidth
+            if not index:
+                textWidth += self._firstOffset
             w = sidePadding * 2 + textWidth
             if isClosable:
                 w += crossMargin + crossSize
@@ -230,8 +249,6 @@ class TabWidget(QWidget):
             painter.restore()
             # shift for the next tab
             shift = textWidth + 2 * sidePadding + spacing
-            if not isHeroFirstTab:
-                shift += tabPadding
             if isClosable:
                 shift += crossMargin + crossSize
             painter.translate(shift, 0)
@@ -247,7 +264,7 @@ class TabWidget(QWidget):
         metrics = self.fontMetrics()
         heroTab = self._heroFirstTab
         for name in self._tabs:
-            width += metrics.width(name) + 2 * sidePadding + tabPadding
+            width += metrics.width(name) + 2 * sidePadding + spacing
             if not heroTab:
                 width += crossMargin + crossSize
             heroTab = False

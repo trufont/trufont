@@ -69,6 +69,7 @@ class FontWindow(BaseWindow):
         self.glyphCellView.setFocus()
 
         self.tabWidget = TabWidget(self)
+        self.tabWidget.setAutoHide(True)
         self.tabWidget.setHeroFirstTab(True)
         self.tabWidget.addTab(self.tr("Font"))
 
