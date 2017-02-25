@@ -1,9 +1,8 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QPainterPath
 from PyQt5.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QSpinBox, QSizePolicy, QWidget)
+    QHBoxLayout, QLabel, QSpinBox, QSizePolicy, QWidget)
 from trufont.controls.pathButton import PathButton
-from trufont.objects import icons
 
 __all__ = ["StatusBar"]
 
@@ -17,6 +16,7 @@ _plusPath.lineTo(6, 11)
 
 _minPath.translate(5, 7)
 _plusPath.translate(5, 7)
+
 
 def Button():
     btn = PathButton()

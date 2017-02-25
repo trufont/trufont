@@ -12,7 +12,7 @@ class PathButton(QAbstractButton):
         self._fill = self._stroke = False
         self._path = None
         self._pathSize = QSize()
-        self._size = QSize(24, 24)
+        self._size = QSize(28, 28)
 
     def color(self):
         return self._color
