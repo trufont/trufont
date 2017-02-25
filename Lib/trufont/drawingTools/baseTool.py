@@ -27,6 +27,7 @@ path.closeSubpath()
 class BaseTool(QObject):
     icon = QPainterPath()
     name = QApplication.translate("BaseTool", "Tool")
+    shortcut = None
 
     @property
     def cursor(self):

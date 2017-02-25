@@ -885,6 +885,7 @@ class PropertiesView(QScrollArea):
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
 
         self._propertiesWidget = self.propertiesWidgetClass(self)
         self.setWidget(self._propertiesWidget)

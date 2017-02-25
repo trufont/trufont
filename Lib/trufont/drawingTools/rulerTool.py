@@ -41,6 +41,7 @@ _path.closeSubpath()
 class RulerTool(BaseTool):
     icon = _path
     name = QApplication.translate("RulerTool", "Ruler")
+    shortcut = "L"
 
     def __init__(self, parent=None):
         super().__init__(parent)

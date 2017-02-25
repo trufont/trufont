@@ -28,7 +28,7 @@ class Application(QApplication):
         self._currentMainWindow = None
         self._launched = False
         self._drawingTools = [
-            SelectionTool, PenTool, KnifeTool, RulerTool]
+            SelectionTool(), PenTool(), KnifeTool(), RulerTool()]
         self._extensions = []
         self.dispatcher = NotificationCenter()
         self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")

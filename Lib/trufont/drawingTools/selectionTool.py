@@ -57,6 +57,7 @@ def _pointWithinThreshold(x, y, curve, eps):
 class SelectionTool(BaseTool):
     icon = _path
     name = QApplication.translate("SelectionTool", "Selection")
+    shortcut = "V"
 
     def __init__(self, parent=None):
         super().__init__(parent)

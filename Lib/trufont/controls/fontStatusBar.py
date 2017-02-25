@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QPainter
 from PyQt5.QtWidgets import (
     QLabel, QProxyStyle, QPushButton, QSlider, QStatusBar, QStyle)
 from trufont.objects import icons
@@ -96,6 +96,10 @@ class FontStatusBar(QStatusBar):
             self.sizeSlider.valueChanged.emit(value)
         # nudge label w unclamped value
         self._sliderSizeChanged(value)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(event.rect(), Qt.white)
 
     def _updateLabelWidth(self):
         text = "0" * 5  # len(str(self.maximumSize()))

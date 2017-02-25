@@ -27,6 +27,7 @@ _path.closeSubpath()
 class PenTool(BaseTool):
     icon = _path
     name = QApplication.translate("PenTool", "Pen")
+    shortcut = "P"
 
     def __init__(self, parent=None):
         super().__init__(parent)

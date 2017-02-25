@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QEvent, QMimeData, QSize, QStandardPaths, Qt
-from PyQt5.QtGui import QKeySequence, QPainterPath
+from PyQt5.QtGui import QColor, QKeySequence, QPainter, QPainterPath
 from PyQt5.QtWidgets import (
     QApplication, QFileDialog, QHBoxLayout, QMessageBox, QShortcut,
     QStackedWidget, QVBoxLayout)
@@ -11,7 +11,8 @@ from trufont.controls.fontStatusBar import FontStatusBar
 from trufont.controls.glyphCanvasView import GlyphCanvasView
 from trufont.controls.glyphDialogs import FindDialog
 from trufont.controls.propertiesView import PropertiesView
-from trufont.controls.shellWidget import ShellWidget
+from trufont.controls.tabWidget import TabWidget
+from trufont.controls.toolBar import ToolBar
 from trufont.objects import settings
 from trufont.objects.menu import Entries
 from trufont.tools import errorReports, platformSpecific
@@ -54,6 +55,9 @@ class FontWindow(BaseWindow):
         self._metricsWindow = None
         self._groupsWindow = None
 
+        self.toolBar = ToolBar(self)
+        self.toolBar.setTools(QApplication.instance().drawingTools())
+
         self.glyphCellView = GlyphCellView(self)
         self.glyphCellView.glyphActivated.connect(self.openGlyphTab)
         self.glyphCellView.glyphsDropped.connect(self._orderChanged)
@@ -64,28 +68,16 @@ class FontWindow(BaseWindow):
         self.glyphCellView.setFrameShape(self.glyphCellView.NoFrame)
         self.glyphCellView.setFocus()
 
-        self.shellWidget = ShellWidget(self)
-        self.shellWidget.setHeroFirstTab(True)
-        tools = QApplication.instance().drawingTools()
-        self.shellWidget.setToolsClasses(tools)
-        self.shellWidget.addTab(self.tr("Font"))
-
-        class Button:
-            pass
-        # TODO: have an add(Persistent)Button API instead of this
-        button = Button()
-        button.activated = False
-        button.icon = _path
-        self.shellWidget.setPersistentTools([button])
+        self.tabWidget = TabWidget(self)
+        self.tabWidget.setHeroFirstTab(True)
+        self.tabWidget.addTab(self.tr("Font"))
 
         self.stackWidget = QStackedWidget(self)
         self.stackWidget.addWidget(self.glyphCellView)
-        self.shellWidget.currentTabChanged.connect(self._tabChanged)
-        self.shellWidget.tabRemoved.connect(
+        self.tabWidget.currentTabChanged.connect(self._tabChanged)
+        self.tabWidget.tabRemoved.connect(
             lambda index: self.stackWidget.removeWidget(
                 self.stackWidget.widget(index)))
-        self.shellWidget.persistentToolToggled.connect(
-            lambda: self.properties())
         self.stackWidget.currentChanged.connect(self._widgetChanged)
 
         self.propertiesView = PropertiesView(self)
@@ -106,21 +98,21 @@ class FontWindow(BaseWindow):
         app.dispatcher.addObserver(
             self, "_glyphViewGlyphChanged", "glyphViewGlyphChanged")
 
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.shellWidget)
-        hLayout = QHBoxLayout()
-        hLayout.addWidget(self.stackWidget)
-        hLayout.addWidget(self.propertiesView)
-        hLayout.setStretch(0, 1)
-        hLayout.setStretch(1, 0)
-        layout.addLayout(hLayout)
-        layout.addWidget(self.statusBar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout = QHBoxLayout(self)
+        layout.addWidget(self.toolBar)
+        vLayout = QVBoxLayout()
+        vLayout.addWidget(self.tabWidget)
+        vLayout.addWidget(self.stackWidget)
+        vLayout.addWidget(self.statusBar)
+        layout.addLayout(vLayout)
+        layout.addWidget(self.propertiesView)
+        layout.setContentsMargins(0, 2, 0, 0)
+        layout.setSpacing(2)
         self.setWindowTitle(self.fontTitle())
 
         elements = [
             ("Ctrl+D", self.deselect),
+            (platformSpecific.closeKeySequence(), self.closeGlyphTab),
             # XXX: does this really not warrant widget focus?
             (QKeySequence.Delete, self.delete),
             ("Shift+" + QKeySequence(
@@ -276,25 +268,31 @@ class FontWindow(BaseWindow):
 
     def openGlyphTab(self, glyph):
         # if a tab with this glyph exists already, switch to it
-        for index, tab in enumerate(self.shellWidget.tabs()):
+        for index in range(self.stackWidget.count()):
             if not index:
                 continue
-            # XXX: flimsy
-            if tab.name == glyph.name:
-                self.shellWidget.setCurrentTab(index)
+            view = self.stackWidget.widget(index)
+            if view.widget().glyph() == glyph:
+                self.tabWidget.setCurrentTab(index)
                 return
         # spawn
         widget = GlyphCanvasView(self)
+        # TODO: this should be in the widget
         widget.setFrameShape(widget.NoFrame)
         widget.setGlyph(glyph)
         widget.pointSizeModified.connect(self.statusBar.setSize)
         # add
-        self.shellWidget.addTab(glyph.name, widget.widget())
+        self.tabWidget.addTab(glyph.name)
         self.stackWidget.addWidget(widget)
         # activate
-        self.shellWidget.setCurrentTab(-1)
+        self.tabWidget.setCurrentTab(-1)
         # XXX: drop the need for this, i.e. catch keys in the window
         widget.setFocus(True)
+
+    def closeGlyphTab(self):
+        index = self.stackWidget.currentIndex()
+        if index:
+            self.tabWidget.removeTab(index)
 
     def maybeSaveBeforeExit(self):
         if self._font.dirty:
@@ -315,11 +313,11 @@ class FontWindow(BaseWindow):
 
     def _drawingToolRegistered(self, notification):
         tool = notification.data["tool"]
-        self.shellWidget.addToolClass(tool)
+        self.toolBar.addTool(tool)
 
     def _drawingToolUnregistered(self, notification):
         tool = notification.data["tool"]
-        self.shellWidget.removeToolClass(tool)
+        self.toolBar.removeTool(tool)
 
     def _glyphViewGlyphChanged(self, notification):
         self._updateGlyphActions()
@@ -329,7 +327,7 @@ class FontWindow(BaseWindow):
         widget = self.stackWidget.currentWidget()
         glyph = widget.glyph()
         # XXX: subscribe to Glyph.NameChanged
-        self.shellWidget.setTabName(index, glyph.name)
+        self.tabWidget.setTabName(index, glyph.name)
 
     # widgets
 
@@ -344,6 +342,10 @@ class FontWindow(BaseWindow):
     def _tabChanged(self, index):
         self.statusBar.setShouldPropagateSize(not index)
         self.stackWidget.setCurrentIndex(index)
+        parent = self.stackWidget.currentWidget().widget(
+            ) if index else None
+        for tool in QApplication.instance().drawingTools():
+            tool.setParent(parent)
 
     def _widgetChanged(self, index):
         # update current glyph
@@ -365,14 +367,14 @@ class FontWindow(BaseWindow):
         self.statusBar.selectionLabel.setVisible(not self.isGlyphTab())
         # update and connect setCurrentTool
         try:
-            self.shellWidget.currentToolChanged.disconnect()
+            self.toolBar.currentToolChanged.disconnect()
         except TypeError:
             pass
         if not index:
             return
         widget = self.stackWidget.currentWidget()
-        self.shellWidget.currentToolChanged.connect(widget.setCurrentTool)
-        self.shellWidget.updateTool()
+        widget.setCurrentTool(self.toolBar.currentTool())
+        self.toolBar.currentToolChanged.connect(widget.setCurrentTool)
 
     def _orderChanged(self):
         # TODO: reimplement when we start showing glyph subsets
@@ -748,9 +750,9 @@ class FontWindow(BaseWindow):
             self.statusBar.setSize(cellSize)
 
     def tabOffset(self, value):
-        tab = self.shellWidget.currentTab()
-        newTab = (tab + value) % len(self.shellWidget.tabs())
-        self.shellWidget.setCurrentTab(newTab)
+        tab = self.tabWidget.currentTab()
+        newTab = (tab + value) % len(self.tabWidget.tabs())
+        self.tabWidget.setCurrentTab(newTab)
 
     def glyphOffset(self, value):
         widget = self.stackWidget.currentWidget()
@@ -870,8 +872,6 @@ class FontWindow(BaseWindow):
 
     def properties(self):
         shouldBeVisible = self.propertiesView.isHidden()
-        if self.sender() != self.shellWidget:
-            self.shellWidget.setPersistentToolEnabled(0, shouldBeVisible)
         self.propertiesView.setVisible(shouldBeVisible)
         self.writeSettings()
 
@@ -990,3 +990,7 @@ class FontWindow(BaseWindow):
             app.setCurrentMainWindow(self)
             self._updateCurrentGlyph()
         return super().event(event)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(event.rect(), QColor(212, 212, 212))
