@@ -80,10 +80,11 @@ class KnifeTool(BaseTool):
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
-            if self._knifeLine is None:
-                self.mousePressEvent(event)
-            line = self._knifeLine
             pos = event.localPos()
+            if self._knifeLine is None:
+                self._knifeLine = QLineF(pos, pos)
+                return
+            line = self._knifeLine
             if event.modifiers() & Qt.ShiftModifier:
                 pos = self.clampToOrigin(pos, line.p1())
             line.setP2(pos)
