@@ -11,6 +11,7 @@ class PathButton(QAbstractButton):
         self._hoverColor = None
         self._fill = self._stroke = False
         self._path = None
+        self._pathSize = QSize()
         self._size = QSize(24, 24)
 
     def color(self):
@@ -30,11 +31,13 @@ class PathButton(QAbstractButton):
     def path(self):
         return self._path
 
-    def setPath(self, path, fill=True, stroke=False, size=None):
-        self._fill = fill
-        self._stroke = stroke
+    def setPath(self, path, size=None, fill=True, stroke=False):
+        if size is None:
+            size = QSize()
         self._path = path
         self._pathSize = size
+        self._fill = fill
+        self._stroke = stroke
         self.update()
 
     def size(self):
@@ -55,13 +58,12 @@ class PathButton(QAbstractButton):
         rect = event.rect()
         target = rect.size()
         size = self._pathSize
-        if size is not None:
-            if not size.isNull() and (size.width(
-                    ) > target.width() or size.height() > target.height()):
-                sz = size.scaled(target, Qt.KeepAspectRatio)
-                width, height = sz.width(
-                    ) / size.width(), sz.height() / size.height()
-                painter.scale(width, height)
+        if not size.isNull() and (size.width(
+                ) > target.width() or size.height() > target.height()):
+            sz = size.scaled(target, Qt.KeepAspectRatio)
+            width, height = sz.width(
+                ) / size.width(), sz.height() / size.height()
+            painter.scale(width, height)
         if self._hoverColor and self.isDown():
             painter.fillRect(rect, self._hoverColor)
         painter.translate(0, target.height())
