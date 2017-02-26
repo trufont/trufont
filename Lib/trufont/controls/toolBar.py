@@ -33,7 +33,9 @@ class ToolBar(QWidget):
                 toolIndex = i
             else:
                 color = self._color
-            btn.setColor(color)
+            cmds = btn.drawingCommands()
+            cmds[1][2] = color
+            btn.setDrawingCommands(cmds)
         self._currentTool = toolIndex
         self.currentToolChanged.emit(self._tools[toolIndex])
 
@@ -45,7 +47,9 @@ class ToolBar(QWidget):
                 color = self._selectedColor
             else:
                 color = self._color
-            btn.setColor(color)
+            cmds = btn.drawingCommands()
+            cmds[1][2] = color
+            btn.setDrawingCommands(cmds)
 
     def _updateTools(self):
         layout = self.layout()
@@ -57,8 +61,11 @@ class ToolBar(QWidget):
                 color = self._selectedColor
             else:
                 color = self._color
-            btn.setColor(color)
-            btn.setPath(tool.icon, QSize(28, 28))
+            btn.setDrawingCommands([
+                QSize(28, 28),
+                [tool.icon, 'f', color],
+            ])
+            btn.setIsFlipped(True)
             text = tool.name
             if tool.shortcut is not None:
                 text = "{} ({})".format(text, tool.shortcut)

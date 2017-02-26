@@ -20,8 +20,8 @@ _plusPath.translate(5, 7)
 
 def Button():
     btn = PathButton()
-    btn.setColor(QColor(126, 126, 126))
-    btn.setHoverColor(QColor(210, 210, 210))
+    btn.setIsDownColor(QColor(210, 210, 210))
+    btn.setIsFlipped(True)
     btn.setSize(QSize(23, 25))
     return btn
 
@@ -40,9 +40,12 @@ class StatusBar(QWidget):
 
         self.statusLabel = QLabel(self)
 
+        btnColor = QColor(126, 126, 126)
         minusButton = Button()
-        # TODO: make fill/stroke a separate property?
-        minusButton.setPath(_minPath, fill=False, stroke=True)
+        minusButton.setDrawingCommands([
+            QSize(23, 25),
+            (_minPath, '1', btnColor),
+        ])
         minusButton.setProperty("delta", -10)
         minusButton.pressed.connect(self._sizeOffset)
         self.sizeEdit = QSpinBox(self)
@@ -51,7 +54,10 @@ class StatusBar(QWidget):
         self.sizeEdit.setFrame(False)
         self.sizeEdit.lineEdit().setAlignment(Qt.AlignCenter)
         plusButton = Button()
-        plusButton.setPath(_plusPath, fill=False, stroke=True)
+        plusButton.setDrawingCommands([
+            QSize(23, 25),
+            (_plusPath, '1', btnColor),
+        ])
         plusButton.setProperty("delta", 10)
         plusButton.pressed.connect(self._sizeOffset)
 

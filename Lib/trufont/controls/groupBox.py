@@ -1,6 +1,7 @@
 from PyQt5.QtGui import QColor, QFont, QPainter
 from PyQt5.QtWidgets import (
     QLabel, QVBoxLayout, QSizePolicy, QWidget)
+from trufont.tools import platformSpecific
 
 
 class GroupBox(QWidget):
@@ -8,14 +9,15 @@ class GroupBox(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        self.setStyleSheet("QLabel { color: #505050 }")
 
         self.titleLabel = QLabel(self)
-        self.setStyleSheet("QLabel { color: #787878 }")
         font = self.titleLabel.font()
         font.setCapitalization(QFont.AllUppercase)
         font.setLetterSpacing(QFont.AbsoluteSpacing, 1)
-        font.setPointSize(8)
+        font.setPointSize(platformSpecific.baseFontSize())
         self.titleLabel.setFont(font)
+        self.titleLabel.setStyleSheet("color: #787878")
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.titleLabel)

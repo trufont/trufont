@@ -11,6 +11,16 @@ import sys
 def treatPackageAsFile():
     return sys.platform == "darwin"
 
+# -----
+# Fonts
+# -----
+
+
+def baseFontSize():
+    if sys.platform == "darwin":
+        return 9
+    return 8
+
 # -------------
 # Key sequences
 # -------------

@@ -2,24 +2,23 @@ from PyQt5.QtCore import QEvent, QLocale, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QRegularExpressionValidator
 from PyQt5.QtWidgets import (
     QApplication, QDoubleSpinBox, QGridLayout, QHeaderView, QLineEdit,
-    QPushButton, QScrollArea, QSizePolicy, QSpinBox, QVBoxLayout,
-    QWidget)
+    QScrollArea, QSizePolicy, QSpinBox, QVBoxLayout, QWidget)
 from defconQt.controls.colorVignette import ColorVignette
 from defconQt.controls.listView import ListView
 from defconQt.tools.drawing import colorToQColor
 from trufont.controls.glyphAlignmentWidget import GlyphAlignmentWidget
 from trufont.controls.groupBox import GroupBox
+from trufont.controls.pathButton import PathButton
 from trufont.objects import icons
 from trufont.tools.colorGenerator import ColorGenerator
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel
 
 
-def PushButton(parent=None):
-    btn = QPushButton(parent)
-    btn.setFlat(True)
+def Button(parent=None):
+    btn = PathButton(parent)
     btn.setFocusPolicy(Qt.NoFocus)
-    btn.setIconSize(QSize(20, 20))
+    btn.setSize(QSize(26, 26))
     return btn
 
 
@@ -159,132 +158,132 @@ class PropertiesWidget(QWidget):
         self.alignmentWidget = GlyphAlignmentWidget(self)
 
         # TODO: should this be implemented for partial selection?
-        invScaleButton = PushButton(self)
+        invScaleButton = Button(self)
+        invScaleButton.setDrawingCommands(icons.dc_invscale())
         invScaleButton.setToolTip(
             self.tr("Scale down selection"))
         invScaleButton.clicked.connect(self.scaleGlyph)
         invScaleButton.setProperty("inverted", True)
-        invScaleButton.setIcon(icons.icon("i_invscale"))
         self.scaleXEdit = SpinBox(self)
         self.scaleXEdit.setSuffix(" %")
         self.scaleXEdit.setMaximum(500)
         self.scaleXEdit.setMinimum(-500)
         self.scaleXEdit.setValue(2)
-        scaleButton = PushButton(self)
+        scaleButton = Button(self)
+        scaleButton.setDrawingCommands(icons.dc_scale())
         scaleButton.setToolTip(
             self.tr("Scale up selection"))
         scaleButton.clicked.connect(self.scaleGlyph)
-        scaleButton.setIcon(icons.icon("i_scale"))
         self.scaleYEdit = SpinBox(self)
         self.scaleYEdit.setSuffix(" %")
         self.scaleYEdit.setMaximum(500)
         self.scaleYEdit.setMinimum(-500)
         self.scaleYEdit.setValue(2)
 
-        rotateButton = PushButton(self)
+        rotateButton = Button(self)
+        rotateButton.setDrawingCommands(icons.dc_rotate())
         rotateButton.setToolTip(
             self.tr("Rotate selection counter-clockwise"))
         rotateButton.clicked.connect(self.rotateGlyph)
-        rotateButton.setIcon(icons.icon("i_rotate"))
         self.rotateEdit = SpinBox(self)
         self.rotateEdit.setSuffix("º")
         # XXX: calling stepDown() from zero shows 359.999
         self.rotateEdit.setMaximum(359.999)
         self.rotateEdit.setValue(40)
         self.rotateEdit.setWrapping(True)
-        invRotateButton = PushButton(self)
+        invRotateButton = Button(self)
+        invRotateButton.setDrawingCommands(icons.dc_invrotate())
         invRotateButton.setToolTip(
             self.tr("Rotate selection clockwise"))
         invRotateButton.clicked.connect(self.rotateGlyph)
         invRotateButton.setProperty("inverted", True)
-        invRotateButton.setIcon(icons.icon("i_invrotate"))
 
-        invSkewButton = PushButton(self)
+        invSkewButton = Button(self)
+        invSkewButton.setDrawingCommands(icons.dc_invskew())
         invSkewButton.setToolTip(
             self.tr("Skew selection counter-clockwise"))
         invSkewButton.clicked.connect(self.skewGlyph)
         invSkewButton.setProperty("inverted", True)
-        invSkewButton.setIcon(icons.icon("i_invskew"))
         self.skewEdit = SpinBox(self)
         self.skewEdit.setSuffix("º")
         self.skewEdit.setMaximum(100)
         self.skewEdit.setValue(6)
         self.skewEdit.setWrapping(True)
-        skewButton = PushButton(self)
+        skewButton = Button(self)
+        skewButton.setDrawingCommands(icons.dc_skew())
         skewButton.setToolTip(
             self.tr("Skew selection clockwise"))
         skewButton.clicked.connect(self.skewGlyph)
-        skewButton.setIcon(icons.icon("i_skew"))
 
-        snapButton = PushButton(self)
+        snapButton = Button(self)
+        snapButton.setDrawingCommands(icons.dc_snap())
         snapButton.setToolTip(
             self.tr("Snap selection to precision"))
         snapButton.clicked.connect(self.snapGlyph)
-        snapButton.setIcon(icons.icon("i_snap"))
         self.snapEdit = SpinBox(self)
         self.snapEdit.setValue(1)
 
-        unionButton = PushButton(self)
+        unionButton = Button(self)
+        unionButton.setDrawingCommands(icons.dc_union())
         unionButton.setToolTip(
             self.tr("Remove selection overlap"))
         unionButton.clicked.connect(self.union)
-        unionButton.setIcon(icons.icon("i_union"))
-        subtractButton = PushButton(self)
+        subtractButton = Button(self)
+        subtractButton.setDrawingCommands(icons.dc_subtract())
         subtractButton.setToolTip(
             self.tr("Subtract selected or top contour"))
         subtractButton.clicked.connect(self.subtract)
-        subtractButton.setIcon(icons.icon("i_subtract"))
-        intersectButton = PushButton(self)
+        intersectButton = Button(self)
+        intersectButton.setDrawingCommands(icons.dc_intersect())
         intersectButton.setToolTip(
             self.tr("Intersect selected or top contour"))
         intersectButton.clicked.connect(self.intersect)
-        intersectButton.setIcon(icons.icon("i_intersect"))
-        xorButton = PushButton(self)
+        xorButton = Button(self)
+        xorButton.setDrawingCommands(icons.dc_xor())
         xorButton.setToolTip(
             self.tr("Xor selected or top contour"))
         xorButton.clicked.connect(self.xor)
-        xorButton.setIcon(icons.icon("i_xor"))
-        hMirrorButton = PushButton()
+        hMirrorButton = Button()
+        hMirrorButton.setDrawingCommands(icons.dc_hmirror())
         hMirrorButton.setToolTip(
             self.tr("Mirror selection horizontally"))
         hMirrorButton.clicked.connect(self.hMirror)
-        hMirrorButton.setIcon(icons.icon("i_hmirror"))
-        vMirrorButton = PushButton()
+        vMirrorButton = Button()
+        vMirrorButton.setDrawingCommands(icons.dc_vmirror())
         vMirrorButton.setToolTip(
             self.tr("Mirror selection vertically"))
         vMirrorButton.clicked.connect(self.vMirror)
-        vMirrorButton.setIcon(icons.icon("i_vmirror"))
 
-        alignHLeftButton = PushButton(self)
+        alignHLeftButton = Button(self)
+        alignHLeftButton.setDrawingCommands(icons.dc_alignhleft())
         alignHLeftButton.setToolTip(
             self.tr("Push selection left"))
         alignHLeftButton.clicked.connect(self.alignHLeft)
-        alignHLeftButton.setIcon(icons.icon("i_alignhleft"))
-        alignHCenterButton = PushButton(self)
+        alignHCenterButton = Button(self)
+        alignHCenterButton.setDrawingCommands(icons.dc_alignhcenter())
         alignHCenterButton.setToolTip(
             self.tr("Push selection to horizontal center"))
         alignHCenterButton.clicked.connect(self.alignHCenter)
-        alignHCenterButton.setIcon(icons.icon("i_alignhcenter"))
-        alignHRightButton = PushButton(self)
+        alignHRightButton = Button(self)
+        alignHRightButton.setDrawingCommands(icons.dc_alignhright())
         alignHRightButton.setToolTip(
             self.tr("Push selection right"))
         alignHRightButton.clicked.connect(self.alignHRight)
-        alignHRightButton.setIcon(icons.icon("i_alignhright"))
-        alignVTopButton = PushButton(self)
+        alignVTopButton = Button(self)
+        alignVTopButton.setDrawingCommands(icons.dc_alignvtop())
         alignVTopButton.setToolTip(
             self.tr("Push selection top"))
         alignVTopButton.clicked.connect(self.alignVTop)
-        alignVTopButton.setIcon(icons.icon("i_alignvtop"))
-        alignVCenterButton = PushButton(self)
+        alignVCenterButton = Button(self)
+        alignVCenterButton.setDrawingCommands(icons.dc_alignvcenter())
         alignVCenterButton.setToolTip(
             self.tr("Push selection to vertical center"))
         alignVCenterButton.clicked.connect(self.alignVCenter)
-        alignVCenterButton.setIcon(icons.icon("i_alignvcenter"))
-        alignVBottomButton = PushButton(self)
+        alignVBottomButton = Button(self)
+        alignVBottomButton.setDrawingCommands(icons.dc_alignvbottom())
         alignVBottomButton.setToolTip(
             self.tr("Push selection bottom"))
         alignVBottomButton.clicked.connect(self.alignVBottom)
-        alignVBottomButton.setIcon(icons.icon("i_alignvbottom"))
 
         buttonsLayout = QGridLayout()
         buttonsLayout.setSpacing(0)
@@ -347,24 +346,20 @@ class PropertiesWidget(QWidget):
         self.layerSetView.dataDropped.connect(self.writeLayerOrder)
         self.layerSetView.valueChanged.connect(self.writeLayerAttribute)
 
-        layerAddButton = PushButton(self)
-        layerAddButton.setIconSize(QSize(16, 16))
-        layerAddButton.setIcon(icons.icon("i_plus"))
+        layerAddButton = Button(self)
+        layerAddButton.setDrawingCommands(icons.dc_plus())
         layerAddButton.setToolTip(self.tr("Add a layer"))
         layerAddButton.clicked.connect(self.addLayer)
-        layerRemoveButton = PushButton(self)
-        layerRemoveButton.setIconSize(QSize(16, 16))
-        layerRemoveButton.setIcon(icons.icon("i_minus"))
+        layerRemoveButton = Button(self)
+        layerRemoveButton.setDrawingCommands(icons.dc_minus())
         layerRemoveButton.setToolTip(self.tr("Remove selected layer"))
         layerRemoveButton.clicked.connect(self.removeLayer)
-        layerDownButton = PushButton(self)
-        layerDownButton.setIconSize(QSize(16, 16))
-        layerDownButton.setIcon(icons.icon("i_down"))
+        layerDownButton = Button(self)
+        layerDownButton.setDrawingCommands(icons.dc_down())
         layerDownButton.setToolTip(self.tr("Lower selected layer"))
         layerDownButton.clicked.connect(lambda: self.layerOffset(1))
-        layerUpButton = PushButton(self)
-        layerUpButton.setIconSize(QSize(16, 16))
-        layerUpButton.setIcon(icons.icon("i_up"))
+        layerUpButton = Button(self)
+        layerUpButton.setDrawingCommands(icons.dc_up())
         layerUpButton.setToolTip(self.tr("Raise selected layer"))
         layerUpButton.clicked.connect(lambda: self.layerOffset(-1))
 

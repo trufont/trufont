@@ -1,10 +1,8 @@
 """
-Icon db using PathIcon.
+Icon database, issues drawing commands. PathButton is a consumer.
 """
+from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QColor, QPainterPath, QTransform
-from trufont.objects.pathIcon import PathIcon
-
-__all__ = ["icon"]
 
 _listIconsStrokeColor = QColor(90, 90, 90)
 _sidebarIconsFillColor = QColor(187, 187, 187)
@@ -18,20 +16,21 @@ def p_minus():
     return path
 
 
-def i_minus():
-    icon = PathIcon(16, 16)
-    path = p_minus()
-    icon.addStrokePath(path, _listIconsStrokeColor, 2)
-    return icon
+def dc_minus():
+    return [
+        QSize(16, 16),
+        (p_minus(), '2', _listIconsStrokeColor),
+    ]
 
 
-def i_plus():
-    icon = PathIcon(16, 16)
+def dc_plus():
     path = p_minus()
     path.moveTo(8, 4)
     path.lineTo(8, 12)
-    icon.addStrokePath(path, _listIconsStrokeColor, 2)
-    return icon
+    return [
+        QSize(16, 16),
+        (path, '2', _listIconsStrokeColor),
+    ]
 
 
 def p_down():
@@ -44,18 +43,19 @@ def p_down():
     return path
 
 
-def i_down():
-    icon = PathIcon(16, 16)
-    path = p_down()
-    icon.addStrokePath(path, _listIconsStrokeColor, 2, True)
-    return icon
+def dc_down():
+    return [
+        QSize(16, 16),
+        (p_down(), '2a', _listIconsStrokeColor),
+    ]
 
 
-def i_up():
-    icon = PathIcon(16, 16)
+def dc_up():
     path = p_down() * QTransform.fromScale(1, -1).translate(0, -16)
-    icon.addStrokePath(path, _listIconsStrokeColor, 2, True)
-    return icon
+    return [
+        QSize(16, 16),
+        (path, '2a', _listIconsStrokeColor),
+    ]
 
 
 def p_ellipses():
@@ -66,24 +66,26 @@ def p_ellipses():
     return circ1, circ2
 
 
-def i_invscale():
+def dc_invscale():
     circ1, circ2 = p_ellipses()
-    icon = PathIcon(20, 20)
-    icon.addFillPath(circ2, _sidebarIconsFillColor)
-    path_ = circ1 - circ2
-    path_.addPath(circ2)
-    icon.addStrokePath(path_, _sidebarIconsStrokeColor, antialiasing=True)
-    return icon
+    path = circ1 - circ2
+    path.addPath(circ2)
+    return [
+        QSize(20, 20),
+        (circ2, 'f', _sidebarIconsFillColor),
+        (path, '1a', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_scale():
+def dc_scale():
     circ1, circ2 = p_ellipses()
-    icon = PathIcon(20, 20)
-    icon.addFillPath(circ1, _sidebarIconsFillColor)
-    path_ = circ2 - circ1
-    path_.addPath(circ1)
-    icon.addStrokePath(path_, _sidebarIconsStrokeColor, antialiasing=True)
-    return icon
+    path = circ2 - circ1
+    path.addPath(circ1)
+    return [
+        QSize(20, 20),
+        (circ1, 'f', _sidebarIconsFillColor),
+        (path, '1a', _sidebarIconsStrokeColor),
+    ]
 
 
 def p_rotate():
@@ -100,19 +102,19 @@ def p_rotate():
     return path
 
 
-def i_rotate():
-    icon = PathIcon(20, 20)
-    path = p_rotate()
+def dc_rotate():
     t = QTransform.fromScale(-1, 1).translate(-20, 0)
-    icon.addStrokePath(path * t, _sidebarIconsStrokeColor, antialiasing=True)
-    return icon
+    return [
+        QSize(20, 20),
+        (p_rotate() * t, '1a', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_invrotate():
-    icon = PathIcon(20, 20)
-    path = p_rotate()
-    icon.addStrokePath(path, _sidebarIconsStrokeColor, antialiasing=True)
-    return icon
+def dc_invrotate():
+    return [
+        QSize(20, 20),
+        (p_rotate(), '1a', _sidebarIconsStrokeColor),
+    ]
 
 
 def p_skew():
@@ -129,35 +131,38 @@ def p_skew():
     return path1, path2
 
 
-def i_invskew():
-    icon = PathIcon(20, 20)
+def dc_invskew():
     path1, path2 = p_skew()
     t = QTransform.fromScale(-1, 1).translate(-20, 0)
-    icon.addFillPath(path1 * t, _sidebarIconsFillColor)
-    icon.addStrokePath(path2 * t, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path1 * t, 'f', _sidebarIconsFillColor),
+        (path2 * t, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_skew():
-    icon = PathIcon(20, 20)
+def dc_skew():
     path1, path2 = p_skew()
-    icon.addFillPath(path1, _sidebarIconsFillColor)
-    icon.addStrokePath(path2, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path1, 'f', _sidebarIconsFillColor),
+        (path2, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_snap():
-    icon = PathIcon(20, 20)
-    path = QPainterPath()
-    path.moveTo(10, 2)
-    path.lineTo(10, 18)
-    path.moveTo(2, 10)
-    path.lineTo(18, 10)
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
+def dc_snap():
     path = QPainterPath()
     path.addEllipse(8, 8, 5, 5)
-    icon.addFillPath(path, _sidebarIconsFillColor)
-    return icon
+    path_ = QPainterPath()
+    path_.moveTo(10, 2)
+    path_.lineTo(10, 18)
+    path_.moveTo(2, 10)
+    path_.lineTo(18, 10)
+    return [
+        QSize(20, 20),
+        (path, 'f', _sidebarIconsFillColor),
+        (path_, '1', _sidebarIconsStrokeColor),
+    ]
 
 
 def p_cubes():
@@ -177,87 +182,93 @@ def p_cubes():
     return cube1, cube2
 
 
-def i_union():
-    icon = PathIcon(20, 20)
+def dc_union():
     cube1, cube2 = p_cubes()
     path = cube1 + cube2
-    icon.addFillPath(path, _sidebarIconsFillColor)
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, 'f', _sidebarIconsFillColor),
+        (path, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_subtract():
-    icon = PathIcon(20, 20)
+def dc_subtract():
     cube1, cube2 = p_cubes()
     path = cube1 - cube2
-    icon.addFillPath(path, _sidebarIconsFillColor)
     path_ = cube2
     path_.addPath(path)
-    icon.addStrokePath(path_, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, 'f', _sidebarIconsFillColor),
+        (path_, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_intersect():
-    icon = PathIcon(20, 20)
-    cube1, cube2 = p_cubes()
-    icon.addFillPath(cube1 & cube2, _sidebarIconsFillColor)
-    cubes = cube1
-    cubes.addPath(cube2)
-    icon.addStrokePath(cubes, _sidebarIconsStrokeColor)
-    return icon
-
-
-def i_xor():
-    icon = PathIcon(20, 20)
+def dc_intersect():
     cube1, cube2 = p_cubes()
     intersect = cube1 & cube2
     cubes = cube1
     cubes.addPath(cube2)
-    icon.addFillPath(cubes - intersect, _sidebarIconsFillColor)
-    icon.addStrokePath(cubes, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (intersect, 'f', _sidebarIconsFillColor),
+        (cubes, '1', _sidebarIconsStrokeColor),
+    ]
+
+
+def dc_xor():
+    cube1, cube2 = p_cubes()
+    intersect = cube1 & cube2
+    cubes = cube1
+    cubes.addPath(cube2)
+    return [
+        QSize(20, 20),
+        (cubes - intersect, 'f', _sidebarIconsFillColor),
+        (cubes, '1', _sidebarIconsStrokeColor),
+    ]
 
 
 def p_mirror():
     raise NotImplementedError
 
 
-def i_hmirror():
-    icon = PathIcon(20, 20)
+def dc_hmirror():
     path = QPainterPath()
     path.moveTo(8, 18)
     path.lineTo(1, 18)
     path.lineTo(8, 1)
     path.closeSubpath()
-    icon.addFillPath(path, _sidebarIconsFillColor)
     path_ = QPainterPath(path)
     path_.moveTo(11, 18)
     path_.lineTo(19, 18)
     path_.lineTo(11, 1)
     path_.closeSubpath()
-    icon.addStrokePath(path_, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, 'f', _sidebarIconsFillColor),
+        (path_, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_vmirror():
-    icon = PathIcon(20, 20)
+def dc_vmirror():
     path = QPainterPath()
     path.moveTo(2, 1)
     path.lineTo(19, 8)
     path.lineTo(2, 8)
     path.closeSubpath()
-    icon.addFillPath(path, _sidebarIconsFillColor)
     path_ = QPainterPath(path)
     path_.moveTo(2, 11)
     path_.lineTo(19, 11)
     path_.lineTo(2, 19)
     path_.closeSubpath()
-    icon.addStrokePath(path_, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, 'f', _sidebarIconsFillColor),
+        (path_, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_alignhleft():
-    icon = PathIcon(20, 20)
+def dc_alignhleft():
     path = QPainterPath()
     path.moveTo(2, 2)
     path.lineTo(2, 18)
@@ -272,12 +283,13 @@ def i_alignhleft():
     path.lineTo(18, 12)
     path.lineTo(18, 16)
     path.lineTo(3, 16)
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_alignhcenter():
-    icon = PathIcon(20, 20)
+def dc_alignhcenter():
     path = QPainterPath()
     path.moveTo(9, 2)
     path.lineTo(9, 18)
@@ -294,12 +306,13 @@ def i_alignhcenter():
     path.lineTo(18, 16)
     path.lineTo(2, 16)
     path.closeSubpath()
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_alignhright():
-    icon = PathIcon(20, 20)
+def dc_alignhright():
     path = QPainterPath()
     path.moveTo(17, 2)
     path.lineTo(17, 18)
@@ -314,12 +327,13 @@ def i_alignhright():
     path.lineTo(2, 12)
     path.lineTo(2, 16)
     path.lineTo(17, 16)
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_alignvtop():
-    icon = PathIcon(20, 20)
+def dc_alignvtop():
     path = QPainterPath()
     path.moveTo(2, 2)
     path.lineTo(18, 2)
@@ -334,12 +348,13 @@ def i_alignvtop():
     path.lineTo(12, 13)
     path.lineTo(16, 13)
     path.lineTo(16, 3)
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_alignvcenter():
-    icon = PathIcon(20, 20)
+def dc_alignvcenter():
     path = QPainterPath()
     path.moveTo(2, 9)
     path.lineTo(18, 9)
@@ -356,12 +371,13 @@ def i_alignvcenter():
     path.lineTo(16, 15)
     path.lineTo(16, 5)
     path.closeSubpath()
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
-    return icon
+    return [
+        QSize(20, 20),
+        (path, '1', _sidebarIconsStrokeColor),
+    ]
 
 
-def i_alignvbottom():
-    icon = PathIcon(20, 20)
+def dc_alignvbottom():
     path = QPainterPath()
     path.moveTo(2, 17)
     path.lineTo(18, 17)
@@ -376,13 +392,7 @@ def i_alignvbottom():
     path.lineTo(12, 8)
     path.lineTo(16, 8)
     path.lineTo(16, 17)
-    icon.addStrokePath(path, _sidebarIconsStrokeColor)
-    return icon
-
-
-def icon(key):
-    return globals()[key]()
-
-
-def iconPath(key):
-    raise NotImplementedError
+    return [
+        QSize(20, 20),
+        (path, '1', _sidebarIconsStrokeColor),
+    ]
