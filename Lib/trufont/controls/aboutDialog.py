@@ -9,7 +9,7 @@ import platform
 import subprocess
 
 try:
-    PATH = os.path.join(modulePath, "../../..")
+    PATH = os.path.abspath(os.path.join(modulePath, "../../.."))
     gitShortHash = subprocess.check_output(
         ['git', 'rev-parse', '--short', 'HEAD'], cwd=PATH,
         stderr=subprocess.DEVNULL

@@ -107,10 +107,6 @@ def useTabBar():
 def showAppIconInDialog():
     return sys.platform == "darwin"
 
-
-def useCenteredButtons():
-    return sys.platform == "darwin"
-
 # -----------
 # Rubber band
 # -----------
