@@ -1,14 +1,14 @@
 from PyQt5.QtCore import QEvent, QLocale, QRegularExpression, QSize, Qt
-from PyQt5.QtGui import QColor, QRegularExpressionValidator
+from PyQt5.QtGui import QColor, QPainter, QRegularExpressionValidator
 from PyQt5.QtWidgets import (
     QApplication, QDoubleSpinBox, QGridLayout, QHeaderView, QLineEdit,
     QPushButton, QScrollArea, QSizePolicy, QSpinBox, QVBoxLayout,
     QWidget)
-from defconQt.controls.accordionBox import AccordionBox
 from defconQt.controls.colorVignette import ColorVignette
 from defconQt.controls.listView import ListView
 from defconQt.tools.drawing import colorToQColor
 from trufont.controls.glyphAlignmentWidget import GlyphAlignmentWidget
+from trufont.controls.groupBox import GroupBox
 from trufont.objects import icons
 from trufont.tools.colorGenerator import ColorGenerator
 # TODO: switch to QFormLayout
@@ -76,6 +76,17 @@ class NumberBox(SpinBox):
         self.setRange(-900000, 900000)
 
 
+class FillWidget(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(event.rect(), QColor(240, 240, 240))
+
+
 class PropertiesWidget(QWidget):
 
     def __init__(self, parent=None):
@@ -86,35 +97,36 @@ class PropertiesWidget(QWidget):
         self._glyph = None
         self._shouldEditLastName = False
 
-        glyphGroup = AccordionBox(self.tr("Glyph"), self)
-        glyphLayout = QGridLayout(self)
+        glyphGroup = GroupBox(self)
+        glyphGroup.setTitle(self.tr("Glyph"))
+        glyphLayout = QGridLayout()
         columnOneWidth = self.fontMetrics().width('0') * 7
 
-        nameLabel = RLabel(self.tr("Name:"), self)
+        nameLabel = RLabel(self.tr("Name"), self)
         self.nameEdit = QLineEdit(self)
         self.nameEdit.editingFinished.connect(self.writeGlyphName)
-        unicodesLabel = RLabel(self.tr("Unicode:"), self)
+        unicodesLabel = RLabel(self.tr("Unicode"), self)
         self.unicodesEdit = QLineEdit(self)
         self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
         unicodesRegExp = QRegularExpression(
             "(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
         unicodesValidator = QRegularExpressionValidator(unicodesRegExp, self)
         self.unicodesEdit.setValidator(unicodesValidator)
-        widthLabel = RLabel(self.tr("Width:"), self)
+        widthLabel = RLabel(self.tr("Width"), self)
         self.widthEdit = NumberBox(self)
         self.widthEdit.setMaximumWidth(columnOneWidth)
         self.widthEdit.editingFinished.connect(self.writeWidth)
-        leftMarginLabel = RLabel(self.tr("Left:"), self)
+        leftMarginLabel = RLabel(self.tr("Left"), self)
         self.leftMarginEdit = NumberBox(self)
         self.leftMarginEdit.setMaximumWidth(columnOneWidth)
         self.leftMarginEdit.editingFinished.connect(
             self.writeleftMargin)
-        rightMarginLabel = RLabel(self.tr("Right:"), self)
+        rightMarginLabel = RLabel(self.tr("Right"), self)
         self.rightMarginEdit = NumberBox(self)
         self.rightMarginEdit.setMaximumWidth(columnOneWidth)
         self.rightMarginEdit.editingFinished.connect(
             self.writerightMargin)
-        markColorLabel = RLabel(self.tr("Flag:"), self)
+        markColorLabel = RLabel(self.tr("Flag"), self)
         self.markColorWidget = ColorVignette(self)
         self.markColorWidget.colorChanged.connect(
             self.writeMarkColor)
@@ -137,10 +149,12 @@ class PropertiesWidget(QWidget):
         l += 1
         glyphLayout.addWidget(markColorLabel, l, 0)
         glyphLayout.addWidget(self.markColorWidget, l, 1)
-        glyphGroup.setLayout(glyphLayout)
+        glyphLayout.setSpacing(8)
+        glyphGroup.setChildLayout(glyphLayout)
 
-        transformGroup = AccordionBox(self.tr("Transform"), self)
-        transformLayout = QGridLayout(self)
+        transformGroup = GroupBox(self)
+        transformGroup.setTitle(self.tr("Transform"))
+        transformLayout = QGridLayout()
 
         self.alignmentWidget = GlyphAlignmentWidget(self)
 
@@ -310,12 +324,15 @@ class PropertiesWidget(QWidget):
         transformLayout.addWidget(self.snapEdit, l, 1)
         l += 1
         transformLayout.addLayout(buttonsLayout, l, 0, 1, 3)
-        transformGroup.setLayout(transformLayout)
+        transformLayout.setSpacing(4)
+        transformGroup.setChildLayout(transformLayout)
 
-        layersGroup = AccordionBox(self.tr("Layers"), self)
-        layersLayout = QGridLayout(self)
+        layersGroup = GroupBox(self)
+        layersGroup.setTitle(self.tr("Layers"))
+        layersLayout = QGridLayout()
 
         self.layerSetView = ListView(self)
+        self.layerSetView.setFixedWidth(197)
         self.layerSetView.setDragEnabled(True)
         # HACK: we need this to setup headers and signals
         self.layerSetView.setList([[None, None, None]])
@@ -363,16 +380,15 @@ class PropertiesWidget(QWidget):
         layersLayout.addWidget(spacer, l, 2)
         layersLayout.addWidget(layerDownButton, l, 3)
         layersLayout.addWidget(layerUpButton, l, 4)
-        layersGroup.setLayout(layersLayout)
-
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        layersGroup.setChildLayout(layersLayout)
 
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(glyphGroup)
         mainLayout.addWidget(transformGroup)
         mainLayout.addWidget(layersGroup)
-        mainLayout.addWidget(spacer)
+        mainLayout.addWidget(FillWidget())
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.setSpacing(2)
         self.setLayout(mainLayout)
 
     # -------------
@@ -874,6 +890,10 @@ class PropertiesWidget(QWidget):
         app = QApplication.instance()
         app.dispatcher.removeObserver(self, "currentGlyphChanged")
         app.dispatcher.removeObserver(self, "currentFontChanged")
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(event.rect(), QColor(212, 212, 212))
 
 
 class PropertiesView(QScrollArea):
