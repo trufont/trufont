@@ -15,9 +15,9 @@ class GroupBox(QWidget):
         font = self.titleLabel.font()
         font.setCapitalization(QFont.AllUppercase)
         font.setLetterSpacing(QFont.AbsoluteSpacing, 1)
-        font.setPointSize(platformSpecific.baseFontSize())
         self.titleLabel.setFont(font)
-        self.titleLabel.setStyleSheet("color: #787878")
+        self.titleLabel.setStyleSheet("color: #787878; font-size: {}pt".format(
+            platformSpecific.baseFontSize()))
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.titleLabel)
