@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QColor, QPainter
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QAbstractButton
 
 

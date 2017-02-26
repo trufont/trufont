@@ -3,6 +3,7 @@ Icon database, issues drawing commands. PathButton is a consumer.
 """
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QColor, QPainterPath, QTransform
+from trufont.objects.pathIcon import PathIcon
 
 _listIconsStrokeColor = QColor(90, 90, 90)
 _sidebarIconsFillColor = QColor(187, 187, 187)
@@ -31,6 +32,22 @@ def dc_plus():
         QSize(16, 16),
         (path, '2', _listIconsStrokeColor),
     ]
+
+
+def i_minus():
+    icon = PathIcon(16, 16)
+    path = p_minus()
+    icon.addStrokePath(path, _listIconsStrokeColor, 2)
+    return icon
+
+
+def i_plus():
+    icon = PathIcon(16, 16)
+    path = p_minus()
+    path.moveTo(8, 4)
+    path.lineTo(8, 12)
+    icon.addStrokePath(path, _listIconsStrokeColor, 2)
+    return icon
 
 
 def p_down():

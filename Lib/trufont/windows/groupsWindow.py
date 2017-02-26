@@ -35,11 +35,11 @@ class GroupsWindow(QWidget):
         self.stackWidget = GlyphStackWidget(self)
 
         self.addGroupButton = QPushButton(self)
-        self.addGroupButton.setIcon(icons.icon("i_plus"))
+        self.addGroupButton.setIcon(icons.i_plus())
         self.addGroupButton.setToolTip(self.tr("Add group"))
         self.addGroupButton.clicked.connect(self._groupAdd)
         self.removeGroupButton = QPushButton(self)
-        self.removeGroupButton.setIcon(icons.icon("i_minus"))
+        self.removeGroupButton.setIcon(icons.i_minus())
         self.removeGroupButton.setToolTip(self.tr("Remove group"))
         self.removeGroupButton.clicked.connect(self._groupDeleted)
         if not groups:

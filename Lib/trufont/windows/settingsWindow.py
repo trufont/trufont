@@ -79,10 +79,10 @@ class GlyphSetTab(QWidget):
         splitter.addWidget(self.glyphSetList)
         splitter.addWidget(self.glyphSetContents)
         self.addGlyphSetButton = QPushButton(self)
-        self.addGlyphSetButton.setIcon(icons.icon("i_plus"))
+        self.addGlyphSetButton.setIcon(icons.i_plus())
         self.addGlyphSetButton.clicked.connect(lambda: self.addGlyphSet())
         self.removeGlyphSetButton = QPushButton(self)
-        self.removeGlyphSetButton.setIcon(icons.icon("i_minus"))
+        self.removeGlyphSetButton.setIcon(icons.i_minus())
         self.removeGlyphSetButton.clicked.connect(self.removeGlyphSet)
         self.importButton = QPushButton(self.tr("Import"), self)
         importMenu = QMenu(self)
@@ -242,10 +242,10 @@ class MetricsWindowTab(QWidget):
         self.inputTextList = QListWidget(self)
         self.inputTextList.setDragDropMode(QAbstractItemView.InternalMove)
         self.addItemButton = QPushButton(self)
-        self.addItemButton.setIcon(icons.icon("i_plus"))
+        self.addItemButton.setIcon(icons.i_plus())
         self.addItemButton.clicked.connect(self.addItem)
         self.removeItemButton = QPushButton(self)
-        self.removeItemButton.setIcon(icons.icon("i_minus"))
+        self.removeItemButton.setIcon(icons.i_minus())
         self.removeItemButton.clicked.connect(self.removeItem)
 
         buttonsLayout = QHBoxLayout()
@@ -307,10 +307,10 @@ class MiscTab(QWidget):
         self.markColorView.setHeaderLabels(
             (self.tr("Color"), self.tr("Name")))
         self.addItemButton = QPushButton(self)
-        self.addItemButton.setIcon(icons.icon("i_plus"))
+        self.addItemButton.setIcon(icons.i_plus())
         self.addItemButton.clicked.connect(self.addItem)
         self.removeItemButton = QPushButton(self)
-        self.removeItemButton.setIcon(icons.icon("i_minus"))
+        self.removeItemButton.setIcon(icons.i_minus())
         self.removeItemButton.clicked.connect(self.removeItem)
 
         self.loadRecentFileBox = QCheckBox(

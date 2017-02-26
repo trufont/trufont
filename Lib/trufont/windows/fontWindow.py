@@ -333,6 +333,7 @@ class FontWindow(BaseWindow):
 
     def _drawingToolRegistered(self, notification):
         toolClass = notification.data["tool"]
+        index = self.stackWidget.currentIndex()
         parent = self.stackWidget.currentWidget().widget(
             ) if index else None
         self.toolBar.addTool(toolClass(parent=parent))
