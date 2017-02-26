@@ -101,7 +101,7 @@ class PropertiesWidget(QWidget):
         glyphGroup.setTitle(self.tr("Glyph"))
         glyphLayout = QGridLayout()
         zeroWidth = self.fontMetrics().width('0')
-        columnOneWidth = zeroWidth * 6
+        columnOneWidth = zeroWidth * 7
 
         nameLabel = RLabel(self.tr("Name"), self)
         self.nameEdit = QLineEdit(self)
@@ -135,10 +135,10 @@ class PropertiesWidget(QWidget):
 
         l = 0
         glyphLayout.addWidget(nameLabel, l, 0)
-        glyphLayout.addWidget(self.nameEdit, l, 1, 1, 5)
+        glyphLayout.addWidget(self.nameEdit, l, 1, 1, 3)
         l += 1
         glyphLayout.addWidget(unicodesLabel, l, 0)
-        glyphLayout.addWidget(self.unicodesEdit, l, 1, 1, 5)
+        glyphLayout.addWidget(self.unicodesEdit, l, 1, 1, 3)
         l += 1
         glyphLayout.addWidget(widthLabel, l, 0)
         glyphLayout.addWidget(self.widthEdit, l, 1)
