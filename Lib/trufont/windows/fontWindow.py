@@ -375,6 +375,14 @@ class FontWindow(BaseWindow):
         for tool in self.toolBar.tools():
             tool.setParent(parent)
 
+    def _toolChanged(self, tool):
+        widget = self.stackWidget.currentWidget()
+        ok = widget.setCurrentTool(tool)
+        # the glyph view NAKed the change (in mouseDown)
+        # set back the current tool in the toolbar
+        if not ok:
+            self.toolBar.setCurrentTool(widget.currentTool())
+
     def _widgetChanged(self, index):
         # update current glyph
         self._updateCurrentGlyph()
@@ -402,7 +410,7 @@ class FontWindow(BaseWindow):
             return
         widget = self.stackWidget.currentWidget()
         widget.setCurrentTool(self.toolBar.currentTool())
-        self.toolBar.currentToolChanged.connect(widget.setCurrentTool)
+        self.toolBar.currentToolChanged.connect(self._toolChanged)
 
     def _orderChanged(self):
         # TODO: reimplement when we start showing glyph subsets

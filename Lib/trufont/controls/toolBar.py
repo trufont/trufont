@@ -110,6 +110,10 @@ class ToolBar(QWidget):
     def currentTool(self):
         return self._tools[self._currentTool]
 
+    def setCurrentTool(self, tool):
+        self._currentTool = self._tools.index(tool)
+        self._updateColors()
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(event.rect(), QColor(240, 240, 240))
