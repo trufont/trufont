@@ -17,6 +17,7 @@ from trufont.tools.rlabel import RLabel
 
 def Button(parent=None):
     btn = PathButton(parent)
+    btn.setIsDownColor(QColor())
     btn.setFocusPolicy(Qt.NoFocus)
     btn.setSize(QSize(26, 26))
     return btn

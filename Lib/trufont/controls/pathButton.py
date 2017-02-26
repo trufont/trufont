@@ -58,12 +58,16 @@ class PathButton(QAbstractButton):
             if size.height() < target.height():
                 dy = int(.5 * (target.height() - size.height()))
             painter.translate(dx, dy)
-        if self._isDownColor and self.isDown():
+        isDown = self.isDown() and self._isDownColor is not None
+        if isDown and self._isDownColor.isValid():
             painter.fillRect(rect, self._isDownColor)
+            isDown = False
         if self._isFlipped:
             painter.translate(0, target.height())
             painter.scale(1, -1)
         for path, cmd, color in self._drawingCommands[1:]:
+            if isDown:
+                color = color.darker(110)
             if cmd == 'f':
                 painter.save()
                 painter.setRenderHint(QPainter.Antialiasing)
@@ -74,6 +78,8 @@ class PathButton(QAbstractButton):
                 if cmd[-1] == 'a':
                     painter.setRenderHint(QPainter.Antialiasing)
                 pen = painter.pen()
+                if isDown:
+                    color = color.darker(140)
                 pen.setColor(color)
                 pen.setWidth(int(cmd[0]))
                 painter.setPen(pen)
