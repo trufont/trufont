@@ -53,8 +53,8 @@ class ToolBar(QWidget):
 
     def _updateTools(self):
         layout = self.layout()
-        for i in range(layout.count(), 0, -1):
-            layout.takeAt(i)
+        for i in reversed(range(layout.count())):
+            layout.takeAt(i).widget().close()
         for index, tool in enumerate(self._tools):
             btn = PathButton(self)
             if index == self._currentTool:
