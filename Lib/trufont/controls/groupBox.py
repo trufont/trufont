@@ -9,15 +9,18 @@ class GroupBox(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        self.setStyleSheet("QLabel { color: #505050 }")
+        pointSize, delta = 8, platformSpecific.fontSizeDelta()
+        self.setStyleSheet("QLabel {{ color: #505050; font-size: {}pt }}".format(
+            pointSize + 1 + 3 * delta))
 
         self.titleLabel = QLabel(self)
         font = self.titleLabel.font()
         font.setCapitalization(QFont.AllUppercase)
         font.setLetterSpacing(QFont.AbsoluteSpacing, 1)
+        font.setPointSize(pointSize + delta)
         self.titleLabel.setFont(font)
         self.titleLabel.setStyleSheet("color: #787878; font-size: {}pt".format(
-            platformSpecific.baseFontSize()))
+            pointSize + delta))
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.titleLabel)

@@ -99,7 +99,8 @@ class PropertiesWidget(QWidget):
         glyphGroup = GroupBox(self)
         glyphGroup.setTitle(self.tr("Glyph"))
         glyphLayout = QGridLayout()
-        columnOneWidth = self.fontMetrics().width('0') * 7
+        zeroWidth = self.fontMetrics().width('0')
+        columnOneWidth = zeroWidth * 6
 
         nameLabel = RLabel(self.tr("Name"), self)
         self.nameEdit = QLineEdit(self)
@@ -154,6 +155,7 @@ class PropertiesWidget(QWidget):
         transformGroup = GroupBox(self)
         transformGroup.setTitle(self.tr("Transform"))
         transformLayout = QGridLayout()
+        columnTwoWidth = zeroWidth * 10
 
         self.alignmentWidget = GlyphAlignmentWidget(self)
 
@@ -165,6 +167,7 @@ class PropertiesWidget(QWidget):
         invScaleButton.clicked.connect(self.scaleGlyph)
         invScaleButton.setProperty("inverted", True)
         self.scaleXEdit = SpinBox(self)
+        self.scaleXEdit.setMaximumWidth(columnTwoWidth)
         self.scaleXEdit.setSuffix(" %")
         self.scaleXEdit.setMaximum(500)
         self.scaleXEdit.setMinimum(-500)
@@ -175,6 +178,7 @@ class PropertiesWidget(QWidget):
             self.tr("Scale up selection"))
         scaleButton.clicked.connect(self.scaleGlyph)
         self.scaleYEdit = SpinBox(self)
+        self.scaleYEdit.setMaximumWidth(columnTwoWidth)
         self.scaleYEdit.setSuffix(" %")
         self.scaleYEdit.setMaximum(500)
         self.scaleYEdit.setMinimum(-500)
@@ -186,6 +190,7 @@ class PropertiesWidget(QWidget):
             self.tr("Rotate selection counter-clockwise"))
         rotateButton.clicked.connect(self.rotateGlyph)
         self.rotateEdit = SpinBox(self)
+        self.rotateEdit.setMaximumWidth(columnTwoWidth)
         self.rotateEdit.setSuffix("º")
         # XXX: calling stepDown() from zero shows 359.999
         self.rotateEdit.setMaximum(359.999)
@@ -205,6 +210,7 @@ class PropertiesWidget(QWidget):
         invSkewButton.clicked.connect(self.skewGlyph)
         invSkewButton.setProperty("inverted", True)
         self.skewEdit = SpinBox(self)
+        self.skewEdit.setMaximumWidth(columnTwoWidth)
         self.skewEdit.setSuffix("º")
         self.skewEdit.setMaximum(100)
         self.skewEdit.setValue(6)
@@ -221,6 +227,7 @@ class PropertiesWidget(QWidget):
             self.tr("Snap selection to precision"))
         snapButton.clicked.connect(self.snapGlyph)
         self.snapEdit = SpinBox(self)
+        self.snapEdit.setMaximumWidth(columnTwoWidth)
         self.snapEdit.setValue(1)
 
         unionButton = Button(self)

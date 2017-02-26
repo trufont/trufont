@@ -256,7 +256,7 @@ class TabWidget(QWidget):
 
     def minimumSizeHint(self):
         height = topPadding + bottomPadding + self.fontMetrics().lineSpacing()
-        return QSize(400, height)
+        return QSize(200, height)
 
     def sizeHint(self):
         width = 0

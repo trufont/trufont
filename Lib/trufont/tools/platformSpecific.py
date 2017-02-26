@@ -16,10 +16,8 @@ def treatPackageAsFile():
 # -----
 
 
-def baseFontSize():
-    if sys.platform == "darwin":
-        return 9
-    return 8
+def fontSizeDelta():
+    return int(sys.platform == "darwin")
 
 # -------------
 # Key sequences
