@@ -331,7 +331,8 @@ class PropertiesWidget(QWidget):
         layersLayout = QGridLayout()
 
         self.layerSetView = ListView(self)
-        self.layerSetView.setFixedWidth(197)
+        # QListView has no proper sizeHint by default
+        self.layerSetView.sizeHint = lambda: QSize(150, 150)
         self.layerSetView.setDragEnabled(True)
         # HACK: we need this to setup headers and signals
         self.layerSetView.setList([[None, None, None]])
