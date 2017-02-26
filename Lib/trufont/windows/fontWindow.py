@@ -72,7 +72,8 @@ class FontWindow(BaseWindow):
         self._groupsWindow = None
 
         self.toolBar = ToolBar(self)
-        self.toolBar.setTools(QApplication.instance().drawingTools())
+        self.toolBar.setTools(
+            t() for t in QApplication.instance().drawingTools())
 
         self.glyphCellView = GlyphCellView(self)
         self.glyphCellView.glyphActivated.connect(self.openGlyphTab)
@@ -331,12 +332,19 @@ class FontWindow(BaseWindow):
     # app
 
     def _drawingToolRegistered(self, notification):
-        tool = notification.data["tool"]
-        self.toolBar.addTool(tool)
+        toolClass = notification.data["tool"]
+        parent = self.stackWidget.currentWidget().widget(
+            ) if index else None
+        self.toolBar.addTool(toolClass(parent=parent))
 
     def _drawingToolUnregistered(self, notification):
-        tool = notification.data["tool"]
-        self.toolBar.removeTool(tool)
+        toolClass = notification.data["tool"]
+        for tool in self.toolBar.tools():
+            if isinstance(tool, toolClass):
+                self.toolBar.removeTool(tool)
+                return
+        raise ValueError(
+            "couldn't find tool to unregister: {}".format(toolClass))
 
     def _glyphViewGlyphChanged(self, notification):
         self._updateGlyphActions()
@@ -363,7 +371,7 @@ class FontWindow(BaseWindow):
         self.stackWidget.setCurrentIndex(index)
         parent = self.stackWidget.currentWidget().widget(
             ) if index else None
-        for tool in QApplication.instance().drawingTools():
+        for tool in self.toolBar.tools():
             tool.setParent(parent)
 
     def _widgetChanged(self, index):
