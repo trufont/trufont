@@ -174,6 +174,23 @@ class TLayer(Layer):
 
         return glyph
 
+    def _glyphsReloadFilter(self, glyphNames):
+        for glyphName in glyphNames:
+            if glyphName in self and self[glyphName].template:
+                continue
+            if glyphName not in self._glyphSet:
+                # TODO: blindy treating every KeyError as a "former"
+                # template glyph isn't particularly elegant.
+                glyph = self[glyphName]
+                glyph.clear()
+                glyph.template = True
+                glyph.dirty = False
+                continue
+            yield glyphName
+
+    def reloadGlyphs(self, glyphNames):
+        super().reloadGlyphs(self._glyphsReloadFilter(glyphNames))
+
     def saveGlyph(self, glyph, glyphSet, saveAs=False):
         if not glyph.template:
             super().saveGlyph(glyph, glyphSet, saveAs)
