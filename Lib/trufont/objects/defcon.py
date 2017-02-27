@@ -222,6 +222,11 @@ class TGlyph(Glyph):
 
     # observe contours selection
 
+    def selfNotificationCallback(self, notification):
+        super().selfNotificationCallback(notification)
+        if notification.name == "Glyph.Changed" and self.dirty:
+            self.template = False
+
     def beginSelfContourNotificationObservation(self, contour):
         if contour.dispatcher is None:
             return
@@ -281,13 +286,6 @@ class TGlyph(Glyph):
     template = property(
         _get_template, _set_template,
         doc="A boolean indicating whether the glyph is a template glyph.")
-
-    def _set_dirty(self, value):
-        BaseObject._set_dirty(self, value)
-        if value:
-            self.template = False
-
-    dirty = property(BaseObject._get_dirty, _set_dirty)
 
     def _get_side1KerningGroup(self):
         font = self.font
