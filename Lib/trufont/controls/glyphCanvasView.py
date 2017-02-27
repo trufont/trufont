@@ -21,6 +21,7 @@ class GlyphCanvasWidget(GlyphWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.setAcceptDrops(True)
         self._currentTool = BaseTool()
+        self._currentToolActivated = False
         self._mouseDown = False
         self._preview = False
 
@@ -170,14 +171,19 @@ class GlyphCanvasWidget(GlyphWidget):
     # QWidget methods
     # ---------------
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._setCurrentToolEnabled(True)
+
     def hideEvent(self, event):
         super().hideEvent(event)
+        self._setCurrentToolEnabled(False)
         self._preview = False
 
     def closeEvent(self, event):
         super().closeEvent(event)
         if event.isAccepted():
-            self._currentTool.toolDisabled()
+            self._setCurrentToolEnabled(False)
             app = QApplication.instance()
             app.dispatcher.removeObserver(self, "glyphViewUpdate")
             app.dispatcher.removeObserver(self, "parametersChanged")
@@ -307,16 +313,27 @@ class GlyphCanvasWidget(GlyphWidget):
 
     # current tool
 
+    def _setCurrentToolEnabled(self, value):
+        if self._currentToolActivated == value:
+            return
+        if value != self.isVisible():
+            return
+        self._currentToolActivated = value
+        if value:
+            self._currentTool.toolActivated()
+        else:
+            self._currentTool.toolDisabled()
+
     def currentTool(self):
         return self._currentTool
 
     def setCurrentTool(self, tool):
         if self._mouseDown:
             return False
-        self._currentTool.toolDisabled()
+        self._setCurrentToolEnabled(False)
         self._currentTool = tool
         self.setCursor(tool.cursor)
-        self._currentTool.toolActivated()
+        self._setCurrentToolEnabled(True)
         return True
 
     def _redirectEvent(self, event, callback, transmute=False):

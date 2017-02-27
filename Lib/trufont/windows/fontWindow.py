@@ -369,11 +369,13 @@ class FontWindow(BaseWindow):
 
     def _tabChanged(self, index):
         self.statusBar.setShouldPropagateSize(not index)
+        # we need to hide, then setParent, then show
+        self.stackWidget.currentWidget().hide()
+        if index:
+            parent = self.stackWidget.widget(index).widget()
+            for tool in self.toolBar.tools():
+                tool.setParent(parent)
         self.stackWidget.setCurrentIndex(index)
-        parent = self.stackWidget.currentWidget().widget(
-            ) if index else None
-        for tool in self.toolBar.tools():
-            tool.setParent(parent)
 
     def _toolChanged(self, tool):
         widget = self.stackWidget.currentWidget()
