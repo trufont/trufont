@@ -10,8 +10,8 @@ class GroupBox(QWidget):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
         pointSize, delta = 8, platformSpecific.fontSizeDelta()
-        self.setStyleSheet("QLabel {{ color: #505050; font-size: {}pt }}".format(
-            pointSize + 1 + 3 * delta))
+        self.setStyleSheet("QLabel {{ color: #505050; font-size: {}pt }}"
+                           .format(pointSize + 1 + 3 * delta))
 
         self.titleLabel = QLabel(self)
         font = self.titleLabel.font()

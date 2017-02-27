@@ -2,7 +2,6 @@ from booleanOperations.booleanGlyph import BooleanGlyph
 from defcon import (
     Font, Layer, Glyph, Groups, Kerning, Contour, Point, Anchor, Component,
     Guideline, Image)
-from defcon.objects.base import BaseObject
 from fontTools.misc.transform import Identity
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication

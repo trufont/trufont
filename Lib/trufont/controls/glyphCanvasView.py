@@ -316,6 +316,8 @@ class GlyphCanvasWidget(GlyphWidget):
     def _setCurrentToolEnabled(self, value):
         if self._currentToolActivated == value:
             return
+        # Note this is just to avoid extra enable/disable combo,
+        # it's not required for correctness
         if value != self.isVisible():
             return
         self._currentToolActivated = value
