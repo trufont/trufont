@@ -45,10 +45,10 @@ class TFGlyphCellFactoryDrawingController(GlyphCellFactoryDrawingController):
             painter.setFont(font)
             painter.setPen(Qt.lightGray)
             if self.glyph.unicode is not None:
-                text = chr(self.glyph.unicode)
+                uni = self.glyph.unicode
             else:
-                text = "✌"
+                uni = 0xFFFD
             painter.drawText(
                 0, 0, self.width, self.height - GlyphCellHeaderHeight,
-                Qt.AlignVCenter | Qt.AlignCenter, text)
+                Qt.AlignVCenter | Qt.AlignCenter, chr(uni))
             painter.restore()
