@@ -1,9 +1,7 @@
-from defconQt.controls.colorVignette import ColorVignette
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QGridLayout, QLabel, QLineEdit, QListWidget,
     QRadioButton)
-from trufont.tools.colorGenerator import ColorGenerator
 
 
 class FindDialog(QDialog):
@@ -104,45 +102,6 @@ class AddComponentDialog(FindDialog):
         self.setWindowTitle(self.tr("Add component…"))
         self._sortedGlyphNames.remove(args[0].name)
         self.updateGlyphList()
-
-
-class AddLayerDialog(QDialog):
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle(self.tr("Add layer…"))
-
-        layout = QGridLayout(self)
-
-        layerNameLabel = QLabel(self.tr("Layer name:"), self)
-        self.layerNameEdit = QLineEdit(self)
-        self.layerNameEdit.setFocus(True)
-        self.layerColorVignette = ColorVignette(self)
-        self.layerColorVignette.setColor(LayerColorGenerator.getQColor())
-
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-
-        l = 0
-        layout.addWidget(layerNameLabel, l, 0)
-        layout.addWidget(self.layerNameEdit, l, 1)
-        layout.addWidget(self.layerColorVignette, l, 2)
-        l += 1
-        layout.addWidget(buttonBox, l, 0, 1, 3)
-        self.setLayout(layout)
-
-    @classmethod
-    def getNewLayerNameAndColor(cls, parent):
-        dialog = cls(parent)
-        result = dialog.exec_()
-        name = dialog.layerNameEdit.text()
-        color = dialog.layerColorVignette.color()
-        if not result:
-            LayerColorGenerator.revert()
-        return (name, color.getRgbF(), result)
 
 
 class LayerActionsDialog(QDialog):

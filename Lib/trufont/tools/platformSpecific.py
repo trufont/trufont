@@ -29,6 +29,7 @@ def altDeleteSequence():
         return "Backspace"
     return None
 
+
 def closeKeySequence():
     if sys.platform == "win32":
         return "Ctrl+W"
@@ -110,6 +111,13 @@ def useTabBar():
 def showAppIconInDialog():
     return sys.platform == "darwin"
 
+# -----------
+# Rubber band
+# -----------
+
+
+def useBuiltinRubberBand():
+    return sys.platform == "darwin"
 
 # ----------
 # Stylesheet
