@@ -17,21 +17,9 @@ def clampUIPointToOrigin(x, y, pt):
         pt.y = y
 
 
-def projectUIPointOnRefLine(x1, y1, x2, y2, pt, forceUpfront=False):
-    # XXX: the delta isn't calculated from mouse pos when inverse projecting
-    # the current model can't work with the mouse
-    forceUpfront = False
-    #
+def projectUIPointOnRefLine(x1, y1, x2, y2, pt):
     x, y, t = bezierMath.lineProjection(
         x1, y1, x2, y2, pt.x, pt.y, False)
-    # we don't want to project "behind" p2. in that case, reflect p2,p3
-    # vector.
-    if forceUpfront and t < 1:
-        l = QLineF(x, y, x2, y2)
-        p2p3_l = l.length()
-        l.setP1(QPointF(x1, y1))
-        l.setLength(l.length() + p2p3_l)
-        x, y = l.x2(), l.y2()
     # TODO: use grid precision ROUND
     pt.x = x  # round(x)
     pt.y = y  # round(y)
@@ -58,8 +46,7 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
 # ----------
 
 
-def UIMove(contour, delta, clampToMouseDownDelta=None, interpolatePoints=False,
-           slidePoints=False):
+def UIMove(contour, delta, slidePoints=False):
     contour_ = contour
     if contour[0].segmentType is None:
         if contour[1].segmentType is None:
@@ -109,8 +96,7 @@ def UIMove(contour, delta, clampToMouseDownDelta=None, interpolatePoints=False,
                     p1, p3 = p3, p1
                 if p3.segmentType is None:
                     if p2.smooth and p2.segmentType != "move":
-                        projectUIPointOnRefLine(
-                                p1.x, p1.y, p2.x, p2.y, p3, True)
+                        projectUIPointOnRefLine(p1.x, p1.y, p2.x, p2.y, p3)
                     else:
                         dx, dy = delta
                         rx, ry = p3.x - dx, p3.y - dy
@@ -132,8 +118,7 @@ def UIMove(contour, delta, clampToMouseDownDelta=None, interpolatePoints=False,
                 if p1.selected:
                     p1, p3 = p3, p1
                 if p1.segmentType is not None:
-                    projectUIPointOnRefLine(
-                        p1.x, p1.y, p2.x, p2.y, p3, True)
+                    projectUIPointOnRefLine(p1.x, p1.y, p2.x, p2.y, p3)
                 elif not slidePoints:
                     rotateUIPointAroundRefLine(p3.x, p3.y, p2.x, p2.y, p1)
         secondPrevForRotation = None
@@ -196,8 +181,6 @@ def UIMove_runTests():
     UIMove_test_move()
     UIMove_test_move_offWithOn()
     UIMove_test_move_offAtStart()
-    # UIMove_test_constrain_clamp()
-    # UIMove_test_constrain_interpolate()
     UIMove_test_constrain_slidePoints()
     UIMove_test_constrain_smoothOffRotation()
     UIMove_test_constrain_smoothOnProjection()
@@ -325,106 +308,6 @@ def UIMove_test_move_offAtStart():
             ((3, 4), None, False, True),
             ((2, 6), "curve", False, True),
             ((5, 1), "line", False, True),
-        ]
-    )
-
-
-def UIMove_test_constrain_clamp():
-    """
-    Clamp offCurve points to their onCurve x or y axis, or clamp onCurve to
-    their mouseDown x or y position.
-
-    Make sure clamped onCurve commits to its offCurve points.
-
-    Make sure clamped offCurve commits across a smooth onCurve.
-
-    Make sure non-zero clampToMouseDownDelta does clamp properly.
-    (clampToMouseDelta is the sum of previous deltas since mouseDown)
-    """
-    contour = UIMove_buildContour(
-        [
-            ((3, 0), "move", False, False),
-            ((2, 2), None, False, False),
-            ((1, 3), None, False, False),
-            ((0, 5), "curve", True, True),
-            ((-1, 7), None, False, False),
-        ]
-    )
-    UIMove(contour, (1, 3), clampToMouseDownDelta=(0, 0))
-    UIMove_testContour(
-        contour,
-        [
-            ((3, 0), "move", False, False),
-            ((2, 2), None, False, False),
-            ((1, 6), None, False, False),
-            ((0, 8), "curve", True, True),
-            ((-1, 10), None, False, False),
-        ]
-    )
-    contour[3].selected = False
-    contour[2].selected = True
-    UIMove(contour, (-2, -1), clampToMouseDownDelta=(0, 0))
-    UIMove_testContour(
-        contour,
-        [
-            ((3, 0), "move", False, False),
-            ((2, 2), None, False, False),
-            ((0, 5), None, False, True),
-            ((0, 8), "curve", True, False),
-            ((0, 10), None, False, False),
-        ]
-    )
-    contour[2].selected = False
-    contour[0].selected = True
-    UIMove(contour, (-2, 2), clampToMouseDownDelta=(0, 0))
-    UIMove_testContour(
-        contour,
-        [
-            ((3, 2), "move", False, True),
-            ((2, 4), None, False, False),
-            ((0, 5), None, False, False),
-            ((0, 8), "curve", True, False),
-            ((0, 10), None, False, False),
-        ]
-    )
-    contour[0].selected = False
-    contour[3].selected = True
-    UIMove(contour, (-1, -3), clampToMouseDownDelta=(3, 4))
-    UIMove_testContour(
-        contour,
-        [
-            ((3, 2), "move", False, False),
-            ((2, 4), None, False, False),
-            ((-1, 1), None, False, False),
-            ((-1, 4), "curve", True, True),
-            ((-1, 6), None, False, False),
-        ]
-    )
-
-
-def UIMove_test_constrain_interpolate():
-    """
-    Interpolate offCurve points around selected onCurve.
-    """
-    return  # NotImplemented!
-    contour = UIMove_buildContour(
-        [
-            ((3, 0), "move", False, False),
-            ((2, 2), None, False, False),
-            ((1, 3), None, False, False),
-            ((0, 5), "curve", True, True),
-            ((-1, 7), None, False, False),
-        ]
-    )
-    UIMove(contour, (2, 2), slidePoints=True)
-    UIMove_testContour(
-        contour,
-        [
-            ((3, 0), "move", False, False),
-            ((2, 2), None, False, False),
-            ((1, 3), None, False, False),
-            ((0, 6), "curve", True, True),
-            ((-1, 7), None, False, False),
         ]
     )
 
