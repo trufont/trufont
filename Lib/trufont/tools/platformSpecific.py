@@ -110,13 +110,6 @@ def useTabBar():
 def showAppIconInDialog():
     return sys.platform == "darwin"
 
-# -----------
-# Rubber band
-# -----------
-
-
-def needsCustomRubberBand():
-    return sys.platform.startswith("linux")
 
 # ----------
 # Stylesheet

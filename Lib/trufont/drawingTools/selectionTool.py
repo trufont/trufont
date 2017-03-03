@@ -1,12 +1,11 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import QColor, QPainter, QPalette, QPainterPath
-from PyQt5.QtWidgets import (
-    QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
+from PyQt5.QtWidgets import QMenu, QApplication
 from defcon import Anchor, Component, Glyph, Guideline
 from fontTools.pens.basePen import decomposeQuadraticSegment
 from trufont.controls.glyphDialogs import AddComponentDialog, RenameDialog
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.tools import bezierMath, platformSpecific
+from trufont.tools import bezierMath
 from trufont.tools.uiMethods import (
     maybeProjectUISmoothPointOffcurve, moveUIGlyphElements,
     unselectUIGlyphElements)
@@ -528,31 +527,15 @@ class SelectionTool(BaseTool):
             return
         widget = self.parent()
         rect = self._rubberBandRect
-        # TODO: maybe extract this to drawRubberBand
-        if platformSpecific.needsCustomRubberBand():
-            highlight = widget.palette(
-                ).color(QPalette.Active, QPalette.Highlight)
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing, False)
-            painter.setPen(highlight.darker(120))
-            highlight.setAlphaF(.35)
-            painter.setBrush(highlight)
-            painter.drawRect(rect)
-            painter.restore()
-        else:
-            # okay, OS-native rubber band does not support painting with
-            # floating-point coordinates
-            # paint directly on the widget with unscaled context
-            widgetOrigin = widget.mapFromCanvas(rect.bottomLeft())
-            widgetMove = widget.mapFromCanvas(rect.topRight())
-            option = QStyleOptionRubberBand()
-            option.initFrom(widget)
-            option.opaque = False
-            option.rect = QRectF(widgetOrigin, widgetMove).toRect()
-            option.shape = QRubberBand.Rectangle
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing, False)
-            painter.resetTransform()
-            widget.style().drawControl(
-                QStyle.CE_RubberBand, option, painter, widget)
-            painter.restore()
+        highlight = widget.palette(
+            ).color(QPalette.Active, QPalette.Highlight)
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        pen = painter.pen()
+        pen.setColor(highlight.darker(120))
+        pen.setWidth(0)
+        painter.setPen(pen)
+        highlight.setAlphaF(.35)
+        painter.setBrush(highlight)
+        painter.drawRect(rect)
+        painter.restore()
