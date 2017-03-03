@@ -14,7 +14,7 @@ class GlyphAlignmentWidget(QWidget):
         self._glyph = None
 
         self._color = QColor(130, 130, 130)
-        self._selectedColor = QColor(70, 70, 70)
+        self._selectedColor = QColor(20, 146, 230)
 
     def alignment(self):
         return self._alignment

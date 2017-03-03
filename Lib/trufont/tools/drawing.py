@@ -390,7 +390,7 @@ def drawGlyphPoints(
                 x, y = point["point"]
                 # TODO: we could add a non-overlapping interval tree special
                 # cased for borders
-                selected = drawSelection and point.get("selected")
+                selected = drawSelection and point.get("selected", False)
                 if selected:
                     size_ = selectedSize
                     snapSize_ = selectedSnapSize
@@ -445,7 +445,7 @@ def drawGlyphPoints(
                 notchPath.moveTo(x1, y1)
                 notchPath.lineTo(x2, y2)
             # points
-            selected = drawSelection and point.get("selected")
+            selected = drawSelection and point.get("selected", False)
             if selected:
                 size_ = selectedSize
                 smoothSize_ = selectedSmoothSize
@@ -502,7 +502,7 @@ def drawGlyphPoints(
         selectedPath.setFillRule(Qt.WindingFill)
         for point in outlineData["offCurvePoints"]:
             x, y = point["point"]
-            selected = drawSelection and point.get("selected")
+            selected = drawSelection and point.get("selected", False)
             if selected:
                 offSize_ = selectedOffSize
             else:

@@ -225,7 +225,8 @@ class TabWidget(QWidget):
             painter.translate(sidePadding, metrics.ascent() + topPadding)
             painter.setPen(textColor)
             painter.setRenderHint(QPainter.Antialiasing)
-            painter.drawText(0, 0, name)
+            painter.drawText(0, 0, metrics.elidedText(
+                name, Qt.ElideRight, textWidth))
             # cross
             if isClosable:
                 # 3px padding for click rect

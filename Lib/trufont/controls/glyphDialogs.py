@@ -235,33 +235,3 @@ class RenameDialog(QDialog):
         result = dialog.exec_()
         name = dialog.nameEdit.text()
         return (name, result)
-
-# ---------------
-# Color generator
-# ---------------
-
-
-class LayerColorGenerator(ColorGenerator):
-    # precomputed colors fancy/k-means
-    colors = [
-        (185, 225, 122),
-        (158, 206, 228),
-        (233, 174, 200),
-        (227, 191, 206),
-        (130, 223, 184)
-    ]
-    index = 0
-
-    @classmethod
-    def getColor(cls):
-        if cls.index <= len(cls.colors):
-            color = (clr / 255 for clr in cls.colors[cls.index])
-        else:
-            color = ColorGenerator.getColor()
-        cls.index += 1
-        return color
-
-    @classmethod
-    def revert(cls):
-        if cls.index > 0:
-            cls.index -= 1

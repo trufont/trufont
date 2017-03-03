@@ -65,6 +65,7 @@ class ToolBar(QWidget):
                 QSize(28, 28),
                 [tool.icon, 'f', color],
             ])
+            btn.setIsDownColor(QColor())
             btn.setIsFlipped(True)
             text = tool.name
             if tool.shortcut is not None:
@@ -72,7 +73,6 @@ class ToolBar(QWidget):
                 btn.setShortcut(QKeySequence(tool.shortcut))
             btn.setToolTip(text)
             btn.clicked.connect(self._buttonClicked)
-            # btn.pressed.connect(lambda: btn.setColor(self._selectedColor))
             layout.addWidget(btn)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)

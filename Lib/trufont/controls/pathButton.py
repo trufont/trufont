@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QAbstractButton
 
@@ -7,6 +7,8 @@ class PathButton(QAbstractButton):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setFocusPolicy(Qt.NoFocus)
+
         self._drawingCommands = []
         self._isDownColor = None
         self._isFlipped = False
@@ -66,20 +68,20 @@ class PathButton(QAbstractButton):
             painter.translate(0, target.height())
             painter.scale(1, -1)
         for path, cmd, color in self._drawingCommands[1:]:
-            if isDown:
-                color = color.darker(110)
             if cmd == 'f':
+                if isDown:
+                    color = color.darker(120)
                 painter.save()
                 painter.setRenderHint(QPainter.Antialiasing)
                 painter.fillPath(path, color)
                 painter.restore()
             else:
+                if isDown:
+                    color = color.darker(150)
                 painter.save()
                 if cmd[-1] == 'a':
                     painter.setRenderHint(QPainter.Antialiasing)
                 pen = painter.pen()
-                if isDown:
-                    color = color.darker(140)
                 pen.setColor(color)
                 pen.setWidth(int(cmd[0]))
                 painter.setPen(pen)

@@ -32,7 +32,7 @@ class BaseTool(QObject):
     @property
     def cursor(self):
         # TODO: cache?
-        return self.makeCursor(_path, path, 10, 1)
+        return self.makeCursor(_path, path, 9, 1)
 
     def toolActivated(self):
         pass

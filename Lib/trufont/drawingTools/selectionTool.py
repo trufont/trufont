@@ -372,7 +372,7 @@ class SelectionTool(BaseTool):
             changed = False
             for contour in self._glyph:
                 for index, point in enumerate(contour):
-                    if point.segmentType is not None:
+                    if point.segmentType is not None and point.selected:
                         if all(contour.getPoint(
                                 index + d).segmentType for d in (-1, 1)):
                             continue

@@ -81,7 +81,6 @@ class FontWindow(BaseWindow):
         self.glyphCellView.selectionChanged.connect(self._selectionChanged)
         self.glyphCellView.setAcceptDrops(True)
         self.glyphCellView.setCellRepresentationName("TruFont.GlyphCell")
-        # TODO: check this on non-Windows platforms
         self.glyphCellView.setFrameShape(self.glyphCellView.NoFrame)
         self.glyphCellView.setFocus()
 
@@ -138,6 +137,9 @@ class FontWindow(BaseWindow):
             ("Shift+" + QKeySequence(
                 QKeySequence.Delete).toString(), self.delete),
         ]
+        e = platformSpecific.altDeleteSequence()
+        if e is not None:
+            elements.append((e, self.delete))
         for keys, callback in elements:
             shortcut = QShortcut(QKeySequence(keys), self)
             shortcut.activated.connect(callback)
@@ -392,7 +394,7 @@ class FontWindow(BaseWindow):
         self._updateGlyphActions()
         # update slider
         if self.isGlyphTab():
-            lo, hi, unit = 600, 12000, " pt"
+            lo, hi, unit = 0, 900000, " pt"
             widget = self.stackWidget.currentWidget()
             size = widget.pointSize()
         else:

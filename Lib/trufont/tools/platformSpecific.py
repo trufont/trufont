@@ -24,6 +24,11 @@ def fontSizeDelta():
 # -------------
 
 
+def altDeleteSequence():
+    if sys.platform == "darwin":
+        return "Backspace"
+    return None
+
 def closeKeySequence():
     if sys.platform == "win32":
         return "Ctrl+W"

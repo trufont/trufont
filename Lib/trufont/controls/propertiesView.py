@@ -13,6 +13,7 @@ from trufont.objects import icons
 from trufont.tools.colorGenerator import ColorGenerator
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel
+import itertools
 
 
 def Button(parent=None):
@@ -849,7 +850,8 @@ class PropertiesWidget(QWidget):
         name = "New layer"  # XXX: mangle
         self._shouldEditLastName = True
         layer = font.layers.newLayer(name)
-        layer.color = ColorGenerator.getColor() + [1]
+        layer.color = tuple(
+            itertools.chain(LayerColorGenerator.getColor(), (1,)))
 
     def removeLayer(self):
         font = self._font
@@ -921,3 +923,33 @@ class PropertiesView(QScrollArea):
             self.setMinimumWidth(self.widget().minimumSizeHint().width(
                 ))  # + self.verticalScrollBar().width())
         return super().eventFilter(obj, event)
+
+# ---------------
+# Color generator
+# ---------------
+
+
+class LayerColorGenerator(ColorGenerator):
+    # precomputed colors fancy/k-means
+    colors = [
+        (185, 225, 122),
+        (158, 206, 228),
+        (233, 174, 200),
+        (227, 191, 206),
+        (130, 223, 184)
+    ]
+    index = 0
+
+    @classmethod
+    def getColor(cls):
+        if cls.index <= len(cls.colors):
+            color = (clr / 255 for clr in cls.colors[cls.index])
+        else:
+            color = ColorGenerator.getColor()
+        cls.index += 1
+        return color
+
+    @classmethod
+    def revert(cls):
+        if cls.index > 0:
+            cls.index -= 1
