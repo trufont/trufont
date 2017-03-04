@@ -109,7 +109,9 @@ class KnifeTool(BaseTool):
         cutContours = not event.modifiers() & Qt.AltModifier and \
             len(self._cachedIntersections) > 1
         if cutContours:
-            oldPts = set(pt for contour in self._glyph for pt in contour)
+            oldContourPts = dict()
+            for contour in self._glyph:
+                oldContourPts[contour] = set(pt for pt in contour)
         # reverse so as to not invalidate our cached segment indexes
         for loc, ts in reversed(list(self._cachedIntersections.items())):
             contour, index = loc
@@ -120,44 +122,37 @@ class KnifeTool(BaseTool):
                 prev = t
         # TODO: optimize
         if cutContours:
-            newPts = set(pt for contour in self._glyph for pt in contour
-                         if pt.segmentType) - oldPts
-            del oldPts
-            distances = dict()
-            for point in newPts:
-                d = bezierMath.distance(p1.x(), p1.y(), point.x, point.y)
-                distances[d] = point
-            # XXX: that model doesn't work well for winding number > 1
-            siblings = [
-                distances[dist] for dist in sorted(distances.keys())]
-            if len(siblings) % 2:
-                # we have an odd number of intersections. if one end of the
-                # knife line is in a contour's "black area", elide that end
-                # from the siblings array so we just create a point.
-                # if no black area is found (open contour), fallback to eliding
-                # the last intersection.
-                def getCutIndex():
-                    for contour in self._glyph:
-                        ##
-                        # TODO: make this a repr?
-                        # path = contour.getRepresentation(
-                        #     "defconQt.QPainterPath")
-                        pen = QtPen({})
-                        contour.draw(pen)
-                        path = pen.path
-                        ##
-                        i = 0
-                        for pt in (p1, p2):
-                            if path.contains(pt):
-                                return i
-                            i -= 1
-                    return -1
-                index = getCutIndex()
-                del siblings[index]
-            del distances
+            newContourPts = dict()
+            for contour in self._glyph:
+                newContourPts[contour] = set(
+                    pt for pt in contour if pt.segmentType) - oldContourPts[contour]
+            del oldContourPts
+            siblings = []
+
+            # if one end of the knife line is out of the glyph's "black area",
+            # use it as ref point.
+            path = self._glyph.getRepresentation("defconQt.QPainterPath")
+            refPoint = p2 if path.contains(p1) else p1
+
+            for contour, pts in newContourPts.items():
+                if len(pts) > 2:
+                    distances = dict()
+                    for point in pts:
+                        d = bezierMath.distance(
+                            refPoint.x(), refPoint.y(), point.x, point.y)
+                        distances[d] = point
+                    byDist = [
+                        distances[dist] for dist in sorted(distances.keys())]
+                    del distances
+                    while len(byDist) > 1:
+                        siblings.extend(byDist[-2:])
+                        del byDist[-2:]
+                    del byDist
+                elif len(pts) > 1:
+                    siblings.extend(list(pts))
+
             # ok, now i = siblings.index(loc); siblings[i+1-2(i%2)] will yield
             # sibling
-            # nota if len(siblings) is odd then the last point has no buddy
             newGlyph = self._glyph.__class__()
             pen = newGlyph.getPointPen()
 
