@@ -2,7 +2,6 @@ from PyQt5.QtCore import QLineF, Qt
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QApplication
 from collections import OrderedDict
-from fontTools.pens.qtPen import QtPen
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import bezierMath, drawing
 
@@ -112,6 +111,11 @@ class KnifeTool(BaseTool):
             oldContourPts = dict()
             for contour in self._glyph:
                 oldContourPts[contour] = set(pt for pt in contour)
+
+            # if one end of the knife line is out of the glyph's "black area",
+            # use it as ref point.
+            path = self._glyph.getRepresentation("defconQt.QPainterPath")
+            refPoint = p2 if path.contains(p1) else p1
         # reverse so as to not invalidate our cached segment indexes
         for loc, ts in reversed(list(self._cachedIntersections.items())):
             contour, index = loc
@@ -125,15 +129,11 @@ class KnifeTool(BaseTool):
             newContourPts = dict()
             for contour in self._glyph:
                 newContourPts[contour] = set(
-                    pt for pt in contour if pt.segmentType) - oldContourPts[contour]
+                    pt for pt in contour if pt.segmentType) - oldContourPts[
+                        contour]
             del oldContourPts
+
             siblings = []
-
-            # if one end of the knife line is out of the glyph's "black area",
-            # use it as ref point.
-            path = self._glyph.getRepresentation("defconQt.QPainterPath")
-            refPoint = p2 if path.contains(p1) else p1
-
             for contour, pts in newContourPts.items():
                 if len(pts) > 2:
                     distances = dict()
