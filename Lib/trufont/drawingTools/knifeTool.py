@@ -141,8 +141,9 @@ class KnifeTool(BaseTool):
                         d = bezierMath.distance(
                             refPoint.x(), refPoint.y(), point.x, point.y)
                         distances[d] = point
-                    byDist = [
-                        distances[dist] for dist in sorted(distances.keys())]
+                    # we reverse to act like a LIFO stack and pop from the array
+                    byDist = [distances[dist] for dist in sorted(
+                        distances.keys(), reverse=True)]
                     del distances
                     while len(byDist) > 1:
                         siblings.extend(byDist[-2:])
@@ -203,7 +204,10 @@ class KnifeTool(BaseTool):
 
     # custom painting
 
-    def paint(self, painter):
+    def paint(self, painter, index):
+        widget = self.parent()
+        if index != widget.activeIndex():
+            return
         line = self._knifeLine
         if line is not None and line.length():
             painter.save()
@@ -213,7 +217,7 @@ class KnifeTool(BaseTool):
             drawing.drawLine(
                 painter, line.x1(), line.y1(), line.x2(), line.y2())
             if self._knifePts is not None:
-                scale = self.parent().inverseScale()
+                scale = widget.inverseScale()
                 dotSize = 5 * scale
                 dotHalf = dotSize / 2
                 path = QPainterPath()

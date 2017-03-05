@@ -56,7 +56,7 @@ def _pointWithinThreshold(x, y, curve, eps):
 
 class SelectionTool(BaseTool):
     icon = _path
-    name = QApplication.translate("SelectionTool", "Selection")
+    name = QApplication.translate("SelectionTool", "Select")
     shortcut = "V"
 
     def __init__(self, parent=None):
@@ -179,7 +179,7 @@ class SelectionTool(BaseTool):
         if segmentTuple is None:
             segmentTuple = self._findSegmentUnderMouse(pos, action)
         if segmentTuple is None:
-            return
+            return False
         segment, contour = segmentTuple
         prev, point = segment[0], segment[-1]
         if point.segmentType == "line":
@@ -194,12 +194,13 @@ class SelectionTool(BaseTool):
                         index+i, point.__class__((xt, yt)))
                 point.segmentType = "curve"
                 contour.releaseHeldNotifications()
-                return
+                return True
         elif point.segmentType not in ("curve", "qcurve"):
-            return
+            return True
         if action == "selectContour":
             contour.selected = not contour.selected
             self._shouldMove = self._shouldPrepareUndo = True
+        return True
 
     def _maybeJoinContour(self, pos):
         def getAtEdge(contour, pt):
@@ -508,11 +509,18 @@ class SelectionTool(BaseTool):
             elif isinstance(item, (Anchor, Guideline)):
                 self._renameItem(item)
         else:
-            self._performSegmentClick(event.localPos(), "selectContour")
+            if self._performSegmentClick(event.localPos(), "selectContour"):
+                return
+            index = widget.indexForPoint(
+                widget.mapFromCanvas(event.localPos()))
+            if index is not None:
+                widget.setActiveIndex(index)
 
     # custom painting
 
-    def paintBackground(self, painter):
+    def paintBackground(self, painter, index):
+        if index != self.parent().activeIndex():
+            return
         if self._oldPath is not None:
             # XXX: honor partialAliasing
             painter.save()
@@ -523,10 +531,12 @@ class SelectionTool(BaseTool):
             painter.drawPath(self._oldPath)
             painter.restore()
 
-    def paint(self, painter):
+    def paint(self, painter, index):
         if self._rubberBandRect is None:
             return
         widget = self.parent()
+        if index != widget.activeIndex():
+            return
         rect = self._rubberBandRect
         if platformSpecific.useBuiltinRubberBand():
             # okay, OS-native rubber band does not support painting with

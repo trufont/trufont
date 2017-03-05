@@ -7,6 +7,7 @@ from trufont.drawingTools.selectionTool import SelectionTool
 from trufont.drawingTools.penTool import PenTool
 from trufont.drawingTools.rulerTool import RulerTool
 from trufont.drawingTools.knifeTool import KnifeTool
+from trufont.drawingTools.textTool import TextTool
 from trufont.windows.fontWindow import FontWindow
 from trufont.windows.extensionBuilderWindow import ExtensionBuilderWindow
 from trufont.windows.scriptingWindow import ScriptingWindow
@@ -28,7 +29,7 @@ class Application(QApplication):
         self._currentMainWindow = None
         self._launched = False
         self._drawingTools = [
-            SelectionTool, PenTool, KnifeTool, RulerTool]
+            SelectionTool, PenTool, KnifeTool, RulerTool, TextTool]
         self._extensions = []
         self.dispatcher = NotificationCenter()
         self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")

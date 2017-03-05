@@ -28,11 +28,12 @@ class BaseTool(QObject):
     icon = QPainterPath()
     name = QApplication.translate("BaseTool", "Tool")
     shortcut = None
+    grabKeyboard = False
 
     @property
     def cursor(self):
         # TODO: cache?
-        return self.makeCursor(_path, path, 9, 1)
+        return self.makeCursor(_path, path, 9.5, 1)
 
     def toolActivated(self):
         pass
@@ -40,12 +41,19 @@ class BaseTool(QObject):
     def toolDisabled(self):
         pass
 
-    def drawingAttribute(self, attr, layerName):
+    def drawingAttribute(self, attr, flags):
+        return None
+
+    def drawingColor(self, attr, flags):
         return None
 
     @property
+    def _font(self):
+        return self.parent().window().font_()
+
+    @property
     def _glyph(self):
-        return self.parent().glyph()
+        return self.parent().activeGlyph()
 
     # helper functions
 
@@ -120,14 +128,7 @@ class BaseTool(QObject):
     def mouseMoveEvent(self, event):
         if hasattr(self, "_panOrigin"):
             pos = event.globalPos()
-            scrollArea = self.parent().scrollArea()
-            delta = pos - self._panOrigin
-
-            hSB = scrollArea.horizontalScrollBar()
-            hSB.setValue(hSB.value() - delta.x())
-            vSB = scrollArea.verticalScrollBar()
-            vSB.setValue(vSB.value() - delta.y())
-
+            self.parent().scrollBy(pos - self._panOrigin)
             self._panOrigin = pos
 
     def mouseReleaseEvent(self, event):
@@ -139,8 +140,8 @@ class BaseTool(QObject):
 
     # custom painting
 
-    def paintBackground(self, painter):
+    def paintBackground(self, painter, index):
         pass
 
-    def paint(self, painter):
+    def paint(self, painter, index):
         pass

@@ -6,7 +6,6 @@ from fontTools.misc.transform import Identity
 from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import (
     QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
-from PyQt5.QtWidgets import QApplication
 import math
 
 # ------
@@ -209,7 +208,7 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
 
 
 def drawGlyphImage(
-        painter, glyph, scale, rect, drawSelection=True, selectionColor=None):
+        painter, glyph, scale, drawSelection=True, selectionColor=None):
     image = glyph.image
     pixmap = image.getRepresentation("defconQt.QPixmap")
     if pixmap is None:
@@ -234,11 +233,12 @@ def drawGlyphImage(
 
 
 def drawGlyphFillAndStroke(
-        painter, glyph, scale, rect, drawFill=True, drawStroke=True,
-        drawSelection=True, drawComponentsFill=True, contourFillColor=None,
-        contourStrokeColor=None, componentFillColor=None,
-        componentStrokeColor=None, strokeWidth=0, partialAliasing=True,
-        selectionColor=None):
+        painter, glyph, scale, drawFill=True, drawStroke=True,
+        drawSelection=True, drawComponentsFill=True,
+        drawComponentsStroke=False,
+        contourFillColor=None, contourStrokeColor=None,
+        componentFillColor=None, componentStrokeColor=None,
+        selectionColor=None, partialAliasing=True):
     if glyph.template:
         if glyph.unicode is None:
             return
@@ -261,7 +261,6 @@ def drawGlyphFillAndStroke(
         painter.drawText(0, 0, text)
         painter.restore()
         return
-    strokeWidth /= QApplication.instance().devicePixelRatio()
     # get the layer color
     layer = glyph.layer
     layerColor = None
@@ -329,16 +328,21 @@ def drawGlyphFillAndStroke(
                 contourStrokeColor = defaultColor("glyphContourStroke")
         # contours
         pen = QPen(contourStrokeColor)
-        pen.setWidthF(strokeWidth * scale)
+        pen.setWidth(0)
         painter.setPen(pen)
         if partialAliasing:
             drawGlyphWithAliasedLines(painter, glyph)
         else:
             painter.drawPath(contourPath)
     # components
-    if componentStrokeColor is not None:
+    if drawComponentsStroke:
+        if componentStrokeColor is None:
+            if layerColor is not None:
+                componentStrokeColor = layerColor
+            else:
+                componentStrokeColor = defaultColor("glyphContourStroke")
         pen = QPen(componentStrokeColor)
-        pen.setWidthF(strokeWidth * scale)
+        pen.setWidth(0)
         painter.setPen(pen)
         painter.drawPath(componentPath)
     painter.restore()
@@ -347,7 +351,7 @@ def drawGlyphFillAndStroke(
 
 
 def drawGlyphPoints(
-        painter, glyph, scale, rect,
+        painter, glyph, scale,
         drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
         drawCoordinates=False, drawSelection=True, drawBluesMarkers=True,
         onCurveColor=None, onCurveSmoothColor=None, offCurveColor=None,
@@ -368,7 +372,7 @@ def drawGlyphPoints(
     outlineData = glyph.getRepresentation("defconQt.OutlineInformation")
     points = []
     # blue zones markers
-    if drawBluesMarkers:
+    if drawBluesMarkers and drawOnCurves:
         font = glyph.font
         blues = []
         if font.info.postscriptBlueValues:
@@ -546,7 +550,7 @@ def drawGlyphPoints(
 # Anchors
 
 
-def drawGlyphAnchors(painter, glyph, scale, rect, drawAnchors=True,
+def drawGlyphAnchors(painter, glyph, scale, drawAnchors=True,
                      drawSelection=True, drawText=True, color=None):
     if not glyph.anchors:
         return

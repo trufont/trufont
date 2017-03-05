@@ -1,10 +1,11 @@
-from PyQt5.QtCore import QBuffer, QByteArray, QIODevice, QPoint, QRectF, Qt
+from PyQt5.QtCore import (
+    pyqtSignal, QBuffer, QByteArray, QEvent, QIODevice, QObject, QRectF, Qt)
 from PyQt5.QtGui import (
     QContextMenuEvent, QImage, QImageReader, QMouseEvent, QPainterPath,
     QPainterPathStroker, QTransform)
 from PyQt5.QtWidgets import QApplication
-from defconQt.controls.glyphView import (
-    GlyphView, GlyphViewMinSizeForDetails, GlyphWidget)
+from defconQt.controls.glyphContextView import GlyphContextView, GlyphFlags
+from defconQt.controls.glyphView import GlyphViewMinSizeForDetails
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects import settings
 from trufont.tools import drawing, errorReports
@@ -14,7 +15,18 @@ import os
 GlyphViewMinSizeForGrid = 10000
 
 
-class GlyphCanvasWidget(GlyphWidget):
+class KeyEventFilter(QObject):
+
+    def eventFilter(self, object, event):
+        if event.type() == QEvent.ShortcutOverride:
+            event.accept()
+            return True
+        return False
+
+
+class GlyphCanvasView(GlyphContextView):
+    glyphNamesChanged = pyqtSignal()
+    toolModified = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -22,8 +34,11 @@ class GlyphCanvasWidget(GlyphWidget):
         self.setAcceptDrops(True)
         self._currentTool = BaseTool()
         self._currentToolActivated = False
+        self._eventFilter = KeyEventFilter(self)
         self._mouseDown = False
         self._preview = False
+
+        self._defaultDrawingAttributes["showGlyphSelection"] = True
 
         # inbound notifications
         app = QApplication.instance()
@@ -36,23 +51,70 @@ class GlyphCanvasWidget(GlyphWidget):
     def readSettings(self):
         drawingAttributes = settings.drawingAttributes()
         for attr, value in drawingAttributes.items():
-            self.setDrawingAttribute(attr, value, None)
+            self.setDefaultDrawingAttribute(attr, value)
 
     # --------------
     # Custom Methods
     # --------------
 
-    def setGlyph(self, glyph):
+    def setGlyphRecords(self, glyphRecords):
+        # TODO: should we also NAK in mouseDown here?
         app = QApplication.instance()
-        app.postNotification("glyphViewGlyphWillChange")
-        self._currentTool.toolDisabled()
-        super().setGlyph(glyph)
-        self._currentTool.toolActivated()
-        app.postNotification("glyphViewGlyphChanged")
+        app.postNotification("glyphViewGlyphsWillChange")
+        # TODO: secondly stop calling tool disabled when it's just
+        # the glyph changing?
+        # e.g. def toolGlyphWillChange(self, newGlyph)
+        self._setCurrentToolEnabled(False)
+        super().setGlyphRecords(glyphRecords)
+        self._setCurrentToolEnabled(True)
+        app.postNotification("glyphViewGlyphsChanged")
+        self.glyphNamesChanged.emit()
 
-    # --------------------
+    def previewEnabled(self):
+        return self._preview
+
+    def setPreviewEnabled(self, value):
+        if value and self._mouseDown:
+            return
+        if value != self._preview:
+            self._preview = value
+            self.update()
+
+    # -------------
     # Notifications
-    # --------------------
+    # -------------
+
+    def _subscribeToGlyphs(self, glyphRecords):
+        super()._subscribeToGlyphs(glyphRecords)
+        handledGlyphs = set()
+        for glyphRecord in glyphRecords:
+            glyph = glyphRecord.glyph
+            if glyph in handledGlyphs:
+                continue
+            handledGlyphs.add(glyph)
+            glyph.addObserver(
+                self, "_glyphNameChanged", "Glyph.NameChanged")
+            glyph.addObserver(
+                self, "_glyphSelectionChanged", "Glyph.SelectionChanged")
+
+    def _unsubscribeFromGlyphs(self):
+        handledGlyphs = set()
+        for glyphRecord in self._glyphRecords:
+            glyph = glyphRecord.glyph
+            if glyph in handledGlyphs:
+                continue
+            handledGlyphs.add(glyph)
+            glyph.removeObserver(self, "Glyph.NameChanged")
+            glyph.removeObserver(self, "Glyph.SelectionChanged")
+        super()._unsubscribeFromGlyphs()
+
+    def _glyphNameChanged(self, notification):
+        self.glyphNamesChanged.emit()
+
+    def _glyphSelectionChanged(self, notification):
+        self.update()
+
+    # app
 
     def _needsUpdate(self, notification):
         self.update()
@@ -61,111 +123,133 @@ class GlyphCanvasWidget(GlyphWidget):
         self.readSettings()
 
     # ---------------
+    # Display Control
+    # ---------------
+
+    def drawingAttribute(self, attr, flags):
+        toolOverride = self._currentTool.drawingAttribute(attr, flags)
+        if toolOverride is not None:
+            return toolOverride
+        return super().drawingAttribute(attr, flags)
+
+    def drawingColor(self, attr, flags):
+        toolOverride = self._currentTool.drawingColor(attr, flags)
+        if toolOverride is not None:
+            return toolOverride
+        return super().drawingColor(attr, flags)
+
+    # defaults
+
+    def showSelection(self):
+        return self.defaultDrawingAttribute("showGlyphSelection")
+
+    def setShowSelection(self, value):
+        self.setDefaultDrawingAttribute("showGlyphSelection", value)
+
+    # ---------------
     # Drawing helpers
     # ---------------
 
-    def drawingAttribute(self, attr, layerName):
-        toolOverride = self._currentTool.drawingAttribute(attr, layerName)
-        if toolOverride is not None:
-            return toolOverride
-        return super().drawingAttribute(attr, layerName)
+    def drawGlyphBackground(self, painter, glyph, flags):
+        if not self._preview:
+            super().drawGlyphBackground(painter, glyph, flags)
 
-    def drawBackground(self, painter):
+    def drawBackground(self, painter, index):
         app = QApplication.instance()
         data = dict(
             widget=self,
             painter=painter,
+            index=index,
         )
         app.postNotification("glyphViewDrawBackground", data)
-        self._currentTool.paintBackground(painter)
+        self._currentTool.paintBackground(painter, index)
 
-    def drawGlyphLayer(self, painter, glyph, layerName, default=False):
+    def drawGlyphLayer(self, painter, glyph, flags):
         if self._preview:
-            layerName = None if glyph == self._glyph else layerName
-            if layerName is None:
-                self.drawFillAndStroke(painter, glyph, layerName)
+            if flags.isActiveLayer:
+                self.drawFillAndPoints(painter, glyph, flags)
         else:
-            super().drawGlyphLayer(painter, glyph, layerName, default)
+            super().drawGlyphLayer(painter, glyph, flags)
 
-    def drawMetrics(self, painter, glyph, layerName):
+    def drawForeground(self, painter, index):
+        app = QApplication.instance()
+        data = dict(
+            widget=self,
+            painter=painter,
+            index=index,
+        )
+        app.postNotification("glyphViewDrawForeground", data)
+        self._currentTool.paint(painter, index)
+
+    # drawing primitives
+
+    def drawMetrics(self, painter, glyph, flags):
         # TODO: should this have its own parameter?
         if self._impliedPointSize > GlyphViewMinSizeForGrid:
-            drawingRect = self._drawingRect
-            if self._scrollArea is not None:
-                # culling
-                drawingRect = self.mapRectToCanvas(QRectF(
-                    self.mapFromParent(QPoint(0, 0)),
-                    self.mapFromParent(QPoint(
-                        self.parent().width(), self.parent().height()))
-                )).getRect()
-            drawing.drawGrid(painter, self._inverseScale, drawingRect)
-        super().drawMetrics(painter, glyph, layerName)
+            viewportRect = self.mapRectToCanvas(
+                self.rect()).adjusted(0, 0, 2, 2).getRect()
+            drawing.drawGrid(painter, self._inverseScale, viewportRect)
+        super().drawMetrics(painter, glyph, flags)
 
-    def drawGuidelines(self, painter, glyph, layerName):
+    def drawGuidelines(self, painter, glyph, flags):
         drawText = self._impliedPointSize > GlyphViewMinSizeForDetails
-        if self.drawingAttribute("showFontGuidelines", layerName):
+        viewportRect = self.mapRectToCanvas(self.rect()).getRect()
+        if self.drawingAttribute("showFontGuidelines", flags):
             drawing.drawFontGuidelines(
-                painter, glyph, self._inverseScale, self._drawingRect,
+                painter, glyph, self._inverseScale, viewportRect,
                 drawText=drawText)
-        if self.drawingAttribute("showGlyphGuidelines", layerName):
+        if self.drawingAttribute("showGlyphGuidelines", flags):
             drawing.drawGlyphGuidelines(
-                painter, glyph, self._inverseScale, self._drawingRect,
+                painter, glyph, self._inverseScale, viewportRect,
                 drawText=drawText)
 
-    def drawPoints(self, painter, glyph, layerName):
-        if not self._impliedPointSize > GlyphViewMinSizeForDetails:
-            return
-        # XXX: those won't be drawn if points are hidden
-        drawFill = self.drawingAttribute("showGlyphFill", layerName)
-        drawSelection = not self._preview and layerName is None
+    def drawFillAndPoints(self, painter, glyph, flags):
+        contourFillColor = self.drawingColor(
+            "contourFillColor", flags)
+        componentFillColor = contourFillColor if self._preview else \
+            self.drawingColor("componentFillColor", flags)
+        drawFill = self._preview or self.drawingAttribute(
+            "showGlyphFill", flags)
+        drawSelection = not self._preview and self.drawingAttribute(
+            "showGlyphSelection", flags)
         drawing.drawGlyphFillAndStroke(
-            painter, glyph, self._inverseScale, self._drawingRect,
+            painter, glyph, self._inverseScale,
+            contourFillColor=contourFillColor,
+            componentFillColor=componentFillColor,
             drawFill=drawFill, drawSelection=drawSelection, drawStroke=False)
+        if self._preview or \
+                not self._impliedPointSize > GlyphViewMinSizeForDetails:
+            return
         drawStartPoints = self.drawingAttribute(
-            "showGlyphStartPoints", layerName)
+            "showGlyphStartPoints", flags)
         drawOnCurves = self.drawingAttribute(
-            "showGlyphOnCurvePoints", layerName)
+            "showGlyphOnCurvePoints", flags)
         drawOffCurves = self.drawingAttribute(
-            "showGlyphOffCurvePoints", layerName)
+            "showGlyphOffCurvePoints", flags)
         drawCoordinates = self.drawingAttribute(
-            "showGlyphPointCoordinates", layerName)
+            "showGlyphPointCoordinates", flags)
         drawing.drawGlyphPoints(
-            painter, glyph, self._inverseScale, self._drawingRect,
-            drawStartPoints=drawStartPoints, drawOnCurves=drawOnCurves,
-            drawOffCurves=drawOffCurves, drawCoordinates=drawCoordinates,
+            painter, glyph, self._inverseScale,
+            drawOnCurves=drawOnCurves, drawOffCurves=drawOffCurves,
+            drawStartPoints=drawStartPoints, drawCoordinates=drawCoordinates,
             backgroundColor=self._backgroundColor)
 
-    def drawFillAndStroke(self, painter, glyph, layerName):
+    def drawStroke(self, painter, glyph, flags):
         drawDetails = self._impliedPointSize > GlyphViewMinSizeForDetails
-        if self._preview:
-            contourFillColor = componentFillColor = Qt.black
-            showFill = showComponentsFill = True
-            showStroke = False
-        else:
-            contourFillColor = componentFillColor = None
-            showFill = showComponentsFill = False
-            showStroke = self.drawingAttribute("showGlyphStroke", layerName)
+        drawStroke = self.drawingAttribute("showGlyphStroke", flags)
+        drawComponentsStroke = self.drawingAttribute(
+            "showComponentsStroke", flags)
         drawing.drawGlyphFillAndStroke(
-            painter, glyph, self._inverseScale, self._drawingRect,
-            componentFillColor=componentFillColor,
-            contourFillColor=contourFillColor,
-            drawFill=showFill, drawSelection=False, drawStroke=showStroke,
-            drawComponentsFill=showComponentsFill, partialAliasing=drawDetails)
+            painter, glyph, self._inverseScale,
+            drawFill=False, drawComponentsFill=False, drawStroke=drawStroke,
+            drawComponentsStroke=drawComponentsStroke, drawSelection=False,
+            partialAliasing=drawDetails)
 
-    def drawAnchors(self, painter, glyph, layerName):
+    def drawAnchors(self, painter, glyph, flags):
         if not self._impliedPointSize > GlyphViewMinSizeForDetails:
             return
         drawing.drawGlyphAnchors(
-            painter, glyph, self._inverseScale, self._drawingRect)
-
-    def drawForeground(self, painter):
-        app = QApplication.instance()
-        data = dict(
-            widget=self,
-            painter=painter,
-        )
-        app.postNotification("glyphViewDrawForeground", data)
-        self._currentTool.paint(painter)
+            painter, glyph, self._inverseScale)
 
     # ---------------
     # QWidget methods
@@ -241,13 +325,20 @@ class GlyphCanvasWidget(GlyphWidget):
             event=event,
             widget=self,
         )
+        # TODO: sending an event that doesn't contain the menu isn't
+        # extremely useful
         app.postNotification("glyphViewContextMenu", data)
 
     def keyPressEvent(self, event):
-        if not event.isAutoRepeat() and event.key() == Qt.Key_Space:
-            if not self._mouseDown:
-                self._preview = True
-                self.update()
+        # TODO: put this in event filter?
+        if self._currentTool.grabKeyboard and event.key() == Qt.Key_Escape:
+            ok = self.setCurrentTool(self._previousTool)
+            if ok:
+                self.toolModified.emit(self._previousTool)
+        # Note: not needed, only for parity with keyReleaseEvent
+        if not self._currentTool.grabKeyboard and event.key() == Qt.Key_Space:
+            event.ignore()
+            return
         self._redirectEvent(event, self._currentTool.keyPressEvent)
         app = QApplication.instance()
         data = dict(
@@ -257,9 +348,10 @@ class GlyphCanvasWidget(GlyphWidget):
         app.postNotification("glyphViewKeyPress", data)
 
     def keyReleaseEvent(self, event):
-        if not event.isAutoRepeat() and event.key() == Qt.Key_Space:
-            self._preview = False
-            self.update()
+        # TODO: I don't know why we have to do this for releaseEvent
+        if not self._currentTool.grabKeyboard and event.key() == Qt.Key_Space:
+            event.ignore()
+            return
         self._redirectEvent(event, self._currentTool.keyReleaseEvent)
         app = QApplication.instance()
         data = dict(
@@ -316,14 +408,14 @@ class GlyphCanvasWidget(GlyphWidget):
     def _setCurrentToolEnabled(self, value):
         if self._currentToolActivated == value:
             return
-        # Note this is just to avoid extra enable/disable combo,
-        # it's not required for correctness
-        if value != self.isVisible():
-            return
         self._currentToolActivated = value
         if value:
             self._currentTool.toolActivated()
+            if self._currentTool.grabKeyboard:
+                self.window().installEventFilter(self._eventFilter)
         else:
+            if self._currentTool.grabKeyboard:
+                self.window().removeEventFilter(self._eventFilter)
             self._currentTool.toolDisabled()
 
     def currentTool(self):
@@ -333,6 +425,8 @@ class GlyphCanvasWidget(GlyphWidget):
         if self._mouseDown:
             return False
         self._setCurrentToolEnabled(False)
+        if tool.grabKeyboard:
+            self._previousTool = self._currentTool
         self._currentTool = tool
         self.setCursor(tool.cursor)
         self._setCurrentToolEnabled(True)
@@ -353,6 +447,9 @@ class GlyphCanvasWidget(GlyphWidget):
                 )
                 event.localPos = lambda: canvasPos
             elif isinstance(event, QMouseEvent):
+                # TODO: not redirect mouse events if there's no glyph?
+                # if not self._glyphRecords:
+                #     return
                 canvasPos = self.mapToCanvas(event.localPos())
                 event = event.__class__(
                     event.type(),
@@ -416,43 +513,47 @@ class GlyphCanvasWidget(GlyphWidget):
                 guidelines=[],
                 image=None,
             )
-        if not self.drawingAttribute("showGlyphOnCurvePoints", None):
-            if not justOne:
-                return ret
-            return None
+        if self._glyph is None:
+            if justOne:
+                return None
+            return ret
+        flags = GlyphFlags(True)
         # anchors
-        for anchor in reversed(self._glyph.anchors):
-            path = QPainterPath()
-            path.addEllipse(anchor.x - anchorHalfSize,
-                            anchor.y - anchorHalfSize, anchorSize, anchorSize)
-            if func(path, obj):
-                if justOne:
-                    return anchor
-                ret["anchors"].append(anchor)
-        # points
-        for contour in reversed(self._glyph):
-            for index, point in enumerate(contour):
+        if self.drawingAttribute("showGlyphAnchors", flags):
+            for anchor in reversed(self._glyph.anchors):
                 path = QPainterPath()
-                if point.segmentType is None:
-                    x = point.x - offHalf
-                    y = point.y - offHalf
-                    path.addEllipse(x, y, offSize, offSize)
-                    strokeWidth = offStrokeWidth
-                else:
-                    if point.smooth:
-                        x = point.x - smoothHalf
-                        y = point.y - smoothHalf
-                        path.addEllipse(x, y, smoothSize, smoothSize)
-                    else:
-                        x = point.x - onHalf
-                        y = point.y - onHalf
-                        path.addRect(x, y, onSize, onSize)
-                    strokeWidth = onStrokeWidth
-                path = _shapeFromPath(path, strokeWidth)
+                path.addEllipse(anchor.x - anchorHalfSize,
+                                anchor.y - anchorHalfSize,
+                                anchorSize, anchorSize)
                 if func(path, obj):
                     if justOne:
-                        return (contour, index)
-                    ret["points"].append((contour, index))
+                        return anchor
+                    ret["anchors"].append(anchor)
+        # points
+        if self.drawingAttribute("showGlyphOnCurvePoints", flags):
+            for contour in reversed(self._glyph):
+                for index, point in enumerate(contour):
+                    path = QPainterPath()
+                    if point.segmentType is None:
+                        x = point.x - offHalf
+                        y = point.y - offHalf
+                        path.addEllipse(x, y, offSize, offSize)
+                        strokeWidth = offStrokeWidth
+                    else:
+                        if point.smooth:
+                            x = point.x - smoothHalf
+                            y = point.y - smoothHalf
+                            path.addEllipse(x, y, smoothSize, smoothSize)
+                        else:
+                            x = point.x - onHalf
+                            y = point.y - onHalf
+                            path.addRect(x, y, onSize, onSize)
+                        strokeWidth = onStrokeWidth
+                    path = _shapeFromPath(path, strokeWidth)
+                    if func(path, obj):
+                        if justOne:
+                            return (contour, index)
+                        ret["points"].append((contour, index))
         # components
         for component in reversed(self._glyph.components):
             path = component.getRepresentation("TruFont.QPainterPath")
@@ -461,31 +562,35 @@ class GlyphCanvasWidget(GlyphWidget):
                     return component
                 ret["components"].append(component)
         # guideline
-        for guideline in UIGlyphGuidelines(self._glyph):
-            if None not in (guideline.x, guideline.y):
-                # point
-                x = guideline.x - smoothHalf
-                y = guideline.y - smoothHalf
+        # TODO: we should further dispatch with showFontGuidelines,
+        # although both are bind in the UI
+        if self.drawingAttribute("showGlyphGuidelines", flags):
+            for guideline in UIGlyphGuidelines(self._glyph):
+                if None not in (guideline.x, guideline.y):
+                    # point
+                    x = guideline.x - smoothHalf
+                    y = guideline.y - smoothHalf
+                    path = QPainterPath()
+                    path.addEllipse(x, y, smoothSize, smoothSize)
+                    path = _shapeFromPath(path, guidelineStrokeWidth)
+                    if func(path, obj):
+                        if justOne:
+                            return guideline
+                        ret["guidelines"].append(guideline)
+                    # TODO: catch line if selected
+        # image
+        if self.drawingAttribute("showGlyphImage", flags):
+            image = self._glyph.image
+            pixmap = image.getRepresentation("defconQt.QPixmap")
+            if pixmap is not None:
                 path = QPainterPath()
-                path.addEllipse(x, y, smoothSize, smoothSize)
-                path = _shapeFromPath(path, guidelineStrokeWidth)
+                transform = QTransform(*image.transformation)
+                rect = transform.mapRect(QRectF(pixmap.rect()))
+                path.addRect(*rect.getCoords())
                 if func(path, obj):
                     if justOne:
-                        return guideline
-                    ret["guidelines"].append(guideline)
-                # TODO: catch line if selected
-        # image
-        image = self._glyph.image
-        pixmap = image.getRepresentation("defconQt.QPixmap")
-        if pixmap is not None:
-            path = QPainterPath()
-            transform = QTransform(*image.transformation)
-            rect = transform.mapRect(QRectF(pixmap.rect()))
-            path.addRect(*rect.getCoords())
-            if func(path, obj):
-                if justOne:
-                    return image
-                ret["image"] = image
+                        return image
+                    ret["image"] = image
         if not justOne:
             return ret
         return None
@@ -511,67 +616,6 @@ class GlyphCanvasWidget(GlyphWidget):
         """
         return self._itemsAt(
             lambda path, rect: path.intersects(rect), rect, False)
-
-
-class GlyphCanvasView(GlyphView):
-    glyphWidgetClass = GlyphCanvasWidget
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-    # -------------
-    # Notifications
-    # -------------
-
-    def _subscribeToGlyph(self, glyph):
-        if glyph is not None:
-            glyph.addObserver(
-                self, "_glyphSelectionChanged", "Glyph.SelectionChanged")
-            super()._subscribeToGlyph(glyph)
-
-    def _unsubscribeFromGlyph(self):
-        if self._glyphWidget is not None:
-            glyph = self._glyphWidget.glyph()
-            if glyph is not None:
-                super()._unsubscribeFromGlyph()
-                glyph.removeObserver(self, "Glyph.SelectionChanged")
-
-    def _glyphSelectionChanged(self, notification):
-        self._glyphWidget.glyphChanged()
-
-    # ------------
-    # Canvas tools
-    # ------------
-
-    def currentTool(self):
-        return self._glyphWidget.currentTool()
-
-    def setCurrentTool(self, tool):
-        return self._glyphWidget.setCurrentTool(tool)
-
-    def itemAt(self, pos):
-        return self._glyphWidget.itemAt(pos)
-
-    def itemsAt(self, pos, items=False):
-        return self._glyphWidget.itemsAt(pos, items)
-
-    def items(self, rect):
-        return self._glyphWidget.items(rect)
-
-    def setFocus(self, value):
-        super().setFocus(value)
-        self._glyphWidget.setFocus(value)
-
-    # ----------
-    # Qt methods
-    # ----------
-
-    def closeEvent(self, event):
-        super().closeEvent(event)
-        if event.isAccepted():
-            self._glyphWidget.closeEvent(event)
 
 
 def _shapeFromPath(path, width):
