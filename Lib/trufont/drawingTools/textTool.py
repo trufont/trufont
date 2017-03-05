@@ -148,7 +148,8 @@ class TextTool(BaseTool):
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             widget = self.parent()
-            index = widget.indexForPoint(widget.mapFromCanvas(event.localPos()))
+            index = widget.indexForPoint(
+                widget.mapFromCanvas(event.localPos()))
             if index is not None:
                 widget.setActiveIndex(index)
         else:

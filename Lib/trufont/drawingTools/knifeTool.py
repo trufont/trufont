@@ -141,7 +141,7 @@ class KnifeTool(BaseTool):
                         d = bezierMath.distance(
                             refPoint.x(), refPoint.y(), point.x, point.y)
                         distances[d] = point
-                    # we reverse to act like a LIFO stack and pop from the array
+                    # reverse to act like a LIFO stack and pop from the array
                     byDist = [distances[dist] for dist in sorted(
                         distances.keys(), reverse=True)]
                     del distances
