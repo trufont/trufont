@@ -308,8 +308,6 @@ class FontWindow(BaseWindow):
         self.stackWidget.addWidget(widget)
         # activate
         self.tabWidget.setCurrentTab(-1)
-        # XXX: drop the need for this, i.e. catch keys in the window
-        widget.setFocus(True)
 
     def closeGlyphTab(self):
         index = self.stackWidget.currentIndex()
@@ -373,11 +371,12 @@ class FontWindow(BaseWindow):
         self.statusBar.setShouldPropagateSize(not index)
         # we need to hide, then setParent, then show
         self.stackWidget.currentWidget().hide()
+        newWidget = self.stackWidget.widget(index).widget()
         if index:
-            parent = self.stackWidget.widget(index).widget()
             for tool in self.toolBar.tools():
-                tool.setParent(parent)
+                tool.setParent(newWidget)
         self.stackWidget.setCurrentIndex(index)
+        newWidget.setFocus(Qt.OtherFocusReason)
 
     def _toolChanged(self, tool):
         widget = self.stackWidget.currentWidget()

@@ -171,7 +171,7 @@ class RenameDialog(QDialog):
 
         nameLabel = QLabel(self.tr("Name:"), self)
         self.nameEdit = QLineEdit(self)
-        self.nameEdit.setFocus(True)
+        self.nameEdit.setFocus(Qt.OtherFocusReason)
 
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)

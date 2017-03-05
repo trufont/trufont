@@ -30,7 +30,7 @@ class AddGlyphsDialog(QDialog):
             self.importCharDrop.addItem(name, glyphNames)
         self.importCharDrop.currentIndexChanged[int].connect(self.importGlyphs)
         self.addGlyphsEdit = QPlainTextEdit(self)
-        self.addGlyphsEdit.setFocus(True)
+        self.addGlyphsEdit.setFocus(Qt.OtherFocusReason)
 
         self.addUnicodeBox = QCheckBox(self.tr("Add Unicode"), self)
         self.addUnicodeBox.setChecked(True)
@@ -93,7 +93,7 @@ class AddGlyphsDialog(QDialog):
             cursor.movePosition(QTextCursor.End, QTextCursor.MoveAnchor)
             self.addGlyphsEdit.setTextCursor(cursor)
         self.importCharDrop.setCurrentIndex(0)
-        self.addGlyphsEdit.setFocus(True)
+        self.addGlyphsEdit.setFocus(Qt.OtherFocusReason)
 
 
 class SortDialog(QDialog):

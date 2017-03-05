@@ -353,7 +353,7 @@ class MetricsToolBar(QToolBar):
 
     def showEvent(self, event):
         super().showEvent(event)
-        self.textField.setFocus(True)
+        self.textField.setFocus(Qt.OtherFocusReason)
 
 
 class MetricsLineWidget(GlyphLineWidget):
