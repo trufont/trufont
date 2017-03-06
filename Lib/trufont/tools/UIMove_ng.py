@@ -7,16 +7,6 @@ from trufont.tools import bezierMath
 # ----------------
 
 
-def clampUIPointToOrigin(x, y, pt):
-    # go into the first quadrant to simplify our study
-    dx = abs(pt.x - x)
-    dy = abs(pt.y - y)
-    if dy >= dx:
-        pt.x = x
-    else:
-        pt.y = y
-
-
 def projectUIPointOnRefLine(x1, y1, x2, y2, pt):
     x, y, t = bezierMath.lineProjection(
         x1, y1, x2, y2, pt.x, pt.y, False)

@@ -44,6 +44,12 @@ _path.lineTo(5, 20)
 _path.closeSubpath()
 
 
+def _textForGlyphs(glyphs):
+    return "".join(
+        chr(glyph.unicode) if glyph.unicode is not None else
+        "/{} ".format(glyph.name) for glyph in glyphs)
+
+
 class PageWidget(QWidget):
 
     def __init__(self, parent=None):
@@ -326,7 +332,7 @@ class FontWindow(BaseWindow):
         widget.pointSizeModified.connect(self.statusBar.setSize)
         widget.toolModified.connect(self.toolBar.setCurrentTool)
         # add
-        self.tabWidget.addTab(glyph.name)
+        self.tabWidget.addTab(_textForGlyphs([glyph]))
         self.stackWidget.addWidget(widget)
         # activate
         self.tabWidget.setCurrentTab(-1)
@@ -377,10 +383,7 @@ class FontWindow(BaseWindow):
     def _namesChanged(self):
         sender = self.sender()
         index = self.stackWidget.indexOf(sender)
-        text = "".join(
-            chr(glyph.unicode) if glyph.unicode is not None else
-            glyph.name for glyph in sender.glyphs())
-        self.tabWidget.setTabName(index, text)
+        self.tabWidget.setTabName(index, _textForGlyphs(sender.glyphs()))
 
     def _sizeChanged(self):
         size = self.statusBar.size()

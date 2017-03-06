@@ -203,12 +203,6 @@ class SelectionTool(BaseTool):
         return True
 
     def _maybeJoinContour(self, pos):
-        def getAtEdge(contour, pt):
-            for index in range(2):
-                if contour[index-1] == pt:
-                    return index - 1
-            return None
-
         if self._mouseItem is None or not isinstance(self._mouseItem, tuple):
             return
         contour, index = self._mouseItem
