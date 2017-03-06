@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QLineF, Qt
+from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QApplication
 from collections import OrderedDict
@@ -108,14 +108,8 @@ class KnifeTool(BaseTool):
         cutContours = not event.modifiers() & Qt.AltModifier and \
             len(self._cachedIntersections) > 1
         if cutContours:
-            oldContourPts = dict()
-            for contour in self._glyph:
-                oldContourPts[contour] = set(pt for pt in contour)
-
-            # if one end of the knife line is out of the glyph's "black area",
-            # use it as ref point.
+            oldPts = set(pt for contour in self._glyph for pt in contour)
             path = self._glyph.getRepresentation("defconQt.QPainterPath")
-            refPoint = p2 if path.contains(p1) else p1
         # reverse so as to not invalidate our cached segment indexes
         for loc, ts in reversed(list(self._cachedIntersections.items())):
             contour, index = loc
@@ -126,31 +120,41 @@ class KnifeTool(BaseTool):
                 prev = t
         # TODO: optimize
         if cutContours:
-            newContourPts = dict()
-            for contour in self._glyph:
-                newContourPts[contour] = set(
-                    pt for pt in contour if pt.segmentType) - oldContourPts[
-                        contour]
-            del oldContourPts
+            newPts = set(pt for contour in self._glyph for pt in contour
+                         if pt.segmentType) - oldPts
+            del oldPts
 
+            distances = dict()
+            for point in newPts:
+                d = bezierMath.distance(p1.x(), p1.y(), point.x, point.y)
+                distances[d] = point
+            del newPts
+
+            sortedPts = [
+                distances[dist] for dist in sorted(distances.keys())]
+            del distances
+
+            # group points by belonging to contour "black area"
             siblings = []
-            for contour, pts in newContourPts.items():
-                if len(pts) > 2:
-                    distances = dict()
-                    for point in pts:
-                        d = bezierMath.distance(
-                            refPoint.x(), refPoint.y(), point.x, point.y)
-                        distances[d] = point
-                    # reverse to act like a LIFO stack and pop from the array
-                    byDist = [distances[dist] for dist in sorted(
-                        distances.keys(), reverse=True)]
-                    del distances
-                    while len(byDist) > 1:
-                        siblings.extend(byDist[-2:])
-                        del byDist[-2:]
-                    del byDist
-                elif len(pts) > 1:
-                    siblings.extend(list(pts))
+            stack = None
+            if not path.contains(p1):
+                stack = []
+            for pt, nextPt in zip(sortedPts, sortedPts[1:]):
+                qPt = QPointF(pt.x, pt.y)
+                qHalf = qPt + .5 * (QPointF(nextPt.x, nextPt.y) - qPt)
+                if path.contains(qHalf):
+                    if stack is not None:
+                        stack.append(pt)
+                else:
+                    if stack:
+                        stack.append(pt)
+                        siblings.extend(stack)
+                    stack = []
+            if not path.contains(p2):
+                if stack:
+                    stack.append(nextPt)
+                    siblings.extend(stack)
+            del stack
 
             # ok, now i = siblings.index(loc); siblings[i+1-2(i%2)] will yield
             # sibling
