@@ -85,6 +85,20 @@ class TextTool(BaseTool):
             return Qt.black
         return None
 
+    # helpers
+
+    def _shapeAndSetGlyphs(self, glyphs):
+        if self.engine is not None:
+            font = self._font
+            records = self.engine.process(
+                glyph.name for glyph in glyphs)
+            # TODO: not sure why we have to do this...
+            for glyphRecord in records:
+                glyphRecord.glyph = font[glyphRecord.glyphName]
+            self.parent().setGlyphRecords(records)
+        else:
+            self.parent().setGlyphs(glyphs)
+
     # events
 
     def keyPressEvent(self, event):
@@ -97,16 +111,15 @@ class TextTool(BaseTool):
             if self._caretIndex < len(list(widget.glyphs())) - 1:
                 self.caretIndex += 1
         elif key in (Qt.Key_Backspace, Qt.Key_Delete):
-            glyphRecords = list(widget.glyphRecords())
-            if not glyphRecords:
+            glyphs = list(widget.glyphs())
+            if not glyphs:
                 return
             newIndex = self._caretIndex - (key == Qt.Key_Backspace)
             popIndex = newIndex + 1
-            if popIndex < 0 or popIndex >= len(glyphRecords):
+            if popIndex < 0 or popIndex >= len(glyphs):
                 return
-            # TODO: does deletion warrant reshaping?
-            glyphRecords.pop(popIndex)
-            widget.setGlyphRecords(glyphRecords)
+            glyphs.pop(popIndex)
+            self._shapeAndSetGlyphs(glyphs)
             self.caretIndex = newIndex
         else:
             font = self._font
@@ -118,15 +131,7 @@ class TextTool(BaseTool):
                 newCaretIndex = self.caretIndex + 1
                 glyphs = list(widget.glyphs())
                 glyphs.insert(newCaretIndex, font[glyphName])
-                if self.engine is not None:
-                    records = self.engine.process(
-                        glyph.name for glyph in glyphs)
-                    # TODO: not sure why we have to do this...
-                    for glyphRecord in records:
-                        glyphRecord.glyph = font[glyphRecord.glyphName]
-                    widget.setGlyphRecords(records)
-                else:
-                    widget.setGlyphs(glyphs)
+                self._shapeAndSetGlyphs(glyphs)
                 self.caretIndex = newCaretIndex
                 # TODO: also scroll the view to show the cursor
 
@@ -161,7 +166,11 @@ class TextTool(BaseTool):
         widget = self.parent()
         if index != max(self._caretIndex, 0):
             return
-        glyph = widget.glyphForIndex(index)
+        glyphRecord = widget.glyphRecords()[index]
+        glyph = glyphRecord.glyph
+        xA = glyphRecord.xAdvance
+        yA = glyphRecord.yAdvance
+        #
         bottom, top = widget.verticalBounds()
         upm = top - bottom
         painter.save()
@@ -169,8 +178,12 @@ class TextTool(BaseTool):
         pen.setColor(QColor(90, 90, 90))
         pen.setWidth(0)
         painter.setPen(pen)
-        dx = glyph.width if self._caretIndex >= 0 else 0
-        painter.translate(dx, bottom)
+        if self._caretIndex >= 0:
+            dx = glyph.width + xA
+            dy = glyph.height + yA
+        else:
+            dx = dy = 0
+        painter.translate(dx, bottom + dy)
         painter.drawLine(-30, -25, 0, 0)
         painter.drawLine(0, 0, 30, -25)
         painter.drawLine(0, 0, 0, upm)

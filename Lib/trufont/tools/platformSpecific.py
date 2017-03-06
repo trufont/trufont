@@ -95,14 +95,6 @@ def appNameInTitle():
 def shouldSpawnDocument():
     return sys.platform != "darwin"
 
-# -------
-# ToolBar
-# -------
-
-
-def useTabBar():
-    return sys.platform == "darwin"
-
 # -----------
 # Message box
 # -----------
