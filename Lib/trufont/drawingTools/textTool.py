@@ -166,10 +166,15 @@ class TextTool(BaseTool):
         widget = self.parent()
         if index != max(self._caretIndex, 0):
             return
-        glyphRecord = widget.glyphRecords()[index]
-        glyph = glyphRecord.glyph
-        xA = glyphRecord.xAdvance
-        yA = glyphRecord.yAdvance
+        if self._caretIndex >= 0:
+            glyphRecord = widget.glyphRecords()[index]
+            w, h = glyphRecord.advanceWidth, glyphRecord.advanceHeight
+            xA, yA = glyphRecord.xAdvance, glyphRecord.yAdvance
+            xP, yP = glyphRecord.xPlacement, glyphRecord.yPlacement
+            dx = w + xA - xP
+            dy = h + yA - yP
+        else:
+            dx = dy = 0
         #
         bottom, top = widget.verticalBounds()
         upm = top - bottom
@@ -178,11 +183,6 @@ class TextTool(BaseTool):
         pen.setColor(QColor(90, 90, 90))
         pen.setWidth(0)
         painter.setPen(pen)
-        if self._caretIndex >= 0:
-            dx = glyph.width + xA
-            dy = glyph.height + yA
-        else:
-            dx = dy = 0
         painter.translate(dx, bottom + dy)
         painter.drawLine(-30, -25, 0, 0)
         painter.drawLine(0, 0, 30, -25)
