@@ -160,7 +160,7 @@ class TextTool(BaseTool):
         else:
             super().mouseDoubleClickEvent(event)
 
-    def paint(self, painter, index):
+    def paintBackground(self, painter, index):
         # XXX: we can't currently draw the caret when there's no
         # glyph on canvas
         widget = self.parent()
