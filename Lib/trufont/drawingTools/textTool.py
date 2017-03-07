@@ -1,14 +1,23 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPainterPath
 from PyQt5.QtWidgets import QApplication
-from defcon import LayoutEngine
+from defconQt.controls.glyphContextView import GlyphRecord
 from trufont.drawingTools.baseTool import BaseTool
 import unicodedata
 
-try:
-    import compositor
-except ImportError:
-    compositor = None
+_harfbuzz = False
+_shaper = None
+
+if _harfbuzz:
+    from trufont.objects.layoutEngine import LayoutEngine
+    _shaper = 'harfbuzz'
+else:
+    from defcon import LayoutEngine
+    try:
+        import compositor
+        _shaper = 'compositor'
+    except ImportError:
+        pass
 
 _path = QPainterPath()
 _path.moveTo(5.29, 17.96)
@@ -62,7 +71,7 @@ class TextTool(BaseTool):
 
     @property
     def engine(self):
-        if self._engine is None and compositor is not None:
+        if _shaper and self._engine is None:
             self._engine = LayoutEngine(self._font)
         return self._engine
 
@@ -90,11 +99,26 @@ class TextTool(BaseTool):
     def _shapeAndSetGlyphs(self, glyphs):
         if self.engine is not None:
             font = self._font
+            if _harfbuzz:
+                elements = "".join(glyph.name for glyph in glyphs)
+            else:
+                elements = (glyph.name for glyph in glyphs)
             records = self.engine.process(
-                glyph.name for glyph in glyphs)
-            # TODO: not sure why we have to do this...
-            for glyphRecord in records:
-                glyphRecord.glyph = font[glyphRecord.glyphName]
+                elements)
+            if _shaper == 'compositor':
+                records_ = []
+                # XXX: indexes are busted
+                # TODO: not sure why we have to do this...
+                for index, glyphRecord in enumerate(records):
+                    record_ = GlyphRecord()
+                    record_.glyph = glyph = font[glyphRecord.glyphName]
+                    record_.index = index
+                    record_.xOffset = glyphRecord.xPlacement
+                    record_.yOffset = glyphRecord.yPlacement
+                    record_.xAdvance = glyph.width + glyphRecord.xAdvance
+                    record_.yAdvance = glyph.height + glyphRecord.yAdvance
+                    records_.append(record_)
+                records = records_
             self.parent().setGlyphRecords(records)
         else:
             self.parent().setGlyphs(glyphs)
@@ -168,11 +192,10 @@ class TextTool(BaseTool):
             return
         if self._caretIndex >= 0:
             glyphRecord = widget.glyphRecords()[index]
-            w, h = glyphRecord.advanceWidth, glyphRecord.advanceHeight
             xA, yA = glyphRecord.xAdvance, glyphRecord.yAdvance
-            xP, yP = glyphRecord.xPlacement, glyphRecord.yPlacement
-            dx = w + xA - xP
-            dy = h + yA - yP
+            xO, yO = glyphRecord.xOffset, glyphRecord.yOffset
+            dx = xA - xO
+            dy = yA - yO
         else:
             dx = dy = 0
         #

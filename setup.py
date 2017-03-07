@@ -26,7 +26,7 @@ setup(
         "fonttools>=3.3.1",
         "ufoLib>=2.0.0",
         "defcon>=0.2.0",
-        "defconQt>=0.4.1",
+        "defconQt>=0.5.0",
         "ufo-extractor>=0.2.0",
         "ufo2ft>=0.3.2",
         "booleanOperations>=0.6.4",
