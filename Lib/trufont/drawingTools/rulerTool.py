@@ -110,13 +110,12 @@ class RulerTool(BaseTool):
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
+            pos = self.magnetPos(event.localPos())
             if self._rulerObject is None:
-                self.mousePressEvent(event)
+                self._rulerObject = (QLineF(pos, pos), "0.0º")
                 return
             line, _ = self._rulerObject
-            pos = event.localPos()
-            # magnet before clamping to axis
-            pos = self.magnetPos(pos)
+            # magnet done before clamping to axis
             if event.modifiers() & Qt.ShiftModifier:
                 pos = self.clampToOrigin(pos, line.p1())
             line.setP2(pos)
