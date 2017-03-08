@@ -164,7 +164,8 @@ def removeUISelection(contour, preserveShape=True):
                 glyph.removeContour(contour)
                 return
             # using preserveShape at the edge of an open contour will traceback
-            if onCurve.segmentType == "line":
+            # TODO: preserveShape should be implemented for qcurve
+            if onCurve.segmentType in ("line", "qcurve"):
                 preserveShape = False
             if preserveShape and contour.open:
                 if index in (0, len(segments) - 1):
