@@ -509,6 +509,8 @@ class SelectionTool(BaseTool):
                 widget.mapFromCanvas(event.localPos()))
             if index is not None:
                 widget.setActiveIndex(index)
+                # since we shuffle the coordinates system, flush the rubber band
+                self._rubberBandRect = None
 
     # custom painting
 

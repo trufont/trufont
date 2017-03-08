@@ -18,6 +18,7 @@ except ImportError:
 
 class LayoutEngine(BaseObject):
     changeNotificationName = "LayoutEngine.Changed"
+    representationFactories = dict()
 
     def __init__(self, font):
         self._needsInternalUpdate = True
@@ -168,7 +169,7 @@ class LayoutEngine(BaseObject):
             record = GlyphRecord()
             glyphName = self._GIDToGlyphNameMapping[info.codepoint]
             record.glyph = self.font[glyphName]
-            record.index = info.cluster
+            record.cluster = info.cluster
             record.xOffset = pos.x_offset
             record.yOffset = pos.y_offset
             record.xAdvance = pos.x_advance

@@ -14,7 +14,7 @@ if _harfbuzz:
 else:
     from defcon import LayoutEngine
     try:
-        import compositor
+        import compositor  # noqa
         _shaper = 'compositor'
     except ImportError:
         pass
@@ -107,17 +107,17 @@ class TextTool(BaseTool):
                 elements)
             if _shaper == 'compositor':
                 records_ = []
-                # XXX: indexes are busted
-                # TODO: not sure why we have to do this...
-                for index, glyphRecord in enumerate(records):
+                index = 0
+                for glyphRecord in records:
                     record_ = GlyphRecord()
                     record_.glyph = glyph = font[glyphRecord.glyphName]
-                    record_.index = index
+                    record_.cluster = index
                     record_.xOffset = glyphRecord.xPlacement
                     record_.yOffset = glyphRecord.yPlacement
                     record_.xAdvance = glyph.width + glyphRecord.xAdvance
                     record_.yAdvance = glyph.height + glyphRecord.yAdvance
                     records_.append(record_)
+                    index += len(glyphRecord.ligatureComponents) or 1
                 records = records_
             self.parent().setGlyphRecords(records)
         else:
