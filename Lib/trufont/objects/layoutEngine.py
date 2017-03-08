@@ -1,6 +1,5 @@
 from defcon.objects.base import BaseObject
 from defconQt.controls.glyphContextView import GlyphRecord
-from fontTools.ttLib import TTFont
 from io import BytesIO
 import array
 import weakref
@@ -40,7 +39,7 @@ class LayoutEngine(BaseObject):
             self._updateEngine()
         return self._layoutEngine
 
-    engine = property(_get_engine, doc="The compositor layout engine. This object must always be retrieved from the LayoutEngine for the automatic updating to occur.")
+    engine = property(_get_engine)
 
     # --------------
     # Engine Updates
@@ -92,13 +91,19 @@ class LayoutEngine(BaseObject):
 
     def beginSelfLayersObservation(self):
         layers = self.font.layers
-        layers.addObserver(observer=self, methodName="_layerSetDefaultLayerWillChange", notification="LayerSet.DefaultLayerWillChange")
-        layers.addObserver(observer=self, methodName="_layerSetDefaultLayerChanged", notification="LayerSet.DefaultLayerChanged")
+        layers.addObserver(
+            observer=self, methodName="_layerSetDefaultLayerWillChange",
+            notification="LayerSet.DefaultLayerWillChange")
+        layers.addObserver(
+            observer=self, methodName="_layerSetDefaultLayerChanged",
+            notification="LayerSet.DefaultLayerChanged")
 
     def endSelfLayersObservation(self):
         layers = self.font.layers
-        layers.removeObserver(observer=self, notification="LayerSet.DefaultLayerWillChange")
-        layers.removeObserver(observer=self, notification="LayerSet.DefaultLayerChanged")
+        layers.removeObserver(
+            observer=self, notification="LayerSet.DefaultLayerWillChange")
+        layers.removeObserver(
+            observer=self, notification="LayerSet.DefaultLayerChanged")
 
     def _layerSetDefaultLayerWillChange(self, notification):
         self.endSelfLayerObservation()
@@ -111,11 +116,14 @@ class LayoutEngine(BaseObject):
 
     def beginSelfLayerObservation(self):
         layer = self.font.layers.defaultLayer
-        layer.addObserver(observer=self, methodName="_layerGlyphUnicodesChanged", notification="Layer.GlyphUnicodesChanged")
+        layer.addObserver(
+            observer=self, methodName="_layerGlyphUnicodesChanged",
+            notification="Layer.GlyphUnicodesChanged")
 
     def endSelfLayerObservation(self):
         layer = self.font.layers.defaultLayer
-        layer.removeObserver(observer=self, notification="Layer.GlyphUnicodesChanged")
+        layer.removeObserver(
+            observer=self, notification="Layer.GlyphUnicodesChanged")
 
     def _layerGlyphUnicodesChanged(self):
         self._postNeedsUpdateNotification()
@@ -124,11 +132,14 @@ class LayoutEngine(BaseObject):
 
     def beginSelfFeaturesObservation(self):
         features = self.font.features
-        features.addObserver(observer=self, methodName="_featuresTextChanged", notification="Features.TextChanged")
+        features.addObserver(
+            observer=self, methodName="_featuresTextChanged",
+            notification="Features.TextChanged")
 
     def endSelfFeaturesObservation(self):
         features = self.font.features
-        features.removeObserver(observer=self, notification="Features.TextChanged")
+        features.removeObserver(
+            observer=self, notification="Features.TextChanged")
 
     def _featuresTextChanged(self, notification):
         self._postNeedsUpdateNotification()
