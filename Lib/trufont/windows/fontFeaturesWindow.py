@@ -59,6 +59,9 @@ class FontFeaturesWindow(QMainWindow):
 
     def saveFile(self):
         self.editor.write(self.font.features)
+        parent = self.parent()
+        if parent is not None and hasattr(parent, "saveFile"):
+            parent.saveFile()
 
     def reloadFile(self):
         self.font.reloadFeatures()
