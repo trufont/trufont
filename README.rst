@@ -12,8 +12,9 @@ Getting started
 1. Install **Python 3.5** (or later):
 
    -  OS X: Install using `Homebrew <http://brew.sh/>`__:
-      ``brew install python3 && brew linkapps python3``
-   -  Windows: Download installer from https://www.python.org/downloads/
+      ``brew install python3``
+   -  Windows: Download installer from 
+      `python.org/downloads <https://www.python.org/downloads/>`__
    -  Linux: It's usually packaged with the OS.
 
 2. Set up a new Python **virtual environment**. Although this is not
@@ -25,10 +26,10 @@ Getting started
 
       ``python3 -m venv ENV_DIR``
 
-      This creates a new ``ENV_DIR`` folder (you can choose the name you
-      want). The ``bin`` subfolder (or ``Scripts`` if you are on Windows)
-      contains a new ``python`` executable, and the ``pip`` installer
-      linked to that.
+      This creates a new ``ENV_DIR`` folder (you can choose the name 
+	  you want). The ``bin`` subfolder (or ``Scripts`` if you are 
+	  on Windows) contains a new ``python`` executable, and the 
+	  ``pip`` installer linked to that.
 
    -  Activate the newly created environment:
 
@@ -79,15 +80,15 @@ Here's a quick tutorial if you'd like to contribute to TruFont.
 
    ``git checkout -b my-cool-new-feature``
 
-6. If you haven'd done it already, you can use pip to install TruFont
-   in "editable" mode:
+6. Use pip to install TruFont in "editable" mode:
 
    ``pip install --editable .``
 
    Instead of copying `trufont` to your Python site-packages directory,
    this command only creates a link to the source directory inside the
-   git repository. You can then modify the code in place, or pull the
-   latest upstream changes without having to re-install.
+   git repository. You can then modify the code in place, or 
+   synchronize the latest upstream changes (as in step 4) without
+   having to re-install.
 
 7. It is also recommended to regularly update the dependencies to the
    curently tested versions as listed in `requirements.txt`:
@@ -98,10 +99,10 @@ Here's a quick tutorial if you'd like to contribute to TruFont.
 
    ``git push -u origin my-cool-new-feature``
 
-9. Finally, clik "New pull request" on TruFont's Github page to submit
+9. Finally, click "New pull request" on TruFont's Github page to submit
    your patch.
 
-We will be happy to review and integrate it in the main app.
+We will be happy to review and integrate it into the main app.
 
 Happy hacking with TruFont! :muscle:
 
