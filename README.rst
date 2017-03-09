@@ -80,15 +80,15 @@ Here's a quick tutorial if you'd like to contribute to TruFont.
 
    ``git checkout -b my-cool-new-feature``
 
-6. If you haven'd done it already, you can use pip to install TruFont
-   in "editable" mode:
+6. Use pip to install TruFont in "editable" mode:
 
    ``pip install --editable .``
 
    Instead of copying `trufont` to your Python site-packages directory,
    this command only creates a link to the source directory inside the
-   git repository. You can then modify the code in place, or pull the
-   latest upstream changes without having to re-install.
+   git repository. You can then modify the code in place, or 
+   synchronize the latest upstream changes (as in step 4) without
+   having to re-install.
 
 7. It is also recommended to regularly update the dependencies to the
    curently tested versions as listed in `requirements.txt`:
