@@ -26,10 +26,10 @@ Getting started
 
       ``python3 -m venv ENV_DIR``
 
-      This creates a new ``ENV_DIR`` folder (you can choose the name you
-      want). The ``bin`` subfolder (or ``Scripts`` if you are on Windows)
-      contains a new ``python`` executable, and the ``pip`` installer
-      linked to that.
+      This creates a new ``ENV_DIR`` folder (you can choose the name 
+	  you want). The ``bin`` subfolder (or ``Scripts`` if you are 
+	  on Windows) contains a new ``python`` executable, and the 
+	  ``pip`` installer linked to that.
 
    -  Activate the newly created environment:
 
@@ -99,10 +99,10 @@ Here's a quick tutorial if you'd like to contribute to TruFont.
 
    ``git push -u origin my-cool-new-feature``
 
-9. Finally, clik "New pull request" on TruFont's Github page to submit
+9. Finally, click "New pull request" on TruFont's Github page to submit
    your patch.
 
-We will be happy to review and integrate it in the main app.
+We will be happy to review and integrate it into the main app.
 
 Happy hacking with TruFont! :muscle:
 
