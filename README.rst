@@ -12,7 +12,7 @@ Getting started
 1. Install **Python 3.5** (or later):
 
    -  OS X: Install using `Homebrew <http://brew.sh/>`__:
-      ``brew install python3 && brew linkapps python3``
+      ``brew install python3``
    -  Windows: Download installer from https://www.python.org/downloads/
    -  Linux: It's usually packaged with the OS.
 
