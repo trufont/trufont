@@ -13,7 +13,8 @@ Getting started
 
    -  OS X: Install using `Homebrew <http://brew.sh/>`__:
       ``brew install python3``
-   -  Windows: Download installer from https://www.python.org/downloads/
+   -  Windows: Download installer from 
+      `python.org/downloads <https://www.python.org/downloads/>`__
    -  Linux: It's usually packaged with the OS.
 
 2. Set up a new Python **virtual environment**. Although this is not
