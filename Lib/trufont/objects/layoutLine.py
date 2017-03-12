@@ -15,9 +15,6 @@ class LayoutLine(QObject):
 
     def __init__(self, parent):
         super().__init__(parent)
-        assert self.engine is not None, \
-            "LayoutLine needs a shaping engine to work!"
-
         # this stays None except when we want to commit to widget
         self._activeIndex = None
         text = "".join(
@@ -79,7 +76,7 @@ class LayoutLine(QObject):
 
     def insert(self, text):
         self._inputString.insert(self._caretIndex, text)
-        self._activeIndex = 1
+        self._activeIndex = 0  # will be recalculated after shaping
         self._caretIndex += len(text)
         self._needsLayout = True
         self.updateView()
@@ -131,9 +128,9 @@ class LayoutLine(QObject):
         raise ValueError("caret index cannot be matched!")
 
     def _shapeAndSetText(self):
-        font = self._font
         records = self.engine.process(self._inputString.tounicode())
         if self._shaper == 'compositor':
+            font = self._font
             records_ = []
             index = 0
             for glyphRecord in records:
@@ -153,7 +150,17 @@ class LayoutLine(QObject):
         widget = self.parent()
         layoutPerformed = self._needsLayout
         if self._needsLayout:
-            self._shapeAndSetText()
+            if self.engine is not None:
+                self._shapeAndSetText()
+            else:
+                font = self._font
+                uniData = font.unicodeData
+                glyphs = []
+                for c in self._inputString.tounicode():
+                    glyphName = uniData.glyphNameForUnicode(ord(c))
+                    if glyphName is not None:
+                        glyphs.append(font[glyphName])
+                widget.setGlyphs(glyphs)
             self._needsLayout = False
         if self._activeIndex is not None:
             if layoutPerformed:

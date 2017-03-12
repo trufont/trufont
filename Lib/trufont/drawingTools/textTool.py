@@ -73,9 +73,9 @@ class TextTool(BaseTool):
         return self._layoutLine[widget]
 
     @layoutLine.setter
-    def layoutLine(self, text):
+    def layoutLine(self, line):
         widget = self.parent()
-        self._layoutLine[widget] = text
+        self._layoutLine[widget] = line
 
     # methods
 
