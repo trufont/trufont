@@ -174,11 +174,13 @@ class LayoutLine(QObject):
         if self._needsCaretPostFix:
             # fixup caret index, in case we input text that serves as prefix
             # to a ligature
-            for i, rec in enumerate(self.parent().glyphRecords()):
+            for i, rec in enumerate(widget.glyphRecords()):
                 if rec.cluster >= self._caretIndex:
                     self._activeIndex = i
                     self._caretIndex = rec.cluster
                     break
+            if self._activeIndex is None:
+                self._activeIndex = i
             self._needsCaretPostFix = False
         if self._activeIndex is not None:
             widget.setActiveIndex(self._activeIndex)
