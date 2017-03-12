@@ -9,6 +9,8 @@ def _reverseEnumerate(seq):
         n -= 1
         yield n, obj
 
+# TODO: support unencoded glyphs input
+
 
 class LayoutLine(QObject):
     engine = None
@@ -22,6 +24,7 @@ class LayoutLine(QObject):
             glyph.name for glyph in parent.glyphs())
         self._inputString = array.array('u', text)
         self._caretIndex = len(text)
+        self._needsCaretPostFix = False
         self._needsLayout = False
         self.updateView()
 
@@ -78,6 +81,7 @@ class LayoutLine(QObject):
         self._inputString.insert(self._caretIndex, text)
         self._activeIndex = 0  # will be recalculated after shaping
         self._caretIndex += len(text)
+        self._needsCaretPostFix = True  # clamp caretIndex after shaping
         self._needsLayout = True
         self.updateView()
 
@@ -167,4 +171,12 @@ class LayoutLine(QObject):
                 self._activeIndex = self._lookupActiveIndex()
             widget.setActiveIndex(self._activeIndex)
             self._activeIndex = None
+        if self._needsCaretPostFix:
+            # fixup caret index, in case we input text that serves as prefix
+            # to a ligature
+            for rec in self.parent().glyphRecords():
+                if rec.cluster >= self._caretIndex:
+                    self._caretIndex = rec.cluster
+                    break
+            self._needsCaretPostFix = False
         widget.update()
