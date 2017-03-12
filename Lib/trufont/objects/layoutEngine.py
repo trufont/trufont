@@ -166,8 +166,11 @@ class LayoutEngine(BaseObject):
 
         glyphRecords = []
         for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
-            record = GlyphRecord()
             glyphName = self._GIDToGlyphNameMapping[info.codepoint]
+            if glyphName not in self.font:
+                # usually .notdef
+                continue
+            record = GlyphRecord()
             record.glyph = self.font[glyphName]
             record.cluster = info.cluster
             record.xOffset = pos.x_offset
