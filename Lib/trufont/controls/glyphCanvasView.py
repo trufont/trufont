@@ -235,8 +235,7 @@ class GlyphCanvasView(GlyphContextView):
             backgroundColor=self._backgroundColor)
 
     def drawStroke(self, painter, glyph, flags):
-        drawDetails = self._impliedPointSize > GlyphViewMinSizeForDetails and \
-            self.drawingAttribute("showGlyphOnCurvePoints", flags)
+        drawDetails = self._impliedPointSize > GlyphViewMinSizeForDetails
         drawStroke = self.drawingAttribute("showGlyphStroke", flags)
         drawComponentsStroke = self.drawingAttribute(
             "showComponentsStroke", flags)

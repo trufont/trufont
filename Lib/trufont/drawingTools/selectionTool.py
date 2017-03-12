@@ -110,9 +110,7 @@ class SelectionTool(BaseTool):
         font = self._glyph.font
         if glyphName in font:
             glyph = font[glyphName]
-            # XXX: coupling. we need currentFontWindow() or font.window
-            # or windowForFont()?
-            fontWindow = widget.parent().parent().parent().parent()
+            fontWindow = widget.window()
             fontWindow.openGlyphTab(glyph)
 
     def _toggleGuideline(self, guideline):
