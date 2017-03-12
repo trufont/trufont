@@ -84,8 +84,8 @@ class TextTool(BaseTool):
         if self.layoutLine is None:
             LayoutLine.engine = self.engine
             self.layoutLine = LayoutLine(widget)
-        else:
-            self.layoutLine.initCaret()
+        # else:
+        #     self.layoutLine.initCaret()
         widget.update()
 
     def toolDisabled(self):
