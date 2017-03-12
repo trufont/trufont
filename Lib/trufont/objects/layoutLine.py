@@ -92,8 +92,8 @@ class LayoutLine(QObject):
     def insert(self, text):
         self._inputString.insert(self._caretIndex, text)
         self._caretIndex += len(text)
-        self._needsCaretPostFix = True  # clamp caretIndex after shaping
-                                        # and set activeIndex
+        # clamp caretIndex after shaping and set activeIndex
+        self._needsCaretPostFix = True
         self._needsLayout = True
         self.updateView()
 
