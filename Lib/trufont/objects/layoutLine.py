@@ -28,6 +28,18 @@ class LayoutLine(QObject):
         self._needsLayout = False
         self.updateView()
 
+    def initCaret(self):
+        """
+        aka. setCaretFromActiveIndex
+        """
+        widget = self.parent()
+        index = widget.activeIndex()
+        glyphRecords = widget.glyphRecords()
+        try:
+            self._caretIndex = glyphRecords[index + 1].cluster
+        except IndexError:
+            self._caretIndex = len(self._inputString)
+
     def caretNext(self):
         widget = self.parent()
         # TODO: this could be a binary search
@@ -79,9 +91,9 @@ class LayoutLine(QObject):
 
     def insert(self, text):
         self._inputString.insert(self._caretIndex, text)
-        self._activeIndex = 0  # will be recalculated after shaping
         self._caretIndex += len(text)
         self._needsCaretPostFix = True  # clamp caretIndex after shaping
+                                        # and set activeIndex
         self._needsLayout = True
         self.updateView()
 
@@ -125,12 +137,6 @@ class LayoutLine(QObject):
             return 'compositor'
         return 'harfbuzz'
 
-    def _lookupActiveIndex(self):
-        for i, rec in _reverseEnumerate(self.parent().glyphRecords()):
-            if rec.cluster <= self._caretIndex:
-                return i
-        raise ValueError("caret index cannot be matched!")
-
     def _shapeAndSetText(self):
         records = self.engine.process(self._inputString.tounicode())
         if self._shaper == 'compositor':
@@ -152,7 +158,6 @@ class LayoutLine(QObject):
 
     def updateView(self):
         widget = self.parent()
-        layoutPerformed = self._needsLayout
         if self._needsLayout:
             if self.engine is not None:
                 self._shapeAndSetText()
@@ -166,17 +171,16 @@ class LayoutLine(QObject):
                         glyphs.append(font[glyphName])
                 widget.setGlyphs(glyphs)
             self._needsLayout = False
-        if self._activeIndex is not None:
-            if layoutPerformed:
-                self._activeIndex = self._lookupActiveIndex()
-            widget.setActiveIndex(self._activeIndex)
-            self._activeIndex = None
         if self._needsCaretPostFix:
             # fixup caret index, in case we input text that serves as prefix
             # to a ligature
-            for rec in self.parent().glyphRecords():
+            for i, rec in enumerate(self.parent().glyphRecords()):
                 if rec.cluster >= self._caretIndex:
+                    self._activeIndex = i
                     self._caretIndex = rec.cluster
                     break
             self._needsCaretPostFix = False
+        if self._activeIndex is not None:
+            widget.setActiveIndex(self._activeIndex)
+            self._activeIndex = None
         widget.update()
