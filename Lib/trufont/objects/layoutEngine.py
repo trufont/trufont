@@ -59,6 +59,7 @@ class LayoutEngine(BaseObject):
             f.seek(0)
             a.fromfile(f, size)
 
+        self._cachedArray = a
         blob = hb.Blob.create_for_array(a, HB.MEMORY_MODE_READONLY)
         face = hb.Face.create(blob, 0)
         del blob
