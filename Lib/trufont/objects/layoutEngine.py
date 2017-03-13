@@ -23,6 +23,7 @@ class LayoutEngine(BaseObject):
     def __init__(self, font):
         self._needsInternalUpdate = True
         self._font = weakref.ref(font)
+        self._fontFeatures = dict()
         self._GIDToGlyphNameMapping = []
         self._hbFont = None
         super().__init__()
@@ -163,7 +164,7 @@ class LayoutEngine(BaseObject):
         buf = hb.Buffer.create()
         buf.add_str(text)
         buf.guess_segment_properties()
-        hb.shape(self._hbFont, buf)
+        hb.shape(self._hbFont, buf, list(self._fontFeatures.values()))
 
         glyphRecords = []
         for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
@@ -181,3 +182,44 @@ class LayoutEngine(BaseObject):
             glyphRecords.append(record)
         del buf
         return glyphRecords
+
+    def getScriptList(self):
+        self._updateEngine()
+        # XXX: for now we only list GSUB
+        tags = self._hbFont.face.ot_layout.table_get_script_tags(
+            hb.tag_from_string("GSUB"))
+        return [hb.tag_to_string(t) for t in tags]
+
+    def getLanguageList(self):
+        self._updateEngine()
+        # XXX: for now we only list GSUB, default script
+        tags = self._hbFont.face.ot_layout.script_get_language_tags(
+            hb.tag_from_string("GSUB"), 0)
+        return [hb.tag_to_string(t) for t in tags]
+
+    def getFeatureList(self):
+        self._updateEngine()
+        # XXX: for now we only list GSUB, default script, default language
+        tags = self._hbFont.face.ot_layout.language_get_feature_tags(
+            hb.tag_from_string("GSUB"), 0, 0xFFFF)
+        return [hb.tag_to_string(t) for t in tags]
+
+    def getFeatureState(self, name):
+        ret = self._fontFeatures.get(name)
+        if ret is not None:
+            return ret.value
+        return ret
+
+    def setFeatureState(self, name, state):
+        if state is None:
+            if name in self._fontFeatures:
+                del self._fontFeatures[name]
+            return
+        #
+        if name in self._fontFeatures:
+            feature = self._fontFeatures[name]
+        else:
+            feature = hb.Feature.from_string(name)
+        feature.value = state
+        # TODO: start, end
+        self._fontFeatures[name] = feature
