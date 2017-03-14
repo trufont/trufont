@@ -5,19 +5,16 @@ from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.layoutLine import LayoutLine
 import unicodedata
 
-_harfbuzz = False
-_shaper = None
-
-if _harfbuzz:
+_shaper = True
+try:
+    import harfbuzz  # noqa
     from trufont.objects.layoutEngine import LayoutEngine
-    _shaper = 'harfbuzz'
-else:
-    from defcon import LayoutEngine
+except ImportError:
     try:
         import compositor  # noqa
-        _shaper = 'compositor'
+        from defcon import LayoutEngine
     except ImportError:
-        pass
+        _shaper = False
 
 _path = QPainterPath()
 _path.moveTo(5.29, 17.96)

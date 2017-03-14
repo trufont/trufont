@@ -135,7 +135,7 @@ class LayoutEngine(BaseObject):
         face.upem = upem = ufo.info.unitsPerEm
         font.scale = (upem, upem)
 
-        funcs = hb.FontFuncs.create(False)
+        self._cachedFuncs = funcs = hb.FontFuncs.create(False)
         funcs.set_nominal_glyph_func(_get_nominal_glyph, None, None)
         funcs.set_glyph_h_advance_func(_get_glyph_h_advance, font, None)
         # TODO: vertical advance
