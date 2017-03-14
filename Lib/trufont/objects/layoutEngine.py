@@ -80,11 +80,14 @@ def _spitLayoutTable(face, tag, layoutTables):
     name = hb.tag_to_string(tag)
     return layoutTables.get(name)
 
+# TODO: what if the source font does not have .notdef, is there a
+# fallback gid?
+
 
 class LayoutEngine(BaseObject):
     changeNotificationName = "LayoutEngine.Changed"
     representationFactories = {
-        "defcon.layoutEngine.tables": dict(
+        "TruFont.layoutEngine.tables": dict(
             factory=_layoutEngineOTLTablesRepresentationFactory,
             destructiveNotifications=("LayoutEngine._DestroyCachedTables")
         )
@@ -124,7 +127,7 @@ class LayoutEngine(BaseObject):
             return
         ufo = self.font
         layoutTables, self._GIDToGlyphNameMapping = self.getRepresentation(
-            "defcon.layoutEngine.tables")
+            "TruFont.layoutEngine.tables")
 
         self._cachedFace = face = hb.Face.create_for_tables(
             _spitLayoutTable, layoutTables, None, False)
@@ -240,16 +243,21 @@ class LayoutEngine(BaseObject):
 
         # TODO: reuse buffer?
         buf = hb.Buffer.create()
-        buf.add_str(text)
+        if isinstance(text, list):
+            unicodes = []
+            for name in text:
+                # TODO: use a dict instead?
+                gid = self._GIDToGlyphNameMapping.index(name)
+                unicodes.append(CH_GID_PREFIX + gid)
+            buf.add_codepoints(unicodes, len(unicodes), 0, len(unicodes))
+        else:
+            buf.add_str(text)
         buf.guess_segment_properties()
         hb.shape(self._hbFont, buf, list(self._fontFeatures.values()))
 
         glyphRecords = []
         for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
             glyphName = self._GIDToGlyphNameMapping[info.codepoint]
-            if glyphName not in self.font:
-                # usually .notdef
-                continue
             record = GlyphRecord()
             record.glyph = self.font[glyphName]
             record.cluster = info.cluster
