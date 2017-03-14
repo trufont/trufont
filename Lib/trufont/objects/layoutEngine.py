@@ -258,6 +258,8 @@ class LayoutEngine(BaseObject):
         glyphRecords = []
         for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
             glyphName = self._GIDToGlyphNameMapping[info.codepoint]
+            if glyphName not in self.font:
+                continue
             record = GlyphRecord()
             record.glyph = self.font[glyphName]
             record.cluster = info.cluster

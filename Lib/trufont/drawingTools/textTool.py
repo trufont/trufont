@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QPainterPath
+from PyQt5.QtGui import QColor, QKeySequence, QPainterPath
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.layoutLine import LayoutLine
@@ -102,7 +102,15 @@ class TextTool(BaseTool):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if key == Qt.Key_Left:
+        if event.matches(QKeySequence.Paste):
+            # XXX: the menu item should also go down this codepath
+            clipboard = QApplication.clipboard()
+            mimeData = clipboard.mimeData()
+            if mimeData.hasText():
+                # TODO: way to alleviate the loop?
+                for c in mimeData.text():
+                    self.layoutLine.insert(c)
+        elif key == Qt.Key_Left:
             # TODO: we'll probably need to reform this stuff for RTL
             self.layoutLine.caretPrevious()
         elif key == Qt.Key_Right:
