@@ -1,6 +1,7 @@
 from defcon.objects.base import BaseObject
 from defconQt.controls.glyphContextView import GlyphRecord
-from io import BytesIO
+from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
+from fontTools.ttLib import TTFont
 import array
 import weakref
 
@@ -10,15 +11,84 @@ try:
 except ImportError:
     pass
 
-# TODO: add more parameters
-# TODO: make sure we subscribe to appropriate notifications
-# TODO: how to shape and have unencoded glyphs input?
-# TODO: remove steps from font compilation?
+CH_GID_PREFIX = 0x80000000
+
+# ---------
+# Factories
+# ---------
+
+
+def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
+    font = layoutEngine.font
+    ret = dict()
+    glyphOrder = sorted(font.keys())
+    if font.features.text.strip():
+        otf = TTFont()
+        otf.setGlyphOrder(glyphOrder)
+        # compile with fontTools
+        try:
+            addOpenTypeFeaturesFromString(otf, font.features.text)
+        except:
+            # TODO: handle this in the UI
+            import traceback
+            print(traceback.format_exc(5))
+        for name in ("GDEF", "GSUB", "GPOS"):
+            if name in otf:
+                # XXX: why does this not work?
+                # table = otf[name].compile(otf)
+                # value = hb.Blob.create(
+                #     table, len(table), HB.MEMORY_MODE_READONLY, None, None)
+                a = array.array('B')
+                a.frombytes(otf[name].compile(otf))
+                value = hb.Blob.create_for_array(a, HB.MEMORY_MODE_READONLY)
+            else:
+                value = None
+            ret[name] = value
+    return ret, glyphOrder
+
+# harfbuzz
+
+
+def _get_nominal_glyph(funcs, engine, ch, user_data):
+    if ch >= CH_GID_PREFIX:
+        return ch - CH_GID_PREFIX
+
+    glyphName = engine.font.unicodeData.glyphNameForUnicode(ch)
+    if glyphName is not None:
+        try:
+            return engine.GIDToGlyphNameMapping.index(glyphName)
+        except IndexError:
+            pass
+    return 0
+
+
+def _get_glyph_h_advance(funcs, engine, gid, user_data):
+    # Should have been the first parameter, see:
+    # https://github.com/ldo/harfpy/issues/6
+    font = user_data
+
+    ufo = engine.font
+    glyph = ufo[engine.GIDToGlyphNameMapping[gid]]
+    return glyph.width * font.scale[0] / font.face.upem
+
+
+def _get_glyph_name_func(funcs, engine, gid, user_data):
+    return engine.GIDToGlyphNameMapping[gid]
+
+
+def _spitLayoutTable(face, tag, layoutTables):
+    name = hb.tag_to_string(tag)
+    return layoutTables.get(name)
 
 
 class LayoutEngine(BaseObject):
     changeNotificationName = "LayoutEngine.Changed"
-    representationFactories = dict()
+    representationFactories = {
+        "defcon.layoutEngine.tables": dict(
+            factory=_layoutEngineOTLTablesRepresentationFactory,
+            destructiveNotifications=("LayoutEngine._DestroyCachedTables")
+        )
+    }
 
     def __init__(self, font):
         self._needsInternalUpdate = True
@@ -29,19 +99,21 @@ class LayoutEngine(BaseObject):
         super().__init__()
         self.beginSelfNotificationObservation()
 
-    def _get_font(self):
+    @property
+    def font(self):
         if self._font is not None:
             return self._font()
         return None
 
-    font = property(_get_font)
-
-    def _get_engine(self):
+    @property
+    def engine(self):
         if self._needsInternalUpdate:
             self._updateEngine()
         return self._layoutEngine
 
-    engine = property(_get_engine)
+    @property
+    def GIDToGlyphNameMapping(self):
+        return self._GIDToGlyphNameMapping
 
     # --------------
     # Engine Updates
@@ -50,25 +122,24 @@ class LayoutEngine(BaseObject):
     def _updateEngine(self):
         if not self._needsInternalUpdate:
             return
-        font = self.font
-        otf = font.getRepresentation("TruFont.TTFont")
-        self._GIDToGlyphNameMapping = otf.getGlyphOrder()
-        a = array.array('B')
-        with BytesIO() as f:
-            otf.save(f)
-            size = f.tell()
-            f.seek(0)
-            a.fromfile(f, size)
+        ufo = self.font
+        layoutTables, self._GIDToGlyphNameMapping = self.getRepresentation(
+            "defcon.layoutEngine.tables")
 
-        self._cachedArray = a
-        blob = hb.Blob.create_for_array(a, HB.MEMORY_MODE_READONLY)
-        face = hb.Face.create(blob, 0)
-        del blob
+        self._cachedFace = face = hb.Face.create_for_tables(
+            _spitLayoutTable, layoutTables, None, False)
         font = hb.Font.create(face)
-        upem = face.upem
-        del face
+        face.upem = upem = ufo.info.unitsPerEm
         font.scale = (upem, upem)
-        font.ot_set_funcs()
+
+        funcs = hb.FontFuncs.create(False)
+        funcs.set_nominal_glyph_func(_get_nominal_glyph, None, None)
+        funcs.set_glyph_h_advance_func(_get_glyph_h_advance, font, None)
+        # TODO: vertical advance
+        # TODO: kerning funcs from UFO kerning?
+        funcs.set_glyph_name_func(_get_glyph_name_func, None, None)
+        font.set_funcs(funcs, self, None)
+
         self._hbFont = font
 
         self._needsInternalUpdate = False
@@ -145,9 +216,13 @@ class LayoutEngine(BaseObject):
             observer=self, notification="Features.TextChanged")
 
     def _featuresTextChanged(self, notification):
+        self._destroyCachedTables()
         self._postNeedsUpdateNotification()
 
     # posting
+
+    def _destroyCachedTables(self):
+        self.postNotification("LayoutEngine._DestroyCachedTables")
 
     def _postNeedsUpdateNotification(self):
         self._needsInternalUpdate = True
@@ -158,7 +233,10 @@ class LayoutEngine(BaseObject):
     # ----------
 
     def process(self, text):
-        self._updateEngine()
+        if not text:
+            return []
+        if self._needsInternalUpdate:
+            self._updateEngine()
 
         # TODO: reuse buffer?
         buf = hb.Buffer.create()
