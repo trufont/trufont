@@ -79,8 +79,7 @@ class TextTool(BaseTool):
     def toolActivated(self):
         widget = self.parent()
         if self.layoutLine is None:
-            LayoutLine.engine = self.engine
-            self.layoutLine = LayoutLine(widget)
+            self.layoutLine = LayoutLine(self.engine, widget)
         # else:
         #     self.layoutLine.initCaret()
         widget.update()

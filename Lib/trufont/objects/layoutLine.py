@@ -13,10 +13,10 @@ def _reverseEnumerate(seq):
 
 
 class LayoutLine(QObject):
-    engine = None
 
-    def __init__(self, parent):
+    def __init__(self, engine, parent):
         super().__init__(parent)
+        self._engine = engine
         # this stays None except when we want to commit to widget
         self._activeIndex = None
         text = "".join(
@@ -134,12 +134,12 @@ class LayoutLine(QObject):
 
     @property
     def _shaper(self):
-        if hasattr(self.engine, "_layoutEngine"):
+        if hasattr(self._engine, "_layoutEngine"):
             return 'compositor'
         return 'harfbuzz'
 
     def _shapeAndSetText(self):
-        records = self.engine.process(self._inputString.tounicode())
+        records = self._engine.process(self._inputString.tounicode())
         if self._shaper == 'compositor':
             font = self._font
             records_ = []
@@ -160,7 +160,7 @@ class LayoutLine(QObject):
     def updateView(self):
         widget = self.parent()
         if self._needsLayout:
-            if self.engine is not None:
+            if self._engine is not None:
                 self._shapeAndSetText()
             else:
                 font = self._font
