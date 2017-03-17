@@ -19,8 +19,10 @@ class KeyEventFilter(QObject):
 
     def eventFilter(self, object, event):
         if event.type() == QEvent.ShortcutOverride:
-            event.accept()
-            return True
+            # we'll only kang shortcut that do not have modifiers
+            if event.modifiers() == Qt.NoModifier:
+                event.accept()
+                return True
         return False
 
 

@@ -26,13 +26,13 @@ class Application(QApplication):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._currentGlyph = None
-        self._currentMainWindow = None
+        self._currentFontWindow = None
         self._launched = False
         self._drawingTools = [
             SelectionTool, PenTool, KnifeTool, RulerTool, TextTool]
         self._extensions = []
         self.dispatcher = NotificationCenter()
-        self.dispatcher.addObserver(self, "_mainWindowClosed", "fontWillClose")
+        self.dispatcher.addObserver(self, "_fontWindowClosed", "fontWillClose")
         self.focusWindowChanged.connect(self._focusWindowChanged)
         self.GL2UV = None
         self.outputWindow = None
@@ -58,15 +58,15 @@ class Application(QApplication):
                 break
             window = parent
         if isinstance(window, FontWindow):
-            self.setCurrentMainWindow(window)
+            self.setCurrentFontWindow(window)
 
-    def _mainWindowClosed(self, notification):
+    def _fontWindowClosed(self, notification):
         font = notification.data["font"]
         # cleanup CurrentFont/CurrentGlyph when closing the corresponding
         # window
-        if self._currentMainWindow is not None:
-            if self._currentMainWindow.font == font:
-                self.setCurrentMainWindow(None)
+        if self._currentFontWindow is not None:
+            if self._currentFontWindow.font == font:
+                self.setCurrentFontWindow(None)
         if self._currentGlyph is not None:
             if self._currentGlyph.font == font:
                 self.setCurrentGlyph(None)
@@ -133,23 +133,14 @@ class Application(QApplication):
     # Window management
     # -----------------
 
-    def currentMainWindow(self):
-        return self._currentMainWindow
+    def currentFontWindow(self):
+        return self._currentFontWindow
 
-    def setCurrentMainWindow(self, mainWindow):
-        if mainWindow == self._currentMainWindow:
+    def setCurrentFontWindow(self, fontWindow):
+        if fontWindow == self._currentFontWindow:
             return
-        self._currentMainWindow = mainWindow
+        self._currentFontWindow = fontWindow
         self.postNotification("currentFontChanged")
-
-    def openMetricsWindow(self, font):
-        # TODO: why are we doing this for metrics window and no other child
-        # window?
-        for widget in self.topLevelWidgets():
-            if isinstance(widget, FontWindow) and widget.font_() == font:
-                widget.metrics()
-                return widget._metricsWindow
-        return None
 
     # --------
     # Menu Bar
@@ -253,9 +244,9 @@ class Application(QApplication):
 
     def currentFont(self):
         # might be None when closing all windows with scripting window open
-        if self._currentMainWindow is None:
+        if self._currentFontWindow is None:
             return None
-        return self._currentMainWindow.font_()
+        return self._currentFontWindow.font_()
 
     def currentGlyph(self):
         return self._currentGlyph

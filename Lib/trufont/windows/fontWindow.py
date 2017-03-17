@@ -1073,7 +1073,7 @@ class FontWindow(BaseWindow):
     def event(self, event):
         if event.type() == QEvent.WindowActivate:
             app = QApplication.instance()
-            app.setCurrentMainWindow(self)
+            app.setCurrentFontWindow(self)
             self._updateCurrentGlyph()
         return super().event(event)
 

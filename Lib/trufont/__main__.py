@@ -29,6 +29,9 @@ def main():
     app.setApplicationVersion(__version__)
     app.setWindowIcon(QIcon(":app.png"))
     app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    appFont = platformSpecific.UIFontOverride()
+    if appFont is not None:
+        app.setFont(appFont)
     app.setStyleSheet(platformSpecific.appStyleSheet())
 
     # Install stream redirection

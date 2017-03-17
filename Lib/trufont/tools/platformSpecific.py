@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QFont, QKeySequence
 import os
 import sys
 
@@ -18,6 +18,15 @@ def treatPackageAsFile():
 
 def fontSizeDelta():
     return int(sys.platform == "darwin")
+
+
+def UIFontOverride():
+    if sys.platform == "win32":
+        font = QFont()
+        font.setFamily("Segoe UI")
+        font.setPointSize(9)
+        return font
+    return None
 
 # -------------
 # Key sequences
@@ -118,8 +127,7 @@ def useBuiltinRubberBand():
 
 def appStyleSheet():
     if sys.platform == "win32":
-        return "QStatusBar::item { border: none; } QWidget { \
-            font-family: 'Segoe UI', sans-serif; font-size: 9pt; }"
+        return "QStatusBar::item { border: none; }"
     elif sys.platform == "darwin":
         return "QToolTip { background-color: white; }"
     return None
