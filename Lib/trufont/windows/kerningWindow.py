@@ -94,9 +94,14 @@ class KerningWindow(QWidget):
             self, "_kerningChanged", "Kerning.Changed")
         self._font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
         self.kerningView = QTreeView(self)
-        self.kerningView.header().hide()
         self.kerningView.setModel(
             KerningDictModel(font.kerning, self.kerningView))
+        metrics = self.kerningView.fontMetrics()
+        self.kerningView.setColumnWidth(1, 6 * metrics.width("0"))
+        hdr = self.kerningView.header()
+        hdr.setStretchLastSection(False)
+        hdr.setSectionResizeMode(0, hdr.Stretch)
+        hdr.hide()
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.kerningView)
