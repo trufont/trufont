@@ -156,7 +156,6 @@ class LayoutManager(QObject):
     def _shapeAndSetText(self):
         font = self._font
         records = font.engine.process(self._glyphList)
-        print("SHAP'd", records, self._shaper)
         if self._shaper == 'compositor':
             records_ = []
             index = 0
