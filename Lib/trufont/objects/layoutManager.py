@@ -15,7 +15,7 @@ def _reverseEnumerate(seq):
 
 class LayoutManager(QObject):
     """
-    parent should be a GlyphCanvasView.
+    parent should be a GlyphContextView.
     """
 
     def __init__(self, font, parent):

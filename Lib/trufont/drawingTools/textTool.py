@@ -2,7 +2,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QKeySequence, QPainterPath
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.objects.layoutManager import LayoutManager
 import unicodedata
 
 _path = QPainterPath()
@@ -53,8 +52,7 @@ class TextTool(BaseTool):
     def toolActivated(self):
         widget = self.parent()
         # XXX: don't disable tool on setGlyphs, then uncomment this
-        # else:
-        #     self.layoutManager.initCaret()
+        # self._layoutManager.initCaret()
         widget.update()
 
     def toolDisabled(self):
