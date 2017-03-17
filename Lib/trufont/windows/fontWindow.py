@@ -20,6 +20,7 @@ from trufont.tools.uiMethods import deleteUISelection, removeUIGlyphElements
 from trufont.windows.fontFeaturesWindow import FontFeaturesWindow
 from trufont.windows.fontInfoWindow import FontInfoWindow
 from trufont.windows.groupsWindow import GroupsWindow
+from trufont.windows.kerningWindow import KerningWindow
 from trufont.windows.metricsWindow import MetricsWindow
 from ufoLib.glifLib import readGlyphFromString
 from collections import OrderedDict
@@ -93,8 +94,9 @@ class FontWindow(BaseWindow):
 
         self._infoWindow = None
         self._featuresWindow = None
-        self._metricsWindow = None
         self._groupsWindow = None
+        self._kerningWindow = None
+        self._metricsWindow = None
 
         self.toolBar = ToolBar(self)
         self.toolBar.setTools(
@@ -267,6 +269,7 @@ class FontWindow(BaseWindow):
 
         windowMenu = menuBar.fetchMenu(Entries.Window)
         windowMenu.fetchAction(Entries.Window_Groups, self.groups)
+        windowMenu.fetchAction(Entries.Window_Kerning, self.kerning)
         windowMenu.fetchAction(Entries.Window_Metrics, self.metrics)
         windowMenu.fetchAction(Entries.Window_Scripting)
         windowMenu.fetchAction(Entries.Window_Properties, self.properties)
@@ -921,6 +924,14 @@ class FontWindow(BaseWindow):
         else:
             self._groupsWindow = GroupsWindow(self._font, self)
             self._groupsWindow.show()
+
+    def kerning(self):
+        # TODO: see up here
+        if self._kerningWindow is not None and self._kerningWindow.isVisible():
+            self._kerningWindow.raise_()
+        else:
+            self._kerningWindow = KerningWindow(self._font, self)
+            self._kerningWindow.show()
 
     def metrics(self):
         # TODO: see up here

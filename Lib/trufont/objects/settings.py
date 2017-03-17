@@ -150,6 +150,14 @@ def setGroupsWindowGeometry(geometry):
     setValue("groupsWindow/geometry", geometry)
 
 
+def kerningWindowGeometry():
+    return value("kerningWindow/geometry", type=QByteArray)
+
+
+def setKerningWindowGeometry(geometry):
+    setValue("kerningWindow/geometry", geometry)
+
+
 def metricsWindowGeometry():
     return value("metricsWindow/geometry", type=QByteArray)
 
