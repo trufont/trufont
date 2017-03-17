@@ -26,15 +26,6 @@ class KerningDictModel(QAbstractItemModel):
         self.layoutChanged.emit()
 
     def columnCount(self, parent):
-        """
-        # XXX: differenciated column count doesn't seem to work
-        if not parent.isValid():
-            return 1
-        key = parent.internalPointer()
-        if key is None:
-            return 2
-        return 0
-        """
         return 2
 
     def data(self, index, role):
@@ -96,8 +87,9 @@ class KerningWindow(QWidget):
         self.kerningView = QTreeView(self)
         self.kerningView.setModel(
             KerningDictModel(font.kerning, self.kerningView))
+        self.kerningView.expandAll()
         metrics = self.kerningView.fontMetrics()
-        self.kerningView.setColumnWidth(1, 6 * metrics.width("0"))
+        self.kerningView.setColumnWidth(1, 8 * metrics.width("0"))
         hdr = self.kerningView.header()
         hdr.setStretchLastSection(False)
         hdr.setSectionResizeMode(0, hdr.Stretch)
