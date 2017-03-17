@@ -1,6 +1,5 @@
 from PyQt5.QtCore import QObject
 from defconQt.controls.glyphContextView import GlyphRecord
-import array
 
 
 def _reverseEnumerate(seq):
@@ -10,23 +9,36 @@ def _reverseEnumerate(seq):
         yield n, obj
 
 # TODO: support unencoded glyphs input
+# TODO: support RTL (caret)
+# TODO: support selection
 
 
-class LayoutLine(QObject):
+class LayoutManager(QObject):
+    """
+    parent should be a GlyphCanvasView.
+    """
 
-    def __init__(self, engine, parent):
+    def __init__(self, font, parent):
         super().__init__(parent)
-        self._engine = engine
+        self._font = font
         # this stays None except when we want to commit to widget
         self._activeIndex = None
-        text = "".join(
-            chr(glyph.unicode) if glyph.unicode is not None else
-            glyph.name for glyph in parent.glyphs())
-        self._inputString = array.array('u', text)
-        self._caretIndex = len(text)
+        self._caretIndex = 0
+        self._glyphList = []
         self._needsCaretPostFix = False
         self._needsLayout = False
         self.updateView()
+
+    def glyphList(self):
+        return self._glyphList
+
+    def setGlyphList(self, glyphNames):
+        self._glyphList = glyphNames
+        self._caretIndex = len(self._glyphList)
+        self._needsLayout = True
+        self.updateView()
+
+    #
 
     def initCaret(self):
         """
@@ -38,7 +50,7 @@ class LayoutLine(QObject):
         try:
             self._caretIndex = glyphRecords[index + 1].cluster
         except IndexError:
-            self._caretIndex = len(self._inputString)
+            self._caretIndex = len(self._glyphList)
 
     def caretNext(self):
         widget = self.parent()
@@ -51,7 +63,7 @@ class LayoutLine(QObject):
         # TODO: trim no-op updates?
         if self._activeIndex is None:
             self._activeIndex = i
-            self._caretIndex = len(self._inputString)
+            self._caretIndex = len(self._glyphList)
         self.updateView()
 
     def caretPrevious(self):
@@ -86,12 +98,16 @@ class LayoutLine(QObject):
                 try:
                     self._caretIndex = glyphRecords[index + 1].cluster
                 except IndexError:
-                    self._caretIndex = len(self._inputString)
+                    self._caretIndex = len(self._glyphList)
             self.updateView()
 
-    def insert(self, text):
-        self._inputString.insert(self._caretIndex, text)
-        self._caretIndex += len(text)
+    def insert(self, content):
+        if isinstance(content, list):
+            self._glyphList[self._caretIndex:self._caretIndex] = content
+            self._caretIndex += len(content)
+        else:
+            self._glyphList.insert(self._caretIndex, content)
+            self._caretIndex += 1
         # clamp caretIndex after shaping and set activeIndex
         # typ. when we input text that serves as prefix to a ligature
         self._needsCaretPostFix = True
@@ -100,9 +116,9 @@ class LayoutLine(QObject):
 
     def delete(self, forward=False):
         index = self._caretIndex - (not forward)
-        if index < 0 or index >= len(self._inputString):
+        if index < 0 or index >= len(self._glyphList):
             return
-        self._inputString.pop(index)
+        self._glyphList.pop(index)
         self._caretIndex = index
         self._needsLayout = True
         self.updateView()
@@ -115,7 +131,7 @@ class LayoutLine(QObject):
         """
         glyphRecords = self.parent().glyphRecords()
         glyphRecord = glyphRecords[index]
-        atRightBoundary = self._caretIndex == len(self._inputString)
+        atRightBoundary = self._caretIndex == len(self._glyphList)
         if glyphRecord.cluster != self._caretIndex and not \
                 (atRightBoundary and index == len(glyphRecords) - 1):
             return None
@@ -129,19 +145,19 @@ class LayoutLine(QObject):
     #
 
     @property
-    def _font(self):
-        return self.parent().window().font_()
-
-    @property
     def _shaper(self):
-        if hasattr(self._engine, "_layoutEngine"):
+        engine = self._font.engine
+        if engine is None:
+            return None
+        if hasattr(engine, "_layoutEngine"):
             return 'compositor'
         return 'harfbuzz'
 
     def _shapeAndSetText(self):
-        records = self._engine.process(self._inputString.tounicode())
+        font = self._font
+        records = font.engine.process(self._glyphList)
+        print("SHAP'd", records, self._shaper)
         if self._shaper == 'compositor':
-            font = self._font
             records_ = []
             index = 0
             for glyphRecord in records:
@@ -160,15 +176,13 @@ class LayoutLine(QObject):
     def updateView(self):
         widget = self.parent()
         if self._needsLayout:
-            if self._engine is not None:
+            font = self._font
+            if font.engine is not None:
                 self._shapeAndSetText()
             else:
-                font = self._font
-                uniData = font.unicodeData
                 glyphs = []
-                for c in self._inputString.tounicode():
-                    glyphName = uniData.glyphNameForUnicode(ord(c))
-                    if glyphName is not None:
+                for glyphName in self._glyphList:
+                    if glyphName in font:
                         glyphs.append(font[glyphName])
                 widget.setGlyphs(glyphs)
             self._needsLayout = False

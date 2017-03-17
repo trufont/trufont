@@ -102,12 +102,6 @@ class LayoutEngine(BaseObject):
         return None
 
     @property
-    def engine(self):
-        if self._needsInternalUpdate:
-            self._updateEngine()
-        return self._layoutEngine
-
-    @property
     def GIDToGlyphNameMapping(self):
         return self._GIDToGlyphNameMapping
 

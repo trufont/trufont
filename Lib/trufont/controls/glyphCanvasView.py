@@ -8,6 +8,7 @@ from defconQt.controls.glyphContextView import GlyphContextView, GlyphFlags
 from defconQt.controls.glyphView import GlyphViewMinSizeForDetails
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects import settings
+from trufont.objects.layoutManager import LayoutManager
 from trufont.tools import drawing, errorReports
 from trufont.tools.uiMethods import UIGlyphGuidelines
 import os
@@ -37,6 +38,8 @@ class GlyphCanvasView(GlyphContextView):
         self._currentTool = BaseTool()
         self._currentToolActivated = False
         self._eventFilter = KeyEventFilter(self)
+        font = self.window().font_()
+        self._layoutManager = LayoutManager(font, self)
         self._mouseDown = False
         self._preview = False
 
@@ -58,6 +61,15 @@ class GlyphCanvasView(GlyphContextView):
     # --------------
     # Custom Methods
     # --------------
+
+    def inputNames(self):
+        return self._layoutManager.glyphList()
+
+    def setInputNames(self, names):
+        self._layoutManager.setGlyphList(names)
+
+    def layoutManager(self):
+        return self._layoutManager
 
     def setGlyphRecords(self, glyphRecords):
         # TODO: should we also NAK in mouseDown here?

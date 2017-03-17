@@ -2,19 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QKeySequence, QPainterPath
 from PyQt5.QtWidgets import QApplication
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.objects.layoutLine import LayoutLine
+from trufont.objects.layoutManager import LayoutManager
 import unicodedata
-
-_shaper = True
-try:
-    import harfbuzz  # noqa
-    from trufont.objects.layoutEngine import LayoutEngine
-except ImportError:
-    try:
-        import compositor  # noqa
-        from defcon import LayoutEngine
-    except ImportError:
-        _shaper = False
 
 _path = QPainterPath()
 _path.moveTo(5.29, 17.96)
@@ -54,36 +43,18 @@ class TextTool(BaseTool):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._engine = None
-        # TODO: remove entry when tab is closed
-        self._layoutLine = dict()
 
     @property
-    def engine(self):
-        if _shaper and self._engine is None:
-            self._engine = LayoutEngine(self._font)
-        return self._engine
-
-    @property
-    def layoutLine(self):
-        widget = self.parent()
-        if widget not in self._layoutLine:
-            return None
-        return self._layoutLine[widget]
-
-    @layoutLine.setter
-    def layoutLine(self, line):
-        widget = self.parent()
-        self._layoutLine[widget] = line
+    def _layoutManager(self):
+        return self.parent().layoutManager()
 
     # methods
 
     def toolActivated(self):
         widget = self.parent()
-        if self.layoutLine is None:
-            self.layoutLine = LayoutLine(self.engine, widget)
+        # XXX: don't disable tool on setGlyphs, then uncomment this
         # else:
-        #     self.layoutLine.initCaret()
+        #     self.layoutManager.initCaret()
         widget.update()
 
     def toolDisabled(self):
@@ -108,33 +79,34 @@ class TextTool(BaseTool):
             clipboard = QApplication.clipboard()
             mimeData = clipboard.mimeData()
             if mimeData.hasText():
-                # TODO: way to alleviate the loop?
-                for c in mimeData.text():
-                    self.layoutLine.insert(c)
+                self._layoutManager.insert(list(mimeData.text()))
         elif key == Qt.Key_Left:
             # TODO: we'll probably need to reform this stuff for RTL
-            self.layoutLine.caretPrevious()
+            self._layoutManager.caretPrevious()
         elif key == Qt.Key_Right:
-            self.layoutLine.caretNext()
+            self._layoutManager.caretNext()
         elif key in (Qt.Key_Backspace, Qt.Key_Delete):
-            self.layoutLine.delete(forward=(key == Qt.Key_Delete))
+            self._layoutManager.delete(forward=(key == Qt.Key_Delete))
         else:
             text = event.text()
+            unicodeData = self._font.unicodeData
             if not _isUnicodeChar(text):
                 return
-            self.layoutLine.insert(text)
+            for c in text:  # text should be just one codepoint, but be safe
+                glyphName = unicodeData.glyphNameForUnicode(ord(c))
+                self._layoutManager.insert(glyphName)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             pos = self.parent().mapFromCanvas(event.localPos())
-            self.layoutLine.setCaretFromPos(pos)
+            self._layoutManager.setCaretFromPos(pos)
         else:
             super().mousePressEvent(event)
 
     def paintBackground(self, painter, index):
         # XXX: we can't currently draw the caret when there's no
         # glyph on canvas
-        offset = self.layoutLine.drawingOffset(index)
+        offset = self._layoutManager.drawingOffset(index)
         if offset is None:
             return
         dx, dy = offset

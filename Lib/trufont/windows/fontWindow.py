@@ -329,7 +329,7 @@ class FontWindow(BaseWindow):
                 return
         # spawn
         widget = GlyphCanvasView(self)
-        widget.setGlyphs([glyph])
+        widget.setInputNames([glyph.name])
         widget.activeGlyphChanged.connect(self._selectionChanged)
         widget.glyphNamesChanged.connect(self._namesChanged)
         widget.pointSizeModified.connect(self.statusBar.setSize)

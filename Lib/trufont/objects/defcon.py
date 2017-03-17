@@ -9,6 +9,17 @@ from trufont.objects import settings
 import fontTools
 import math
 
+_shaper = True
+try:
+    import harfbuzz  # noqa
+    from trufont.objects.layoutEngine import LayoutEngine
+except ImportError:
+    try:
+        import compositor  # noqa
+        from defcon import LayoutEngine
+    except ImportError:
+        _shaper = False
+
 
 class TFont(Font):
 
@@ -30,12 +41,19 @@ class TFont(Font):
             if attr not in kwargs:
                 kwargs[attr] = defaultClass
         super().__init__(*args, **kwargs)
+        self._engine = None
 
     @property
     def binaryPath(self):
         if hasattr(self, "_binaryPath"):
             return self._binaryPath
         return None
+
+    @property
+    def engine(self):
+        if _shaper and self._engine is None:
+            self._engine = LayoutEngine(self)
+        return self._engine
 
     @classmethod
     def new(cls):
