@@ -268,7 +268,6 @@ class Application(QApplication):
             "unregisterExtension": self.unregisterExtension,
             "registerTool": self.registerTool,
             "unregisterTool": self.unregisterTool,
-            "OpenMetricsWindow": self.openMetricsWindow,
             "qApp": self,
         }
         return global_vars

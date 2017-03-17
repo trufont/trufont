@@ -7,6 +7,7 @@ class PathButton(QAbstractButton):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # TODO: make it TabFocus and make sure there's a corresponding visual cue
         self.setFocusPolicy(Qt.NoFocus)
 
         self._drawingCommands = []
