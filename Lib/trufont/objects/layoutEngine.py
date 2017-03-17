@@ -2,7 +2,6 @@ from defcon.objects.base import BaseObject
 from defconQt.controls.glyphContextView import GlyphRecord
 from fontTools.ttLib import TTFont
 from ufo2ft.featureCompiler import FeatureCompiler
-import array
 import weakref
 
 try:
@@ -37,13 +36,8 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
             return ret, glyphOrder
         for name in ("GDEF", "GSUB", "GPOS"):
             if name in otf:
-                # XXX: why does this not work?
-                # table = otf[name].compile(otf)
-                # value = hb.Blob.create(
-                #     table, len(table), HB.MEMORY_MODE_READONLY, None, None)
-                a = array.array('B')
-                a.frombytes(otf[name].compile(otf))
-                value = hb.Blob.create_for_array(a, HB.MEMORY_MODE_READONLY)
+                table = otf[name].compile(otf)
+                value = hb.Blob.create_for_array(table, HB.MEMORY_MODE_READONLY)
             else:
                 value = None
             ret[name] = value
@@ -52,11 +46,12 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
 # harfbuzz
 
 
-def _get_nominal_glyph(funcs, engine, ch, user_data):
+def _get_nominal_glyph(font, engine, ch, user_data):
     if ch >= CH_GID_PREFIX:
         return ch - CH_GID_PREFIX
 
-    glyphName = engine.font.unicodeData.glyphNameForUnicode(ch)
+    ufo = engine.font
+    glyphName = ufo.unicodeData.glyphNameForUnicode(ch)
     if glyphName is not None:
         try:
             return engine.GIDToGlyphNameMapping.index(glyphName)
@@ -65,17 +60,13 @@ def _get_nominal_glyph(funcs, engine, ch, user_data):
     return 0
 
 
-def _get_glyph_h_advance(funcs, engine, gid, user_data):
-    # Should have been the first parameter, see:
-    # https://github.com/ldo/harfpy/issues/6
-    font = user_data
-
+def _get_glyph_h_advance(font, engine, gid, user_data):
     ufo = engine.font
     glyph = ufo[engine.GIDToGlyphNameMapping[gid]]
     return glyph.width * font.scale[0] / font.face.upem
 
 
-def _get_glyph_name_func(funcs, engine, gid, user_data):
+def _get_glyph_name_func(font, engine, gid, user_data):
     return engine.GIDToGlyphNameMapping[gid]
 
 
@@ -132,22 +123,21 @@ class LayoutEngine(BaseObject):
         layoutTables, self._GIDToGlyphNameMapping = self.getRepresentation(
             "TruFont.layoutEngine.tables")
 
-        self._cachedFace = face = hb.Face.create_for_tables(
+        face = hb.Face.create_for_tables(
             _spitLayoutTable, layoutTables, None, False)
         font = hb.Font.create(face)
         face.upem = upem = ufo.info.unitsPerEm
         font.scale = (upem, upem)
 
-        self._cachedFuncs = funcs = hb.FontFuncs.create(False)
+        funcs = hb.FontFuncs.create(False)
         funcs.set_nominal_glyph_func(_get_nominal_glyph, None, None)
-        funcs.set_glyph_h_advance_func(_get_glyph_h_advance, font, None)
+        funcs.set_glyph_h_advance_func(_get_glyph_h_advance, None, None)
         # TODO: vertical advance
         # TODO: kerning funcs from UFO kerning?
         funcs.set_glyph_name_func(_get_glyph_name_func, None, None)
         font.set_funcs(funcs, self, None)
 
         self._hbFont = font
-
         self._needsInternalUpdate = False
 
     # -------------
