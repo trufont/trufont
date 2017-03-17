@@ -28,7 +28,7 @@ setup(
         "defcon>=0.2.0",
         "defconQt>=0.5.0",
         "ufo-extractor>=0.2.0",
-        "ufo2ft>=0.3.2",
+        "ufo2ft>=0.4.0",
         "booleanOperations>=0.6.4",
         "hsluv>=0.0.2",
     ],

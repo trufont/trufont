@@ -43,6 +43,8 @@ _path.closeSubpath()
 def _isUnicodeChar(text):
         return len(text) and unicodedata.category(text) != "Cc"
 
+# XXX: rewind the shaped string when metrics change/anchors are moved
+
 
 class TextTool(BaseTool):
     icon = _path

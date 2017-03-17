@@ -1,7 +1,7 @@
 from defcon.objects.base import BaseObject
 from defconQt.controls.glyphContextView import GlyphRecord
-from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
 from fontTools.ttLib import TTFont
+from ufo2ft.featureCompiler import FeatureCompiler
 import array
 import weakref
 
@@ -25,13 +25,16 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
     if font.features.text.strip():
         otf = TTFont()
         otf.setGlyphOrder(glyphOrder)
-        # compile with fontTools
+        # compile with feaLib + markWriter. kerning is handled separately
         try:
-            addOpenTypeFeaturesFromString(otf, font.features.text)
+            compiler = FeatureCompiler(font, otf, kernWriterClass=None)
+            compiler.postProcess = lambda: None
+            compiler.compile()
         except:
             # TODO: handle this in the UI
             import traceback
             print(traceback.format_exc(5))
+            return ret, glyphOrder
         for name in ("GDEF", "GSUB", "GPOS"):
             if name in otf:
                 # XXX: why does this not work?
