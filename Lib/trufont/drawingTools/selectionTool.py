@@ -11,8 +11,6 @@ from trufont.tools.uiMethods import (
     maybeProjectUISmoothPointOffcurve, moveUIGlyphElements,
     unselectUIGlyphElements)
 
-from trufont.tools.UIMove_ng import UIMove
-
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
 
@@ -344,11 +342,10 @@ class SelectionTool(BaseTool):
         if key in arrowKeys:
             # TODO: prune
             self._glyph.prepareUndo()
-            delta = self._moveForEvent(event)
+            dx, dy = self._moveForEvent(event)
             modifiers = event.modifiers()
             slidePoints = modifiers & Qt.AltModifier
-            for contour in self._glyph:
-                UIMove(contour, delta, slidePoints=slidePoints)
+            moveUIGlyphElements(self._glyph, dx, dy, slidePoints=slidePoints)
         # TODO: nav shouldn't be specific to this tool
         elif key in navKeys:
             pack = self._getSelectedCandidatePoint()
