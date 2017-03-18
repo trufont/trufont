@@ -1,6 +1,7 @@
 from defconQt.tools import platformSpecific as basePlatformSpecific
 from PyQt5.QtCore import pyqtSignal, QObject, QSize, Qt
-from PyQt5.QtGui import QPalette, QTextCursor, QTextOption
+from PyQt5.QtGui import (
+    QColor, QPalette, QTextBlockFormat, QTextCursor, QTextOption)
 from PyQt5.QtWidgets import QCheckBox, QMainWindow, QPushButton, QPlainTextEdit
 from trufont.objects import settings
 from trufont.tools import platformSpecific
@@ -79,6 +80,35 @@ class OutputEdit(QPlainTextEdit):
         self.setFont(basePlatformSpecific.fixedFont())
         self.setReadOnly(True)
         self.setUndoRedoEnabled(False)
+
+    def grayOutOldContent(self):
+        insert = True
+        textCursor = self.textCursor()
+        if not textCursor.atEnd():
+            textCursor.movePosition(QTextCursor.End)
+        if textCursor.atStart():
+            insert = False
+        endFormat = textCursor.charFormat()
+
+        textCursor.select(QTextCursor.Document)
+
+        fmt = endFormat.__class__()
+        bgColor = self.palette().base().color()
+        fgColor = self.palette().text().color()
+        bgFactor = .5
+        fgFactor = 1 - bgFactor
+        fmt.setForeground(QColor(
+            bgFactor * bgColor.red() + fgFactor * fgColor.red(),
+            bgFactor * bgColor.green() + fgFactor * fgColor.green(),
+            bgFactor * bgColor.blue() + fgFactor * fgColor.blue(),
+        ))
+        textCursor.mergeCharFormat(fmt)
+
+        textCursor.movePosition(QTextCursor.End)
+        textCursor.setCharFormat(endFormat)
+        if insert:
+            textCursor.insertBlock(QTextBlockFormat())
+        self.setTextCursor(textCursor)
 
     def isScrollBarAtBottom(self):
         scrollBar = self.verticalScrollBar()

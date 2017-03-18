@@ -164,6 +164,7 @@ class ScriptingWindow(QMainWindow):
         global_vars = app.globals()
         script = self.editor.toPlainText()
         streams = []
+        self.outputEdit.grayOutOldContent()
         for channel in ("stdout", "stderr"):
             stream = OutputStream(channel, self)
             stream.forward = True
