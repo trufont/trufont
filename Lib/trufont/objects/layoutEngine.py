@@ -21,7 +21,7 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
     font = layoutEngine.font
     ret = dict()
     glyphOrder = sorted(font.keys())
-    if font.features.text.strip():
+    if font.features.text:
         otf = TTFont()
         otf.setGlyphOrder(glyphOrder)
         # compile with feaLib + markWriter. kerning is handled separately
@@ -188,7 +188,7 @@ class LayoutEngine(BaseObject):
         layer.removeObserver(
             observer=self, notification="Layer.GlyphUnicodesChanged")
 
-    def _layerGlyphUnicodesChanged(self):
+    def _layerGlyphUnicodesChanged(self, notification):
         self._postNeedsUpdateNotification()
 
     # feature text change

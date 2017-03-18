@@ -662,7 +662,7 @@ class FontWindow(BaseWindow):
         pickled = []
         for glyph in packGlyphs:
             pickled.append(glyph.serialize(
-                blacklist=("name", "unicode")
+                blacklist=("name", "unicodes")
             ))
         mimeData.setData("application/x-trufont-glyph-data",
                          pickle.dumps(pickled))
