@@ -180,13 +180,21 @@ class LayoutEngine(BaseObject):
     def beginSelfLayerObservation(self):
         layer = self.font.layers.defaultLayer
         layer.addObserver(
+            observer=self, methodName="_layerGlyphNamesChanged",
+            notification="Layer.GlyphNamesChanged")
+        layer.addObserver(
             observer=self, methodName="_layerGlyphUnicodesChanged",
             notification="Layer.GlyphUnicodesChanged")
 
     def endSelfLayerObservation(self):
         layer = self.font.layers.defaultLayer
         layer.removeObserver(
+            observer=self, notification="Layer.GlyphNamesChanged")
+        layer.removeObserver(
             observer=self, notification="Layer.GlyphUnicodesChanged")
+
+    def _layerGlyphNamesChanged(self, notification):
+        self._postNeedsUpdateNotification()
 
     def _layerGlyphUnicodesChanged(self, notification):
         self._postNeedsUpdateNotification()

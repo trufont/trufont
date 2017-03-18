@@ -140,7 +140,7 @@ class FontWindow(BaseWindow):
         app.dispatcher.addObserver(
             self, "_drawingToolUnregistered", "drawingToolUnregistered")
         app.dispatcher.addObserver(
-            self, "_glyphViewGlyphChanged", "glyphViewGlyphChanged")
+            self, "_glyphViewGlyphsChanged", "glyphViewGlyphsChanged")
 
         layout = QHBoxLayout(self)
         layout.addWidget(self.toolBar)
@@ -378,7 +378,7 @@ class FontWindow(BaseWindow):
         raise ValueError(
             "couldn't find tool to unregister: {}".format(toolClass))
 
-    def _glyphViewGlyphChanged(self, notification):
+    def _glyphViewGlyphsChanged(self, notification):
         self._updateGlyphActions()
 
     # widgets
@@ -482,7 +482,9 @@ class FontWindow(BaseWindow):
         self.setWindowModified(font.dirty)
 
     def _glyphOrderChanged(self, notification):
-        self._updateGlyphsFromGlyphOrder()
+        font = notification.object
+        glyphs = [font[name] for name in font.glyphOrder]
+        self.glyphCellView.setGlyphs(glyphs)
 
     def _updateGlyphsFromGlyphOrder(self):
         font = self._font
@@ -783,12 +785,15 @@ class FontWindow(BaseWindow):
                 glyphs = widget.glyphsForIndexes(widget.selection())
                 for glyph in glyphs:
                     font = glyph.font
-                    if erase:
-                        del font[glyph.name]
-                    else:
-                        # TODO: consider doing that in glyph template setter
-                        glyph.clear()
-                        glyph.template = True
+                    for layer in font.layers:
+                        if glyph.name in layer:
+                            defaultLayer = layer[glyph.name] == glyph
+                            if defaultLayer and not erase:
+                                # TODO: clear in glyph.template setter?
+                                glyph.clear()
+                                glyph.template = True
+                            else:
+                                del layer[glyph.name]
 
     def findGlyph(self):
         widget = self.stackWidget.currentWidget()

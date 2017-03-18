@@ -363,6 +363,19 @@ class TGlyph(Glyph):
             return
         self.unicodes = [uni]
 
+    def rename(self, newName):
+        if self.layerSet is not None:
+            font = self.font
+            oldName = self.name
+            font.disableNotifications()
+            for layer in self.layerSet:
+                if oldName in layer:
+                    glyph = layer[oldName]
+                    glyph.name = newName
+            font.enableNotifications()
+        else:
+            self.name = newName
+
     def hasOverlap(self):
         bGlyph = BooleanGlyph()
         pen = bGlyph.getPointPen()
