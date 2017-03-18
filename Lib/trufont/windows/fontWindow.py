@@ -566,6 +566,8 @@ class FontWindow(BaseWindow):
             nameFilter = dialog.selectedNameFilter()
             path = dialog.selectedFiles()[0]
             self.saveFile(path, fileFormats[nameFilter])
+            app = QApplication.instance()
+            app.setCurrentFile(self._font.path)
             self.setWindowTitle(self.fontTitle())
         # return ok
 

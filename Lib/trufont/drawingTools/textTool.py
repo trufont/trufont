@@ -92,7 +92,8 @@ class TextTool(BaseTool):
                 return
             for c in text:  # text should be just one codepoint, but be safe
                 glyphName = unicodeData.glyphNameForUnicode(ord(c))
-                self._layoutManager.insert(glyphName)
+                if glyphName is not None:
+                    self._layoutManager.insert(glyphName)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

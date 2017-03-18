@@ -39,7 +39,7 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
                     table = otf[name].compile(otf)
                     value = hb.Blob.create_for_array(
                         table, HB.MEMORY_MODE_READONLY)
-                ret[name] = value
+                    ret[name] = value
     return ret, glyphOrder
 
 # harfbuzz
