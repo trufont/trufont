@@ -120,6 +120,7 @@ class ExportDialog(QDialog):
         warningLayout.setStretch(3, 1)
         layout.addLayout(warningLayout)
         layout.addWidget(buttonBox)
+        # XXX: check this on non-Windows platforms
         layout.setContentsMargins(16, 16, 16, 16)
 
         self.readSettings()

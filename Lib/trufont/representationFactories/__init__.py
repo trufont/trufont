@@ -1,4 +1,4 @@
-from defcon import Font, Glyph, Component, registerRepresentationFactory
+from defcon import Glyph, Component, registerRepresentationFactory
 from trufont.representationFactories.glyphCellFactory import (
     TFGlyphCellFactory)
 from trufont.representationFactories.glyphViewFactory import (
