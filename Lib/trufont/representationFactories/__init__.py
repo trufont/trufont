@@ -5,13 +5,7 @@ from trufont.representationFactories.glyphViewFactory import (
     ComponentQPainterPathFactory, FilterSelectionFactory,
     SelectedContoursQPainterPathFactory, SelectedComponentsQPainterPathFactory,
     SplitLinesQPainterPathFactory)
-from trufont.representationFactories.openTypeFactory import (
-    TTFontFactory, QuadraticTTFontFactory)
 
-_fontFactories = {
-    "TruFont.TTFont": (TTFontFactory, None),
-    "TruFont.QuadraticTTFont": (QuadraticTTFontFactory, None),
-}
 # TODO: fine-tune the destructive notifications
 _glyphFactories = {
     "TruFont.SelectedComponentsQPainterPath": (
@@ -35,10 +29,6 @@ _componentFactories = {
 
 
 def registerAllFactories():
-    for name, (factory, destructiveNotifications) in _fontFactories.items():
-        registerRepresentationFactory(
-            Font, name, factory,
-            destructiveNotifications=destructiveNotifications)
     for name, (factory, destructiveNotifications) in _glyphFactories.items():
         registerRepresentationFactory(
             Glyph, name, factory,

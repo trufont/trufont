@@ -45,6 +45,9 @@ _latinDefaultGlyphNames = \
      "tildecomb", "uni0327", "quoteleft", "quoteright", "minus"]
 
 _fallbackValues = {
+    "export/removeOverlap": False,  # XXX: make these true when implemented
+    "export/autohint": False,
+    "export/useDirectory": True,
     "fontWindow/glyphCellSize": 86,
     "fontWindow/propertiesHidden": False,
     "metricsWindow/comboBoxItems": _metricsWindowComboBoxItems,
@@ -272,11 +275,59 @@ def setSaveFileDialogState(state):
 
 
 def exportFileDialogState():
-    return value("core/exportFileDialogState", type=QByteArray)
+    return value("export/fileDialogState", type=QByteArray)
 
 
 def setExportFileDialogState(state):
-    setValue("core/exportFileDialogState", state)
+    setValue("export/fileDialogState", state)
+
+
+def exportFileFormats():
+    return value("export/fileFormats", type=str)
+
+
+def setExportFileFormats(formats):
+    setValue("export/fileFormats", formats)
+
+
+def exportCompressionFormats():
+    return value("export/compressionFormats", type=str)
+
+
+def setExportCompressionFormats(formats):
+    setValue("export/compressionFormats", formats)
+
+
+def exportRemoveOverlap():
+    return value("export/removeOverlap")
+
+
+def setExportRemoveOverlap(value):
+    setValue("export/removeOverlap", value)
+
+
+def exportAutohint():
+    return value("export/autohint")
+
+
+def setExportAutohint(value):
+    setValue("export/autohint", value)
+
+
+def exportUseDirectory():
+    return value("export/useDirectory")
+
+
+def setExportUseDirectory(value):
+    setValue("export/useDirectory", value)
+
+
+def exportDirectory():
+    return value("export/directory", type=str)
+
+
+def setExportDirectory(value):
+    setValue("export/directory", value)
 
 
 def scriptingFileDialogState():

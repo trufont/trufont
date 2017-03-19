@@ -23,14 +23,15 @@ setup(
     },
     install_requires=[
         "pyqt5>=5.5.0",
-        "fonttools>=3.3.1",
+        "fonttools>=3.9.0",
         "ufoLib>=2.0.0",
         "defcon>=0.2.5",
-        "defconQt>=0.5.0",
+        "defconQt>=0.5.1",
         "ufo-extractor>=0.2.0",
         "ufo2ft>=0.4.0",
         "booleanOperations>=0.6.4",
         "hsluv>=0.0.2",
+        "brotli>=0.5.2",
     ],
     platforms=["Linux", "Win32", "Mac OS X"],
     classifiers=[

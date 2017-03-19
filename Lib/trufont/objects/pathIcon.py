@@ -16,9 +16,9 @@ class PathIconEngine(QIconEngine):
             size = QSize(width, height)
         self._size = size
 
-    def addFillPath(self, path, color=Qt.black):
+    def addFillPath(self, path, color=Qt.black, antialiasing=False):
         # TODO: add Mode, State
-        self._fillPaths.append((path, color))
+        self._fillPaths.append((path, color, antialiasing))
 
     def addStrokePath(self, path, color=Qt.black, width=.9,
                       antialiasing=False):
@@ -49,7 +49,8 @@ class PathIconEngine(QIconEngine):
             # coordinates are used to paint in; this will ensure pixel
             # perfection
             painter.scale(width, height)
-        for path, color in self._fillPaths:
+        for path, color, antialiasing in self._fillPaths:
+            painter.setRenderHint(QPainter.Antialiasing, antialiasing)
             painter.fillPath(path, color)
         for path, color, width, antialiasing in self._strokePaths:
             painter.setRenderHint(QPainter.Antialiasing, antialiasing)

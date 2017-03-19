@@ -6,6 +6,7 @@ from fontTools.misc.transform import Identity
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
 from trufont.objects import settings
+from ufo2ft import compileOTF, compileTTF
 import fontTools
 import math
 
@@ -114,9 +115,19 @@ class TFont(Font):
         self.dirty = False
         app.postNotification("fontSaved", data)
 
-    def export(self, path, format="otf"):
-        if format not in ("otf", "ttf"):
-            raise ValueError("unknown format: %s")
+    def export(self, path, format="otf", compression=None, **kwargs):
+        if format == "otf":
+            func = compileOTF
+        elif format == "ttf":
+            func = compileTTF
+        else:
+            raise ValueError("unknown format: %s" % format)
+        if compression is not None:
+            invalid = compression - {"none", "woff", "woff2"}
+            if invalid:
+                raise ValueError(
+                    "unknown compression format: {}".format(invalid))
+        # info attrs
         missingAttrs = []
         for attr in ("familyName", "styleName", "unitsPerEm", "ascender",
                      "descender", "xHeight", "capHeight"):
@@ -129,13 +140,21 @@ class TFont(Font):
         app = QApplication.instance()
         data = dict(
             font=self,
-            format=format,
             path=path,
+            format=format,
+            compression=compression,
+            kwargs=kwargs,
         )
-        rp = "TruFont.QuadraticTTFont" if format == "ttf" else "TruFont.TTFont"
         app.postNotification("fontWillExport", data)
-        otf = self.getRepresentation(rp)
-        otf.save(path)
+        otf = func(self, **kwargs)
+        if compression is None or "none" in compression:
+            otf.save(path)
+        if compression is not None:
+            for header in compression:
+                if header == "none":
+                    continue
+                otf.flavor = header
+                otf.save("{}.{}".format(path, header))
         app.postNotification("fontExported", data)
 
     # sort descriptor

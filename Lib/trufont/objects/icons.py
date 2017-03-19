@@ -75,6 +75,20 @@ def dc_up():
     ]
 
 
+def i_warning():
+    icon = PathIcon(20, 20)
+    path = QPainterPath()
+    path.moveTo(4, 16)
+    path.lineTo(16, 16)
+    path.lineTo(10, 5)
+    path.closeSubpath()
+    path_ = QPainterPath()
+    path_.addRect(9, 8, 2, 4)
+    path_.addRect(9, 13, 2, 2)
+    icon.addFillPath(path - path_, QColor(230, 20, 20), antialiasing=True)
+    return icon
+
+
 def p_ellipses():
     circ1 = QPainterPath()
     circ1.addEllipse(5, 1, 14, 14)

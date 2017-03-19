@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import (
     QStackedWidget, QVBoxLayout, QWidget)
 from defconQt.controls.glyphCellView import GlyphCellView
 from defconQt.windows.baseWindows import BaseWindow
+from fontTools.feaLib.error import FeatureLibError
+from trufont.controls.exportDialog import ExportDialog
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
 from trufont.controls.glyphCanvasView import GlyphCanvasView
@@ -593,31 +595,22 @@ class FontWindow(BaseWindow):
             self.setFont_(font_)
 
     def exportFile(self):
-        fileFormats = [
-            (self.tr("PostScript OT font {}").format("(*.otf)")),
-            (self.tr("TrueType OT font {}").format("(*.ttf)")),
-        ]
-        state = settings.exportFileDialogState()
-        # TODO: font.path as default?
-        # TODO: store per-font export path in lib
-        directory = None if state else QStandardPaths.standardLocations(
-            QStandardPaths.DocumentsLocation)[0]
-        dialog = QFileDialog(
-            self, self.tr("Export File"), directory,
-            ";;".join(fileFormats))
-        if state:
-            dialog.restoreState(state)
-        dialog.setAcceptMode(QFileDialog.AcceptSave)
-        ok = dialog.exec_()
-        settings.setExportFileDialogState(dialog.saveState())
-        if ok:
-            fmt = "ttf" if dialog.selectedNameFilter(
-                ) == fileFormats[1] else "otf"
-            path = dialog.selectedFiles()[0]
+        params, ok = ExportDialog.getExportParameters(self, self._font)
+        if not ok:
+            return
+        baseName = params['baseName']
+        directory = params['exportDirectory']
+        compression = set(map(str.lower, params['compression']))
+        for format in map(str.lower, params['formats']):
+            fileName = "{}.{}".format(baseName, format)
+            path = os.path.join(directory, fileName)
             try:
-                self._font.export(path, fmt)
+                self._font.export(path, format, compression=compression)
             except Exception as e:
-                errorReports.showCriticalException(e)
+                msg = self.tr(
+                    "This font’s feature file contains an error."
+                    ) if isinstance(e, FeatureLibError) else None
+                errorReports.showCriticalException(e, message=msg)
 
     # Edit
 
