@@ -129,7 +129,7 @@ class FontWindow(BaseWindow):
         self.propertiesView = PropertiesView(self)
         self.propertiesView.hide()
 
-        self.statusBar = StatusBar()
+        self.statusBar = StatusBar(self)
         self.statusBar.setMinimumSize(32)
         self.statusBar.setMaximumSize(128)
         self.statusBar.sizeChanged.connect(self._sizeChanged)

@@ -443,7 +443,7 @@ class Application(QApplication):
             path = dialog.selectedFiles()[0]
         # sanitize
         path = os.path.normpath(path)
-        if ".plist" in path:
+        if ".plist" in os.path.basename(path):
             path = os.path.dirname(path)
         ext = os.path.splitext(path)[1]
         if ext == ".ufo":
