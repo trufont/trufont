@@ -21,16 +21,15 @@ class ExportDialog(QDialog):
                 0])
         self.baseName = getAttrWithFallback(font.info, "postscriptFontName")
 
-        self.formatButtonSet = ButtonSet(self)
-        self.formatButtonSet.setOptions(["OTF", "TTF"])
-        self.formatButtonSet.setSelectionMode(ButtonSet.OneOrMoreSelection)
-        self.compressionButtonSet = ButtonSet(self)
-        self.compressionButtonSet.setOptions(["None", "WOFF", "WOFF2"])
-        self.compressionButtonSet.setSelectionMode(
-            ButtonSet.OneOrMoreSelection)
+        self.formatBtnSet = ButtonSet(self)
+        self.formatBtnSet.setOptions(["OTF", "TTF"])
+        self.formatBtnSet.setSelectionMode(ButtonSet.OneOrMoreSelection)
+        self.compressionBtnSet = ButtonSet(self)
+        self.compressionBtnSet.setOptions(["None", "WOFF", "WOFF2"])
+        self.compressionBtnSet.setSelectionMode(ButtonSet.OneOrMoreSelection)
         self.numberLabel = QLabel(self)
-        self.formatButtonSet.buttonClicked.connect(self.updateNumbers)
-        self.compressionButtonSet.buttonClicked.connect(self.updateNumbers)
+        self.formatBtnSet.buttonClicked.connect(self.updateNumbers)
+        self.compressionBtnSet.buttonClicked.connect(self.updateNumbers)
 
         self.removeOverlapBox = QCheckBox(self.tr("Remove Overlap"), self)
         # self.removeOverlapBox.setChecked(True)  # XXX: implement
@@ -92,8 +91,8 @@ class ExportDialog(QDialog):
 
         layout = QVBoxLayout(self)
         formLayout = QFormLayout()
-        formLayout.addRow(self.tr("Format"), self.formatButtonSet)
-        formLayout.addRow(self.tr("Compression"), self.compressionButtonSet)
+        formLayout.addRow(self.tr("Format"), self.formatBtnSet)
+        formLayout.addRow(self.tr("Compression"), self.compressionBtnSet)
         formLayout.setHorizontalSpacing(16)
         formLayout.setContentsMargins(0, 0, 0, 4)
         layout.addLayout(formLayout)
@@ -128,9 +127,9 @@ class ExportDialog(QDialog):
     def readSettings(self):
         attrs = [
             (settings.exportFileFormats,
-             self.formatButtonSet.setSelectedOptions),
+             self.formatBtnSet.setSelectedOptions),
             (settings.exportCompressionFormats,
-             self.compressionButtonSet.setSelectedOptions),
+             self.compressionBtnSet.setSelectedOptions),
             (settings.exportRemoveOverlap, self.removeOverlapBox.setChecked),
             (settings.exportAutohint, self.autohintBox.setChecked),
             (settings.exportUseDirectory, self.exportBox.setChecked),
@@ -147,9 +146,9 @@ class ExportDialog(QDialog):
     def writeSettings(self):
         attrs = [
             (settings.setExportFileFormats,
-             self.formatButtonSet.selectedOptions),
+             self.formatBtnSet.selectedOptions),
             (settings.setExportCompressionFormats,
-             self.compressionButtonSet.selectedOptions),
+             self.compressionBtnSet.selectedOptions),
             (settings.setExportRemoveOverlap, self.removeOverlapBox.isChecked),
             (settings.setExportAutohint, self.autohintBox.isChecked),
             (settings.setExportUseDirectory, self.exportBox.isChecked),
@@ -204,18 +203,18 @@ class ExportDialog(QDialog):
             w.setEnabled(value)
 
     def updateNumbers(self):
+        formatOptions = self.formatBtnSet.selectedOptions()
+        compressionOptions = self.compressionBtnSet.selectedOptions()
         # number label
-        formatCnt = len(self.formatButtonSet.selectedOptions())
-        compressionCnt = len(self.compressionButtonSet.selectedOptions())
+        count = len(formatOptions) * len(compressionOptions)
         self.numberLabel.setText(self.tr(
-            "×%n font(s) with base name: {}*".format(self.baseName),
-            n=formatCnt * compressionCnt))
+            "×%n font(s) with base name: {}*".format(self.baseName), n=count))
         # overwrite status
         # XXX: not DRY with the TFont.export logic
         count = 0
-        compressions = map(
-            str.lower, self.compressionButtonSet.selectedOptions())
-        for format in map(str.lower, self.formatButtonSet.selectedOptions()):
+        # make a list out of this, otherwise we'll consume the iterator
+        compressions = list(map(str.lower, compressionOptions))
+        for format in map(str.lower, formatOptions):
             filePath = os.path.join(self.exportDirectory, "{}.{}".format(
                 self.baseName, format))
             for compression in compressions:
@@ -243,8 +242,8 @@ class ExportDialog(QDialog):
         result = dialog.exec_()
         params = dict(
             baseName=dialog.baseName,
-            formats=dialog.formatButtonSet.selectedOptions(),
-            compression=dialog.compressionButtonSet.selectedOptions(),
+            formats=dialog.formatBtnSet.selectedOptions(),
+            compression=dialog.compressionBtnSet.selectedOptions(),
             exportDirectory=dialog.exportDirectory,
             removeOverlap=dialog.removeOverlapBox.isChecked(),
             autohint=dialog.autohintBox.isChecked(),
