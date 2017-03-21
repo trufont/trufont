@@ -14,6 +14,7 @@ from trufont.tools.colorGenerator import ColorGenerator
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel
 import booleanOperations
+import functools
 import itertools
 
 
@@ -23,6 +24,40 @@ def Button(parent=None):
     btn.setFocusPolicy(Qt.NoFocus)
     btn.setSize(QSize(26, 26))
     return btn
+
+
+def _glyphHasSelection(glyph):
+    for contour in glyph:
+        for point in contour:
+            if point.selected:
+                return True
+    for container in (
+            glyph.components, glyph.anchors, glyph.guidelines):
+        for element in container:
+            if element.selected:
+                return True
+    return False
+
+
+def _partialTransform(glyph, matrix):
+    for contour in glyph:
+        for point in contour:
+            dirty = False
+            if point.selected:
+                point.x, point.y = matrix.transformPoint(
+                    (point.x, point.y))
+                dirty = True
+            if dirty:
+                contour.dirty = True
+    for component in glyph.components:
+        if component.selected:
+            component.transform(matrix)
+    for anchor in glyph.anchors:
+        if anchor.selected:
+            anchor.transform(matrix)
+    for guideline in glyph.guidelines:
+        if guideline.selected:
+            guideline.transform(matrix)
 
 
 class SpinBox(QDoubleSpinBox):
@@ -161,6 +196,7 @@ class PropertiesWidget(QWidget):
         columnTwoWidth = zeroWidth * 10
 
         self.alignmentWidget = GlyphAlignmentWidget(self)
+        self.alignmentWidget.setAlignment(4)
 
         # TODO: should this be implemented for partial selection?
         invScaleButton = Button(self)
@@ -583,8 +619,15 @@ class PropertiesWidget(QWidget):
             sX, sY = -sX, -sY
         sX = 1 + .01 * sX
         sY = 1 + .01 * sY
-        center = self.alignmentWidget.origin()
+        # apply
+        hasSelection = _glyphHasSelection(glyph)
+        representation = "TruFont.FilterSelection" if hasSelection else None
+        center = self.alignmentWidget.origin(representation=representation)
+        bareFunc = glyph.transform
+        if hasSelection:
+            glyph.transform = functools.partial(_partialTransform, glyph)
         glyph.scale((sX, sY), center=center)
+        glyph.transform = bareFunc
 
     def rotateGlyph(self):
         glyph = self._glyph
@@ -594,8 +637,15 @@ class PropertiesWidget(QWidget):
         value = self.rotateEdit.value()
         if self.sender().property("inverted"):
             value = -value
-        origin = self.alignmentWidget.origin()
+        # apply
+        hasSelection = _glyphHasSelection(glyph)
+        representation = "TruFont.FilterSelection" if hasSelection else None
+        origin = self.alignmentWidget.origin(representation=representation)
+        bareFunc = glyph.transform
+        if hasSelection:
+            glyph.transform = functools.partial(_partialTransform, glyph)
         glyph.rotate(value, offset=origin)
+        glyph.transform = bareFunc
 
     def skewGlyph(self):
         glyph = self._glyph
@@ -605,7 +655,12 @@ class PropertiesWidget(QWidget):
         value = self.skewEdit.value()
         if self.sender().property("inverted"):
             value = -value
+        # apply
+        bareFunc = glyph.transform
+        if _glyphHasSelection(glyph):
+            glyph.transform = functools.partial(_partialTransform, glyph)
         glyph.skew((value, 0))
+        glyph.transform = bareFunc
 
     def snapGlyph(self):
         glyph = self._glyph
@@ -613,6 +668,8 @@ class PropertiesWidget(QWidget):
             return
         glyph.prepareUndo()
         base = self.snapEdit.value()
+        # apply
+        # TODO: this doesn't go by selection
         glyph.snap(base)
 
     # boolean ops

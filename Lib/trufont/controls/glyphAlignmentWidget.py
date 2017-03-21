@@ -36,11 +36,15 @@ class GlyphAlignmentWidget(QWidget):
                 return 0
         return 1
 
-    def origin(self):
+    def origin(self, representation=None):
         alignment = self._alignment
         glyph = self._glyph
         if alignment is None or not glyph:
             return (0, 0)
+        if representation is not None:
+            glyph = glyph.getRepresentation(representation)
+            if not glyph:
+                return (0, 0)
         left, bottom, right, top = glyph.controlPointBounds
         if not alignment % 3:
             x = left

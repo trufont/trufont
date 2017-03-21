@@ -428,18 +428,22 @@ class TGlyph(Glyph):
             contour.drawPoints(pointPen)
 
     def scale(self, pt, center=(0, 0)):
-        for contour in self:
-            contour.scale(pt, center=center)
-        for component in self.components:
-            component.scale(pt, center=center)
-        for anchor in self.anchors:
-            anchor.scale(pt, center=center)
+        dx, dy = center[0], center[1]
+        sT = Identity.translate(dx, dy)
+        x, y = pt
+        sT = sT.scale(x=x, y=y)
+        sT = sT.translate(-dx, -dy)
+        self.transform(sT)
 
     def transform(self, matrix):
         for contour in self:
             contour.transform(matrix)
+        for component in self.components:
+            component.transform(matrix)
         for anchor in self.anchors:
             anchor.transform(matrix)
+        for guideline in self.guidelines:
+            guideline.transform(matrix)
 
     def rotate(self, angle, offset=(0, 0)):
         radAngle = math.radians(angle)
@@ -462,6 +466,8 @@ class TGlyph(Glyph):
             component.snap(base)
         for anchor in self.anchors:
             anchor.snap(base)
+        for guideline in self.guidelines:
+            guideline.snap(base)
 
 
 class TKerning(Kerning):
@@ -704,6 +710,9 @@ class TComponent(Component):
         self.transformation = (
             xScale, xyScale, yxScale, yScale, xOffset, yOffset)
 
+    def transform(self, matrix):
+        self.transformation = tuple(matrix.transform(self.transformation))
+
     def snap(self, base):
         xScale, xyScale, yxScale, yScale, xOffset, yOffset = \
             self._transformation
@@ -755,6 +764,19 @@ class TGuideline(Guideline):
     selected = property(
         _get_selected, _set_selected,
         doc="A boolean indicating the selected state of the guideline.")
+
+    def scale(self, pt, center=(0, 0)):
+        # TODO: handle the angle
+        self.x, self.y = _scalePointFromCenter(
+            (self.x, self.y), pt, center)
+
+    def transform(self, matrix):
+        # TODO: handle the angle
+        self.x, self.y = matrix.transformPoint((self.x, self.y))
+
+    def snap(self, base):
+        self.x = _snap(self.x, base)
+        self.y = _snap(self.y, base)
 
 
 class TImage(Image):
