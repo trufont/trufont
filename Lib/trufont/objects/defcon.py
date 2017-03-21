@@ -44,6 +44,10 @@ class TFont(Font):
         super().__init__(*args, **kwargs)
         self._engine = None
 
+    def __repr__(self):
+        return "<%s %s %s>" % (
+            self.__class__.__name__, self.info.familyName, self.info.styleName)
+
     @property
     def binaryPath(self):
         if hasattr(self, "_binaryPath"):
@@ -238,6 +242,10 @@ class TGlyph(Glyph):
         super().__init__(*args, **kwargs)
         self._template = False
         self._undoManager = UndoManager(self)
+
+    def __repr__(self):
+        return "<%s %s (%s)>" % (
+            self.__class__.__name__, self.name, self.layer.name)
 
     # observe anchor selection
 
