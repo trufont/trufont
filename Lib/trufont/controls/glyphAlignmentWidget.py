@@ -16,24 +16,32 @@ class GlyphAlignmentWidget(QWidget):
         self._color = QColor(130, 130, 130)
         self._selectedColor = QColor(20, 146, 230)
 
-    def alignment(self):
-        return self._alignment
+    # synthetized properties
 
-    def setAlignment(self, value):
-        self._alignment = value
+    def hOrigin(self):
+        alignment = self._alignment
+        if alignment is not None:
+            if not alignment % 3:
+                return 0
+            elif not (alignment - 2) % 3:
+                return 2
+        return 1
 
-    def glyph(self):
-        return self._glyph
-
-    def setGlyph(self, glyph):
-        self._glyph = glyph
+    def vOrigin(self):
+        alignment = self._alignment
+        if alignment is not None:
+            if alignment < 3:
+                return 2
+            elif alignment > 5:
+                return 0
+        return 1
 
     def origin(self):
         alignment = self._alignment
         glyph = self._glyph
-        if None in (alignment, glyph, glyph.bounds):
+        if alignment is None or not glyph:
             return (0, 0)
-        left, bottom, right, top = glyph.bounds
+        left, bottom, right, top = glyph.controlPointBounds
         if not alignment % 3:
             x = left
         elif not (alignment - 2) % 3:
@@ -47,6 +55,20 @@ class GlyphAlignmentWidget(QWidget):
         else:
             y = (top + bottom) / 2
         return (x, y)
+
+    # properties
+
+    def alignment(self):
+        return self._alignment
+
+    def setAlignment(self, value):
+        self._alignment = value
+
+    def glyph(self):
+        return self._glyph
+
+    def setGlyph(self, glyph):
+        self._glyph = glyph
 
     def color(self):
         return self._color

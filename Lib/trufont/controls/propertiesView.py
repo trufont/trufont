@@ -645,9 +645,9 @@ class PropertiesWidget(QWidget):
         if glyph is None or len(glyph) < 2:
             return
         glyph.prepareUndo()
-        target, others, open_ = None, [], []
-        others = list(glyph)
+        target, open_ = None, []
         delIndex = None
+        others = list(glyph)
         for index, contour in enumerate(glyph):
             if contour.open:
                 open_.append(contour)
@@ -676,27 +676,37 @@ class PropertiesWidget(QWidget):
 
     # fitting
 
-    def hMirror(self):
+    def _mirror(self, attr, origin):
         glyph = self._glyph
-        if glyph is None or glyph.controlPointBounds is None:
+        if not glyph:
             return
         glyph.prepareUndo()
-        xMin, _, xMax, _ = glyph.controlPointBounds
+        points = glyph.selection
+        useSelection = bool(points)
+        vMin = vMax = None
         for contour in glyph:
             for point in contour:
-                point.x = xMin + xMax - point.x
+                if useSelection and not point.selected:
+                    continue
+                value = getattr(point, attr)
+                if vMin is None:
+                    vMin = vMax = value
+                else:
+                    vMin = min(vMin, value)
+                    vMax = max(vMax, value)
+                if not useSelection:
+                    points.add(point)
+        f = getattr(self.alignmentWidget, origin)()
+        for point in points:
+            value = (2 - f) * vMin + f * vMax - getattr(point, attr)
+            setattr(point, attr, value)
         glyph.dirty = True
 
+    def hMirror(self):
+        self._mirror("x", "hOrigin")
+
     def vMirror(self):
-        glyph = self._glyph
-        if glyph is None or glyph.controlPointBounds is None:
-            return
-        glyph.prepareUndo()
-        _, yMin, _, yMax = glyph.controlPointBounds
-        for contour in glyph:
-            for point in contour:
-                point.y = yMin + yMax - point.y
-        glyph.dirty = True
+        self._mirror("y", "vOrigin")
 
     def alignHLeft(self):
         glyph = self._glyph
