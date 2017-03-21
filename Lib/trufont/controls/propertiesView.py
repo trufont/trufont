@@ -696,9 +696,10 @@ class PropertiesWidget(QWidget):
                     vMax = max(vMax, value)
                 if not useSelection:
                     points.add(point)
-        f = getattr(self.alignmentWidget, origin)()
+        factor = getattr(self.alignmentWidget, origin)()
+        base = (2 - factor) * vMin + factor * vMax
         for point in points:
-            value = (2 - f) * vMin + f * vMax - getattr(point, attr)
+            value = base - getattr(point, attr)
             setattr(point, attr, value)
         glyph.dirty = True
 

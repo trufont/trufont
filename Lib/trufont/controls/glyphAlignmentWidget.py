@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QRectF, QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QPainterPath
 from PyQt5.QtWidgets import QSizePolicy, QWidget
 
@@ -89,7 +89,7 @@ class GlyphAlignmentWidget(QWidget):
     # ----------
 
     def sizeHint(self):
-        return QSize(30, 30)
+        return QSize(27, 27)
 
     def mousePressEvent(self, event):
         if event.button() & Qt.LeftButton:
@@ -112,6 +112,7 @@ class GlyphAlignmentWidget(QWidget):
         painter.setPen(self._color)
 
         circleRadius = 2.5
+        selectedRadius = 3
         padding = 1
         rect = event.rect()
         size = min(rect.height(), rect.width())
@@ -133,20 +134,21 @@ class GlyphAlignmentWidget(QWidget):
                 index = row * columnCount + col
                 x, y = padding + col * .5 * borderRect.width(
                     ), padding + row * .5 * borderRect.height()
+                delta = selectedRadius - circleRadius
+                sx = x - delta
+                sy = y - delta
                 if self._alignment == index:
-                    selectedRadius = 3
-                    x -= selectedRadius - circleRadius
-                    y -= selectedRadius - circleRadius
                     path = QPainterPath()
                     path.addEllipse(
-                        x, y, 2 * selectedRadius, 2 * selectedRadius)
+                        sx, sy, 2 * selectedRadius, 2 * selectedRadius)
                     selectedPath = path
                 else:
                     path = QPainterPath()
                     path.addEllipse(
                         x, y, 2 * circleRadius, 2 * circleRadius)
                     radioPath.addPath(path)
-                self._alignmentPaths.append(path.translated(offset, 0))
+                self._alignmentPaths.append(QRectF(
+                    sx + offset, sy, 2 * selectedRadius, 2 * selectedRadius))
         painter.drawPath(borderPath - radioPath)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillPath(radioPath, self._color)
