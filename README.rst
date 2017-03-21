@@ -27,9 +27,9 @@ Getting started
       ``python3 -m venv ENV_DIR``
 
       This creates a new ``ENV_DIR`` folder (you can choose the name 
-	  you want). The ``bin`` subfolder (or ``Scripts`` if you are 
-	  on Windows) contains a new ``python`` executable, and the 
-	  ``pip`` installer linked to that.
+      you want). The ``bin`` subfolder (or ``Scripts`` if you are 
+      on Windows) contains a new ``python`` executable, and the 
+      ``pip`` installer linked to that.
 
    -  Activate the newly created environment:
 
