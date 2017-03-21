@@ -1,4 +1,4 @@
-from booleanOperations.booleanGlyph import BooleanGlyph
+from booleanOperations import union
 from defcon import (
     Font, Layer, Glyph, Groups, Kerning, Contour, Point, Anchor, Component,
     Guideline, Image)
@@ -396,34 +396,28 @@ class TGlyph(Glyph):
             self.name = newName
 
     def hasOverlap(self):
-        bGlyph = BooleanGlyph()
-        pen = bGlyph.getPointPen()
-        openContours = 0
+        closed = []
+        length = len(self)
         for contour in self:
-            if not contour.open:
-                contour.drawPoints(pen)
+            if contour.open:
+                length -= 1
             else:
-                openContours += 1
-        bGlyph.removeOverlap()
-        return len(bGlyph.contours) + openContours != len(self)
+                closed.append(contour)
+        glyph = self.__class__()
+        union(closed, glyph.getPointPen())
+        return len(glyph) != length
 
     def removeOverlap(self):
         # TODO: maybe clear undo stack if no changes
         self.prepareUndo()
-        bGlyph = BooleanGlyph()
-        pen = bGlyph.getPointPen()
-        for contour in list(self):
-            if not contour.open:
-                contour.drawPoints(pen)
-                self.removeContour(contour)
-            else:
-                contour.selected = False
-        bGlyph = bGlyph.removeOverlap()
-        pen = self.getPointPen()
-        for contour in bGlyph.contours:
-            contour.drawPoints(pen)
-
-        self.dirty = True
+        open_, closed = [], []
+        for contour in self:
+            (open_ if contour.open else closed).append(contour)
+        self.clearContours()
+        pointPen = self.getPointPen()
+        union(closed, pointPen)
+        for contour in open_:
+            contour.drawPoints(pointPen)
 
     def scale(self, pt, center=(0, 0)):
         for contour in self:
