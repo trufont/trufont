@@ -126,8 +126,7 @@ class ExportDialog(QDialog):
 
     def readSettings(self):
         attrs = [
-            (settings.exportFileFormats,
-             self.formatBtnSet.setSelectedOptions),
+            (settings.exportFileFormats, self.formatBtnSet.setSelectedOptions),
             (settings.exportCompressionFormats,
              self.compressionBtnSet.setSelectedOptions),
             (settings.exportRemoveOverlap, self.removeOverlapBox.setChecked),
@@ -145,8 +144,7 @@ class ExportDialog(QDialog):
 
     def writeSettings(self):
         attrs = [
-            (settings.setExportFileFormats,
-             self.formatBtnSet.selectedOptions),
+            (settings.setExportFileFormats, self.formatBtnSet.selectedOptions),
             (settings.setExportCompressionFormats,
              self.compressionBtnSet.selectedOptions),
             (settings.setExportRemoveOverlap, self.removeOverlapBox.isChecked),

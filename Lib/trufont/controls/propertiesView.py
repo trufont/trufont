@@ -13,6 +13,7 @@ from trufont.objects import icons
 from trufont.tools.colorGenerator import ColorGenerator
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel
+import booleanOperations
 import itertools
 
 
@@ -236,7 +237,7 @@ class PropertiesWidget(QWidget):
         unionButton.setDrawingCommands(icons.dc_union())
         unionButton.setToolTip(
             self.tr("Remove selection overlap"))
-        unionButton.clicked.connect(self.union)
+        unionButton.clicked.connect(self.removeOverlap)
         subtractButton = Button(self)
         subtractButton.setDrawingCommands(icons.dc_subtract())
         subtractButton.setToolTip(
@@ -614,33 +615,66 @@ class PropertiesWidget(QWidget):
         base = self.snapEdit.value()
         glyph.snap(base)
 
-    def union(self):
+    # boolean ops
+
+    def removeOverlap(self):
         # TODO: disable button instead
         glyph = self._glyph
-        if glyph is None:
+        if not glyph:
             return
-        # unselected bookkeeping
-        unselContours = []
+        glyph.prepareUndo()
+        target, others = [], []
+        useSelection = bool(glyph.selection)
         for contour in glyph:
-            if not contour.selection:
-                unselContours.append(contour)
-        partialSelection = unselContours and len(unselContours) < len(glyph)
-        if partialSelection:
-            for contour in reversed(unselContours):
-                glyph.removeContour(contour)
-        glyph.removeOverlap()
-        if partialSelection:
-            for contour in unselContours:
-                glyph.appendContour(contour)
+            if contour.open:
+                others.append(contour)
+                continue
+            if useSelection and not contour.selection:
+                others.append(contour)
+                continue
+            target.append(contour)
+        glyph.clearContours()
+        pointPen = glyph.getPointPen()
+        booleanOperations.union(target, pointPen)
+        for contour in others:
+            contour.drawPoints(pointPen)
+
+    def _binaryBooleanOperation(self, func):
+        # TODO: disable button instead
+        glyph = self._glyph
+        if glyph is None or len(glyph) < 2:
+            return
+        glyph.prepareUndo()
+        target, others, open_ = None, [], []
+        others = list(glyph)
+        delIndex = None
+        for index, contour in enumerate(glyph):
+            if contour.open:
+                open_.append(contour)
+            elif target is None and contour.selection:
+                target = contour
+                delIndex = index
+        if delIndex is not None:
+            del others[index]
+        else:
+            target = glyph[-1]
+            del others[-1]
+        glyph.clearContours()
+        pointPen = glyph.getPointPen()
+        func(others, [target], pointPen)
+        for contour in open_:
+            contour.drawPoints(pointPen)
 
     def subtract(self):
-        pass
+        self._binaryBooleanOperation(booleanOperations.difference)
 
     def intersect(self):
-        pass
+        self._binaryBooleanOperation(booleanOperations.intersection)
 
     def xor(self):
-        pass
+        self._binaryBooleanOperation(booleanOperations.xor)
+
+    # fitting
 
     def hMirror(self):
         glyph = self._glyph
