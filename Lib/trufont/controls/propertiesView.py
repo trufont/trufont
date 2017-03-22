@@ -158,12 +158,12 @@ class PropertiesWidget(QWidget):
         self.leftMarginEdit = NumberBox(self)
         self.leftMarginEdit.setMaximumWidth(columnOneWidth)
         self.leftMarginEdit.editingFinished.connect(
-            self.writeleftMargin)
+            self.writeLeftMargin)
         rightMarginLabel = RLabel(self.tr("Right"), self)
         self.rightMarginEdit = NumberBox(self)
         self.rightMarginEdit.setMaximumWidth(columnOneWidth)
         self.rightMarginEdit.editingFinished.connect(
-            self.writerightMargin)
+            self.writeRightMargin)
         markColorLabel = RLabel(self.tr("Flag"), self)
         self.markColorWidget = ColorVignette(self)
         self.markColorWidget.colorChanged.connect(
@@ -203,7 +203,7 @@ class PropertiesWidget(QWidget):
         invScaleButton.setDrawingCommands(icons.dc_invscale())
         invScaleButton.setToolTip(
             self.tr("Scale down selection"))
-        invScaleButton.clicked.connect(self.scaleGlyph)
+        invScaleButton.clicked.connect(self.scale)
         invScaleButton.setProperty("inverted", True)
         self.scaleXEdit = SpinBox(self)
         self.scaleXEdit.setMaximumWidth(columnTwoWidth)
@@ -215,7 +215,7 @@ class PropertiesWidget(QWidget):
         scaleButton.setDrawingCommands(icons.dc_scale())
         scaleButton.setToolTip(
             self.tr("Scale up selection"))
-        scaleButton.clicked.connect(self.scaleGlyph)
+        scaleButton.clicked.connect(self.scale)
         self.scaleYEdit = SpinBox(self)
         self.scaleYEdit.setMaximumWidth(columnTwoWidth)
         self.scaleYEdit.setSuffix(" %")
@@ -227,7 +227,7 @@ class PropertiesWidget(QWidget):
         rotateButton.setDrawingCommands(icons.dc_rotate())
         rotateButton.setToolTip(
             self.tr("Rotate selection counter-clockwise"))
-        rotateButton.clicked.connect(self.rotateGlyph)
+        rotateButton.clicked.connect(self.rotate)
         self.rotateEdit = SpinBox(self)
         self.rotateEdit.setMaximumWidth(columnTwoWidth)
         self.rotateEdit.setSuffix("º")
@@ -239,14 +239,14 @@ class PropertiesWidget(QWidget):
         invRotateButton.setDrawingCommands(icons.dc_invrotate())
         invRotateButton.setToolTip(
             self.tr("Rotate selection clockwise"))
-        invRotateButton.clicked.connect(self.rotateGlyph)
+        invRotateButton.clicked.connect(self.rotate)
         invRotateButton.setProperty("inverted", True)
 
         invSkewButton = Button(self)
         invSkewButton.setDrawingCommands(icons.dc_invskew())
         invSkewButton.setToolTip(
             self.tr("Skew selection counter-clockwise"))
-        invSkewButton.clicked.connect(self.skewGlyph)
+        invSkewButton.clicked.connect(self.skew)
         invSkewButton.setProperty("inverted", True)
         self.skewEdit = SpinBox(self)
         self.skewEdit.setMaximumWidth(columnTwoWidth)
@@ -258,13 +258,13 @@ class PropertiesWidget(QWidget):
         skewButton.setDrawingCommands(icons.dc_skew())
         skewButton.setToolTip(
             self.tr("Skew selection clockwise"))
-        skewButton.clicked.connect(self.skewGlyph)
+        skewButton.clicked.connect(self.skew)
 
         snapButton = Button(self)
         snapButton.setDrawingCommands(icons.dc_snap())
         snapButton.setToolTip(
             self.tr("Snap selection to precision"))
-        snapButton.clicked.connect(self.snapGlyph)
+        snapButton.clicked.connect(self.snap)
         self.snapEdit = SpinBox(self)
         self.snapEdit.setMaximumWidth(columnTwoWidth)
         self.snapEdit.setValue(1)
@@ -433,6 +433,9 @@ class PropertiesWidget(QWidget):
         mainLayout.setSpacing(2)
         self.setLayout(mainLayout)
 
+        # re-export signal
+        self.activeLayerModified = self.layerSetView.selectionChanged_
+
     # -------------
     # Notifications
     # -------------
@@ -504,13 +507,19 @@ class PropertiesWidget(QWidget):
         self.rightMarginEdit.setValue(rightMargin)
         self.markColorWidget.setColor(markColor)
 
+        self._updateLayerAttributes()
+
     def _updateLayerAttributes(self, *_):
         font = self._font
         if font is None or font.layers is None:
+            self.layerSetView.blockSignals(True)
             self.layerSetView.setList([[None, None, None]])
+            self.layerSetView.blockSignals(False)
             return
         layers = []
-        for layer in font.layers:
+        currentLayer = self._glyph.layer if self._glyph is not None else None
+        currentRow = -1
+        for index, layer in enumerate(font.layers):
             color = layer.color
             if color is not None:
                 color = colorToQColor(color)
@@ -518,7 +527,12 @@ class PropertiesWidget(QWidget):
                 color = QColor()
             # XXX: add layer.visible
             layers.append([True, layer.name, color])
+            if layer == currentLayer:
+                currentRow = index
+        self.layerSetView.blockSignals(True)
         self.layerSetView.setList(layers)
+        self.layerSetView.setCurrentItem(currentRow, 0)
+        self.layerSetView.blockSignals(False)
         if self._shouldEditLastName:
             self.layerSetView.editItem(len(layers)-1, 1)
             self._shouldEditLastName = False
@@ -550,12 +564,12 @@ class PropertiesWidget(QWidget):
             return
         self._glyph.width = self.widthEdit.value()
 
-    def writeleftMargin(self):
+    def writeLeftMargin(self):
         if self._glyph is None:
             return
         self._glyph.leftMargin = self.leftMarginEdit.value()
 
-    def writerightMargin(self):
+    def writeRightMargin(self):
         if self._glyph is None:
             return
         self._glyph.rightMargin = self.rightMarginEdit.value()
@@ -605,7 +619,7 @@ class PropertiesWidget(QWidget):
     def lockScale(self, checked):
         self.scaleYEdit.setEnabled(not checked)
 
-    def scaleGlyph(self):
+    def scale(self):
         glyph = self._glyph
         # TODO: consider disabling the buttons in that case?
         if glyph is None:
@@ -630,7 +644,7 @@ class PropertiesWidget(QWidget):
         glyph.scale((sX, sY), center=center)
         glyph.transform = bareFunc
 
-    def rotateGlyph(self):
+    def rotate(self):
         glyph = self._glyph
         if glyph is None:
             return
@@ -648,7 +662,7 @@ class PropertiesWidget(QWidget):
         glyph.rotate(value, offset=origin)
         glyph.transform = bareFunc
 
-    def skewGlyph(self):
+    def skew(self):
         glyph = self._glyph
         if glyph is None:
             return
@@ -666,7 +680,7 @@ class PropertiesWidget(QWidget):
         glyph.skew((value, 0), offset=origin)
         glyph.transform = bareFunc
 
-    def snapGlyph(self):
+    def snap(self):
         glyph = self._glyph
         if glyph is None:
             return
@@ -1012,6 +1026,8 @@ class PropertiesView(QScrollArea):
 
         self._propertiesWidget = self.propertiesWidgetClass(self)
         self.setWidget(self._propertiesWidget)
+
+        self.activeLayerModified = self._propertiesWidget.activeLayerModified
 
     def eventFilter(self, obj, event):
         # this works because QScrollArea.setWidget installs an eventFilter

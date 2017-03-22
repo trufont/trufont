@@ -234,8 +234,8 @@ def drawGlyphImage(
 
 def drawGlyphFillAndStroke(
         painter, glyph, scale, drawFill=True, drawStroke=True,
-        drawSelection=True, drawComponentsFill=True,
-        drawComponentsStroke=False,
+        drawSelection=True, drawComponentFill=True,
+        drawComponentStroke=False,
         contourFillColor=None, contourStrokeColor=None,
         componentFillColor=None, componentStrokeColor=None,
         selectionColor=None, partialAliasing=True):
@@ -283,7 +283,7 @@ def drawGlyphFillAndStroke(
                 contourFillColor = defaultColor("glyphContourFill")
         painter.fillPath(contourPath, QBrush(contourFillColor))
     # components
-    if drawComponentsFill:
+    if drawComponentFill:
         if componentFillColor is None:
             if layerColor is not None:
                 componentFillColor = layerColor
@@ -335,7 +335,7 @@ def drawGlyphFillAndStroke(
         else:
             painter.drawPath(contourPath)
     # components
-    if drawComponentsStroke:
+    if drawComponentStroke:
         if componentStrokeColor is None:
             if layerColor is not None:
                 componentStrokeColor = layerColor

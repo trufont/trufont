@@ -176,6 +176,8 @@ class FontWindow(BaseWindow):
         self.installEventFilter(PreviewEventFilter(self))
 
         self.readSettings()
+        self.propertiesView.activeLayerModified.connect(
+            self._activeLayerModified)
         self.statusBar.sizeChanged.connect(self.writeSettings)
 
     def readSettings(self):
@@ -384,6 +386,20 @@ class FontWindow(BaseWindow):
         self._updateGlyphActions()
 
     # widgets
+
+    def _activeLayerModified(self):
+        if self.isGlyphTab():
+            widget = self.stackWidget.currentWidget()
+            index = self.sender().currentIndex().row()
+            layers = self._font.layers
+            layer = layers[layers.layerOrder[index]]
+            currentGlyph = widget.activeGlyph()
+            # XXX: adjust TLayer.get and use it
+            if currentGlyph.name in layer:
+                glyph = layer[currentGlyph.name]
+            else:
+                glyph = layer.newGlyph(currentGlyph.name)
+            widget.setActiveGlyph(glyph)
 
     def _namesChanged(self):
         sender = self.sender()
@@ -1065,7 +1081,7 @@ class FontWindow(BaseWindow):
             app = QApplication.instance()
             app.dispatcher.removeObserver(self, "drawingToolRegistered")
             app.dispatcher.removeObserver(self, "drawingToolUnregistered")
-            app.dispatcher.removeObserver(self, "glyphViewGlyphChanged")
+            app.dispatcher.removeObserver(self, "glyphViewGlyphsChanged")
             event.accept()
         else:
             event.ignore()

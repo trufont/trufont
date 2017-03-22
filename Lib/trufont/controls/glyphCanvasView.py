@@ -224,13 +224,16 @@ class GlyphCanvasView(GlyphContextView):
             self.drawingColor("componentFillColor", flags)
         drawFill = self._preview or self.drawingAttribute(
             "showGlyphFill", flags)
+        drawComponentFill = self._preview or self.drawingAttribute(
+            "showComponentFill", flags)
         drawSelection = not self._preview and self.drawingAttribute(
             "showGlyphSelection", flags)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
             contourFillColor=contourFillColor,
             componentFillColor=componentFillColor,
-            drawFill=drawFill, drawSelection=drawSelection, drawStroke=False)
+            drawFill=drawFill, drawComponentFill=drawComponentFill,
+            drawSelection=drawSelection, drawStroke=False)
         if self._preview or \
                 not self._impliedPointSize > GlyphViewMinSizeForDetails:
             return
@@ -251,12 +254,12 @@ class GlyphCanvasView(GlyphContextView):
     def drawStroke(self, painter, glyph, flags):
         drawDetails = self._impliedPointSize > GlyphViewMinSizeForDetails
         drawStroke = self.drawingAttribute("showGlyphStroke", flags)
-        drawComponentsStroke = self.drawingAttribute(
-            "showComponentsStroke", flags)
+        drawComponentStroke = self.drawingAttribute(
+            "showComponentStroke", flags)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
-            drawFill=False, drawComponentsFill=False, drawStroke=drawStroke,
-            drawComponentsStroke=drawComponentsStroke, drawSelection=False,
+            drawFill=False, drawComponentFill=False, drawStroke=drawStroke,
+            drawComponentStroke=drawComponentStroke, drawSelection=False,
             partialAliasing=drawDetails)
 
     def drawAnchors(self, painter, glyph, flags):
