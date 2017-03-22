@@ -484,17 +484,18 @@ class PropertiesWidget(QWidget):
         rightMargin = None
         markColor = None
         if self._glyph is not None:
-            name = self._glyph.name
+            glyph = self._glyph
+            name = glyph.name
+            if glyph.leftMargin is not None:
+                leftMargin = round(glyph.leftMargin)
+            if glyph.rightMargin is not None:
+                rightMargin = round(glyph.rightMargin)
+            foreGlyph = glyph.font[glyph.name]
             unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" %
-                                u for u in self._glyph.unicodes)
-            width = round(self._glyph.width)
-            if self._glyph.leftMargin is not None:
-                leftMargin = round(self._glyph.leftMargin)
-            if self._glyph.rightMargin is not None:
-                rightMargin = round(self._glyph.rightMargin)
-            if self._glyph.markColor is not None:
-                markColor = QColor.fromRgbF(
-                    *tuple(self._glyph.markColor))
+                                u for u in foreGlyph.unicodes)
+            width = round(foreGlyph.width)
+            if foreGlyph.markColor is not None:
+                markColor = QColor.fromRgbF(*tuple(foreGlyph.markColor))
 
         self.nameEdit.setText(name)
         self.unicodesEdit.setText(unicodes)

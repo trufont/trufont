@@ -28,8 +28,8 @@ class ExportDialog(QDialog):
         self.compressionBtnSet.setOptions(["None", "WOFF", "WOFF2"])
         self.compressionBtnSet.setSelectionMode(ButtonSet.OneOrMoreSelection)
         self.numberLabel = QLabel(self)
-        self.formatBtnSet.buttonClicked.connect(self.updateNumbers)
-        self.compressionBtnSet.buttonClicked.connect(self.updateNumbers)
+        self.formatBtnSet.clicked.connect(self.updateNumbers)
+        self.compressionBtnSet.clicked.connect(self.updateNumbers)
 
         self.removeOverlapBox = QCheckBox(self.tr("Remove Overlap"), self)
         # self.removeOverlapBox.setChecked(True)  # XXX: implement
