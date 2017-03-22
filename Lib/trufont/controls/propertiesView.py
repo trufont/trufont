@@ -656,10 +656,13 @@ class PropertiesWidget(QWidget):
         if self.sender().property("inverted"):
             value = -value
         # apply
+        hasSelection = _glyphHasSelection(glyph)
+        representation = "TruFont.FilterSelection" if hasSelection else None
+        origin = self.alignmentWidget.origin(representation=representation)
         bareFunc = glyph.transform
-        if _glyphHasSelection(glyph):
+        if hasSelection:
             glyph.transform = functools.partial(_partialTransform, glyph)
-        glyph.skew((value, 0))
+        glyph.skew((value, 0), offset=origin)
         glyph.transform = bareFunc
 
     def snapGlyph(self):

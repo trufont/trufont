@@ -428,9 +428,9 @@ class TGlyph(Glyph):
             contour.drawPoints(pointPen)
 
     def scale(self, pt, center=(0, 0)):
-        dx, dy = center[0], center[1]
-        sT = Identity.translate(dx, dy)
+        dx, dy = center
         x, y = pt
+        sT = Identity.translate(dx, dy)
         sT = sT.scale(x=x, y=y)
         sT = sT.translate(-dx, -dy)
         self.transform(sT)
@@ -446,18 +446,21 @@ class TGlyph(Glyph):
             guideline.transform(matrix)
 
     def rotate(self, angle, offset=(0, 0)):
+        dx, dy = offset
         radAngle = math.radians(angle)
-        rT = Identity.translate(offset[0], offset[1])
+        rT = Identity.translate(dx, dy)
         rT = rT.rotate(radAngle)
-        rT = rT.translate(-offset[0], -offset[1])
+        rT = rT.translate(-dx, -dy)
         self.transform(rT)
 
     def skew(self, angle, offset=(0, 0)):
-        xRad = math.radians(angle[0])
-        yRad = math.radians(angle[1])
-        rT = Identity.translate(offset[0], offset[1])
-        rT = rT.skew(xRad, yRad)
-        self.transform(rT)
+        dx, dy = offset
+        x, y = angle
+        x, y = math.radians(x), math.radians(y)
+        sT = Identity.translate(dx, dy)
+        sT = sT.skew(x, y)
+        sT = sT.translate(-dx, -dy)
+        self.transform(sT)
 
     def snap(self, base):
         for contour in self:
@@ -628,10 +631,12 @@ class TContour(Contour):
         return self[index % len(self)]
 
     def scale(self, pt, center=(0, 0)):
-        for point in self:
-            point.x, point.y = _scalePointFromCenter(
-                (point.x, point.y), pt, center)
-        self.dirty = True
+        dx, dy = center
+        x, y = pt
+        sT = Identity.translate(dx, dy)
+        sT = sT.scale(x, y)
+        sT = sT.translate(-dx, -dy)
+        self.transform(sT)
 
     def transform(self, matrix):
         for point in self:
@@ -670,8 +675,12 @@ class TAnchor(Anchor):
         doc="A boolean indicating the selected state of the anchor.")
 
     def scale(self, pt, center=(0, 0)):
-        self.x, self.y = _scalePointFromCenter(
-            (self.x, self.y), pt, center)
+        dx, dy = center
+        x, y = pt
+        sT = Identity.translate(dx, dy)
+        sT = sT.scale(x, y)
+        sT = sT.translate(-dx, -dy)
+        self.transform(sT)
 
     def transform(self, matrix):
         self.x, self.y = matrix.transformPoint((self.x, self.y))
@@ -701,14 +710,12 @@ class TComponent(Component):
         doc="A boolean indicating the selected state of the component.")
 
     def scale(self, pt, center=(0, 0)):
+        dx, dy = center
         x, y = pt
-        xScale, xyScale, yxScale, yScale, xOffset, yOffset = \
-            self._transformation
-        xOffset, yOffset = _scalePointFromCenter(
-            (xOffset, yOffset), pt, center)
-        xScale, yScale = xScale * x, yScale * y
-        self.transformation = (
-            xScale, xyScale, yxScale, yScale, xOffset, yOffset)
+        sT = Identity.translate(dx, dy)
+        sT = sT.scale(x, y)
+        sT = sT.translate(-dx, -dy)
+        self.transform(sT)
 
     def transform(self, matrix):
         self.transformation = tuple(matrix.transform(self.transformation))
@@ -766,12 +773,14 @@ class TGuideline(Guideline):
         doc="A boolean indicating the selected state of the guideline.")
 
     def scale(self, pt, center=(0, 0)):
-        # TODO: handle the angle
-        self.x, self.y = _scalePointFromCenter(
-            (self.x, self.y), pt, center)
+        dx, dy = center
+        x, y = pt
+        sT = Identity.translate(dx, dy)
+        sT = sT.scale(x, y)
+        sT = sT.translate(-dx, -dy)
+        self.transform(sT)
 
     def transform(self, matrix):
-        # TODO: handle the angle
         self.x, self.y = matrix.transformPoint((self.x, self.y))
 
     def snap(self, base):
@@ -870,18 +879,6 @@ class UndoManager(QObject):
             self.canUndoChanged.emit(True)
         if not self.canRedo():
             self.canRedoChanged.emit(False)
-
-
-def _scalePointFromCenter(point, scale, center):
-    pointX, pointY = point
-    scaleX, scaleY = scale
-    centerX, centerY = center
-    ogCenter = (centerX, centerY)
-    scaledCenter = (centerX * scaleX, centerY * scaleY)
-    shiftVal = (scaledCenter[0] - ogCenter[0], scaledCenter[1] - ogCenter[1])
-    scaledPointX = (pointX * scaleX) - shiftVal[0]
-    scaledPointY = (pointY * scaleY) - shiftVal[1]
-    return (scaledPointX, scaledPointY)
 
 
 def _snap(x, base=5):
