@@ -659,7 +659,6 @@ class FontWindow(BaseWindow):
             glyphs = widget.glyphs()
             for index in widget.selection():
                 glyph = glyphs[index]
-                glyph.prepareUndo()
                 glyph.clear()
 
     def copy(self):
@@ -724,7 +723,8 @@ class FontWindow(BaseWindow):
                         pasteGlyph.selected = True
                         if len(pasteGlyph) or len(pasteGlyph.components) or \
                                 len(pasteGlyph.anchors):
-                            glyph.prepareUndo()
+                            glyph.beginUndoGroup()
+                            glyph.holdNotifications()
                             pen = glyph.getPointPen()
                             # contours, components
                             pasteGlyph.drawPoints(pen)
@@ -734,9 +734,9 @@ class FontWindow(BaseWindow):
                                 anchor._glyph = None
                                 anchor.selected = True
                                 glyph.appendAnchor(anchor)
+                            glyph.releaseHeldNotifications()
+                            glyph.endUndoGroup()
                     else:
-                        # XXX: prune
-                        glyph.prepareUndo()
                         glyph.deserialize(pickled)
         elif mimeData.hasText():
             if len(glyphs) == 1:
@@ -748,10 +748,11 @@ class FontWindow(BaseWindow):
                         text, otherGlyph, otherGlyph.getPointPen())
                 except:
                     return
-                glyph.prepareUndo()
+                glyph.beginUndoGroup()
                 if not isGlyphTab:
                     glyph.clear()
                 otherGlyph.drawPoints(glyph.getPointPen())
+                glyph.beginUndoGroup()
 
     def selectAll(self):
         widget = self.stackWidget.currentWidget()
@@ -790,8 +791,6 @@ class FontWindow(BaseWindow):
                 deleteUISelection(glyph)
             else:
                 preserveShape = not modifiers & Qt.ShiftModifier
-                # TODO: prune
-                glyph.prepareUndo()
                 removeUIGlyphElements(glyph, preserveShape)
         else:
             erase = modifiers & Qt.ShiftModifier

@@ -64,14 +64,12 @@ class SelectionTool(BaseTool):
         self._oldSelection = set()
         self._rubberBandRect = None
         self._shouldMove = False
-        self._shouldPrepareUndo = False
 
     # helpers
 
     def _createAnchor(self, *_):
         widget = self.parent()
         glyph = self._glyph
-        glyph.prepareUndo()
         pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
         # remove template anchors
         for anchor in glyph.anchors:
@@ -87,7 +85,6 @@ class SelectionTool(BaseTool):
     def _createComponent(self, *_):
         widget = self.parent()
         glyph = self._glyph
-        glyph.prepareUndo()
         newGlyph, ok = AddComponentDialog.getNewGlyph(widget, glyph)
         if ok and newGlyph is not None:
             component = glyph.instantiateComponent()
@@ -97,7 +94,6 @@ class SelectionTool(BaseTool):
     def _createGuideline(self, *_):
         widget = self.parent()
         glyph = self._glyph
-        glyph.prepareUndo()
         pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
         content = dict(x=pos.x(), y=pos.y())
         guideline = glyph.instantiateGuideline(content)
@@ -181,7 +177,6 @@ class SelectionTool(BaseTool):
         if point.segmentType == "line":
             if action == "insert":
                 index = contour.index(point) or len(contour)
-                self._glyph.prepareUndo()
                 contour.holdNotifications()
                 for i, t in enumerate((.35, .65)):
                     xt = prev.x + t * (point.x - prev.x)
@@ -195,7 +190,7 @@ class SelectionTool(BaseTool):
             return True
         if action == "selectContour":
             contour.selected = not contour.selected
-            self._shouldMove = self._shouldPrepareUndo = True
+            self._shouldMove = True
         return True
 
     def _maybeJoinContour(self, pos):
@@ -266,7 +261,6 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         newName, ok = RenameDialog.getNewName(widget, item.name)
         if ok:
-            self._glyph.prepareUndo()
             item.name = newName
 
     def _reverse(self, target=None):
@@ -278,14 +272,14 @@ class SelectionTool(BaseTool):
             target = selectedContours or self._glyph
         if not target:
             return
-        self._glyph.prepareUndo()
+        self._glyph.holdNotifications()
         for contour in target:
             contour.reverse()
+        self._glyph.releaseHeldNotifications()
 
     def _setStartPoint(self, contour, index):
         if not index:
             return
-        self._glyph.prepareUndo()
         contour.setStartPoint(index)
 
     # events
@@ -340,8 +334,6 @@ class SelectionTool(BaseTool):
         key = event.key()
         # XXX: this shouldn't be tool-specific!
         if key in arrowKeys:
-            # TODO: prune
-            self._glyph.prepareUndo()
             dx, dy = self._moveForEvent(event)
             modifiers = event.modifiers()
             slidePoints = modifiers & Qt.AltModifier
@@ -359,18 +351,19 @@ class SelectionTool(BaseTool):
                 contour.postNotification(
                     notification="Contour.SelectionChanged")
         elif key == Qt.Key_Return:
-            changed = False
+            self._glyph.beginUndoGroup()
             for contour in self._glyph:
                 for index, point in enumerate(contour):
+                    changed = False
                     if point.segmentType is not None and point.selected:
                         if all(contour.getPoint(
                                 index + d).segmentType for d in (-1, 1)):
                             continue
-                        if not changed:
-                            self._glyph.prepareUndo()
-                            changed = True
                         point.smooth = not point.smooth
-                    contour.dirty = True
+                        changed = True
+                    if changed:
+                        contour.dirty = True
+            self._glyph.endUndoGroup()
 
     def mousePressEvent(self, event):
         if event.button() != Qt.LeftButton:
@@ -378,6 +371,8 @@ class SelectionTool(BaseTool):
             return
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ControlModifier
+        self._glyph.beginUndoGroup()
+        print("begin:press:")
         self._origin = self._prevPos = pos = self.magnetPos(event.localPos())
         self._mouseItem = widget.itemAt(self._origin)
         if self._mouseItem is not None:
@@ -392,7 +387,6 @@ class SelectionTool(BaseTool):
             if contour is not None:
                 contour.postNotification(
                     notification="Contour.SelectionChanged")
-            self._shouldPrepareUndo = True
         else:
             action = "insert" if event.modifiers() & Qt.AltModifier else None
             segmentTuple = self._findSegmentUnderMouse(pos, action)
@@ -408,8 +402,8 @@ class SelectionTool(BaseTool):
                     unselectUIGlyphElements(self._glyph)
                 self._performSegmentClick(pos, action, segmentTuple)
             else:
-                self._shouldMove = self._shouldPrepareUndo = True
-        if self._shouldPrepareUndo:
+                self._shouldMove = True
+        if self._mouseItem is not None or self._shouldMove:
             self._oldPath = self._glyph.getRepresentation(
                 "defconQt.NoComponentsQPainterPath")
         widget.update()
@@ -422,9 +416,6 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         if self._shouldMove or self._mouseItem is not None:
             canvasPos = event.pos()
-            if self._shouldPrepareUndo:
-                self._glyph.prepareUndo()
-                self._shouldPrepareUndo = False
             modifiers = event.modifiers()
             if modifiers & Qt.ShiftModifier:
                 # we clamp to the mouseDownPos, unless we have a
@@ -475,6 +466,7 @@ class SelectionTool(BaseTool):
             self._oldSelection = set()
             self._rubberBandRect = None
             self._shouldMove = False
+            self._glyph.endUndoGroup()
             self.parent().update()
         else:
             super().mouseReleaseEvent(event)
@@ -482,6 +474,7 @@ class SelectionTool(BaseTool):
     def mouseDoubleClickEvent(self, event):
         widget = self.parent()
         self._mouseItem = item = widget.itemAt(self._origin)
+        self._glyph.beginUndoGroup()
         if item is not None:
             if isinstance(item, tuple):
                 contour, index = item
@@ -504,9 +497,9 @@ class SelectionTool(BaseTool):
                 widget.mapFromCanvas(event.localPos()))
             if index is not None:
                 widget.setActiveIndex(index)
-                # since we shuffle the coordinates system, flush the rubber
-                # band
-                self._rubberBandRect = None
+                # since we shuffle the coordinates system, flush the origin
+                self._origin.setX(0)
+                self._origin.setY(0)
 
     # custom painting
 

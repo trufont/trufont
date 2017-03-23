@@ -132,8 +132,7 @@ def deleteUISelection(glyph):
             point.selected = not point.selected
         contour.postNotification("Contour.SelectionChanged")
     cutGlyph = glyph.getRepresentation("TruFont.FilterSelection")
-    glyph.prepareUndo()
-    glyph.holdNotifications()
+    glyph.beginUndoGroup()
     glyph.clear()
     pen = glyph.getPointPen()
     cutGlyph.drawPoints(pen)
@@ -141,7 +140,7 @@ def deleteUISelection(glyph):
     for anchor in cutGlyph.anchors:
         anchor._glyph = None
     glyph.anchors = cutGlyph.anchors
-    glyph.releaseHeldNotifications()
+    glyph.removeUndoGroup()
 
 
 def removeUISelection(contour, preserveShape=True):
@@ -201,6 +200,7 @@ def UIGlyphGuidelines(glyph):
 
 
 def moveUIGlyphElements(glyph, dx, dy, slidePoints=False):
+    glyph.beginUndoGroup()
     for anchor in glyph.anchors:
         if anchor.selected:
             anchor.move((dx, dy))
@@ -216,9 +216,11 @@ def moveUIGlyphElements(glyph, dx, dy, slidePoints=False):
     image = glyph.image
     if image.selected:
         image.move((dx, dy))
+    glyph.endUndoGroup()
 
 
 def removeUIGlyphElements(glyph, preserveShape):
+    glyph.beginUndoGroup()
     for anchor in glyph.anchors:
         if anchor.selected:
             glyph.removeAnchor(anchor)
@@ -233,6 +235,7 @@ def removeUIGlyphElements(glyph, preserveShape):
             parent.removeGuideline(guideline)
     if glyph.image.selected:
         glyph.image = None
+    glyph.endUndoGroup()
 
 
 def unselectUIGlyphElements(glyph):

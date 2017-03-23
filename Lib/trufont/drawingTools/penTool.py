@@ -162,11 +162,11 @@ class PenTool(BaseTool):
         if event.button() != Qt.LeftButton:
             super().mousePressEvent(event)
             return
+        self._glyph.beginUndoGroup()
         self._origin = event.localPos()
         widget = self.parent()
         candidate = self._getSelectedCandidatePoint()
         mouseItem = widget.itemAt(self._origin)
-        self._glyph.prepareUndo()
         # if we clicked on an item, see if we should join the current contour
         if isinstance(mouseItem, tuple):
             contour, index = mouseItem
@@ -290,5 +290,6 @@ class PenTool(BaseTool):
             self._shouldMoveOnCurve = False
             self._stashedOffCurve = None
             self._targetContour = None
+            self._glyph.endUndoGroup()
         else:
             super().mouseReleaseEvent(event)

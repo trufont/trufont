@@ -624,7 +624,6 @@ class PropertiesWidget(QWidget):
         # TODO: consider disabling the buttons in that case?
         if glyph is None:
             return
-        glyph.prepareUndo()
         sX = self.scaleXEdit.value()
         if not self.scaleYEdit.isEnabled():
             sY = sX
@@ -648,7 +647,6 @@ class PropertiesWidget(QWidget):
         glyph = self._glyph
         if glyph is None:
             return
-        glyph.prepareUndo()
         value = self.rotateEdit.value()
         if self.sender().property("inverted"):
             value = -value
@@ -666,7 +664,6 @@ class PropertiesWidget(QWidget):
         glyph = self._glyph
         if glyph is None:
             return
-        glyph.prepareUndo()
         value = self.skewEdit.value()
         if self.sender().property("inverted"):
             value = -value
@@ -684,7 +681,6 @@ class PropertiesWidget(QWidget):
         glyph = self._glyph
         if glyph is None:
             return
-        glyph.prepareUndo()
         base = self.snapEdit.value()
         # apply
         # TODO: this doesn't go by selection
@@ -697,7 +693,6 @@ class PropertiesWidget(QWidget):
         glyph = self._glyph
         if not glyph:
             return
-        glyph.prepareUndo()
         target, others = [], []
         useSelection = bool(glyph.selection)
         for contour in glyph:
@@ -708,18 +703,19 @@ class PropertiesWidget(QWidget):
                 others.append(contour)
                 continue
             target.append(contour)
+        glyph.beginUndoGroup()
         glyph.clearContours()
         pointPen = glyph.getPointPen()
         booleanOperations.union(target, pointPen)
         for contour in others:
             contour.drawPoints(pointPen)
+        glyph.endUndoGroup()
 
     def _binaryBooleanOperation(self, func):
         # TODO: disable button instead
         glyph = self._glyph
         if glyph is None or len(glyph) < 2:
             return
-        glyph.prepareUndo()
         target, open_ = None, []
         delIndex = None
         others = list(glyph)
@@ -734,11 +730,13 @@ class PropertiesWidget(QWidget):
         else:
             target = glyph[-1]
             del others[-1]
+        glyph.beginUndoGroup()
         glyph.clearContours()
         pointPen = glyph.getPointPen()
         func(others, [target], pointPen)
         for contour in open_:
             contour.drawPoints(pointPen)
+        glyph.endUndoGroup()
 
     def subtract(self):
         self._binaryBooleanOperation(booleanOperations.difference)
@@ -755,7 +753,6 @@ class PropertiesWidget(QWidget):
         glyph = self._glyph
         if not glyph:
             return
-        glyph.prepareUndo()
         points = glyph.selection
         useSelection = bool(points)
         vMin = vMax = None
@@ -776,6 +773,7 @@ class PropertiesWidget(QWidget):
         for point in points:
             value = base - getattr(point, attr)
             setattr(point, attr, value)
+        glyph.postNotification("Glyph.ContoursChanged")
         glyph.dirty = True
 
     def hMirror(self):
@@ -804,11 +802,12 @@ class PropertiesWidget(QWidget):
                     xMin_all = xMin
         if not selectedContours:
             return
-        glyph.prepareUndo()
+        glyph.holdNotifications()
         for contour, xMin in selectedContours:
             if xMin > xMin_all:
                 delta = xMin_all - xMin
                 contour.move((delta, 0))
+        glyph.releaseHeldNotifications()
 
     def alignHCenter(self):
         glyph = self._glyph
@@ -834,13 +833,14 @@ class PropertiesWidget(QWidget):
                     xMax_all = xMax
         if not selectedContours:
             return
-        glyph.prepareUndo()
+        glyph.holdNotifications()
         xAvg_all = xMin_all + round(.5 * (xMax_all - xMin_all))
         for contour, xMin, xMax in selectedContours:
             xAvg = xMin + round(.5 * (xMax - xMin))
             if xAvg != xAvg_all:
                 delta = xAvg_all - xAvg
                 contour.move((delta, 0))
+        glyph.releaseHeldNotifications()
 
     def alignHRight(self):
         glyph = self._glyph
@@ -862,11 +862,12 @@ class PropertiesWidget(QWidget):
                     xMax_all = xMax
         if not selectedContours:
             return
-        glyph.prepareUndo()
+        glyph.holdNotifications()
         for contour, xMax in selectedContours:
             if xMax < xMax_all:
                 delta = xMax_all - xMax
                 contour.move((delta, 0))
+        glyph.releaseHeldNotifications()
 
     def alignVTop(self):
         glyph = self._glyph
@@ -888,11 +889,12 @@ class PropertiesWidget(QWidget):
                     yMax_all = yMax
         if not selectedContours:
             return
-        glyph.prepareUndo()
+        glyph.holdNotifications()
         for contour, yMax in selectedContours:
             if yMax < yMax_all:
                 delta = yMax_all - yMax
                 contour.move((0, delta))
+        glyph.releaseHeldNotifications()
 
     def alignVCenter(self):
         glyph = self._glyph
@@ -918,13 +920,14 @@ class PropertiesWidget(QWidget):
                     yMax_all = yMax
         if not selectedContours:
             return
-        glyph.prepareUndo()
+        glyph.holdNotifications()
         yAvg_all = yMin_all + round(.5 * (yMax_all - yMin_all))
         for contour, yMin, yMax in selectedContours:
             yAvg = yMin + round(.5 * (yMax - yMin))
             if yAvg != yAvg_all:
                 delta = yAvg_all - yAvg
                 contour.move((0, delta))
+        glyph.releaseHeldNotifications()
 
     def alignVBottom(self):
         glyph = self._glyph
@@ -946,11 +949,12 @@ class PropertiesWidget(QWidget):
                     yMin_all = yMin
         if not selectedContours:
             return
-        glyph.prepareUndo()
+        glyph.holdNotifications()
         for contour, yMin in selectedContours:
             if yMin > yMin_all:
                 delta = yMin_all - yMin
                 contour.move((0, delta))
+        glyph.releaseHeldNotifications()
 
     # layer operations
 

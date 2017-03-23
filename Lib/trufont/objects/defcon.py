@@ -3,9 +3,9 @@ from defcon import (
     Font, Layer, Glyph, Groups, Kerning, Contour, Point, Anchor, Component,
     Guideline, Image)
 from fontTools.misc.transform import Identity
-from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
 from trufont.objects import settings
+from trufont.objects.undoManager import UndoManager
 from ufo2ft import compileOTF, compileTTF
 import fontTools
 import math
@@ -214,6 +214,11 @@ class TLayer(Layer):
 
         return glyph
 
+    def loadGlyph(self, name):
+        glyph = super().loadGlyph(name)
+        glyph._undoManager = UndoManager(glyph)
+        return glyph
+
     def _glyphsReloadFilter(self, glyphNames):
         for glyphName in glyphNames:
             if glyphName in self and self[glyphName].template:
@@ -241,7 +246,6 @@ class TGlyph(Glyph):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._template = False
-        self._undoManager = UndoManager(self)
 
     def __repr__(self):
         return "<%s %s (%s)>" % (
@@ -416,16 +420,16 @@ class TGlyph(Glyph):
         return len(glyph) != length
 
     def removeOverlap(self):
-        # TODO: maybe clear undo stack if no changes
-        self.prepareUndo()
         open_, closed = [], []
         for contour in self:
             (open_ if contour.open else closed).append(contour)
+        self.beginUndoGroup()
         self.clearContours()
         pointPen = self.getPointPen()
         union(closed, pointPen)
         for contour in open_:
             contour.drawPoints(pointPen)
+        self.endUndoGroup()
 
     def scale(self, pt, center=(0, 0)):
         dx, dy = center
@@ -436,6 +440,7 @@ class TGlyph(Glyph):
         self.transform(sT)
 
     def transform(self, matrix):
+        self.beginUndoGroup()
         for contour in self:
             contour.transform(matrix)
         for component in self.components:
@@ -444,6 +449,7 @@ class TGlyph(Glyph):
             anchor.transform(matrix)
         for guideline in self.guidelines:
             guideline.transform(matrix)
+        self.endUndoGroup()
 
     def rotate(self, angle, offset=(0, 0)):
         dx, dy = offset
@@ -463,6 +469,7 @@ class TGlyph(Glyph):
         self.transform(sT)
 
     def snap(self, base):
+        self.beginUndoGroup()
         for contour in self:
             contour.snap(base)
         for component in self.components:
@@ -471,6 +478,7 @@ class TGlyph(Glyph):
             anchor.snap(base)
         for guideline in self.guidelines:
             guideline.snap(base)
+        self.endUndoGroup()
 
 
 class TKerning(Kerning):
@@ -810,75 +818,6 @@ class TImage(Image):
     selected = property(
         _get_selected, _set_selected,
         doc="A boolean indicating the selected state of the anchor.")
-
-
-class UndoManager(QObject):
-    canUndoChanged = pyqtSignal(bool)
-    canRedoChanged = pyqtSignal(bool)
-
-    def __init__(self, parent):
-        super().__init__()
-        self._undoStack = []
-        self._redoStack = []
-        self._parent = parent
-        self._shouldBackupCurrent = False
-
-    def prepareTarget(self, title=None):
-        data = self._parent.serialize()
-        undoWasLocked = not self.canUndo()
-        redoWasEnabled = self.canRedo()
-        # prune eventual redo and add push state
-        self._redoStack = []
-        self._undoStack.append((data, title))
-        # set ptr to current state
-        self._shouldBackupCurrent = True
-        if undoWasLocked:
-            self.canUndoChanged.emit(True)
-        if redoWasEnabled:
-            self.canRedoChanged.emit(False)
-
-    def canUndo(self):
-        return bool(len(self._undoStack))
-
-    def getUndoTitle(self, index):
-        data = self._undoStack[index]
-        return data[1]
-
-    def undo(self, index):
-        data = self._undoStack[index]
-        redoWasLocked = not self.canRedo()
-        if self._shouldBackupCurrent:
-            forwardData = self._parent.serialize()
-            self._redoStack.append((forwardData, None))
-        self._parent.deserialize(data[0])
-        self._redoStack = self._undoStack[index:] + self._redoStack
-        self._undoStack = self._undoStack[:index]
-        self._shouldBackupCurrent = False
-        if redoWasLocked:
-            self.canRedoChanged.emit(True)
-        if not self.canUndo():
-            self.canUndoChanged.emit(False)
-
-    def canRedo(self):
-        return bool(len(self._redoStack))
-
-    def getRedoTitle(self, index):
-        data = self._redoStack[index]
-        return data[1]
-
-    def redo(self, index):
-        data = self._redoStack[index]
-        undoWasLocked = not self.canUndo()
-        self._parent.deserialize(data[0])
-        self._undoStack = self._undoStack + self._redoStack[:index+1]
-        if index + 1 < len(self._redoStack):
-            self._redoStack = self._redoStack[index+1:]
-        else:
-            self._redoStack = []
-        if undoWasLocked:
-            self.canUndoChanged.emit(True)
-        if not self.canRedo():
-            self.canRedoChanged.emit(False)
 
 
 def _snap(x, base=5):

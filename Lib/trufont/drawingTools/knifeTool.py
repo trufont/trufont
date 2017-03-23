@@ -104,7 +104,7 @@ class KnifeTool(BaseTool):
         # no-move clicks
         if not self._cachedIntersections:
             return
-        self._glyph.prepareUndo()
+        self._glyph.beginUndoGroup()
         cutContours = not event.modifiers() & Qt.AltModifier and \
             len(self._cachedIntersections) > 1
         if cutContours:
@@ -203,6 +203,7 @@ class KnifeTool(BaseTool):
             self._glyph.clearContours()
             pen = self._glyph.getPointPen()
             newGlyph.drawPoints(pen)
+        self._glyph.endUndoGroup()
         ##
         self._cachedIntersections = None
 
