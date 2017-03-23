@@ -39,10 +39,22 @@ def altDeleteSequence():
     return None
 
 
+def altRedoSequence():
+    if sys.platform == "win32":
+        return "Ctrl+Shift+Z"
+    return None
+
+
 def closeKeySequence():
     if sys.platform == "win32":
         return "Ctrl+W"
     return QKeySequence.Close
+
+
+def previousTabSequence():
+    if sys.platform == "win32":
+        return "Ctrl+Shift+Tab"
+    return QKeySequence.PreviousChild
 
 
 def isDeleteEvent(event):

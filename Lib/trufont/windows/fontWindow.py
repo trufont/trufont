@@ -169,6 +169,9 @@ class FontWindow(BaseWindow):
         e = platformSpecific.altDeleteSequence()
         if e is not None:
             elements.append((e, self.delete))
+        e = platformSpecific.altRedoSequence()
+        if e is not None:
+            elements.append((e, self.redo))
         for keys, callback in elements:
             shortcut = QShortcut(QKeySequence(keys), self)
             shortcut.activated.connect(callback)

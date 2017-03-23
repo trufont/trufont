@@ -187,7 +187,7 @@ _shortcuts = {
     Entries.View_Zoom_Out: QKeySequence.ZoomOut,
     Entries.View_Reset_Zoom: "Ctrl+0",
     Entries.View_Next_Tab: QKeySequence.NextChild,
-    Entries.View_Previous_Tab: QKeySequence.PreviousChild,
+    Entries.View_Previous_Tab: platformSpecific.previousTabSequence(),
     Entries.View_Next_Glyph: "End",
     Entries.View_Previous_Glyph: "Home",
     Entries.View_Layer_Up: "PgUp",
