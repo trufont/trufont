@@ -92,6 +92,10 @@ class GlyphCanvasView(GlyphContextView):
             return
         if value != self._preview:
             self._preview = value
+            if value:
+                self.setCursor(Qt.OpenHandCursor)
+            else:
+                self.setCursor(self._currentTool.cursor)
             self.update()
 
     # -------------
@@ -414,7 +418,8 @@ class GlyphCanvasView(GlyphContextView):
         )
         app.postNotification("glyphViewMouseRelease", data)
         if hasattr(self, "_panOrigin"):
-            self.setCursor(self._currentTool.cursor)
+            if self._preview:
+                self.setCursor(Qt.OpenHandCursor)
             del self._panOrigin
         self._mouseDown = False
 
