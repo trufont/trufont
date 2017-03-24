@@ -40,6 +40,12 @@ class HandTool(BaseTool):
     name = QApplication.translate("HandTool", "Hand")
     shortcut = "H"
 
+    def toolActivated(self):
+        self.parent().setPreviewEnabled(True)
+
+    def toolDisabled(self):
+        self.parent().setPreviewEnabled(False)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             widget = self.parent()
