@@ -428,7 +428,7 @@ class SelectionTool(BaseTool):
                         p_ = c[i]
                         if p_.segmentType is None:
                             for d in (-1, 1):
-                                p__ = c[i+d]
+                                p__ = c[(i+d) % len(c)]
                                 if p__.segmentType is not None:
                                     canvasPos = self.clampToOrigin(
                                         canvasPos, QPointF(p__.x, p__.y))
