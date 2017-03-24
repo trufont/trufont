@@ -372,7 +372,6 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         addToSelection = event.modifiers() & Qt.ControlModifier
         self._glyph.beginUndoGroup()
-        print("begin:press:")
         self._origin = self._prevPos = pos = self.magnetPos(event.localPos())
         self._mouseItem = widget.itemAt(self._origin)
         if self._mouseItem is not None:

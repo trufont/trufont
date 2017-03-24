@@ -64,9 +64,9 @@ class UndoManager(QObject):
         self._undoStack = []
         self._redoStack = []
         self._cleanIndex = 0
-
         self._dumps = dict()
-        self._groupNotifications = []
+        self._groupNotifications = dict()
+        self._groupUndo = 0
 
         self._valueNotifications = n = dict()
         n["Glyph.NameChanged"] = self.tr("Name changed.")
@@ -121,19 +121,19 @@ class UndoManager(QObject):
     def _valueChanged(self, notification):
         name = notification.name
         data = notification.data
-        if self._groupNotifications:
-            if name not in self._groupNotifications[-1]:
-                self._groupNotifications[-1][name] = data
+        if self._groupUndo:
+            if name not in self._groupNotifications:
+                self._groupNotifications[name] = data
             else:
-                self._groupNotifications[-1][name][
+                self._groupNotifications[name][
                     "newValue"] = data["newValue"]
         else:
             self._pushValueChange(name, data)
 
     def _contentChanged(self, notification):
         name = notification.name
-        if self._groupNotifications:
-            self._groupNotifications[-1][name] = None
+        if self._groupUndo:
+            self._groupNotifications[name] = None
         else:
             self._pushContentChange(name)
 
@@ -174,27 +174,27 @@ class UndoManager(QObject):
     # basic API
 
     def beginUndoGroup(self):
-        self._groupNotifications.append(dict())
+        self._groupUndo += 1
 
     def endUndoGroup(self):
-        # XXX: we shouldn't be doing this
-        if not self._groupNotifications:
-            return
-        for name, data in self._groupNotifications[-1].items():
-            if data is None:
-                self._pushContentChange(name)
-            else:
-                self._pushValueChange(name, data)
-        del self._groupNotifications[-1]
+        assert self._groupUndo
+        self._groupUndo -= 1
+        if not self._groupUndo:
+            for name, data in self._groupNotifications.items():
+                if data is None:
+                    self._pushContentChange(name)
+                else:
+                    self._pushValueChange(name, data)
+            self._groupNotifications = dict()
 
     def canUndo(self):
-        return bool(self._undoStack)
+        return not self._groupUndo and bool(self._undoStack)
 
     def canRedo(self):
-        return bool(self._redoStack)
+        return not self._groupUndo and bool(self._redoStack)
 
     def undo(self):
-        if not self._undoStack:
+        if not self._undoStack or self._groupUndo:
             return
         glyph = self.glyph
         redoWasLocked = not self.canRedo()
@@ -223,7 +223,7 @@ class UndoManager(QObject):
             self.canUndoChanged.emit(False)
 
     def redo(self):
-        if not self._redoStack:
+        if not self._redoStack or self._groupUndo:
             return
         glyph = self.glyph
         undoWasLocked = not self.canUndo()
