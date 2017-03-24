@@ -59,8 +59,8 @@ class TextTool(BaseTool):
         self.parent().update()
 
     def drawingAttribute(self, attr, flags):
-        if flags.isActiveLayer and attr == "showGlyphFill":
-            return True
+        if flags.isActiveLayer:
+            return attr in ("showGlyphFill", "showGlyphComponentFill")
         return False
 
     def drawingColor(self, attr, flags):

@@ -302,14 +302,15 @@ def drawGlyphFillAndStroke(
                 selectedComponentPath, QBrush(componentFillColor))
         # components origin
         # TODO: make this a parameter, disable on sizes < MinDetails
-        painter.save()
-        pen = QPen(componentFillColor)
-        pen.setWidth(0)
-        painter.setPen(pen)
-        for x, y in originPts:
-            painter.drawLine(x, y + 5 * scale, x, y)
-            painter.drawLine(x, y, x + 4.5 * scale, y)
-        painter.restore()
+        if drawSelection:
+            painter.save()
+            pen = QPen(componentFillColor)
+            pen.setWidth(0)
+            painter.setPen(pen)
+            for x, y in originPts:
+                painter.drawLine(x, y + 5 * scale, x, y)
+                painter.drawLine(x, y, x + 4.5 * scale, y)
+            painter.restore()
     # selection
     if drawSelection:
         selectionPath = glyph.getRepresentation(
@@ -344,6 +345,7 @@ def drawGlyphFillAndStroke(
         pen = QPen(componentStrokeColor)
         pen.setWidth(0)
         painter.setPen(pen)
+        painter.drawPath(selectedComponentPath)
         painter.drawPath(componentPath)
     painter.restore()
 

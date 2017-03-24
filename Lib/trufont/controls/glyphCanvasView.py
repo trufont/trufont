@@ -229,7 +229,7 @@ class GlyphCanvasView(GlyphContextView):
         drawFill = self._preview or self.drawingAttribute(
             "showGlyphFill", flags)
         drawComponentFill = self._preview or self.drawingAttribute(
-            "showComponentFill", flags)
+            "showGlyphComponentFill", flags)
         drawSelection = not self._preview and self.drawingAttribute(
             "showGlyphSelection", flags)
         drawing.drawGlyphFillAndStroke(
@@ -259,7 +259,7 @@ class GlyphCanvasView(GlyphContextView):
         drawDetails = self._impliedPointSize > GlyphViewMinSizeForDetails
         drawStroke = self.drawingAttribute("showGlyphStroke", flags)
         drawComponentStroke = self.drawingAttribute(
-            "showComponentStroke", flags)
+            "showGlyphComponentStroke", flags)
         drawing.drawGlyphFillAndStroke(
             painter, glyph, self._inverseScale,
             drawFill=False, drawComponentFill=False, drawStroke=drawStroke,
