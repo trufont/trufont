@@ -165,6 +165,8 @@ class FontWindow(BaseWindow):
             (QKeySequence.Delete, self.delete),
             ("Shift+" + QKeySequence(
                 QKeySequence.Delete).toString(), self.delete),
+            ("Z", lambda: self.zoom(1)),
+            ("X", lambda: self.zoom(-1)),
         ]
         e = platformSpecific.altDeleteSequence()
         if e is not None:
