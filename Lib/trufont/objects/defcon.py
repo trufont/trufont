@@ -253,6 +253,12 @@ class TGlyph(Glyph):
         return "<%s %s (%s)>" % (
             self.__class__.__name__, self.name, self.layer.name)
 
+    def beginUndoGroup(self):
+        self._undoManager.beginUndoGroup()
+
+    def endUndoGroup(self):
+        self._undoManager.endUndoGroup()
+
     # observe anchor selection
 
     def beginSelfAnchorNotificationObservation(self, anchor):

@@ -40,6 +40,7 @@ def _glyphHasSelection(glyph):
 
 
 def _partialTransform(glyph, matrix):
+    glyph.beginUndoGroup()
     for contour in glyph:
         for point in contour:
             dirty = False
@@ -58,6 +59,7 @@ def _partialTransform(glyph, matrix):
     for guideline in glyph.guidelines:
         if guideline.selected:
             guideline.transform(matrix)
+    glyph.endUndoGroup()
 
 
 class SpinBox(QDoubleSpinBox):

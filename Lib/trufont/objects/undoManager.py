@@ -177,7 +177,9 @@ class UndoManager(QObject):
         self._groupUndo += 1
 
     def endUndoGroup(self):
-        assert self._groupUndo
+        if not self._groupUndo:
+            print("warning: unmatched endUndoGroup()")
+            return
         self._groupUndo -= 1
         if not self._groupUndo:
             for name, data in self._groupNotifications.items():
@@ -272,9 +274,3 @@ class UndoManager(QObject):
         if name in self._contentNotifications:
             return self._contentNotifications[name]
         return self._valueNotifications[name]
-
-    # defcon naming
-
-    getUndoText = undoText
-
-    getRedoText = redoText
