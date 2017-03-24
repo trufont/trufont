@@ -82,30 +82,11 @@ class UndoManager(QObject):
         n["Glyph.ImageChanged"] = self.tr("Image changed.")
 
         self._subscribeToGlyph()
-        self._dumpContents()
 
     def _subscribeToGlyph(self):
         glyph = self.glyph
         for name in self._valueNotifications.keys():
             glyph.addObserver(self, "_valueChanged", name)
-        for name in self._contentNotifications.keys():
-            glyph.addObserver(self, "_contentChanged", name)
-
-    def _unsubscribeFromGlyph(self):
-        glyph = self.glyph
-        for name in self._valueNotifications.keys():
-            glyph.removeObserver(self, name)
-        for name in self._contentNotifications.keys():
-            glyph.removeObserver(self, name)
-
-    @property
-    def glyph(self):
-        if self._glyph is None:
-            return None
-        return self._glyph()
-
-    def _dumpContents(self):
-        glyph = self.glyph
         for name in self._contentNotifications.keys():
             attr = _attrForNotification(name)
             data = None
@@ -117,6 +98,21 @@ class UndoManager(QObject):
                 data = [item.getDataForSerialization(
                     ) for item in getattr(glyph, attr)]
             self._dumps[name] = pickle.dumps(data)
+            glyph.addObserver(self, "_contentChanged", name)
+
+    def _unsubscribeFromGlyph(self):
+        glyph = self.glyph
+        for name in self._valueNotifications.keys():
+            glyph.removeObserver(self, name)
+        for name in self._contentNotifications.keys():
+            glyph.removeObserver(self, name)
+        self._dumps = dict()
+
+    @property
+    def glyph(self):
+        if self._glyph is None:
+            return None
+        return self._glyph()
 
     # -------------
     # Notifications
@@ -192,10 +188,10 @@ class UndoManager(QObject):
         del self._groupNotifications[-1]
 
     def canUndo(self):
-        return bool(len(self._undoStack))
+        return bool(self._undoStack)
 
     def canRedo(self):
-        return bool(len(self._redoStack))
+        return bool(self._redoStack)
 
     def undo(self):
         if not self._undoStack:
@@ -219,10 +215,8 @@ class UndoManager(QObject):
         # push as redo element
         self._redoStack.append(element)
 
-        # clean state?
         if len(self._undoStack) == self._cleanIndex:
             glyph.dirty = False
-
         if redoWasLocked:
             self.canRedoChanged.emit(True)
         if not self.canUndo():
@@ -250,6 +244,8 @@ class UndoManager(QObject):
         # push as undo element
         self._undoStack.append(element)
 
+        if len(self._undoStack) == self._cleanIndex:
+            glyph.dirty = False
         if undoWasLocked:
             self.canUndoChanged.emit(True)
         if not self.canRedo():

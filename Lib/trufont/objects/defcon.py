@@ -216,7 +216,12 @@ class TLayer(Layer):
 
     def loadGlyph(self, name):
         glyph = super().loadGlyph(name)
-        glyph._undoManager = UndoManager(glyph)
+        glyph.undoManager = UndoManager(glyph)
+        return glyph
+
+    def newGlyph(self, name):
+        glyph = super().newGlyph(name)
+        glyph.undoManager = UndoManager(glyph)
         return glyph
 
     def _glyphsReloadFilter(self, glyphNames):
