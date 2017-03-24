@@ -379,6 +379,10 @@ class GlyphCanvasView(GlyphContextView):
 
     def mousePressEvent(self, event):
         self._mouseDown = True
+        if self._preview:
+            self._panOrigin = event.globalPos()
+            self.setCursor(Qt.ClosedHandCursor)
+            return
         self._redirectEvent(event, self._currentTool.mousePressEvent, True)
         app = QApplication.instance()
         data = dict(
@@ -388,6 +392,11 @@ class GlyphCanvasView(GlyphContextView):
         app.postNotification("glyphViewMousePress", data)
 
     def mouseMoveEvent(self, event):
+        if self._preview and hasattr(self, "_panOrigin"):
+            pos = event.globalPos()
+            self.scrollBy(pos - self._panOrigin)
+            self._panOrigin = pos
+            return
         self._redirectEvent(event, self._currentTool.mouseMoveEvent, True)
         app = QApplication.instance()
         data = dict(
@@ -404,6 +413,9 @@ class GlyphCanvasView(GlyphContextView):
             widget=self,
         )
         app.postNotification("glyphViewMouseRelease", data)
+        if hasattr(self, "_panOrigin"):
+            self.setCursor(self._currentTool.cursor)
+            del self._panOrigin
         self._mouseDown = False
 
     def mouseDoubleClickEvent(self, event):
