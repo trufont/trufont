@@ -2,6 +2,7 @@ from PyQt5.QtCore import pyqtSignal, QSize
 from PyQt5.QtGui import QColor, QKeySequence, QPainter
 from PyQt5.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 from trufont.controls.pathButton import PathButton
+from trufont.drawingTools.handTool import HandTool
 
 
 class ToolBar(QWidget):
@@ -117,3 +118,10 @@ class ToolBar(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(event.rect(), QColor(240, 240, 240))
+
+    def handTool(self):
+        if not hasattr(self, '_handTool'):
+            for tool in self._tools:
+                if isinstance(tool, HandTool):
+                    self._handTool = tool
+        return self._handTool
