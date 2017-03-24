@@ -114,9 +114,6 @@ class TFont(Font):
         app.postNotification("fontWillSave", data)
         super().save(
             path, formatVersion, removeUnreferencedImages, progressBar)
-        for glyph in self:
-            glyph.dirty = False
-        self.dirty = False
         app.postNotification("fontSaved", data)
 
     def export(self, path, format="otf", compression=None, **kwargs):
