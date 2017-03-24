@@ -482,7 +482,6 @@ class SelectionTool(BaseTool):
                     if all(contour.getPoint(index + d).segmentType for d in (
                             -1, 1)):
                         return
-                    self._glyph.prepareUndo()
                     point.smooth = not point.smooth
                     contour.dirty = True
                     # if we have one offCurve, make it tangent
