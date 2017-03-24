@@ -450,8 +450,6 @@ class GlyphCanvasView(GlyphContextView):
         return True
 
     def _redirectEvent(self, event, callback, transmute=False):
-        if self._preview:
-            return
         # construct a new event with pos in canvas coordinates
         if transmute:
             if isinstance(event, QContextMenuEvent):
