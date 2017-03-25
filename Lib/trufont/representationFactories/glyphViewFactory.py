@@ -113,7 +113,7 @@ class FilterSelectionPen(AbstractPointPen):
             self.pen.endPath()
         self.offCurves = []
         # process
-        # NSC of non-direct compatibility (by elision-rotation):
+        # NSC of non-direct compatibility (i.e. by elision-rotation):
         # - first onCurve isn't a move
         # - last onCurve isn't dropped
         # - an onCurve is dropped in the contour
@@ -128,7 +128,7 @@ class FilterSelectionPen(AbstractPointPen):
                     self.recordData[:] = self.recordData[
                         index:] + self.recordData[:index]
                     break
-        # if the last onCurve is dropped, we need to correct the first poin
+        # if the last onCurve is dropped, we need to correct the first point
         # into a move + remove any preceding offCurves
         elif len(self.recordData) > 3 and not self.lastOnCurveSelected:
             self.recordData[1][1][1] = "move"
