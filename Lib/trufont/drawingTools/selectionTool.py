@@ -382,7 +382,10 @@ class SelectionTool(BaseTool):
                 item = contour[i]
             if not (item.selected or addToSelection):
                 unselectUIGlyphElements(self._glyph)
-            item.selected = True
+            if addToSelection:
+                item.selected = not item.selected
+            else:
+                item.selected = True
             if contour is not None:
                 contour.postNotification(
                     notification="Contour.SelectionChanged")

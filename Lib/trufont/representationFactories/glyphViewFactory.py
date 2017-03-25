@@ -1,9 +1,30 @@
 from PyQt5.QtCore import Qt
+from defcon.objects.contour import Recorder  # XXX: should be somewhere else
 from defconQt.representationFactories.glyphViewFactory import (
     OnlyComponentsQtPen)
 from fontTools.misc.transform import Transform
 from fontTools.pens.qtPen import QtPen
-from ufoLib.pointPen import PointToSegmentPen
+from ufoLib.pointPen import AbstractPointPen, PointToSegmentPen
+
+
+class MutRecorder(Recorder):
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(name)
+
+        def command(*args, **kwds):
+            self._data.append([name, list(args), kwds])
+        # cache the method, don't use __setattr__
+        self.__dict__[name] = command
+        return command
+
+
+def _reverseEnumerate(seq):
+    n = len(seq)
+    for obj in reversed(seq):
+        n -= 1
+        yield n, obj
 
 # -------------------
 # selected components
@@ -45,70 +66,120 @@ def ComponentQPainterPathFactory(component):
 
 def FilterSelectionFactory(glyph):
     copyGlyph = glyph.__class__()
-    pen = copyGlyph.getPointPen()
-    for anchor in glyph.anchors:
-        if anchor.selected:
-            anchorDict = dict(
-                x=anchor.x,
-                y=anchor.y,
-                name=anchor.name,
-                color=anchor.color,
-                identifier=anchor.identifier,
-            )
-            copyGlyph.appendAnchor(anchorDict)
-    for contour in glyph:
-        onCurvesSelected = True
-        for point in contour:
-            if point.segmentType and not point.selected:
-                onCurvesSelected = False
-                break
-        if onCurvesSelected:
-            contour.drawPoints(pen)
-        else:
-            # TODO: somehow make this into a pen?
-            # I'm wary of doing it because it warrants reordering and so on
-            segments = contour.segments
-            # put start point at the beginning of a subcontour
-            lastSubcontour = None
-            for index, segment in reversed(list(enumerate(segments))):
-                if segment[-1].selected:
-                    lastSubcontour = index
-                else:
-                    if lastSubcontour is not None:
-                        break
-            if lastSubcontour is None:
-                continue
-            segments = segments[lastSubcontour:] + segments[:lastSubcontour]
-            # now draw filtered
-            shouldMoveTo = True
-            for index, segment in enumerate(segments):
-                on = segment[-1]
-                if not on.selected:
-                    if not shouldMoveTo:
-                        pen.endPath()
-                        shouldMoveTo = True
-                    continue
-                if on.segmentType == "move" and not shouldMoveTo:
-                    pen.endPath()
-                    shouldMoveTo = True
-                if shouldMoveTo:
-                    pen.beginPath()
-                    pen.addPoint(
-                        (on.x, on.y), segmentType="move", smooth=on.smooth,
-                        name=on.name)
-                    shouldMoveTo = False
-                    continue
-                for point in segment:
-                    pen.addPoint(
-                        (point.x, point.y), segmentType=point.segmentType,
-                        smooth=point.smooth, name=point.name)
-            if not shouldMoveTo:
-                pen.endPath()
+    # points
+    pen = FilterSelectionPen(copyGlyph.getPointPen())
+    glyph.drawPoints(pen)
+    # other stuff
     for component in glyph.components:
         if component.selected:
             component.drawPoints(pen)
-    # XXX: guidelines, images?
+    for anchor in glyph.anchors:
+        if anchor.selected:
+            copyGlyph.appendAnchor(dict(anchor))
+    for guideline in glyph.guidelines:
+        if guideline.selected:
+            copyGlyph.appendGuideline(dict(guideline))
+    if glyph.image is not None:
+        if glyph.image.selected:
+            copyGlyph.image = dict(glyph.image)
     return copyGlyph
+
+
+class FilterSelectionPen(AbstractPointPen):
+
+    def __init__(self, outPen):
+        self.recordData = []
+        # TODO: use a more direct way of storage, like fontTools RecordingPen
+        self.pen = MutRecorder(self.recordData)
+        self.outPen = outPen
+
+        self.shouldBeginPath = True
+        self.offCurves = []
+        self.lastOnCurveSelected = False
+        self.onCurveDropped = False
+        self.firstOnCurveIsntMove = False
+
+    def beginPath(self, identifier=None, **kwargs):
+        self.atContourStart = self.shouldBeginPath = True
+        self.firstOnCurveIsntMove = self.lastOnCurveSelected = \
+            self.onCurveDropped = False
+
+    def endPath(self):
+        # end path
+        if not self.shouldBeginPath:
+            if self.offCurves:
+                for data, kwargs_ in self.offCurves:
+                    self.pen.addPoint(*data, **kwargs_)
+            self.pen.endPath()
+        self.offCurves = []
+        # process
+        # NSC of non-direct compatibility (by elision-rotation):
+        # - first onCurve isn't a move
+        # - last onCurve isn't dropped
+        # - an onCurve is dropped in the contour
+        if self.firstOnCurveIsntMove and self.lastOnCurveSelected and \
+                self.onCurveDropped:
+            # remove beginPath/endPath at source contour boundary
+            del self.recordData[0]
+            del self.recordData[-1]
+            # rotate source data to put the last beginPath in ident position
+            for index, (methodName, *_) in _reverseEnumerate(self.recordData):
+                if methodName == "beginPath":
+                    self.recordData[:] = self.recordData[
+                        index:] + self.recordData[:index]
+                    break
+        # if the last onCurve is dropped, we need to correct the first poin
+        # into a move + remove any preceding offCurves
+        elif len(self.recordData) > 3 and not self.lastOnCurveSelected:
+            self.recordData[1][1][1] = "move"
+            beginIndex = endIndex = None
+            for index, (_, args, _) in _reverseEnumerate(self.recordData[:-1]):
+                if args[1] is None:
+                    beginIndex = index
+                    if endIndex is None:
+                        endIndex = index
+                else:
+                    break
+            if endIndex is not None:
+                del self.recordData[beginIndex:endIndex]
+        self.pen(self.outPen)
+        self.recordData.clear()
+
+    def addPoint(self, pt, segmentType=None, smooth=False, name=None,
+                 identifier=None, **kwargs):
+        if segmentType is not None:
+            self.lastOnCurveSelected = selected = kwargs.get("selected")
+            if selected:
+                if self.atContourStart:
+                    self.firstOnCurveIsntMove = segmentType != "move"
+                elif self.shouldBeginPath:
+                    segmentType = "move"
+                if self.shouldBeginPath:
+                    self.pen.beginPath()
+                    self.pen.addPoint(
+                        pt, segmentType, smooth, name, identifier, **kwargs)
+                    self.shouldBeginPath = False
+                else:
+                    if self.offCurves:
+                        for data, kwargs_ in self.offCurves:
+                            self.pen.addPoint(*data, **kwargs_)
+                    assert segmentType != "move"
+                    self.pen.addPoint(
+                        pt, segmentType, smooth, name, identifier, **kwargs)
+                self.offCurves = []
+            else:
+                self.onCurveDropped = True
+                if not self.shouldBeginPath:
+                    self.pen.endPath()
+                    self.shouldBeginPath = True
+            self.atContourStart = False
+        else:
+            if not self.shouldBeginPath:
+                self.offCurves.append(
+                    ((pt, segmentType, smooth, name, identifier), kwargs))
+
+    def addComponent(self, *_):
+        pass
 
 
 def SelectedContoursQPainterPathFactory(glyph):
@@ -130,6 +201,7 @@ def SplitLinesQPainterPathFactory(glyph):
 
 
 class SplitLinesFromPathQtPen(QtPen):
+
     def __init__(self, glyphSet, path=None):
         super().__init__(glyphSet, path)
         self.lines = []
