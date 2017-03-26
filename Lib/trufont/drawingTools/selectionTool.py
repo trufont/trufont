@@ -76,10 +76,7 @@ class SelectionTool(BaseTool):
             if anchor.name == "new anchor":
                 glyph.removeAnchor(anchor)
         # add one at position
-        anchor = glyph.instantiateAnchor()
-        anchor.x = pos.x()
-        anchor.y = pos.y()
-        anchor.name = "new anchor"
+        anchor = dict(x=pos.x(), y=pos.y(), name="new anchor")
         glyph.appendAnchor(anchor)
 
     def _createComponent(self, *_):
@@ -95,8 +92,7 @@ class SelectionTool(BaseTool):
         widget = self.parent()
         glyph = self._glyph
         pos = widget.mapToCanvas(widget.mapFromGlobal(self._cachedPos))
-        content = dict(x=pos.x(), y=pos.y())
-        guideline = glyph.instantiateGuideline(content)
+        guideline = dict(x=pos.x(), y=pos.y(), angle=0)
         glyph.appendGuideline(guideline)
 
     def _goToGlyph(self, glyphName):

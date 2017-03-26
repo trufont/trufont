@@ -686,21 +686,23 @@ class FontWindow(BaseWindow):
         clipboard.setMimeData(mimeData)
 
     def copyAsComponent(self):
-        widget = self.stackWidget.currentWidget()
-        glyphs = widget.glyphs()
-        pickled = []
-        for index in widget.selection():
-            glyph = glyphs[index]
-            componentGlyph = glyph.__class__()
-            componentGlyph.width = glyph.width
-            component = componentGlyph.instantiateComponent()
-            component.baseGlyph = glyph.name
-            pickled.append(componentGlyph.serialize())
-        clipboard = QApplication.clipboard()
-        mimeData = QMimeData()
-        mimeData.setData("application/x-trufont-glyph-data",
-                         pickle.dumps(pickled))
-        clipboard.setMimeData(mimeData)
+        if self.isGlyphTab():
+            pass
+        else:
+            glyphs = self.glyphCellView.glyphs()
+            pickled = []
+            for index in self.glyphCellView.selection():
+                glyph = glyphs[index]
+                componentGlyph = glyph.__class__()
+                componentGlyph.width = glyph.width
+                component = componentGlyph.instantiateComponent()
+                component.baseGlyph = glyph.name
+                pickled.append(componentGlyph.serialize())
+            clipboard = QApplication.clipboard()
+            mimeData = QMimeData()
+            mimeData.setData("application/x-trufont-glyph-data",
+                             pickle.dumps(pickled))
+            clipboard.setMimeData(mimeData)
 
     def paste(self):
         isGlyphTab = self.isGlyphTab()
@@ -732,10 +734,10 @@ class FontWindow(BaseWindow):
                             pasteGlyph.drawPoints(pen)
                             # anchors
                             for anchor in pasteGlyph.anchors:
-                                # XXX: bad API
-                                anchor._glyph = None
-                                anchor.selected = True
-                                glyph.appendAnchor(anchor)
+                                glyph.appendAnchor(dict(anchor))
+                            # guidelines
+                            for guideline in pasteGlyph.guidelines:
+                                glyph.appendGuideline(dict(guideline))
                             glyph.releaseHeldNotifications()
                             glyph.endUndoGroup()
                     else:
