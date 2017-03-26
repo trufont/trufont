@@ -158,8 +158,11 @@ class UndoManager(QObject):
             del self._dumps["_shallowLoadedContours"]
         else:
             oldValue = self._dumps[name]
-        newValue = self._dumps[name] = pickle.dumps(
-            [item.getDataForSerialization() for item in getattr(glyph, attr)])
+        if attr == "image":
+            data = getattr(glyph, attr).getDataForSerialization()
+        else:
+            data = [item.getDataForSerialization() for item in getattr(glyph, attr)]
+        newValue = self._dumps[name] = pickle.dumps(data)
         data = dict(oldValue=oldValue, newValue=newValue)
 
         self._pushValueChange(name, data)

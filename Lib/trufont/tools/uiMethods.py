@@ -140,7 +140,7 @@ def deleteUISelection(glyph):
     for anchor in cutGlyph.anchors:
         anchor._glyph = None
     glyph.anchors = cutGlyph.anchors
-    glyph.removeUndoGroup()
+    glyph.endUndoGroup()
 
 
 def removeUISelection(contour, preserveShape=True):
