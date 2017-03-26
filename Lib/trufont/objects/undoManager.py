@@ -161,7 +161,8 @@ class UndoManager(QObject):
         if attr == "image":
             data = getattr(glyph, attr).getDataForSerialization()
         else:
-            data = [item.getDataForSerialization() for item in getattr(glyph, attr)]
+            data = [item.getDataForSerialization() for item in getattr(
+                glyph, attr)]
         newValue = self._dumps[name] = pickle.dumps(data)
         data = dict(oldValue=oldValue, newValue=newValue)
 
