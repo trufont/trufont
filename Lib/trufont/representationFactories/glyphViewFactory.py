@@ -7,19 +7,6 @@ from fontTools.pens.qtPen import QtPen
 from ufoLib.pointPen import AbstractPointPen, PointToSegmentPen
 
 
-class MutRecorder(Recorder):
-
-    def __getattr__(self, name):
-        if name.startswith('_'):
-            raise AttributeError(name)
-
-        def command(*args, **kwds):
-            self._data.append([name, list(args), kwds])
-        # cache the method, don't use __setattr__
-        self.__dict__[name] = command
-        return command
-
-
 def _reverseEnumerate(seq):
     n = len(seq)
     for obj in reversed(seq):
@@ -89,8 +76,7 @@ class FilterSelectionPen(AbstractPointPen):
 
     def __init__(self, outPen):
         self.recordData = []
-        # TODO: use a more direct way of storage, like fontTools RecordingPen
-        self.pen = MutRecorder(self.recordData)
+        self.pen = Recorder(self.recordData)
         self.outPen = outPen
 
         self.shouldBeginPath = True
@@ -99,7 +85,7 @@ class FilterSelectionPen(AbstractPointPen):
         self.onCurveDropped = False
         self.firstOnCurveIsntMove = False
 
-    def beginPath(self, identifier=None, **kwargs):
+    def beginPath(self, **kwargs):
         self.atContourStart = self.shouldBeginPath = True
         self.firstOnCurveIsntMove = self.lastOnCurveSelected = \
             self.onCurveDropped = False
@@ -108,8 +94,8 @@ class FilterSelectionPen(AbstractPointPen):
         # end path
         if not self.shouldBeginPath:
             if self.offCurves:
-                for data, kwargs_ in self.offCurves:
-                    self.pen.addPoint(*data, **kwargs_)
+                for pt_, kwargs_ in self.offCurves:
+                    self.pen.addPoint(pt_, **kwargs_)
             self.pen.endPath()
         self.offCurves = []
         # process
@@ -131,10 +117,11 @@ class FilterSelectionPen(AbstractPointPen):
         # if the last onCurve is dropped, we need to correct the first point
         # into a move + remove any preceding offCurves
         elif len(self.recordData) > 3 and not self.lastOnCurveSelected:
-            self.recordData[1][1][1] = "move"
+            self.recordData[1][2]["segmentType"] = "move"
             beginIndex = endIndex = None
-            for index, (_, args, _) in _reverseEnumerate(self.recordData[:-1]):
-                if args[1] is None:
+            for index, (_, _, kwargs) in _reverseEnumerate(self.recordData[
+                    :-1]):
+                if kwargs["segmentType"] is None:
                     beginIndex = index
                     if endIndex is None:
                         endIndex = index
@@ -145,27 +132,25 @@ class FilterSelectionPen(AbstractPointPen):
         self.pen(self.outPen)
         self.recordData.clear()
 
-    def addPoint(self, pt, segmentType=None, smooth=False, name=None,
-                 identifier=None, **kwargs):
+    def addPoint(self, pt, **kwargs):
+        segmentType = kwargs.get("segmentType")
         if segmentType is not None:
             self.lastOnCurveSelected = selected = kwargs.get("selected")
             if selected:
                 if self.atContourStart:
                     self.firstOnCurveIsntMove = segmentType != "move"
                 elif self.shouldBeginPath:
-                    segmentType = "move"
+                    kwargs["segmentType"] = "move"
                 if self.shouldBeginPath:
                     self.pen.beginPath()
-                    self.pen.addPoint(
-                        pt, segmentType, smooth, name, identifier, **kwargs)
+                    self.pen.addPoint(pt, **kwargs)
                     self.shouldBeginPath = False
                 else:
                     if self.offCurves:
-                        for data, kwargs_ in self.offCurves:
-                            self.pen.addPoint(*data, **kwargs_)
+                        for pt_, kwargs_ in self.offCurves:
+                            self.pen.addPoint(pt_, **kwargs_)
                     assert segmentType != "move"
-                    self.pen.addPoint(
-                        pt, segmentType, smooth, name, identifier, **kwargs)
+                    self.pen.addPoint(pt, **kwargs)
                 self.offCurves = []
             else:
                 self.onCurveDropped = True
@@ -175,8 +160,7 @@ class FilterSelectionPen(AbstractPointPen):
             self.atContourStart = False
         else:
             if not self.shouldBeginPath:
-                self.offCurves.append(
-                    ((pt, segmentType, smooth, name, identifier), kwargs))
+                self.offCurves.append((pt, kwargs))
 
     def addComponent(self, *_):
         pass
