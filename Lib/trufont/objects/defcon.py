@@ -253,8 +253,8 @@ class TGlyph(Glyph):
         return "<%s %s (%s)>" % (
             self.__class__.__name__, self.name, self.layer.name)
 
-    def beginUndoGroup(self):
-        self._undoManager.beginUndoGroup()
+    def beginUndoGroup(self, text=None):
+        self._undoManager.beginUndoGroup(text)
 
     def endUndoGroup(self):
         self._undoManager.endUndoGroup()

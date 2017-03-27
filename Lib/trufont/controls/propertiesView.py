@@ -775,6 +775,7 @@ class PropertiesWidget(QWidget):
         for point in points:
             value = base - getattr(point, attr)
             setattr(point, attr, value)
+        # XXX: hack, relevant contours should be set dirty instead
         glyph.postNotification("Glyph.ContoursChanged")
         glyph.dirty = True
 

@@ -47,8 +47,6 @@ def _setGlyphContent(glyph, attr, value):
         glyph.image = image
     glyph.releaseHeldNotifications()
 
-# TODO: undoGroups should probably merge heterogenous notifications
-# into a partial glyph serialized dump
 # TODO: limit the number of elements
 
 
@@ -177,7 +175,9 @@ class UndoManager(QObject):
 
     # basic API
 
-    def beginUndoGroup(self):
+    def beginUndoGroup(self, text=None):
+        if not self._groupUndo:
+            self._groupUndoText = text
         self._groupUndo += 1
 
     def endUndoGroup(self):
@@ -186,12 +186,18 @@ class UndoManager(QObject):
             return
         self._groupUndo -= 1
         if not self._groupUndo:
-            for name, data in self._groupNotifications.items():
-                if data is None:
-                    self._pushContentChange(name)
-                else:
-                    self._pushValueChange(name, data)
-            self._groupNotifications = dict()
+            if self._groupNotifications:
+                undoStack = self._undoStack
+                self._undoStack = group = []
+                for name, data in self._groupNotifications.items():
+                    if data is None:
+                        self._pushContentChange(name)
+                    else:
+                        self._pushValueChange(name, data)
+                self._groupNotifications = dict()
+                self._undoStack = undoStack
+                self._undoStack.append((self._groupUndoText, group))
+            del self._groupUndoText
 
     def canUndo(self):
         return not self._groupUndo and bool(self._undoStack)
@@ -206,20 +212,25 @@ class UndoManager(QObject):
         redoWasLocked = not self.canRedo()
 
         # pop the undo element
-        element = self._undoStack.pop()
-        # apply the old value
-        name, data = element
-        attr = _attrForNotification(name)
-        value = data["oldValue"]
-        glyph.disableNotifications(observer=self)
-        if name in self._contentNotifications:
-            _setGlyphContent(glyph, attr, value)
-            self._dumps[name] = value
+        content = self._undoStack.pop()
+        if isinstance(content[1], list):
+            elements = content[1]
         else:
-            setattr(glyph, attr, value)
-        glyph.enableNotifications(observer=self)
+            elements = (content,)
+        for element in reversed(elements):
+            # apply the old value
+            name, data = element
+            attr = _attrForNotification(name)
+            value = data["oldValue"]
+            glyph.disableNotifications(observer=self)
+            if name in self._contentNotifications:
+                _setGlyphContent(glyph, attr, value)
+                self._dumps[name] = value
+            else:
+                setattr(glyph, attr, value)
+            glyph.enableNotifications(observer=self)
         # push as redo element
-        self._redoStack.append(element)
+        self._redoStack.append(content)
 
         if len(self._undoStack) == self._cleanIndex:
             glyph.dirty = False
@@ -235,20 +246,25 @@ class UndoManager(QObject):
         undoWasLocked = not self.canUndo()
 
         # pop the redo element
-        element = self._redoStack.pop()
-        # apply the new value
-        name, data = element
-        attr = _attrForNotification(name)
-        value = data["newValue"]
-        glyph.disableNotifications(observer=self)
-        if name in self._contentNotifications:
-            _setGlyphContent(glyph, attr, value)
-            self._dumps[name] = value
+        content = self._redoStack.pop()
+        if isinstance(content[1], list):
+            elements = content[1]
         else:
-            setattr(glyph, attr, value)
-        glyph.enableNotifications(observer=self)
+            elements = (content,)
+        for element in elements:
+            # apply the new value
+            name, data = element
+            attr = _attrForNotification(name)
+            value = data["newValue"]
+            glyph.disableNotifications(observer=self)
+            if name in self._contentNotifications:
+                _setGlyphContent(glyph, attr, value)
+                self._dumps[name] = value
+            else:
+                setattr(glyph, attr, value)
+            glyph.enableNotifications(observer=self)
         # push as undo element
-        self._undoStack.append(element)
+        self._undoStack.append(content)
 
         if len(self._undoStack) == self._cleanIndex:
             glyph.dirty = False

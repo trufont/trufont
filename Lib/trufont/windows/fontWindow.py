@@ -756,7 +756,7 @@ class FontWindow(BaseWindow):
                 if not isGlyphTab:
                     glyph.clear()
                 otherGlyph.drawPoints(glyph.getPointPen())
-                glyph.beginUndoGroup()
+                glyph.endUndoGroup()
 
     def selectAll(self):
         widget = self.stackWidget.currentWidget()
