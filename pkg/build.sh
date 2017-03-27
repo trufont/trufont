@@ -1,1 +1,0 @@
-pyinstaller --onefile TruFont.spec
