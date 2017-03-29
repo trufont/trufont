@@ -57,7 +57,7 @@ If you want to test TruFont/master without making changes, see `TESTING <https:/
 Contributing
 ~~~~~~~~~~~~
 
-Here's a quick tutorial if you'd like to contribute to TruFont. 
+Here's a quick tutorial if you'd like to contribute to TruFont.
 
 1. Click the "Fork" button above, and clone the forked git repository
    to a new directory called ``trufont``:
