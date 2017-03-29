@@ -49,10 +49,15 @@ Getting started
 
 4. Run the app as ``trufont``.
 
+Testing
+~~~~~~~
+
+If you want to test TruFont/master without making changes, see `TESTING <https://github.com/trufont/trufont/blob/master/TESTING.md/>`__
+
 Contributing
 ~~~~~~~~~~~~
 
-Here's a quick tutorial if you'd like to contribute to TruFont.
+Here's a quick tutorial if you'd like to contribute to TruFont. 
 
 1. Click the "Fork" button above, and clone the forked git repository
    to a new directory called ``trufont``:
