@@ -1,6 +1,8 @@
 ## Intro
 
-This is a step-by-step tutorial to get TruFont running on a LiveCD. This allows you to test TruFont easily, and is simpler / easier than the instructions in README.md. If all else fails, try these instructions.
+This is a step-by-step tutorial to get TruFont running on an Ubuntu live CD. This enables you to test the GitHub/master branch of TruFont easily, and is simpler than the instructions in README.md. 
+
+If all else fails, try these instructions.
 
 ## Ubuntu 16.10
 
