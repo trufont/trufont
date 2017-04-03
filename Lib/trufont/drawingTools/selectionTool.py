@@ -440,8 +440,12 @@ class SelectionTool(BaseTool):
                                     return
             dx = canvasPos.x() - self._prevPos.x()
             dy = canvasPos.y() - self._prevPos.y()
-            slidePoints = modifiers & Qt.AltModifier
-            moveUIGlyphElements(glyph, dx, dy, slidePoints=slidePoints)
+            kwargs = dict()
+            if modifiers & platformSpecific.combinedModifiers():
+                kwargs["nudgePoints"] = True
+            elif modifiers & Qt.AltModifier:
+                kwargs["slidePoints"] = True
+            moveUIGlyphElements(glyph, dx, dy, **kwargs)
             self._prevPos = canvasPos
         else:
             canvasPos = event.localPos()

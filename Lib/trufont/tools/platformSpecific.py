@@ -57,6 +57,13 @@ def previousTabSequence():
     return QKeySequence.PreviousChild
 
 
+def combinedModifiers():
+    # on Windows, Ctrl+Alt is reserved by the system. use WinKey+Alt
+    if sys.platform == "win32":
+        return Qt.MetaModifier | Qt.AltModifier
+    return Qt.ControlModifier | Qt.AltModifier
+
+
 def isDeleteEvent(event):
     if event.matches(QKeySequence.Delete):
         return True
