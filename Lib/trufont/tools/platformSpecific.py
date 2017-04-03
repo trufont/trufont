@@ -86,6 +86,10 @@ def isDeleteEvent(event):
 def needsTighterMargins():
     return sys.platform == "darwin"
 
+
+def widen():
+    return sys.platform == "win32"
+
 # --------
 # Menu bar
 # --------

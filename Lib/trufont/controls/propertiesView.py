@@ -10,6 +10,7 @@ from trufont.controls.glyphAlignmentWidget import GlyphAlignmentWidget
 from trufont.controls.groupBox import GroupBox
 from trufont.controls.pathButton import PathButton
 from trufont.objects import icons
+from trufont.tools import platformSpecific
 from trufont.tools.colorGenerator import ColorGenerator
 # TODO: switch to QFormLayout
 from trufont.tools.rlabel import RLabel
@@ -140,7 +141,7 @@ class PropertiesWidget(QWidget):
         glyphGroup.setTitle(self.tr("Glyph"))
         glyphLayout = QGridLayout()
         zeroWidth = self.fontMetrics().width('0')
-        columnOneWidth = zeroWidth * 7
+        columnOneWidth = zeroWidth * (5 + 2 * platformSpecific.widen())
 
         nameLabel = RLabel(self.tr("Name"), self)
         self.nameEdit = QLineEdit(self)
@@ -195,7 +196,7 @@ class PropertiesWidget(QWidget):
         transformGroup = GroupBox(self)
         transformGroup.setTitle(self.tr("Transform"))
         transformLayout = QGridLayout()
-        columnTwoWidth = zeroWidth * 10
+        columnTwoWidth = zeroWidth * (8 + 2 * platformSpecific.widen())
 
         self.alignmentWidget = GlyphAlignmentWidget(self)
         self.alignmentWidget.setAlignment(4)
@@ -209,7 +210,7 @@ class PropertiesWidget(QWidget):
         invScaleButton.setProperty("inverted", True)
         self.scaleXEdit = SpinBox(self)
         self.scaleXEdit.setMaximumWidth(columnTwoWidth)
-        self.scaleXEdit.setSuffix(" %")
+        self.scaleXEdit.setSuffix("%")
         self.scaleXEdit.setMaximum(500)
         self.scaleXEdit.setMinimum(-500)
         self.scaleXEdit.setValue(2)
@@ -220,7 +221,7 @@ class PropertiesWidget(QWidget):
         scaleButton.clicked.connect(self.scale)
         self.scaleYEdit = SpinBox(self)
         self.scaleYEdit.setMaximumWidth(columnTwoWidth)
-        self.scaleYEdit.setSuffix(" %")
+        self.scaleYEdit.setSuffix("%")
         self.scaleYEdit.setMaximum(500)
         self.scaleYEdit.setMinimum(-500)
         self.scaleYEdit.setValue(2)
