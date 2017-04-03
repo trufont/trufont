@@ -445,7 +445,7 @@ class SelectionTool(BaseTool):
             dx = canvasPos.x() - self._prevPos.x()
             dy = canvasPos.y() - self._prevPos.y()
             kwargs = dict()
-            if modifiers & platformSpecific.combinedModifiers():
+            if modifiers == platformSpecific.combinedModifiers():
                 kwargs["nudgePoints"] = True
             elif modifiers & Qt.AltModifier:
                 kwargs["slidePoints"] = True
