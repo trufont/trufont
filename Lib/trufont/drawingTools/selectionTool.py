@@ -59,6 +59,7 @@ class SelectionTool(BaseTool):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._origin = None
         self._mouseItem = None
         self._oldPath = None
         self._oldSelection = set()
@@ -410,6 +411,8 @@ class SelectionTool(BaseTool):
         if not event.buttons() & Qt.LeftButton:
             super().mouseMoveEvent(event)
             return
+        if self._origin is None:
+            return
         glyph = self._glyph
         widget = self.parent()
         if self._shouldMove or self._mouseItem is not None:
@@ -494,9 +497,8 @@ class SelectionTool(BaseTool):
                 widget.mapFromCanvas(event.localPos()))
             if index is not None:
                 widget.setActiveIndex(index)
-                # since we shuffle the coordinates system, flush the origin
-                self._origin.setX(0)
-                self._origin.setY(0)
+        # don't perform move events on double click
+        self._origin = None
 
     # custom painting
 
