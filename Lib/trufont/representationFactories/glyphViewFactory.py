@@ -1,10 +1,9 @@
 from PyQt5.QtCore import Qt
-from defcon.objects.contour import Recorder  # XXX: should be somewhere else
 from defconQt.representationFactories.glyphViewFactory import (
     OnlyComponentsQtPen)
 from fontTools.misc.transform import Transform
 from fontTools.pens.qtPen import QtPen
-from ufoLib.pointPen import AbstractPointPen, PointToSegmentPen
+from ufoLib.pointPen import PointToSegmentPen
 
 
 def _reverseEnumerate(seq):
@@ -54,8 +53,53 @@ def ComponentQPainterPathFactory(component):
 def FilterSelectionFactory(glyph):
     copyGlyph = glyph.__class__()
     # points
-    pen = FilterSelectionPen(copyGlyph.getPointPen())
-    glyph.drawPoints(pen)
+    pen = copyGlyph.getPointPen()
+    for contour in glyph:
+        onCurvesSelected = True
+        for point in contour:
+            if point.segmentType and not point.selected:
+                onCurvesSelected = False
+                break
+        if onCurvesSelected:
+            contour.drawPoints(pen)
+        else:
+            segments = contour.segments
+            # put start point at the beginning of a subcontour
+            lastSubcontour = None
+            for index, segment in reversed(list(enumerate(segments))):
+                if segment[-1].selected:
+                    lastSubcontour = index
+                else:
+                    if lastSubcontour is not None:
+                        break
+            if lastSubcontour is None:
+                continue
+            segments = segments[lastSubcontour:] + segments[:lastSubcontour]
+            # now draw filtered
+            shouldMoveTo = True
+            for index, segment in enumerate(segments):
+                on = segment[-1]
+                if not on.selected:
+                    if not shouldMoveTo:
+                        pen.endPath()
+                        shouldMoveTo = True
+                    continue
+                if on.segmentType == "move" and not shouldMoveTo:
+                    pen.endPath()
+                    shouldMoveTo = True
+                if shouldMoveTo:
+                    pen.beginPath()
+                    pen.addPoint(
+                        (on.x, on.y), segmentType="move", smooth=on.smooth,
+                        name=on.name)
+                    shouldMoveTo = False
+                    continue
+                for point in segment:
+                    pen.addPoint(
+                        (point.x, point.y), segmentType=point.segmentType,
+                        smooth=point.smooth, name=point.name)
+            if not shouldMoveTo:
+                pen.endPath()
     # other stuff
     for component in glyph.components:
         if component.selected:
@@ -70,100 +114,6 @@ def FilterSelectionFactory(glyph):
         if glyph.image.selected:
             copyGlyph.image = dict(glyph.image)
     return copyGlyph
-
-
-class FilterSelectionPen(AbstractPointPen):
-
-    def __init__(self, outPen):
-        self.recordData = []
-        self.pen = Recorder(self.recordData)
-        self.outPen = outPen
-
-        self.shouldBeginPath = True
-        self.offCurves = []
-        self.lastOnCurveSelected = False
-        self.onCurveDropped = False
-        self.firstOnCurveIsntMove = False
-
-    def beginPath(self, **kwargs):
-        self.atContourStart = self.shouldBeginPath = True
-        self.firstOnCurveIsntMove = self.lastOnCurveSelected = \
-            self.onCurveDropped = False
-
-    def endPath(self):
-        # end path
-        if not self.shouldBeginPath:
-            if self.offCurves:
-                for pt_, kwargs_ in self.offCurves:
-                    self.pen.addPoint(pt_, **kwargs_)
-            self.pen.endPath()
-        self.offCurves = []
-        # process
-        # NSC of non-direct compatibility (i.e. by elision-rotation):
-        # - first onCurve isn't a move
-        # - last onCurve isn't dropped
-        # - an onCurve is dropped in the contour
-        if self.firstOnCurveIsntMove and self.lastOnCurveSelected and \
-                self.onCurveDropped:
-            # remove beginPath/endPath at source contour boundary
-            del self.recordData[0]
-            del self.recordData[-1]
-            # rotate source data to put the last beginPath in ident position
-            for index, (methodName, *_) in _reverseEnumerate(self.recordData):
-                if methodName == "beginPath":
-                    self.recordData[:] = self.recordData[
-                        index:] + self.recordData[:index]
-                    break
-        # if the last onCurve is dropped, we need to correct the first point
-        # into a move + remove any preceding offCurves
-        elif len(self.recordData) > 3 and not self.lastOnCurveSelected:
-            self.recordData[1][2]["segmentType"] = "move"
-            beginIndex = endIndex = None
-            for index, (_, _, kwargs) in _reverseEnumerate(self.recordData[
-                    :-1]):
-                if kwargs["segmentType"] is None:
-                    beginIndex = index
-                    if endIndex is None:
-                        endIndex = index
-                else:
-                    break
-            if endIndex is not None:
-                del self.recordData[beginIndex:endIndex]
-        self.pen(self.outPen)
-        self.recordData.clear()
-
-    def addPoint(self, pt, **kwargs):
-        segmentType = kwargs.get("segmentType")
-        if segmentType is not None:
-            self.lastOnCurveSelected = selected = kwargs.get("selected")
-            if selected:
-                if self.atContourStart:
-                    self.firstOnCurveIsntMove = segmentType != "move"
-                elif self.shouldBeginPath:
-                    kwargs["segmentType"] = "move"
-                if self.shouldBeginPath:
-                    self.pen.beginPath()
-                    self.pen.addPoint(pt, **kwargs)
-                    self.shouldBeginPath = False
-                else:
-                    if self.offCurves:
-                        for pt_, kwargs_ in self.offCurves:
-                            self.pen.addPoint(pt_, **kwargs_)
-                    assert segmentType != "move"
-                    self.pen.addPoint(pt, **kwargs)
-                self.offCurves = []
-            else:
-                self.onCurveDropped = True
-                if not self.shouldBeginPath:
-                    self.pen.endPath()
-                    self.shouldBeginPath = True
-            self.atContourStart = False
-        else:
-            if not self.shouldBeginPath:
-                self.offCurves.append((pt, kwargs))
-
-    def addComponent(self, *_):
-        pass
 
 
 def SelectedContoursQPainterPathFactory(glyph):
