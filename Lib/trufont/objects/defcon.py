@@ -305,7 +305,7 @@ class TGlyph(Glyph):
             return
         super().beginSelfContourNotificationObservation(contour)
         contour.addObserver(
-            observer=self, methodName="_selectionChanged",
+            observer=self, methodName="_contourSelectionChanged",
             notification="Contour.SelectionChanged")
 
     def endSelfContourNotificationObservation(self, contour):
@@ -315,7 +315,7 @@ class TGlyph(Glyph):
             observer=self, notification="Contour.SelectionChanged")
         super().endSelfContourNotificationObservation(contour)
 
-    def _selectionChanged(self, notification):
+    def _contourSelectionChanged(self, notification):
         if self.dispatcher is None:
             return
         self.postNotification(notification="Glyph.SelectionChanged")

@@ -406,7 +406,7 @@ class Application(QApplication):
                     self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
                     self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
                     self.tr("ttx Font file {}").format("(*.ttx)"),
-                    self.tr("WOFF Font file {}").format("(*.woff)"),
+                    self.tr("WOFF Font file {}").format("(*.woff *.woff2)"),
                 ])
                 supportedFiles += "*.otf *.pfa *.pfb *.ttf *.ttx *.woff"
             fileFormats.extend([
