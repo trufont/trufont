@@ -36,7 +36,7 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
 # ----------
 
 
-def UIMove(contour, delta, slidePoints=False):
+def UIMove(contour, delta, nudgePoints=False, slidePoints=False):
     contour_ = contour
     if contour[0].segmentType is None:
         if contour[1].segmentType is None:
@@ -44,23 +44,43 @@ def UIMove(contour, delta, slidePoints=False):
     # first pass: move
     didMove = False
     nextOffShouldMove = False
+    nudgeStuff = []
     prev = contour[-1]
     for point in contour:
+        if len(nudgeStuff) == 1 and point.segmentType is None:
+            nudgeStuff.append(point)
         if point.selected or (nextOffShouldMove and point.segmentType is None):
             point.move(delta)
             didMove = True
         nextOffShouldMove = False
-        if point.selected and point.segmentType and not slidePoints:
-            # move previous point
-            if prev.segmentType is None and not prev.selected and \
-                    point.segmentType != "move":
-                prev.move(delta)
-                didMove = True
-            # schedule the next point for move
-            nextOffShouldMove = True
+        if point.segmentType and not slidePoints:
+            if point.selected:
+                # move previous point
+                if prev.segmentType is None and not prev.selected and \
+                        point.segmentType != "move":
+                    prev.move(delta)
+                    didMove = True
+                # schedule the next point for move
+                nextOffShouldMove = True
+            if nudgePoints:
+                if len(nudgeStuff) == 2 and point.segmentType == "curve":
+                    on1, off1 = nudgeStuff
+                    if nudgePoints and point.selected != on1.selected:
+                        sign = -on1.selected or 1
+                        sdx, sdy = map(lambda n: sign * n, delta)
+                        xFactor = (point.x - on1.x) / (point.x - on1.x - sdx)
+                        yFactor = (point.y - on1.y) / (point.y - on1.y - sdy)
+                        if not off1.selected:
+                            off1.x = on1.x + xFactor * (off1.x - on1.x)
+                            off1.y = on1.y + yFactor * (off1.y - on1.y)
+                        if not prev.selected:
+                            prev.x = on1.x + xFactor * (prev.x - on1.x - sdx)
+                            prev.y = on1.y + yFactor * (prev.y - on1.y - sdy)
+                nudgeStuff = [point]
         prev = point
     if not didMove:
         return
+    del nudgeStuff
     # second pass: constrain
     secondPrevForSliding = None
     secondPrevForRotation = None

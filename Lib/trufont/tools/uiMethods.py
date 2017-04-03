@@ -199,23 +199,24 @@ def UIGlyphGuidelines(glyph):
     return guidelines
 
 
-def moveUIGlyphElements(glyph, dx, dy, slidePoints=False):
+def moveUIGlyphElements(glyph, dx, dy, **kwargs):
+    delta = (dx, dy)
     glyph.beginUndoGroup()
     for anchor in glyph.anchors:
         if anchor.selected:
-            anchor.move((dx, dy))
+            anchor.move(delta)
     for contour in glyph:
-        UIMove(contour, (dx, dy), slidePoints=slidePoints)
+        UIMove(contour, delta, **kwargs)
     for component in glyph.components:
         if component.selected:
-            component.move((dx, dy))
+            component.move(delta)
     for guideline in UIGlyphGuidelines(glyph):
         if guideline.selected:
             guideline.x += dx
             guideline.y += dy
     image = glyph.image
     if image.selected:
-        image.move((dx, dy))
+        image.move(delta)
     glyph.endUndoGroup()
 
 
