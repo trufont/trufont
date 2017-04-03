@@ -42,8 +42,8 @@ def UIMove(contour, delta, nudgePoints=False, slidePoints=False):
     # - two offCurves at the start of the contour, since all "handles ops"
     #   (like rotation etc.) need a "next" offCurve after reading the parent
     #   onCurve
-    # - one offCurve at the start of the contour, nudge needs to read the previous
-    #   onCurve followed by offCurves (followed by onCurve)
+    # - one offCurve at the start of the contour, nudge needs to read the
+    #   previous onCurve followed by offCurves (followed by onCurve)
     if len(contour) > 2 and contour[0].segmentType is None:
         offset = 1 + (contour[1].segmentType is None)
         contour = contour[offset:] + contour[:offset]
@@ -74,8 +74,14 @@ def UIMove(contour, delta, nudgePoints=False, slidePoints=False):
                     if nudgePoints and point.selected != on1.selected:
                         sign = -on1.selected or 1
                         sdx, sdy = map(float(sign).__mul__, delta)
-                        xFactor = (point.x - on1.x) / (point.x - on1.x - sdx)
-                        yFactor = (point.y - on1.y) / (point.y - on1.y - sdy)
+                        # factor
+                        xFactor = (point.x - on1.x - sdx)
+                        if xFactor:
+                            xFactor = (point.x - on1.x) / xFactor
+                        yFactor = (point.y - on1.y - sdy)
+                        if yFactor:
+                            yFactor = (point.y - on1.y) / yFactor
+                        # apply
                         if not off1.selected:
                             off1.x = on1.x + xFactor * (off1.x - on1.x)
                             off1.y = on1.y + yFactor * (off1.y - on1.y)
