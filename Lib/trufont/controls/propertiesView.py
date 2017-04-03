@@ -479,7 +479,6 @@ class PropertiesWidget(QWidget):
         self.alignmentWidget.setGlyph(self._glyph)
         self._updateGlyphAttributes()
 
-
     def _updateGlyphAttributes(self, *_):
         name = None
         unicodes = None
