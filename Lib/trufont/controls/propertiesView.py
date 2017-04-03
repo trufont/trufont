@@ -128,11 +128,11 @@ class FillWidget(QWidget):
 
 class PropertiesWidget(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, font, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
 
-        self._font = None
+        self._font = font
         self._glyph = None
         self._shouldEditLastName = False
 
@@ -435,6 +435,9 @@ class PropertiesWidget(QWidget):
         mainLayout.setSpacing(2)
         self.setLayout(mainLayout)
 
+        self._updateLayerAttributes()
+        self._subscribeToFont(self._font)
+
         # re-export signal
         self.activeLayerModified = self.layerSetView.selectionChanged_
 
@@ -467,19 +470,15 @@ class PropertiesWidget(QWidget):
                     self, "_updateLayerAttributes", "LayerSet.Changed")
 
     def _updateGlyph(self, *_):
-        self._unsubscribeFromGlyph()
         app = QApplication.instance()
+        if app.currentFontWindow() != self.window():
+            return
+        self._unsubscribeFromGlyph()
         self._glyph = app.currentGlyph()
         self._subscribeToGlyph(self._glyph)
         self.alignmentWidget.setGlyph(self._glyph)
         self._updateGlyphAttributes()
 
-    def _updateFont(self, *_):
-        self._unsubscribeFromFont()
-        app = QApplication.instance()
-        self._font = app.currentFont()
-        self._subscribeToFont(self._font)
-        self._updateLayerAttributes()
 
     def _updateGlyphAttributes(self, *_):
         name = None
@@ -1006,14 +1005,15 @@ class PropertiesWidget(QWidget):
         app = QApplication.instance()
         self._updateGlyph()
         app.dispatcher.addObserver(self, "_updateGlyph", "currentGlyphChanged")
-        self._updateFont()
-        app.dispatcher.addObserver(self, "_updateFont", "currentFontChanged")
 
     def hideEvent(self, event):
         super().hideEvent(event)
         app = QApplication.instance()
         app.dispatcher.removeObserver(self, "currentGlyphChanged")
-        app.dispatcher.removeObserver(self, "currentFontChanged")
+
+    def closeEvent(self, event):
+        self._unsubscribeFromFont()
+        self._unsubscribeFromGlyph()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -1023,7 +1023,7 @@ class PropertiesWidget(QWidget):
 class PropertiesView(QScrollArea):
     propertiesWidgetClass = PropertiesWidget
 
-    def __init__(self, parent=None):
+    def __init__(self, font, parent=None):
         super().__init__(parent)
         self.setFrameShape(QScrollArea.NoFrame)
         self.setWidgetResizable(True)
@@ -1031,7 +1031,7 @@ class PropertiesView(QScrollArea):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
 
-        self._propertiesWidget = self.propertiesWidgetClass(self)
+        self._propertiesWidget = self.propertiesWidgetClass(font, self)
         self.setWidget(self._propertiesWidget)
 
         self.activeLayerModified = self._propertiesWidget.activeLayerModified

@@ -126,7 +126,7 @@ class FontWindow(BaseWindow):
                 self.stackWidget.widget(index)))
         self.stackWidget.currentChanged.connect(self._widgetChanged)
 
-        self.propertiesView = PropertiesView(self)
+        self.propertiesView = PropertiesView(font, self)
         self.propertiesView.hide()
 
         self.statusBar = StatusBar(self)
