@@ -193,7 +193,13 @@ class TLayer(Layer):
             if name in self:
                 # TODO: return the glyph here (change dependant code)
                 return None
+        if asTemplate:
+            dirty = self.dirty
+            self.disableNotifications(notification=self.changeNotificationName)
         glyph = self.newGlyph(name)
+        if asTemplate:
+            self.dirty = dirty
+            self.enableNotifications(notification=self.changeNotificationName)
         if asTemplate:
             glyph.disableNotifications()
         glyph.width = width
@@ -305,7 +311,7 @@ class TGlyph(Glyph):
             return
         super().beginSelfContourNotificationObservation(contour)
         contour.addObserver(
-            observer=self, methodName="_contourSelectionChanged",
+            observer=self, methodName="_selectionChanged",
             notification="Contour.SelectionChanged")
 
     def endSelfContourNotificationObservation(self, contour):
@@ -315,7 +321,7 @@ class TGlyph(Glyph):
             observer=self, notification="Contour.SelectionChanged")
         super().endSelfContourNotificationObservation(contour)
 
-    def _contourSelectionChanged(self, notification):
+    def _selectionChanged(self, notification):
         if self.dispatcher is None:
             return
         self.postNotification(notification="Glyph.SelectionChanged")

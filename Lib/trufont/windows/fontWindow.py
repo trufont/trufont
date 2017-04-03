@@ -588,6 +588,8 @@ class FontWindow(BaseWindow):
         if ok:
             nameFilter = dialog.selectedNameFilter()
             path = dialog.selectedFiles()[0]
+            if not os.path.basename(path).endswith(".ufo"):
+                path += ".ufo"
             self.saveFile(path, fileFormats[nameFilter])
             app = QApplication.instance()
             app.setCurrentFile(self._font.path)
