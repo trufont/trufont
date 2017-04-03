@@ -7,6 +7,26 @@ from trufont.tools import bezierMath
 # ----------------
 
 
+def nudgeUICurve(on1, off1, off2, on2, delta):
+    if on2.selected != on1.selected:
+        sign = -on1.selected or 1
+        sdx, sdy = map(float(sign).__mul__, delta)
+        # factor
+        xFactor = (on2.x - on1.x - sdx)
+        if xFactor:
+            xFactor = (on2.x - on1.x) / xFactor
+        yFactor = (on2.y - on1.y - sdy)
+        if yFactor:
+            yFactor = (on2.y - on1.y) / yFactor
+        # apply
+        if not off1.selected:
+            off1.x = on1.x + xFactor * (off1.x - on1.x)
+            off1.y = on1.y + yFactor * (off1.y - on1.y)
+        if not off2.selected:
+            off2.x = on1.x + xFactor * (off2.x - on1.x - sdx)
+            off2.y = on1.y + yFactor * (off2.y - on1.y - sdy)
+
+
 def projectUIPointOnRefLine(x1, y1, x2, y2, pt):
     x, y, t = bezierMath.lineProjection(
         x1, y1, x2, y2, pt.x, pt.y, False)
@@ -71,25 +91,12 @@ def UIMove(contour, delta, nudgePoints=False, slidePoints=False):
             if nudgePoints:
                 if len(nudgeStuff) == 2 and point.segmentType == "curve":
                     on1, off1 = nudgeStuff
-                    if nudgePoints and point.selected != on1.selected:
-                        sign = -on1.selected or 1
-                        sdx, sdy = map(float(sign).__mul__, delta)
-                        # factor
-                        xFactor = (point.x - on1.x - sdx)
-                        if xFactor:
-                            xFactor = (point.x - on1.x) / xFactor
-                        yFactor = (point.y - on1.y - sdy)
-                        if yFactor:
-                            yFactor = (point.y - on1.y) / yFactor
-                        # apply
-                        if not off1.selected:
-                            off1.x = on1.x + xFactor * (off1.x - on1.x)
-                            off1.y = on1.y + yFactor * (off1.y - on1.y)
-                        if not prev.selected:
-                            prev.x = on1.x + xFactor * (prev.x - on1.x - sdx)
-                            prev.y = on1.y + yFactor * (prev.y - on1.y - sdy)
+                    nudgeUICurve(on1, off1, prev, point, delta)
                 nudgeStuff = [point]
         prev = point
+    if len(nudgeStuff) == 2 and contour[0].segmentType == "curve":
+        on1, off1 = nudgeStuff
+        nudgeUICurve(on1, off1, prev, contour[0], delta)
     if not didMove:
         return
     del nudgeStuff
