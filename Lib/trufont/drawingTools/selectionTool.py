@@ -333,8 +333,12 @@ class SelectionTool(BaseTool):
         if key in arrowKeys:
             dx, dy = self._moveForEvent(event)
             modifiers = event.modifiers()
-            slidePoints = modifiers & Qt.AltModifier
-            moveUIGlyphElements(self._glyph, dx, dy, slidePoints=slidePoints)
+            kwargs = dict()
+            if modifiers & platformSpecific.combinedModifiers():
+                kwargs["nudgePoints"] = True
+            elif modifiers & Qt.AltModifier:
+                kwargs["slidePoints"] = True
+            moveUIGlyphElements(self._glyph, dx, dy, **kwargs)
         # TODO: nav shouldn't be specific to this tool
         elif key in navKeys:
             pack = self._getSelectedCandidatePoint()
