@@ -487,8 +487,8 @@ class Application(QApplication):
             window = FontWindow(font)
         except Exception as e:
             msg = self.tr(
-                "There was an issue opening the font at {}.".format(
-                    path))
+                "There was an issue opening the font at {}.").format(
+                    path)
             errorReports.showCriticalException(e, msg)
             return
         window.show()
