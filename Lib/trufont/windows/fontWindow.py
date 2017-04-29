@@ -504,9 +504,7 @@ class FontWindow(BaseWindow):
         self.setWindowModified(font.dirty)
 
     def _glyphOrderChanged(self, notification):
-        font = notification.object
-        glyphs = [font[name] for name in font.glyphOrder]
-        self.glyphCellView.setGlyphs(glyphs)
+        self._updateGlyphsFromGlyphOrder()
 
     def _updateGlyphsFromGlyphOrder(self):
         font = self._font
