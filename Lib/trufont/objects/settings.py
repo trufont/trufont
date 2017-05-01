@@ -347,7 +347,7 @@ def setLoadRecentFile(value):
 
 
 def recentFiles():
-    return value("core/recentFiles", [], type=str)
+    return value("core/recentFiles", [], type=list)
 
 
 def setRecentFiles(recentFiles):
