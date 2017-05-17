@@ -170,8 +170,6 @@ class TFont(Font):
 
     def _set_sortDescriptor(self, value):
         oldValue = self.lib.get("com.typesupply.defcon.sortDescriptor")
-        if oldValue == value:
-            return
         if value is None or len(value) == 0:
             value = None
             if "com.typesupply.defcon.sortDescriptor" in self.lib:
