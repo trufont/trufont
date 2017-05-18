@@ -78,10 +78,10 @@ class PreviewEventFilter(QObject):
             return False
         # or should we reset on WindowActivate?
         if event.type() == QEvent.WindowDeactivate:
-            self.parent()._setGlyphPreview(False)
+            self.parent()._toggleHandTool(False)
         if event.type() in self.filterKeyEvents:
             if not event.isAutoRepeat() and event.key() == Qt.Key_Space:
-                self.parent()._setGlyphPreview(
+                self.parent()._toggleHandTool(
                     event.type() != QEvent.KeyRelease)
                 event.accept()
                 return True
@@ -978,11 +978,21 @@ class FontWindow(BaseWindow):
 
     # update methods
 
-    def _setGlyphPreview(self, value):
+    def _toggleHandTool(self, value):
         index = self.stackWidget.currentIndex()
         if index:
             widget = self.stackWidget.currentWidget()
-            widget.setPreviewEnabled(value)
+            currentWidgetTool = widget.currentTool()
+            if value:
+                # enable both hand tool and preview mode on space key pressed
+                handTool = self.toolBar.handTool()
+                if currentWidgetTool != handTool:
+                    widget.setCurrentTool(handTool)
+            else:
+                # disable preview and restore previous tool on space key raised
+                previousTool = self.toolBar.currentTool()
+                if currentWidgetTool != previousTool:
+                    widget.setCurrentTool(previousTool)
 
     def _updateCurrentGlyph(self):
         # TODO: refactor this pattern...
