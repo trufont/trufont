@@ -831,8 +831,7 @@ class TImage(Image):
         _get_selected, _set_selected,
         doc="A boolean indicating the selected state of the anchor.")
 
-
-def _snap(x, base=5):
-    if not base:
-        return x
-    return base * round(x / base)
+    def _snap(x, base=5):
+        if not base:
+            return x
+        return base * round(x / base)
