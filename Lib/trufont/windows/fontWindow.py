@@ -156,7 +156,6 @@ class FontWindow(BaseWindow):
         layout.addWidget(self.propertiesView)
         layout.setContentsMargins(0, 2, 0, 0)
         layout.setSpacing(2)
-        self.setWindowTitle(self.fontTitle())
 
         elements = [
             ("Ctrl+D", self.deselect),
@@ -307,6 +306,7 @@ class FontWindow(BaseWindow):
             self._font.removeObserver(self, "Font.GlyphOrderChanged")
             self._font.removeObserver(self, "Font.SortDescriptorChanged")
         self._font = font
+        self.setWindowTitle(self.fontTitle())
         if font is None:
             return
         self._updateGlyphsFromGlyphOrder()

@@ -457,13 +457,13 @@ class Application(QApplication):
                     widget.raise_()
                     return
         font = TFont()
+        currentFont = self.currentFont()
         try:
             font.extract(path)
+            self._loadFont(font)
         except Exception as e:
             errorReports.showCriticalException(e)
             return
-        window = FontWindow(font)
-        window.show()
         self.setCurrentFile(font.binaryPath)
 
     def _loadExt(self, path):
@@ -480,15 +480,26 @@ class Application(QApplication):
                     return
         try:
             font = TFont(path)
-            window = FontWindow(font)
+            self._loadFont(font)
         except Exception as e:
             msg = self.tr(
                 "There was an issue opening the font at {}.").format(
                     path)
             errorReports.showCriticalException(e, msg)
             return
-        window.show()
         self.setCurrentFile(font.path)
+
+    def _loadFont(self, font):
+        currentFont = self.currentFont()
+        # Open new font in current font window if it contains an unmodified
+        # empty font (e.g. after startup).
+        if currentFont is not None and currentFont.path is None and \
+                currentFont.binaryPath is None and currentFont.dirty is False:
+            window = self._currentFontWindow
+            window.setFont_(font)
+        else:
+            window = FontWindow(font)
+        window.show()
 
     def openRecentFile(self):
         fontPath = self.sender().toolTip()
