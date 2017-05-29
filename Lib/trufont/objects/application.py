@@ -461,12 +461,21 @@ class Application(QApplication):
                     widget.raise_()
                     return
         font = TFont()
+        currentFont = self.currentFont()
         try:
             font.extract(path)
         except Exception as e:
             errorReports.showCriticalException(e)
             return
-        window = FontWindow(font)
+        # Open new font binary in current font window if it contains an
+        # unmodified empty font (e.g. after startup).
+        if currentFont.path is None and currentFont.binaryPath is None \
+           and currentFont.dirty is False:
+            window = self.currentFontWindow()
+            window.setFont_(font)
+            window.setWindowTitle(window.fontTitle())
+        else:
+            window = FontWindow(font)
         window.show()
         self.setCurrentFile(font.binaryPath)
 
@@ -484,7 +493,16 @@ class Application(QApplication):
                     return
         try:
             font = TFont(path)
-            window = FontWindow(font)
+            currentFont = self.currentFont()
+            # Open new font in current font window if it contains an unmodified
+            # empty font (e.g. after startup).
+            if currentFont.path is None and currentFont.binaryPath is None \
+               and currentFont.dirty is False:
+                window = self.currentFontWindow()
+                window.setFont_(font)
+                window.setWindowTitle(window.fontTitle())
+            else:
+                window = FontWindow(font)
         except Exception as e:
             msg = self.tr(
                 "There was an issue opening the font at {}.").format(
