@@ -479,7 +479,7 @@ class FontWindow(BaseWindow):
             # selection text
             # TODO: this should probably be internal to the label
             selection = self.glyphCellView.selection()
-            if selection is not None:
+            if selection is not None and None not in selection:
                 count = len(selection)
                 if count == 1:
                     glyph = self.glyphCellView.glyphsForIndexes(selection)[0]
