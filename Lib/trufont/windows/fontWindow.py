@@ -538,6 +538,8 @@ class FontWindow(BaseWindow):
     def _sortDescriptorChanged(self, notification):
         font = notification.object
         descriptors = notification.data["newValue"]
+        if descriptors is None:
+            return
         if descriptors[0]["type"] == "glyphSet":
             glyphNames = descriptors[0]["glyphs"]
         else:
