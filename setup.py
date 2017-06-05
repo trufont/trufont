@@ -25,7 +25,7 @@ setup(
         "pyqt5>=5.5.0",
         "fonttools>=3.9.1",
         "ufoLib>=2.0.0",
-        "defcon>=0.3.1",
+        "defcon>=0.3.4",
         "defconQt>=0.5.3",
         "ufo-extractor>=0.2.0",
         "ufo2ft>=0.4.1",
