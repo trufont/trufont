@@ -49,6 +49,11 @@ Getting started
 
 4. Run the app as ``trufont``.
 
+Testing
+~~~~~~~
+
+If you want to test TruFont/master without making changes, see `TESTING <https://github.com/trufont/trufont/blob/master/TESTING.md/>`__
+
 Contributing
 ~~~~~~~~~~~~
 
