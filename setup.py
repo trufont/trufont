@@ -24,7 +24,7 @@ setup(
     install_requires=[
         "pyqt5>=5.5.0",
         "fonttools>=3.9.1",
-        "ufoLib>=2.0.0",
+        "ufoLib>=2.1.0",
         "defcon>=0.3.4",
         "defconQt>=0.5.3",
         "ufo-extractor>=0.2.0",
