@@ -364,9 +364,20 @@ class Version(str):
 
 
 def _stringToSequence(value):
-    major, minor, patch = [i.strip() for i in value.split(".")]
+    value = [i.strip() for i in value.split(".", 3)]
+    if len(value) < 3:
+        # Pad
+        value.extend(["0"] * (3 - len(value)))
+    else:
+        # Trim
+        value = value[:3]
+
+    major, minor, patch = value
     value = []
     for component in (major, minor, patch):
-        v = int(component)
+        try:
+            v = int(component)
+        except ValueError:
+            v = 0
         value.append(v)
     return value
