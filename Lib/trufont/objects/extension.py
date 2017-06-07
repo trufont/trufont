@@ -198,15 +198,15 @@ class TExtension(object):
         # TODO: should it e.g. look if the mainScript is an actual Python file
         raise NotImplementedError
 
-    def run(self, subpath=None):
+    def run(self, subPath=None):
         libPath = self._libPath
         if libPath is None:
             libPath = LIB_PATH
-        if subpath is None:
+        if subPath is None:
             subPath = self.mainScript
             if subPath is None:
                 subPath = ""
-        runPath = os.path.join(self._path, libPath, subpath)
+        runPath = os.path.join(self._path, libPath, subPath)
         app = QApplication.instance()
         global_vars = app.globals()
         try:
