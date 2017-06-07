@@ -162,7 +162,7 @@ class TExtension(object):
         writer.writeLib(libPath)
         writer.writeInfo(self._info)
         writer.writeResources(
-            os.path.join(self._path, self._resourcesPath or RESOURCES_PATH))
+            os.path.join(path, self._resourcesPath or RESOURCES_PATH))
         # done
         self._path = path
 
