@@ -339,7 +339,7 @@ class Version(str):
 
     def __new__(self, value):
         # convert from sequence
-        if isinstance(value, Sequence):
+        if isinstance(value, Sequence) and not isinstance(value, str):
             assert len(value) == 3
             value = ".".join(str(num) for num in value)
         return super().__new__(Version, value)
