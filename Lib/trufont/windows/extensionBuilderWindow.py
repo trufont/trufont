@@ -99,7 +99,7 @@ class ExtensionBuilderWindow(QDialog):
             if not ok:
                 continue
             data = dict(path=path, name=name, shortcut=shortcut)
-            for k, v in data.items():
+            for k, v in list(data.items()):
                 if v is None:
                     del data[k]
             addToMenu.append(data)

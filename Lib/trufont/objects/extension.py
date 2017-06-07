@@ -162,7 +162,7 @@ class TExtension(object):
         writer.writeLib(libPath)
         writer.writeInfo(self._info)
         writer.writeResources(
-            os.path.join(self._path, self._resourcesPath or RESOURCES_PATH))
+            os.path.join(path, self._resourcesPath or RESOURCES_PATH))
         # done
         self._path = path
 
@@ -198,15 +198,15 @@ class TExtension(object):
         # TODO: should it e.g. look if the mainScript is an actual Python file
         raise NotImplementedError
 
-    def run(self, subpath=None):
+    def run(self, subPath=None):
         libPath = self._libPath
         if libPath is None:
             libPath = LIB_PATH
-        if subpath is None:
+        if subPath is None:
             subPath = self.mainScript
             if subPath is None:
                 subPath = ""
-        runPath = os.path.join(self._path, libPath, subpath)
+        runPath = os.path.join(self._path, libPath, subPath)
         app = QApplication.instance()
         global_vars = app.globals()
         try:
@@ -339,7 +339,7 @@ class Version(str):
 
     def __new__(self, value):
         # convert from sequence
-        if isinstance(value, Sequence):
+        if isinstance(value, Sequence) and not isinstance(value, str):
             assert len(value) == 3
             value = ".".join(str(num) for num in value)
         return super().__new__(Version, value)
