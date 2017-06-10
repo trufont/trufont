@@ -76,7 +76,11 @@ class RulerTool(BaseTool):
         self._rulerPts = dict()
         line = self._rulerObject[0]
 
-        width = self._glyph.width
+        # Add intersections at the sidebearings. We need to know the width of
+        # the glyph's base layer because 1) that's what determines the glyph
+        # design box the user sees and 2) other layers can have different
+        # widths.
+        width = self._glyph.layerSet.defaultLayer[self._glyph.name].width
         ascender = self._glyph.font.info.ascender
         descender = self._glyph.font.info.descender
         leftSidebearing = bezierMath.lineIntersection(
