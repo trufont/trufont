@@ -65,7 +65,7 @@ class RulerTool(BaseTool):
 
     # custom methods
 
-    def _appendIntersection(self, contour, index, pt):
+    def _appendIntersection(self, pt):
         x, y, _ = pt
         line = QLineF(self._rulerObject[0])
         line.setP2(QPointF(x, y))
@@ -75,6 +75,19 @@ class RulerTool(BaseTool):
         self._cachedIntersections = OrderedDict()
         self._rulerPts = dict()
         line = self._rulerObject[0]
+
+        defaultGlyph = self._glyph.layerSet.defaultLayer.get(glyph.name)
+        if defaultGlyph is not None:
+            width = defaultGlyph.width
+            ascender = defaultGlyph.font.info.ascender
+            descender = defaultGlyph.font.info.descender
+            for x in (0, width):
+                pt = bezierMath.lineIntersection(
+                    line.x1(), line.y1(), line.x2(), line.y2(),
+                    x, descender, x, ascender)
+                if pt is not None:
+                    self._appendIntersection(pt)
+
         for contour in self._glyph:
             segments = contour.segments
             for index, seg in enumerate(segments):
@@ -86,15 +99,13 @@ class RulerTool(BaseTool):
                         line.x1(), line.y1(), line.x2(), line.y2(),
                         prev, seg[0], seg[1], seg[2])
                     for pt in i:
-                        self._appendIntersection(
-                            contour, index, pt)
+                        self._appendIntersection(pt)
                 elif len(seg) == 1:
                     pt = bezierMath.lineIntersection(
                         line.x1(), line.y1(), line.x2(), line.y2(),
                         prev.x, prev.y, seg[0].x, seg[0].y)
                     if pt is not None:
-                        self._appendIntersection(
-                            contour, index, pt)
+                        self._appendIntersection(pt)
 
     # events
 
