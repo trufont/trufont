@@ -75,6 +75,21 @@ class RulerTool(BaseTool):
         self._cachedIntersections = OrderedDict()
         self._rulerPts = dict()
         line = self._rulerObject[0]
+
+        width = self._glyph.width
+        ascender = self._glyph.font.info.ascender
+        descender = self._glyph.font.info.descender
+        rightSidebearing = bezierMath.lineIntersection(
+                            line.x1(), line.y1(), line.x2(), line.y2(),
+                            0, descender, 0, ascender)
+        if rightSidebearing is not None:
+            self._appendIntersection(rightSidebearing)
+        leftSidebearing = bezierMath.lineIntersection(
+                            line.x1(), line.y1(), line.x2(), line.y2(),
+                            width, descender, width, ascender)
+        if leftSidebearing is not None:
+            self._appendIntersection(leftSidebearing)
+
         for contour in self._glyph:
             segments = contour.segments
             for index, seg in enumerate(segments):
