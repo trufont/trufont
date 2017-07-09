@@ -76,7 +76,8 @@ class RulerTool(BaseTool):
         self._rulerPts = dict()
         line = self._rulerObject[0]
 
-        defaultGlyph = self._glyph.layerSet.defaultLayer.get(glyph.name)
+        defaultGlyph = self._glyph.layerSet.defaultLayer.get(
+            self._glyph.name)
         if defaultGlyph is not None:
             width = defaultGlyph.width
             ascender = defaultGlyph.font.info.ascender
