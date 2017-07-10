@@ -1,4 +1,4 @@
-pyqt5==5.8.2
+pyqt5==5.9
 fonttools==3.13.1
 ufoLib==2.1.0
 defcon==0.3.4
