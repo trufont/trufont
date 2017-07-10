@@ -457,7 +457,6 @@ class Application(QApplication):
                     widget.raise_()
                     return
         font = TFont()
-        currentFont = self.currentFont()
         try:
             font.extract(path)
             self._loadFont(font)
