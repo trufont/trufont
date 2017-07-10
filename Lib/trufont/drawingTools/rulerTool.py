@@ -76,12 +76,14 @@ class RulerTool(BaseTool):
         self._rulerPts = dict()
         line = self._rulerObject[0]
 
+        # the default layer stores the width
         defaultGlyph = self._glyph.layerSet.defaultLayer.get(
             self._glyph.name)
         if defaultGlyph is not None:
             width = defaultGlyph.width
-            ascender = defaultGlyph.font.info.ascender
-            descender = defaultGlyph.font.info.descender
+            info = defaultGlyph.font.info
+            ascender = info.ascender or 750
+            descender = info.descender or -250
             for x in (0, width):
                 pt = bezierMath.lineIntersection(
                     line.x1(), line.y1(), line.x2(), line.y2(),
