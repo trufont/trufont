@@ -209,6 +209,10 @@ class GlyphCanvasView(GlyphContextView):
             drawing.drawGrid(painter, self._inverseScale, viewportRect)
         super().drawMetrics(painter, glyph, flags)
 
+    def drawImage(self, painter, glyph, flags):
+        drawing.drawGlyphImage(
+            painter, glyph, self._inverseScale)
+
     def drawGuidelines(self, painter, glyph, flags):
         drawText = self._impliedPointSize > GlyphViewMinSizeForDetails
         viewportRect = self.mapRectToCanvas(self.rect()).getRect()
@@ -335,6 +339,7 @@ class GlyphCanvasView(GlyphContextView):
                 return
             image = self._glyph.instantiateImage()
             image.fileName = fileName
+            self._glyph.image = image
             event.setAccepted(True)
         else:
             super().dropEvent(event)
@@ -507,9 +512,9 @@ class GlyphCanvasView(GlyphContextView):
         *func(path, obj)* returns True, or only return the first item if
         *justOne* is set to True.
 
-        An item is a (point, contour) or (anchor, None) or (component, None)
-        tuple. The second argument permits accessing parent contour to post
-        notifications.
+        An item is a (contour, index) or (element, None) tuple. Point objects
+        aren't returned directly because their usefulness is limited barring
+        their parent contour.
 
         Here is a sample *func* function that tests whether item with path
         *path* contains *pos*:
