@@ -47,6 +47,14 @@ class TextTool(BaseTool):
     def _layoutManager(self):
         return self.parent().layoutManager()
 
+    # TODO: we might want to fold this into LayoutManager
+    def _insertUnicodings(self, text):
+        unicodeData = self._font.unicodeData
+        for c in text:
+            glyphName = unicodeData.glyphNameForUnicode(ord(c))
+            if glyphName is not None:
+                self._layoutManager.insert(glyphName)
+
     # methods
 
     def toolActivated(self):
@@ -77,7 +85,7 @@ class TextTool(BaseTool):
             clipboard = QApplication.clipboard()
             mimeData = clipboard.mimeData()
             if mimeData.hasText():
-                self._layoutManager.insert(list(mimeData.text()))
+                self._insertUnicodings(mimeData.text())
         elif key == Qt.Key_Left:
             # TODO: we'll probably need to reform this stuff for RTL
             self._layoutManager.caretPrevious()
@@ -87,13 +95,10 @@ class TextTool(BaseTool):
             self._layoutManager.delete(forward=(key == Qt.Key_Delete))
         else:
             text = event.text()
-            unicodeData = self._font.unicodeData
             if not _isUnicodeChar(text):
                 return
-            for c in text:  # text should be just one codepoint, but be safe
-                glyphName = unicodeData.glyphNameForUnicode(ord(c))
-                if glyphName is not None:
-                    self._layoutManager.insert(glyphName)
+            # text should be just one codepoint, but be safe
+            self._insertUnicodings(text)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

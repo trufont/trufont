@@ -53,7 +53,7 @@ def _get_nominal_glyph(font, engine, ch, user_data):
     glyphName = ufo.unicodeData.glyphNameForUnicode(ch)
     if glyphName is not None:
         try:
-            return engine.GIDToGlyphNameMapping.index(glyphName)
+            return engine.glyphOrder.index(glyphName)
         except IndexError:
             pass
     return 0
@@ -61,12 +61,12 @@ def _get_nominal_glyph(font, engine, ch, user_data):
 
 def _get_glyph_h_advance(font, engine, gid, user_data):
     ufo = engine.font
-    glyph = ufo[engine.GIDToGlyphNameMapping[gid]]
+    glyph = ufo[engine.glyphOrder[gid]]
     return glyph.width * font.scale[0] / font.face.upem
 
 
 def _get_glyph_name_func(font, engine, gid, user_data):
-    return engine.GIDToGlyphNameMapping[gid]
+    return engine.glyphOrder[gid]
 
 
 def _spitLayoutTable(face, tag, layoutTables):
@@ -90,7 +90,7 @@ class LayoutEngine(BaseObject):
         self._needsInternalUpdate = True
         self._font = weakref.ref(font)
         self._fontFeatures = dict()
-        self._GIDToGlyphNameMapping = []
+        self._glyphOrder = []
         self._hbFont = None
         super().__init__()
         self.beginSelfNotificationObservation()
@@ -102,8 +102,8 @@ class LayoutEngine(BaseObject):
         return None
 
     @property
-    def GIDToGlyphNameMapping(self):
-        return self._GIDToGlyphNameMapping
+    def glyphOrder(self):
+        return self._glyphOrder
 
     # --------------
     # Engine Updates
@@ -113,7 +113,7 @@ class LayoutEngine(BaseObject):
         if not self._needsInternalUpdate:
             return
         ufo = self.font
-        layoutTables, self._GIDToGlyphNameMapping = self.getRepresentation(
+        layoutTables, self._glyphOrder = self.getRepresentation(
             "TruFont.layoutEngine.tables")
 
         face = hb.Face.create_for_tables(
@@ -241,7 +241,7 @@ class LayoutEngine(BaseObject):
             unicodes = []
             for name in text:
                 # TODO: use a dict instead?
-                gid = self._GIDToGlyphNameMapping.index(name)
+                gid = self._glyphOrder.index(name)
                 unicodes.append(CH_GID_PREFIX + gid)
             buf.add_codepoints(unicodes, len(unicodes), 0, len(unicodes))
         else:
@@ -251,7 +251,7 @@ class LayoutEngine(BaseObject):
 
         glyphRecords = []
         for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
-            glyphName = self._GIDToGlyphNameMapping[info.codepoint]
+            glyphName = self._glyphOrder[info.codepoint]
             if glyphName not in self.font:
                 continue
             record = GlyphRecord()
