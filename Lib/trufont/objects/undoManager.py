@@ -1,6 +1,24 @@
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject
+import functools
 import pickle
 import weakref
+
+
+tr = functools.partial(QCoreApplication.translate, "UndoManager")
+_valueNotifications = n = dict()
+n["Glyph.NameChanged"] = tr("Name changed.")
+n["Glyph.UnicodesChanged"] = tr("Unicode(s) changed.")
+n["Glyph.WidthChanged"] = tr("Width changed.")
+n["Glyph.HeightChanged"] = tr("Height changed.")
+n["Glyph.NoteChanged"] = tr("Note changed.")
+_contentNotifications = n = dict()
+n["Glyph.ContoursChanged"] = tr("Contours changed.")
+n["Glyph.ComponentsChanged"] = tr("Components changed.")
+n["Glyph.AnchorsChanged"] = tr("Anchors changed.")
+n["Glyph.GuidelinesChanged"] = tr("Guidelines changed.")
+n["Glyph.ImageChanged"] = tr("Image changed.")
+del n
+del tr
 
 
 def _attrForNotification(name):
@@ -59,33 +77,23 @@ class UndoManager(QObject):
     def __init__(self, glyph):
         super().__init__()
         self._glyph = weakref.ref(glyph)
+        self._init()
+
+        self._subscribeToGlyph()
+
+    def _init(self):
         self._undoStack = []
         self._redoStack = []
         self._cleanIndex = 0
         self._dumps = dict()
-        self._groupNotifications = dict()
-        self._groupUndo = 0
-
-        self._valueNotifications = n = dict()
-        n["Glyph.NameChanged"] = self.tr("Name changed.")
-        n["Glyph.UnicodesChanged"] = self.tr("Unicode(s) changed.")
-        n["Glyph.WidthChanged"] = self.tr("Width changed.")
-        n["Glyph.HeightChanged"] = self.tr("Height changed.")
-        n["Glyph.NoteChanged"] = self.tr("Note changed.")
-        self._contentNotifications = n = dict()
-        n["Glyph.ContoursChanged"] = self.tr("Contours changed.")
-        n["Glyph.ComponentsChanged"] = self.tr("Components changed.")
-        n["Glyph.AnchorsChanged"] = self.tr("Anchors changed.")
-        n["Glyph.GuidelinesChanged"] = self.tr("Guidelines changed.")
-        n["Glyph.ImageChanged"] = self.tr("Image changed.")
-
-        self._subscribeToGlyph()
+        self._stashedNotifications = dict()
+        self._undoGroups = 0
 
     def _subscribeToGlyph(self):
         glyph = self.glyph
-        for name in self._valueNotifications.keys():
+        for name in _valueNotifications.keys():
             glyph.addObserver(self, "_valueChanged", name)
-        for name in self._contentNotifications.keys():
+        for name in _contentNotifications.keys():
             attr = _attrForNotification(name)
             data = None
             if attr == "_contours":
@@ -100,9 +108,9 @@ class UndoManager(QObject):
 
     def _unsubscribeFromGlyph(self):
         glyph = self.glyph
-        for name in self._valueNotifications.keys():
+        for name in _valueNotifications.keys():
             glyph.removeObserver(self, name)
-        for name in self._contentNotifications.keys():
+        for name in _contentNotifications.keys():
             glyph.removeObserver(self, name)
         self._dumps = dict()
 
@@ -119,19 +127,19 @@ class UndoManager(QObject):
     def _valueChanged(self, notification):
         name = notification.name
         data = notification.data
-        if self._groupUndo:
-            if name not in self._groupNotifications:
-                self._groupNotifications[name] = data
+        if self._undoGroups:
+            if name not in self._stashedNotifications:
+                self._stashedNotifications[name] = data
             else:
-                self._groupNotifications[name][
+                self._stashedNotifications[name][
                     "newValue"] = data["newValue"]
         else:
             self._pushValueChange(name, data)
 
     def _contentChanged(self, notification):
         name = notification.name
-        if self._groupUndo:
-            self._groupNotifications[name] = None
+        if self._undoGroups:
+            self._stashedNotifications[name] = None
         else:
             self._pushContentChange(name)
 
@@ -171,42 +179,42 @@ class UndoManager(QObject):
     # ----------
 
     def clear(self):
-        raise NotImplementedError
+        self._init()
 
     # basic API
 
     def beginUndoGroup(self, text=None):
-        if not self._groupUndo:
-            self._groupUndoText = text
-        self._groupUndo += 1
+        if not self._undoGroups:
+            self._undoGroupText = text
+        self._undoGroups += 1
 
     def endUndoGroup(self):
-        if not self._groupUndo:
+        if not self._undoGroups:
             print("warning: unmatched endUndoGroup()")
             return
-        self._groupUndo -= 1
-        if not self._groupUndo:
-            if self._groupNotifications:
+        self._undoGroups -= 1
+        if not self._undoGroups:
+            if self._stashedNotifications:
                 undoStack = self._undoStack
                 self._undoStack = group = []
-                for name, data in self._groupNotifications.items():
+                for name, data in self._stashedNotifications.items():
                     if data is None:
                         self._pushContentChange(name)
                     else:
                         self._pushValueChange(name, data)
-                self._groupNotifications = dict()
+                self._stashedNotifications = dict()
                 self._undoStack = undoStack
-                self._undoStack.append((self._groupUndoText, group))
-            del self._groupUndoText
+                self._undoStack.append((self._undoGroupText, group))
+            del self._undoGroupText
 
     def canUndo(self):
-        return not self._groupUndo and bool(self._undoStack)
+        return not self._undoGroups and bool(self._undoStack)
 
     def canRedo(self):
-        return not self._groupUndo and bool(self._redoStack)
+        return not self._undoGroups and bool(self._redoStack)
 
     def undo(self):
-        if not self._undoStack or self._groupUndo:
+        if not self._undoStack or self._undoGroups:
             return
         glyph = self.glyph
         redoWasLocked = not self.canRedo()
@@ -223,7 +231,7 @@ class UndoManager(QObject):
             attr = _attrForNotification(name)
             value = data["oldValue"]
             glyph.disableNotifications(observer=self)
-            if name in self._contentNotifications:
+            if name in _contentNotifications:
                 _setGlyphContent(glyph, attr, value)
                 self._dumps[name] = value
             else:
@@ -240,7 +248,7 @@ class UndoManager(QObject):
             self.canUndoChanged.emit(False)
 
     def redo(self):
-        if not self._redoStack or self._groupUndo:
+        if not self._redoStack or self._undoGroups:
             return
         glyph = self.glyph
         undoWasLocked = not self.canUndo()
@@ -257,7 +265,7 @@ class UndoManager(QObject):
             attr = _attrForNotification(name)
             value = data["newValue"]
             glyph.disableNotifications(observer=self)
-            if name in self._contentNotifications:
+            if name in _contentNotifications:
                 _setGlyphContent(glyph, attr, value)
                 self._dumps[name] = value
             else:
@@ -285,12 +293,12 @@ class UndoManager(QObject):
 
     def undoText(self):
         name = self._undoStack[-1][0]
-        if name in self._contentNotifications:
-            return self._contentNotifications[name]
-        return self._valueNotifications[name]
+        if name in _contentNotifications:
+            return _contentNotifications[name]
+        return _valueNotifications[name]
 
     def redoText(self):
         name = self._redoStack[-1][0]
-        if name in self._contentNotifications:
-            return self._contentNotifications[name]
-        return self._valueNotifications[name]
+        if name in _contentNotifications:
+            return _contentNotifications[name]
+        return _valueNotifications[name]
