@@ -98,9 +98,14 @@ class TFont(Font):
             format=fileFormat,
         )
         app.postNotification("fontWillExtract", data)
+        # don't bring on UndoManager just yet
+        func = self.newGlyph
+        self.newGlyph = Font.newGlyph
         extractor.extractUFO(path, self, fileFormat)
         for glyph in self:
             glyph.dirty = False
+            glyph.undoManager = UndoManager(glyph)
+        self.newGlyph = func
         self.dirty = False
         self._binaryPath = path
 
