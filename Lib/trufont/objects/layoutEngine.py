@@ -24,9 +24,9 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
     if font.features.text:
         otf = TTFont()
         otf.setGlyphOrder(glyphOrder)
-        # compile with feaLib + markWriter. kerning is handled separately
+        # compile with feaLib + markWriter/kernWriter
         try:
-            compiler = FeatureCompiler(font, otf, kernWriterClass=None)
+            compiler = FeatureCompiler(font, otf)
             compiler.postProcess = lambda: None
             compiler.compile()
             for name in ("GDEF", "GSUB", "GPOS"):
@@ -127,7 +127,6 @@ class LayoutEngine(BaseObject):
         funcs.set_nominal_glyph_func(_get_nominal_glyph, None, None)
         funcs.set_glyph_h_advance_func(_get_glyph_h_advance, None, None)
         # TODO: vertical advance
-        # TODO: kerning funcs from UFO kerning?
         funcs.set_glyph_name_func(_get_glyph_name_func, None, None)
         font.set_funcs(funcs, self, None)
 
