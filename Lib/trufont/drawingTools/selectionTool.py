@@ -469,13 +469,19 @@ class SelectionTool(BaseTool):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self._maybeJoinContour(event.localPos())
+            # we changed glyph during this mouse press, skip special
+            # processing,
+            # (this would be a no-op except for unbalanced undo warning)
+            if hasattr(self, "_switched"):
+                del self._switched
+            else:
+                self._maybeJoinContour(event.localPos())
+                self._glyph.endUndoGroup()
             self._mouseItem = None
             self._oldPath = None
             self._oldSelection = set()
             self._rubberBandRect = None
             self._shouldMove = False
-            self._glyph.endUndoGroup()
             self.parent().update()
         else:
             super().mouseReleaseEvent(event)
@@ -504,6 +510,9 @@ class SelectionTool(BaseTool):
             index = widget.indexForPoint(
                 widget.mapFromCanvas(event.localPos()))
             if index is not None:
+                # we're about to switch glyph, end undo group first
+                self._glyph.endUndoGroup()
+                self._switched = True
                 widget.setActiveIndex(index)
         # don't perform move events on double click
         self._origin = None
