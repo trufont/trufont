@@ -29,17 +29,16 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
             compiler = FeatureCompiler(font, otf, kernWriterClass=None)
             compiler.postProcess = lambda: None
             compiler.compile()
-        except:
-            # TODO: handle this in the UI
-            import traceback
-            print(traceback.format_exc(5))
-        else:
             for name in ("GDEF", "GSUB", "GPOS"):
                 if name in otf:
                     table = otf[name].compile(otf)
                     value = hb.Blob.create_for_array(
                         table, HB.MEMORY_MODE_READONLY)
                     ret[name] = value
+        except:
+            # TODO: handle this in the UI
+            import traceback
+            print(traceback.format_exc(5))
     return ret, glyphOrder
 
 # harfbuzz
