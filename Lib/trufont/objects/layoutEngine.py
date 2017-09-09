@@ -39,6 +39,8 @@ def _layoutEngineOTLTablesRepresentationFactory(layoutEngine):
             # TODO: handle this in the UI
             import traceback
             print(traceback.format_exc(5))
+            # discard tables from incompletely parsed feature text
+            ret = dict()
     return ret, glyphOrder
 
 # harfbuzz
