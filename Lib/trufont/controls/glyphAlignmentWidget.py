@@ -67,6 +67,7 @@ class GlyphAlignmentWidget(QWidget):
 
     def setAlignment(self, value):
         self._alignment = value
+        self.update()
 
     def glyph(self):
         return self._glyph
