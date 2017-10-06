@@ -9,6 +9,7 @@ from trufont.objects.undoManager import UndoManager
 from ufo2ft import compileOTF, compileTTF
 import fontTools
 import math
+import types
 
 _shaper = True
 try:
@@ -100,12 +101,14 @@ class TFont(Font):
         app.postNotification("fontWillExtract", data)
         # don't bring on UndoManager just yet
         func = self.newGlyph
-        self.newGlyph = Font.newGlyph
-        extractor.extractUFO(path, self, fileFormat)
-        for glyph in self:
-            glyph.dirty = False
-            glyph.undoManager = UndoManager(glyph)
-        self.newGlyph = func
+        try:
+            self.newGlyph = types.MethodType(Font.newGlyph, self)
+            extractor.extractUFO(path, self, fileFormat)
+            for glyph in self:
+                glyph.dirty = False
+                glyph.undoManager = UndoManager(glyph)
+        finally:
+            self.newGlyph = func
         self.dirty = False
         self._binaryPath = path
 
