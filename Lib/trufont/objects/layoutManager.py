@@ -120,6 +120,7 @@ class LayoutManager(QObject):
             return
         self._glyphList.pop(index)
         self._caretIndex = index
+        self._needsCaretPostFix = True
         self._needsLayout = True
         self.updateView()
 
@@ -189,7 +190,7 @@ class LayoutManager(QObject):
             glyphRecords = widget.glyphRecords()
             for i, rec in enumerate(glyphRecords):
                 if rec.cluster >= self._caretIndex:
-                    self._activeIndex = i
+                    self._activeIndex = max(i - 1, 0)
                     self._caretIndex = rec.cluster
                     break
             if self._activeIndex is None:
