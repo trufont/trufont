@@ -244,23 +244,9 @@ class LayoutEngine(BaseObject):
                 gid = self._glyphOrder.index(name)
                 unicodes.append(CH_GID_PREFIX + gid)
             buf.add_codepoints(unicodes, len(unicodes), 0, len(unicodes))
-            # guess segment properties
-            font = self.font
-            props = buf.segment_properties
-            for name in text:
-                uni = font.unicodeData.unicodeForGlyphName(name)
-                script = buf.unicode_funcs.script(uni)
-                if script != HB.SCRIPT_COMMON and \
-                        script != HB.SCRIPT_INHERITED and \
-                        script != HB.SCRIPT_UNKNOWN:
-                    props.script = HB.UNTAG(script, True)
-                    break
-            props.direction = hb.script_get_horizontal_direction(script)
-            props.language = hb.Language.default()
-            buf.segment_properties = props
         else:
             buf.add_str(text)
-            buf.guess_segment_properties()
+        buf.guess_segment_properties()
         hb.shape(self._hbFont, buf, list(self._fontFeatures.values()))
 
         glyphRecords = []
