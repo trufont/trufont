@@ -238,11 +238,15 @@ class LayoutEngine(BaseObject):
         # TODO: reuse buffer?
         buf = hb.Buffer.create()
         if isinstance(text, list):
+            font = self.font
             unicodes = []
             for name in text:
-                # TODO: use a dict instead?
-                gid = self._glyphOrder.index(name)
-                unicodes.append(CH_GID_PREFIX + gid)
+                uni = font.unicodeData.unicodeForGlyphName(name)
+                if uni is None:
+                    # TODO: use a dict instead?
+                    gid = self._glyphOrder.index(name)
+                    uni = CH_GID_PREFIX + gid
+                unicodes.append(uni)
             buf.add_codepoints(unicodes, len(unicodes), 0, len(unicodes))
         else:
             buf.add_str(text)
