@@ -23,7 +23,7 @@ setup(
     },
     install_requires=[
         "pyqt5>=5.5.0",
-        "fonttools>=3.13.1",
+        "fonttools>=3.17.0",
         "ufoLib>=2.1.0",
         "defcon>=0.3.4",
         "defconQt>=0.5.3",
