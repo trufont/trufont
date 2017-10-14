@@ -6,6 +6,8 @@ from PyQt5.QtWidgets import (
 from defconQt.controls.glyphCellView import GlyphCellView
 from defconQt.windows.baseWindows import BaseWindow
 from fontTools.feaLib.error import FeatureLibError
+from fontTools.misc.py23 import SimpleNamespace
+from fontTools.svgLib import SVGPath
 from trufont.controls.exportDialog import ExportDialog
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
@@ -24,7 +26,9 @@ from trufont.windows.fontInfoWindow import FontInfoWindow
 from trufont.windows.groupsWindow import GroupsWindow
 from trufont.windows.kerningWindow import KerningWindow
 from trufont.windows.metricsWindow import MetricsWindow
-from ufoLib.glifLib import readGlyphFromString
+from ufoLib.glifLib import readGlyphFromString, writeGlyphToString
+from ufoLib.pointPen import SegmentToPointPen
+from ufoLib.glifLib import writeGlyphToString
 from collections import OrderedDict
 import os
 import pickle
@@ -743,6 +747,23 @@ class FontWindow(BaseWindow):
                             glyph.endUndoGroup()
                     else:
                         glyph.deserialize(pickled)
+        elif mimeData.hasFormat("image/svg+xml"):
+            if len(glyphs) == 1:
+                glyph = glyphs[0]
+                otherGlyph = glyph.__class__()
+                try:
+                    glyphContentToPaste = self._svg2glif(mimeData.data("image/svg+xml"), glyph.name )
+                    readGlyphFromString(
+                        glyphContentToPaste, otherGlyph, otherGlyph.getPointPen())
+                except Exception as e:
+                    raise ValueError(
+                        "SVG Paste error: {}".format(str(e)))
+                    return
+                glyph.beginUndoGroup()
+                if not isGlyphTab:
+                    glyph.clear()
+                otherGlyph.drawPoints(glyph.getPointPen())
+                glyph.endUndoGroup()
         elif mimeData.hasText():
             if len(glyphs) == 1:
                 glyph = glyphs[0]
@@ -1048,6 +1069,29 @@ class FontWindow(BaseWindow):
                 return True
             return False
 
+    def _svg2glif(self, svg, name, width=0, height=0, unicodes=None, transform=None,
+                version=2):
+        """ Convert an SVG outline to a UFO glyph with given 'name', advance
+        'width' and 'height' (int), and 'unicodes' (list of int).
+        Return the resulting string in GLIF format (default: version 2).
+        If 'transform' is provided, apply a transformation matrix before the
+        conversion (must be tuple of 6 floats, or a FontTools Transform object).
+        """
+        glyph = SimpleNamespace(width=width, height=height, unicodes=unicodes)
+        outline = SVGPath.fromstring(svg, transform=transform)
+
+        # writeGlyphToString takes a callable (usually a glyph's drawPoints
+        # method) that accepts a PointPen, however SVGPath currently only has
+        # a draw method that accepts a segment pen. We need to wrap the call
+        # with a converter pen.
+        def drawPoints(pointPen):
+            pen = SegmentToPointPen(pointPen)
+            outline.draw(pen)
+
+        return writeGlyphToString(name,
+            glyphObject=glyph,
+            drawPointsFunc=drawPoints,
+            formatVersion=version)
     # ----------
     # Qt methods
     # ----------
