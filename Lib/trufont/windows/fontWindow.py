@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
 from defconQt.controls.glyphCellView import GlyphCellView
 from defconQt.windows.baseWindows import BaseWindow
 from fontTools.feaLib.error import FeatureLibError
+from fontTools.svgLib import SVGPath
 from trufont.controls.exportDialog import ExportDialog
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
@@ -743,6 +744,20 @@ class FontWindow(BaseWindow):
                             glyph.endUndoGroup()
                     else:
                         glyph.deserialize(pickled)
+        elif mimeData.hasFormat("image/svg+xml"):
+            if len(glyphs) == 1:
+                glyph = glyphs[0]
+                try:
+                    svgPath = SVGPath.fromstring(
+                        mimeData.data("image/svg+xml"))
+                except Exception as e:
+                    raise ValueError(
+                        "SVG Paste error: {}".format(str(e)))
+                glyph.beginUndoGroup()
+                if not isGlyphTab:
+                    glyph.clear()
+                svgPath.draw(glyph.getPen())
+                glyph.endUndoGroup()
         elif mimeData.hasText():
             if len(glyphs) == 1:
                 glyph = glyphs[0]
