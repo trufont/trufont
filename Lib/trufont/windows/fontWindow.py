@@ -766,8 +766,7 @@ class FontWindow(BaseWindow):
                 otherGlyph = glyph.__class__()
                 text = mimeData.text()
                 try:
-                    svgPath = SVGPath.fromstring(
-                        mimeData.data("image/svg+xml"))
+                    svgPath = SVGPath.fromstring(text)
                     svgPath.draw(otherGlyph.getPen())
                 except:
                     try:
