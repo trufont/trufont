@@ -744,30 +744,37 @@ class FontWindow(BaseWindow):
                             glyph.endUndoGroup()
                     else:
                         glyph.deserialize(pickled)
-        elif mimeData.hasFormat("image/svg+xml"):
+            return
+        if mimeData.hasFormat("image/svg+xml"):
             if len(glyphs) == 1:
                 glyph = glyphs[0]
                 try:
                     svgPath = SVGPath.fromstring(
                         mimeData.data("image/svg+xml"))
-                except Exception as e:
-                    raise ValueError(
-                        "SVG Paste error: {}".format(str(e)))
-                glyph.beginUndoGroup()
-                if not isGlyphTab:
-                    glyph.clear()
-                svgPath.draw(glyph.getPen())
-                glyph.endUndoGroup()
-        elif mimeData.hasText():
+                except:
+                    pass
+                else:
+                    glyph.beginUndoGroup()
+                    if not isGlyphTab:
+                        glyph.clear()
+                    svgPath.draw(glyph.getPen())
+                    glyph.endUndoGroup()
+                    return
+        if mimeData.hasText():
             if len(glyphs) == 1:
                 glyph = glyphs[0]
                 otherGlyph = glyph.__class__()
                 text = mimeData.text()
                 try:
-                    readGlyphFromString(
-                        text, otherGlyph, otherGlyph.getPointPen())
+                    svgPath = SVGPath.fromstring(
+                        mimeData.data("image/svg+xml"))
+                    svgPath.draw(otherGlyph.getPen())
                 except:
-                    return
+                    try:
+                        readGlyphFromString(
+                            text, otherGlyph, otherGlyph.getPointPen())
+                    except:
+                        return
                 glyph.beginUndoGroup()
                 if not isGlyphTab:
                     glyph.clear()
