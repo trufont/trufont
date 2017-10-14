@@ -6,6 +6,7 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import QApplication
 from defconQt.controls.glyphContextView import GlyphContextView, GlyphFlags
 from defconQt.controls.glyphView import GlyphViewMinSizeForDetails
+from fontTools.svgLib import SVGPath
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects import settings
 from trufont.objects.layoutManager import LayoutManager
@@ -321,6 +322,16 @@ class GlyphCanvasView(GlyphContextView):
             ext = os.path.splitext(path)[1][1:]
             # TODO: make sure we cleanup properly when replacing an image with
             # another
+            if ext.lower() == "svg":
+                try:
+                    svgPath = SVGPath.fromstring(data)
+                except Exception as e:
+                    errorReports.showCriticalException(e)
+                    return
+                self._glyph.beginUndoGroup()
+                svgPath.draw(self._glyph.getPen())
+                self._glyph.endUndoGroup()
+                return
             if ext.lower() != "png":
                 # convert
                 img = QImage(path)
