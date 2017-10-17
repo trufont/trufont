@@ -586,7 +586,7 @@ class Application(QApplication):
         if path is None:
             return
         path = os.path.abspath(path)
-        recentFiles = settings.recentFiles()
+        recentFiles = settings.recentFiles() or []
         if path in recentFiles:
             recentFiles.remove(path)
         recentFiles.insert(0, path)
