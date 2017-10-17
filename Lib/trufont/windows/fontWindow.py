@@ -7,6 +7,7 @@ from defconQt.controls.glyphCellView import GlyphCellView
 from defconQt.windows.baseWindows import BaseWindow
 from fontTools.feaLib.error import FeatureLibError
 from fontTools.svgLib import SVGPath
+from fontTools.pens.svgPathPen import SVGPathPen
 from trufont.controls.exportDialog import ExportDialog
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog
@@ -666,6 +667,7 @@ class FontWindow(BaseWindow):
                 glyph.clear()
 
     def copy(self):
+        font = self._font
         widget = self.stackWidget.currentWidget()
         clipboard = QApplication.clipboard()
         mimeData = QMimeData()
@@ -678,13 +680,36 @@ class FontWindow(BaseWindow):
             packGlyphs = (
                 glyphs[index] for index in sorted(
                     self.glyphCellView.selection()))
+
+        svgGlyphs = []
         pickled = []
-        for glyph in packGlyphs:
+        for i, glyph in enumerate(packGlyphs):
             pickled.append(glyph.serialize(
                 blacklist=("name", "unicodes")
             ))
+
+            pen = SVGPathPen(font)
+            glyph.draw(pen)
+            col = i % 5
+            row = i // 5
+            g = '<g transform="matrix(1,0,0,-1,%f,%f)"><path d="%s"/></g>' % (
+                    font.info.unitsPerEm * col, font.info.unitsPerEm * row,
+                    pen.getCommands())
+            svgGlyphs.append(g)
+
         mimeData.setData("application/x-trufont-glyph-data",
                          pickle.dumps(pickled))
+
+        svg = """\
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg">
+%s
+</svg>
+""" % "\n".join(svgGlyphs)
+        mimeData.setData("image/svg+xml", svg.encode("utf-8"))
+
         clipboard.setMimeData(mimeData)
 
     def copyAsComponent(self):
