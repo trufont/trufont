@@ -1,4 +1,5 @@
-from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtCore import QEvent, QLocale, Qt
+from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QGridLayout, QLabel, QLineEdit, QListWidget,
     QRadioButton)
@@ -162,16 +163,25 @@ class LayerActionsDialog(QDialog):
         return (newLayer, action, result)
 
 
-class RenameDialog(QDialog):
+class EditDialog(QDialog):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, item=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
-        self.setWindowTitle(self.tr("Rename…"))
+        self.setWindowTitle(self.tr("Edit…"))
 
         nameLabel = QLabel(self.tr("Name:"), self)
         self.nameEdit = QLineEdit(self)
         self.nameEdit.setFocus(Qt.OtherFocusReason)
+
+        validator = QDoubleValidator(self)
+        validator.setLocale(QLocale.c())
+        xLabel = QLabel(self.tr("X:"), self)
+        self.xEdit = QLineEdit(self)
+        self.xEdit.setValidator(validator)
+        yLabel = QLabel(self.tr("Y:"), self)
+        self.yEdit = QLineEdit(self)
+        self.yEdit.setValidator(validator)
 
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -183,14 +193,25 @@ class RenameDialog(QDialog):
         layout.addWidget(nameLabel, l, 0)
         layout.addWidget(self.nameEdit, l, 1, 1, 3)
         l += 1
+        layout.addWidget(xLabel, l, 0)
+        layout.addWidget(self.xEdit, l, 1)
+        layout.addWidget(yLabel, l, 2)
+        layout.addWidget(self.yEdit, l, 3)
+        l += 1
         layout.addWidget(buttonBox, l, 3)
         self.setLayout(layout)
 
     @classmethod
-    def getNewName(cls, parent, name=None):
-        dialog = cls(parent)
-        dialog.nameEdit.setText(name)
+    def getNewProperties(cls, parent, item):
+        dialog = cls(parent, item)
+        dialog.nameEdit.setText(item.name)
         dialog.nameEdit.selectAll()
+        dialog.xEdit.setText(str(item.x))
+        dialog.xEdit.selectAll()
+        dialog.yEdit.setText(str(item.y))
+        dialog.yEdit.selectAll()
         result = dialog.exec_()
         name = dialog.nameEdit.text()
-        return (name, result)
+        x = float(dialog.xEdit.text())
+        y = float(dialog.yEdit.text())
+        return (name, x, y, result)
