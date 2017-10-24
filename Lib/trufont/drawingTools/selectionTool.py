@@ -79,6 +79,7 @@ class SelectionTool(BaseTool):
         # add one at position
         anchor = dict(x=pos.x(), y=pos.y(), name="new anchor")
         glyph.appendAnchor(anchor)
+        self._editItem(glyph.anchors[-1])
 
     def _createComponent(self, *_):
         widget = self.parent()
