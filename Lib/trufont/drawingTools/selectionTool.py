@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from defcon import Anchor, Component, Glyph, Guideline
 from fontTools.pens.basePen import decomposeQuadraticSegment
-from trufont.controls.glyphDialogs import AddComponentDialog, RenameDialog
+from trufont.controls.glyphDialogs import AddComponentDialog, EditDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
@@ -79,6 +79,7 @@ class SelectionTool(BaseTool):
         # add one at position
         anchor = dict(x=pos.x(), y=pos.y(), name="new anchor")
         glyph.appendAnchor(anchor)
+        self._editItem(glyph.anchors[-1])
 
     def _createComponent(self, *_):
         widget = self.parent()
@@ -254,11 +255,13 @@ class SelectionTool(BaseTool):
                 dy *= 10
         return (dx, dy)
 
-    def _renameItem(self, item):
+    def _editItem(self, item):
         widget = self.parent()
-        newName, ok = RenameDialog.getNewName(widget, item.name)
+        newName, x, y, ok = EditDialog.getNewProperties(widget, item)
         if ok:
             item.name = newName
+            item.x = x
+            item.y = y
 
     def _reverse(self, target=None):
         if target is None:
@@ -503,7 +506,7 @@ class SelectionTool(BaseTool):
                     # if we have one offCurve, make it tangent
                     maybeProjectUISmoothPointOffcurve(contour, index)
             elif isinstance(item, (Anchor, Guideline)):
-                self._renameItem(item)
+                self._editItem(item)
         else:
             if self._performSegmentClick(event.localPos(), "selectContour"):
                 return
