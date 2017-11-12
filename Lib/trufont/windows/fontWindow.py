@@ -756,9 +756,12 @@ class FontWindow(BaseWindow):
                                 len(pasteGlyph.anchors):
                             glyph.beginUndoGroup()
                             glyph.holdNotifications()
+                            count = len(glyph)
                             pen = glyph.getPointPen()
                             # contours, components
                             pasteGlyph.drawPoints(pen)
+                            for contour in glyph[count:]:
+                                contour.selected = True
                             # anchors
                             for anchor in pasteGlyph.anchors:
                                 glyph.appendAnchor(dict(anchor))
