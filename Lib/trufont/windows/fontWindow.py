@@ -794,12 +794,12 @@ class FontWindow(BaseWindow):
                 otherGlyph = glyph.__class__()
                 text = mimeData.text()
                 try:
-                    svgPath = SVGPath.fromstring(text)
-                    svgPath.draw(otherGlyph.getPen())
+                    readGlyphFromString(
+                        text, otherGlyph, otherGlyph.getPointPen())
                 except:
                     try:
-                        readGlyphFromString(
-                            text, otherGlyph, otherGlyph.getPointPen())
+                        svgPath = SVGPath.fromstring(text)
+                        svgPath.draw(otherGlyph.getPen())
                     except:
                         return
                 glyph.beginUndoGroup()
