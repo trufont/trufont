@@ -106,5 +106,5 @@ We will be happy to review and integrate it into the main app.
 
 Happy hacking with TruFont! :muscle:
 
-.. |Build Status| image:: https://travis-ci.org/trufont/trufont.svg
+.. |Build Status| image:: https://travis-ci.org/trufont/trufont.svg?branch=master
    :target: https://travis-ci.org/trufont/trufont
