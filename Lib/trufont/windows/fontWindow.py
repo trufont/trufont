@@ -879,6 +879,7 @@ class FontWindow(BaseWindow):
             widget = self.stackWidget.currentWidget()
             newScale = widget.scale() * pow(1.2, step)
             widget.zoom(newScale)
+            self.statusBar.setSize(widget.pointSize())
         else:
             value = self.statusBar.size()
             newValue = value + 10 * step
