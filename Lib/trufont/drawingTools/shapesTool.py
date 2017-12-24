@@ -1,66 +1,104 @@
 from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QPainterPath
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QColor, QPainter, QPalette, QPainterPath
+from PyQt5.QtWidgets import (
+    QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
+from defcon import Glyph
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.tools.uiMethods import moveUIPoint
+from trufont.tools import bezierMath, platformSpecific
 
+# Draw icon
 _path = QPainterPath()
-_path.moveTo(5.0, 5.0)
-_path.lineTo(5.0, 25.0)
-_path.lineTo(25.0, 25.0)
-_path.lineTo(25.0, 5.0)
-_path.lineTo(5.0, 5.0)
-_path.closeSubpath()
+_path.addRect(4, 14, 14, 14)
+_path.addEllipse(10, 6, 16, 16)
+
 
 class ShapesTool(BaseTool):
+    """
+    A tool for generating basic geometric shapes.
+    """
     icon = _path
     name = QApplication.translate("ShapesTool", "Shapes")
     shortcut = "S"
 
+    # Initialize attributes when class is invoked
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._startPoint = None
+        self._endPoint = None
+        self._rubberBandRect = None
 
-    # events
+    # Events
+
+    # Actions performed when a mouse button is released
     def mousePressEvent(self, event):
-        if event.button() != Qt.LeftButton:
-            super().mousePressEvent(event)
-            return
+        super().mousePressEvent(event)
+        self._startPoint = event.localPos()
 
-        #self._glyph.beginUndoGroup()
-        self._origin = event.localPos()
+    # Actions performed when a mouse button is pressed and dragging takes place
+    def mouseMoveEvent(self, event):
+        super().mouseMoveEvent(event)
         widget = self.parent()
-        #candidate = self._getSelectedCandidatePoint()
-        mouseItem = widget.itemAt(self._origin)
+        self._rubberBandRect = QRectF(
+            self._startPoint, event.localPos()).normalized()
+        widget.update()
 
-        canvasPos = event.pos()
-        x, y = canvasPos.x(), canvasPos.y()
+    # Actions performed when a mouse button is released
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+        self._endPoint = event.localPos()
+        self._rubberBandRect = None
+
+        # Get points to construct shape
+        endX, endY = self._endPoint.x(), self._endPoint.y()
+        startX, startY = self._startPoint.x(), self._startPoint.y()
 
         # Create a new contour
         contour = self._glyph.instantiateContour()
         self._glyph.appendContour(contour)
-        # point
         pointType = "line"
-        # Unselect all points (*click*) and enable new point
         self._glyph.selected = False
-        contour.addPoint((x, y), pointType)
-        contour.addPoint((x, y-64), pointType)
-        contour.addPoint((x-64, y-64), pointType)
-        contour.addPoint((x-64, y), pointType)
-        contour[-1].selected = True
-        contour.postNotification(
-            notification="Contour.SelectionChanged")
-        self._targetContour = contour
 
-    def mouseMoveEvent(self, event):
-        if not event.buttons() & Qt.LeftButton:
-            super().mouseMoveEvent(event)
+        # Draw Shape
+        contour.addPoint((startX, startY), pointType)
+        contour.addPoint((startX, endY), pointType)
+        contour.addPoint((endX, endY), pointType)
+        contour.addPoint((endX, startY), pointType)
+        contour[0].selected = True
+
+    def paint(self, painter, index):
+        if self._rubberBandRect is None:
             return
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._shouldMoveOnCurve = False
-            self._stashedOffCurve = None
-            self._targetContour = None
-            self._glyph.endUndoGroup()
+        widget = self.parent()
+        if index != widget.activeIndex():
+            return
+        rect = self._rubberBandRect
+        if platformSpecific.useBuiltinRubberBand():
+            # okay, OS-native rubber band does not support painting with
+            # floating-point coordinates
+            # paint directly on the widget with unscaled context
+            widgetOrigin = widget.mapFromCanvas(rect.bottomLeft())
+            widgetMove = widget.mapFromCanvas(rect.topRight())
+            option = QStyleOptionRubberBand()
+            option.initFrom(widget)
+            option.opaque = False
+            option.rect = QRectF(widgetOrigin, widgetMove).toRect()
+            option.shape = QRubberBand.Rectangle
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing, False)
+            painter.resetTransform()
+            widget.style().drawControl(
+                QStyle.CE_RubberBand, option, painter, widget)
+            painter.restore()
         else:
-            super().mouseReleaseEvent(event)
+            highlight = widget.palette(
+                ).color(QPalette.Active, QPalette.Highlight)
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing, False)
+            pen = painter.pen()
+            pen.setColor(highlight.darker(120))
+            pen.setWidth(0)
+            painter.setPen(pen)
+            highlight.setAlphaF(.35)
+            painter.setBrush(highlight)
+            painter.drawRect(rect)
+            painter.restore()
