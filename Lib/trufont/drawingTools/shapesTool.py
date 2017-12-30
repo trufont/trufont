@@ -1,10 +1,9 @@
-from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QColor, QPainter, QPalette, QPainterPath
+from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtGui import QPainter, QPalette, QPainterPath
 from PyQt5.QtWidgets import (
     QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
-from defcon import Glyph
 from trufont.drawingTools.baseTool import BaseTool
-from trufont.tools import bezierMath, platformSpecific
+from trufont.tools import platformSpecific
 
 # Draw icon
 _path = QPainterPath()
