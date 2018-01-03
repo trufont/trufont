@@ -13,76 +13,79 @@ _path.addEllipse(12, 6, 12, 12)
 
 
 class ShapesTool(BaseTool):
-    """
-    A tool for generating basic geometric shapes.
-    """
     icon = _path
     name = QApplication.translate("ShapesTool", "Shapes")
     shortcut = "S"
 
-    # Initialize attributes when class is invoked
     def __init__(self, parent=None):
         super().__init__(parent)
         self._startPoint = None
         self._endPoint = None
         self._rubberBandRect = None
 
-    # Events
-
-    # Actions performed when a mouse button is pressed
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
         self._glyph.beginUndoGroup()
-
-        # Set a point to start drawing the shape
         self._startPoint = event.localPos()
 
-    # Actions performed when a mouse button is held down
     def mouseMoveEvent(self, event):
         super().mouseMoveEvent(event)
-
-        # Display a temporary guide showing the bounds of the shape
         widget = self.parent()
-        self._rubberBandRect = QRectF(
-            self._startPoint, event.localPos()).normalized()
-        widget.update()
-
-    # Actions performed when a mouse button is released
-    def mouseReleaseEvent(self, event):
-        super().mouseReleaseEvent(event)
-        self._rubberBandRect = None
-
-        # Set a point marking the end point of the shape
         self._endPoint = event.localPos()
 
-        # Get points to construct the shape
-        endX, endY = self._endPoint.x(), self._endPoint.y()
-        startX, startY = self._startPoint.x(), self._startPoint.y()
+        # Get the width of the shape
+        width = abs(int(self._endPoint.x() - self._startPoint.x()))
+
+        # If Shift key is pressed, equalize the width and height of the shape
+        if event.modifiers() & Qt.ShiftModifier:
+            if self._startPoint.y() >= self._endPoint.y():
+                self._endPoint.setY(int(self._startPoint.y() - width))
+            else:
+                self._endPoint.setY(int(self._startPoint.y() + width))
+
+        # Draw a temporary shape guide
+        self._rubberBandRect = QRectF(self._startPoint, self._endPoint)
+        widget.update()
+
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+
+        # Remove the temporary shape guide
+        self._rubberBandRect = None
 
         # Create a new contour
         contour = self._glyph.instantiateContour()
         self._glyph.appendContour(contour)
-        pointType = "line"
         self._glyph.selected = False
+
+        # Get points to construct the new shape contour
+        endX, endY = int(self._endPoint.x()), int(self._endPoint.y())
+        startX, startY = int(self._startPoint.x()), int(self._startPoint.y())
 
         # Draw ellipse if right mouse button was pressed
         if event.button() == Qt.RightButton:
-            midX = (startX + endX) / 2
-            midY = (startY + endY) / 2
-            handleXStart = (midX + startX) / 2
-            handleXEnd = (midX + endX) / 2
-            handleYStart = (midY + startY) / 2
-            handleYEnd = (midY + endY) / 2
+            handlePos = .55
+            midX = (endX + startX) / 2
+            midY = (endY + startY) / 2
+            halfWidthX = (endX - startX) / 2
+            halfWidthY = (endY - startY) / 2
+            handleXStart = midX - halfWidthX * handlePos
+            handleXEnd = midX + halfWidthX * handlePos
+            handleYStart = midY - halfWidthY * handlePos
+            handleYEnd = midY + halfWidthY * handlePos
 
             contour.addPoint((midX, startY), segmentType="curve", smooth=True)
             contour.addPoint((handleXEnd, startY))
             contour.addPoint((endX, handleYStart))
+
             contour.addPoint((endX, midY), segmentType="curve", smooth=True)
             contour.addPoint((endX, handleYEnd))
             contour.addPoint((handleXEnd, endY))
+
             contour.addPoint((midX, endY), segmentType="curve", smooth=True)
             contour.addPoint((handleXStart, endY))
             contour.addPoint((startX, handleYEnd))
+
             contour.addPoint((startX, midY), segmentType="curve", smooth=True)
             contour.addPoint((startX, handleYStart))
             contour.addPoint((handleXStart, startY))
@@ -90,14 +93,15 @@ class ShapesTool(BaseTool):
 
         # Else, draw a rectangle
         else:
-            contour.addPoint((startX, startY), pointType)
-            contour.addPoint((startX, endY), pointType)
-            contour.addPoint((endX, endY), pointType)
-            contour.addPoint((endX, startY), pointType)
+            contour.addPoint((startX, startY), "line")
+            contour.addPoint((startX, endY), "line")
+            contour.addPoint((endX, endY), "line")
+            contour.addPoint((endX, startY), "line")
             contour[0].selected = True
 
         self._glyph.endUndoGroup()
 
+    # Draw the graphics on screen
     def paint(self, painter, index):
         if self._rubberBandRect is None:
             return
@@ -106,9 +110,6 @@ class ShapesTool(BaseTool):
             return
         rect = self._rubberBandRect
         if platformSpecific.useBuiltinRubberBand():
-            # okay, OS-native rubber band does not support painting with
-            # floating-point coordinates
-            # paint directly on the widget with unscaled context
             widgetOrigin = widget.mapFromCanvas(rect.bottomLeft())
             widgetMove = widget.mapFromCanvas(rect.topRight())
             option = QStyleOptionRubberBand()
