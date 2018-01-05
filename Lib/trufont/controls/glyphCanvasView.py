@@ -12,6 +12,7 @@ from trufont.objects import settings
 from trufont.objects.layoutManager import LayoutManager
 from trufont.tools import drawing, errorReports
 from trufont.tools.uiMethods import UIGlyphGuidelines
+from ufoLib.glifLib import readGlyphFromString
 import os
 
 GlyphViewMinSizeForGrid = 10000
@@ -305,7 +306,7 @@ class GlyphCanvasView(GlyphContextView):
             if url.isLocalFile():
                 path = url.toLocalFile()
                 ext = os.path.splitext(path)[1][1:]
-                if ext.lower() in QImageReader.supportedImageFormats():
+                if ext.lower() in QImageReader.supportedImageFormats() + ['glif']:
                     event.acceptProposedAction()
             return
         super().dragEnterEvent(event)
@@ -322,6 +323,18 @@ class GlyphCanvasView(GlyphContextView):
             ext = os.path.splitext(path)[1][1:]
             # TODO: make sure we cleanup properly when replacing an image with
             # another
+            if ext.lower() == "glif":
+                otherGlyph = self._glyph.__class__()
+                try:
+                    readGlyphFromString(
+                        data, otherGlyph, otherGlyph.getPointPen())
+                except Exception as e:
+                    errorReports.showCriticalException(e)
+                    return
+                self._glyph.beginUndoGroup()
+                otherGlyph.drawPoints(self._glyph.getPointPen())
+                self._glyph.endUndoGroup()
+                return
             if ext.lower() == "svg":
                 try:
                     svgPath = SVGPath.fromstring(data)
