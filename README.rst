@@ -24,15 +24,14 @@ Or, as separate lines, making modifications when needed:
 
    .. code::
 
-      python3 -m venv trufont-venv
-      source trufont-venv/bin/activate
-      cd trufont-venv
-      git clone https://github.com/trufont/trufont.git
-      cd trufont &&
-      pip install --upgrade -r requirements.txt
-      pip install --editable .
-      trufont``
-
+     python3 -m venv trufont-venv
+     source trufont-venv/bin/activate
+     cd trufont-venv
+     git clone https://github.com/trufont/trufont.git
+     cd trufont
+     pip install --upgrade -r requirements.txt
+     pip install --editable .
+     trufont
 
 Detailed Installation Instructions
 ----------------------------------
