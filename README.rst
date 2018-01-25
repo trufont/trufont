@@ -9,10 +9,10 @@ written with Python3, ufoLib, defcon, and PyQt5.
 .. image:: Lib/trufont/resources/screenshot.png
 
 Getting started
----------------
+===============
 
-Quick Installation Instructions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Quick installation instructions
+-------------------------------
 
 If you have Python3 and Git installed and want to quickly install 
 and run TruFont in a virtual environment, open a terminal and enter 
@@ -20,8 +20,22 @@ the following chain of commands as one line:
 
 ``python3 -m venv trufont-venv && source trufont-venv/bin/activate && cd trufont-venv && git clone https://github.com/trufont/trufont.git && cd trufont && pip install --upgrade -r requirements.txt && pip install --editable . && trufont``
 
+Or, as separate lines, making modifications when needed:
+
+   .. code::
+
+      python3 -m venv trufont-venv
+      source trufont-venv/bin/activate
+      cd trufont-venv
+      git clone https://github.com/trufont/trufont.git
+      cd trufont &&
+      pip install --upgrade -r requirements.txt
+      pip install --editable .
+      trufont``
+
+
 Detailed Installation Instructions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 1. Install **Python 3.5** (or later):
 
@@ -75,8 +89,8 @@ Detailed Installation Instructions
 
    .. code::
 
-     cd TRUFONT-VENV
-     git clone https://github.com/trufont/trufont.git
+      cd TRUFONT-VENV
+      git clone https://github.com/trufont/trufont.git
 
 5. Move into the directory you just cloned from GitHub and run the following
    command to install TruFont and the requiered dependancies:
@@ -87,18 +101,18 @@ Detailed Installation Instructions
    then use ``pip`` to update to the latest version. For example, if ``ufoLib`` 
    is causing an error, run:
 
-  ``pip install --upgrade ufolib``
+   ``pip install --upgrade ufolib``
 
 6. Finally, run TruFont with:
 
-    ``trufont``
+   ``trufont``
 
    **TruFont** is now installed! This installation method makes TruFont editable,
    so if you make a change to the source code, that change will take effect 
    next time you launch TruFont, without needing to reinstall.
 
 Contributing
-~~~~~~~~~~~~
+============
 
 Here's a quick tutorial if you'd like to contribute to TruFont.
 
@@ -119,10 +133,10 @@ Here's a quick tutorial if you'd like to contribute to TruFont.
 
    .. code::
 
-     git checkout master
-     git fetch upstream
-     git rebase upstream/master
-     git push
+      git checkout master
+      git fetch upstream
+      git rebase upstream/master
+      git push
 
 5. Now, you can create and checkout your new feature branch:
 
