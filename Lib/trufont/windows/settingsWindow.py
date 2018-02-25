@@ -106,13 +106,13 @@ class GlyphSetTab(QWidget):
         buttonsLayout.addWidget(self.importButton)
 
         firstLayout = QGridLayout()
-        l = 0
-        firstLayout.addWidget(self.defaultGlyphSetBox, l, 0, 1, 2)
-        firstLayout.addWidget(self.defaultGlyphSetDrop, l, 3, 1, 3)
-        l += 1
-        firstLayout.addWidget(splitter, l, 0, 1, 6)
-        l += 1
-        firstLayout.addLayout(buttonsLayout, l, 0, 1, 3)
+        line = 0
+        firstLayout.addWidget(self.defaultGlyphSetBox, line, 0, 1, 2)
+        firstLayout.addWidget(self.defaultGlyphSetDrop, line, 3, 1, 3)
+        line += 1
+        firstLayout.addWidget(splitter, line, 0, 1, 6)
+        line += 1
+        firstLayout.addLayout(buttonsLayout, line, 0, 1, 3)
         secondLayout = QHBoxLayout()
         secondLayout.addWidget(self.glyphListBox)
         secondLayout.addWidget(self.glyphListEdit)

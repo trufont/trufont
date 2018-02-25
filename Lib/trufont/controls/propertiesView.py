@@ -173,23 +173,23 @@ class PropertiesWidget(QWidget):
             self.writeMarkColor)
         self.markColorWidget.setMaximumWidth(columnOneWidth)
 
-        l = 0
-        glyphLayout.addWidget(nameLabel, l, 0)
-        glyphLayout.addWidget(self.nameEdit, l, 1, 1, 3)
-        l += 1
-        glyphLayout.addWidget(unicodesLabel, l, 0)
-        glyphLayout.addWidget(self.unicodesEdit, l, 1, 1, 3)
-        l += 1
-        glyphLayout.addWidget(widthLabel, l, 0)
-        glyphLayout.addWidget(self.widthEdit, l, 1)
-        l += 1
-        glyphLayout.addWidget(leftMarginLabel, l, 0)
-        glyphLayout.addWidget(self.leftMarginEdit, l, 1)
-        glyphLayout.addWidget(rightMarginLabel, l, 2)
-        glyphLayout.addWidget(self.rightMarginEdit, l, 3)
-        l += 1
-        glyphLayout.addWidget(markColorLabel, l, 0)
-        glyphLayout.addWidget(self.markColorWidget, l, 1)
+        line = 0
+        glyphLayout.addWidget(nameLabel, line, 0)
+        glyphLayout.addWidget(self.nameEdit, line, 1, 1, 3)
+        line += 1
+        glyphLayout.addWidget(unicodesLabel, line, 0)
+        glyphLayout.addWidget(self.unicodesEdit, line, 1, 1, 3)
+        line += 1
+        glyphLayout.addWidget(widthLabel, line, 0)
+        glyphLayout.addWidget(self.widthEdit, line, 1)
+        line += 1
+        glyphLayout.addWidget(leftMarginLabel, line, 0)
+        glyphLayout.addWidget(self.leftMarginEdit, line, 1)
+        glyphLayout.addWidget(rightMarginLabel, line, 2)
+        glyphLayout.addWidget(self.rightMarginEdit, line, 3)
+        line += 1
+        glyphLayout.addWidget(markColorLabel, line, 0)
+        glyphLayout.addWidget(self.markColorWidget, line, 1)
         glyphLayout.setSpacing(8)
         glyphGroup.setChildLayout(glyphLayout)
 
@@ -336,42 +336,42 @@ class PropertiesWidget(QWidget):
 
         buttonsLayout = QGridLayout()
         buttonsLayout.setSpacing(0)
-        l = 0
-        buttonsLayout.addWidget(unionButton, l, 0)
-        buttonsLayout.addWidget(subtractButton, l, 1)
-        buttonsLayout.addWidget(intersectButton, l, 2)
-        buttonsLayout.addWidget(xorButton, l, 3)
-        buttonsLayout.addWidget(hMirrorButton, l, 4)
-        buttonsLayout.addWidget(vMirrorButton, l, 5)
-        l += 1
-        buttonsLayout.addWidget(alignHLeftButton, l, 0)
-        buttonsLayout.addWidget(alignHCenterButton, l, 1)
-        buttonsLayout.addWidget(alignHRightButton, l, 2)
-        buttonsLayout.addWidget(alignVTopButton, l, 3)
-        buttonsLayout.addWidget(alignVCenterButton, l, 4)
-        buttonsLayout.addWidget(alignVBottomButton, l, 5)
+        line = 0
+        buttonsLayout.addWidget(unionButton, line, 0)
+        buttonsLayout.addWidget(subtractButton, line, 1)
+        buttonsLayout.addWidget(intersectButton, line, 2)
+        buttonsLayout.addWidget(xorButton, line, 3)
+        buttonsLayout.addWidget(hMirrorButton, line, 4)
+        buttonsLayout.addWidget(vMirrorButton, line, 5)
+        line += 1
+        buttonsLayout.addWidget(alignHLeftButton, line, 0)
+        buttonsLayout.addWidget(alignHCenterButton, line, 1)
+        buttonsLayout.addWidget(alignHRightButton, line, 2)
+        buttonsLayout.addWidget(alignVTopButton, line, 3)
+        buttonsLayout.addWidget(alignVCenterButton, line, 4)
+        buttonsLayout.addWidget(alignVBottomButton, line, 5)
 
-        l = 0
-        transformLayout.addWidget(self.alignmentWidget, l, 1)
-        l += 1
-        transformLayout.addWidget(invScaleButton, l, 0)
-        transformLayout.addWidget(self.scaleXEdit, l, 1)
-        transformLayout.addWidget(scaleButton, l, 2)
-        l += 1
-        transformLayout.addWidget(self.scaleYEdit, l, 1)
-        l += 1
-        transformLayout.addWidget(rotateButton, l, 0)
-        transformLayout.addWidget(self.rotateEdit, l, 1)
-        transformLayout.addWidget(invRotateButton, l, 2)
-        l += 1
-        transformLayout.addWidget(invSkewButton, l, 0)
-        transformLayout.addWidget(self.skewEdit, l, 1)
-        transformLayout.addWidget(skewButton, l, 2)
-        l += 1
-        transformLayout.addWidget(snapButton, l, 0)
-        transformLayout.addWidget(self.snapEdit, l, 1)
-        l += 1
-        transformLayout.addLayout(buttonsLayout, l, 0, 1, 3)
+        line = 0
+        transformLayout.addWidget(self.alignmentWidget, line, 1)
+        line += 1
+        transformLayout.addWidget(invScaleButton, line, 0)
+        transformLayout.addWidget(self.scaleXEdit, line, 1)
+        transformLayout.addWidget(scaleButton, line, 2)
+        line += 1
+        transformLayout.addWidget(self.scaleYEdit, line, 1)
+        line += 1
+        transformLayout.addWidget(rotateButton, line, 0)
+        transformLayout.addWidget(self.rotateEdit, line, 1)
+        transformLayout.addWidget(invRotateButton, line, 2)
+        line += 1
+        transformLayout.addWidget(invSkewButton, line, 0)
+        transformLayout.addWidget(self.skewEdit, line, 1)
+        transformLayout.addWidget(skewButton, line, 2)
+        line += 1
+        transformLayout.addWidget(snapButton, line, 0)
+        transformLayout.addWidget(self.snapEdit, line, 1)
+        line += 1
+        transformLayout.addLayout(buttonsLayout, line, 0, 1, 3)
         transformLayout.setSpacing(4)
         transformGroup.setChildLayout(transformLayout)
 
@@ -417,14 +417,14 @@ class PropertiesWidget(QWidget):
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         layersLayout.setSpacing(0)
-        l = 0
-        layersLayout.addWidget(self.layerSetView, l, 0, 1, 5)
-        l += 1
-        layersLayout.addWidget(layerAddButton, l, 0)
-        layersLayout.addWidget(layerRemoveButton, l, 1)
-        layersLayout.addWidget(spacer, l, 2)
-        layersLayout.addWidget(layerDownButton, l, 3)
-        layersLayout.addWidget(layerUpButton, l, 4)
+        line = 0
+        layersLayout.addWidget(self.layerSetView, line, 0, 1, 5)
+        line += 1
+        layersLayout.addWidget(layerAddButton, line, 0)
+        layersLayout.addWidget(layerRemoveButton, line, 1)
+        layersLayout.addWidget(spacer, line, 2)
+        layersLayout.addWidget(layerDownButton, line, 3)
+        layersLayout.addWidget(layerUpButton, line, 4)
         layersGroup.setChildLayout(layersLayout)
 
         mainLayout = QVBoxLayout()

@@ -43,17 +43,17 @@ class AddGlyphsDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
-        l = 0
-        layout.addWidget(self.markColorWidget, l, 0)
-        layout.addWidget(self.importCharDrop, l, 3, 1, 2)
-        l += 1
-        layout.addWidget(self.addGlyphsEdit, l, 0, 1, 5)
-        l += 1
-        layout.addWidget(self.addUnicodeBox, l, 0)
-        layout.addWidget(self.addAsTemplateBox, l, 1)
-        layout.addWidget(self.sortFontBox, l, 2)
-        layout.addWidget(self.overrideBox, l, 3)
-        layout.addWidget(buttonBox, l, 4)
+        line = 0
+        layout.addWidget(self.markColorWidget, line, 0)
+        layout.addWidget(self.importCharDrop, line, 3, 1, 2)
+        line += 1
+        layout.addWidget(self.addGlyphsEdit, line, 0, 1, 5)
+        line += 1
+        layout.addWidget(self.addUnicodeBox, line, 0)
+        layout.addWidget(self.addAsTemplateBox, line, 1)
+        layout.addWidget(self.sortFontBox, line, 2)
+        layout.addWidget(self.overrideBox, line, 3)
+        layout.addWidget(buttonBox, line, 4)
         self.setLayout(layout)
 
     @classmethod

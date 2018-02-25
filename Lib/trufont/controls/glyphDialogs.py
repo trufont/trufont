@@ -37,16 +37,16 @@ class FindDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
-        l = 0
-        layout.addWidget(self.glyphLabel, l, 0, 1, 2)
-        layout.addWidget(self.glyphEdit, l, 2, 1, 4)
-        l += 1
-        layout.addWidget(self.beginsWithBox, l, 0, 1, 3)
-        layout.addWidget(self.containsBox, l, 3, 1, 3)
-        l += 1
-        layout.addWidget(self.glyphList, l, 0, 1, 6)
-        l += 1
-        layout.addWidget(buttonBox, l, 0, 1, 6)
+        line = 0
+        layout.addWidget(self.glyphLabel, line, 0, 1, 2)
+        layout.addWidget(self.glyphEdit, line, 2, 1, 4)
+        line += 1
+        layout.addWidget(self.beginsWithBox, line, 0, 1, 3)
+        layout.addWidget(self.containsBox, line, 3, 1, 3)
+        line += 1
+        layout.addWidget(self.glyphList, line, 0, 1, 6)
+        line += 1
+        layout.addWidget(buttonBox, line, 0, 1, 6)
         self.setLayout(layout)
         self.updateGlyphList()
 
@@ -135,14 +135,14 @@ class LayerActionsDialog(QDialog):
         buttonBox.rejected.connect(self.reject)
 
         layout = QGridLayout(self)
-        l = 0
-        layout.addWidget(copyBox, l, 0, 1, 2)
-        layout.addWidget(moveBox, l, 2, 1, 2)
-        layout.addWidget(swapBox, l, 4, 1, 2)
-        l += 1
-        layout.addWidget(self.layersList, l, 0, 1, 6)
-        l += 1
-        layout.addWidget(buttonBox, l, 0, 1, 6)
+        line = 0
+        layout.addWidget(copyBox, line, 0, 1, 2)
+        layout.addWidget(moveBox, line, 2, 1, 2)
+        layout.addWidget(swapBox, line, 4, 1, 2)
+        line += 1
+        layout.addWidget(self.layersList, line, 0, 1, 6)
+        line += 1
+        layout.addWidget(buttonBox, line, 0, 1, 6)
         self.setLayout(layout)
 
     @classmethod
@@ -189,16 +189,16 @@ class EditDialog(QDialog):
         buttonBox.rejected.connect(self.reject)
 
         layout = QGridLayout(self)
-        l = 0
-        layout.addWidget(nameLabel, l, 0)
-        layout.addWidget(self.nameEdit, l, 1, 1, 3)
-        l += 1
-        layout.addWidget(xLabel, l, 0)
-        layout.addWidget(self.xEdit, l, 1)
-        layout.addWidget(yLabel, l, 2)
-        layout.addWidget(self.yEdit, l, 3)
-        l += 1
-        layout.addWidget(buttonBox, l, 3)
+        line = 0
+        layout.addWidget(nameLabel, line, 0)
+        layout.addWidget(self.nameEdit, line, 1, 1, 3)
+        line += 1
+        layout.addWidget(xLabel, line, 0)
+        layout.addWidget(self.xEdit, line, 1)
+        layout.addWidget(yLabel, line, 2)
+        layout.addWidget(self.yEdit, line, 3)
+        line += 1
+        layout.addWidget(buttonBox, line, 3)
         self.setLayout(layout)
 
     @classmethod
