@@ -50,9 +50,13 @@ _path.closeSubpath()
 
 
 def _textForGlyphs(glyphs):
-    return "".join(
-        chr(glyph.unicode) if glyph.unicode is not None else
-        "/{} ".format(glyph.name) for glyph in glyphs)
+    names = []
+    for glyph in glyphs:
+        char = ""
+        if glyph.unicode and chr(glyph.unicode) != glyph.name:
+            char = " ({})".format(chr(glyph.unicode))
+        names.append("/{}{}".format(glyph.name, char))
+    return " ".join(names)
 
 
 class PageWidget(QWidget):
