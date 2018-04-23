@@ -1,38 +1,31 @@
-matrix:
-  include:
-    - os: linux
-      dist: trusty
-      sudo: false
-      language: python
-      python: 3.5
-      env:
-        - DISPLAY=:99.0
-        - LIBOVERLAY_SCROLLBAR=0
-    - os: osx
-      language: generic
+language: python
+python: 
+  - "3.6"
+dist: trusty
+env:
+  - DISPLAY=:99.0 LIBOVERLAY_SCROLLBAR=0
 
 before_install:
-  # on OSX, we use homebrew to install python 3.5.2
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update || brew update; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if test $(brew list | grep -q 'python3'); then brew upgrade python3; else brew install python3; fi; fi
-  # check environment
+  # Check environment
   - echo $PATH
   - which python3
-  - pip3 --version
-  - pip3 list
-  # install requirements
-  - pip3 install --upgrade pip setuptools wheel
+  - python3 --version
+  # Install requirements
+  - pip3 install --upgrade setuptools wheel
   - pip3 install --upgrade -r dev-requirements.txt -r requirements.txt
-  # print PyQt5 and SIP versions
-  - python3 -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
-  - python3 -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
+  # Print PyQt5 and SIP versions
+  - python -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
+  - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
+
 install:
   - pip3 install -v .
+
 before_script:
-  # on Linux, we run "headless" tests with xvfb (X Virtual Framebuffer)
+  # We run "headless" tests with xvfb (X Virtual Framebuffer)
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -e /etc/init.d/xvfb start; fi
-  # give xvfb some time to start
+  # Give xvfb some time to start
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi 
+
 script:
   - flake8 --config=setup.cfg Lib/trufont
   - pytest
@@ -45,7 +38,7 @@ deploy:
       repo: trufont/trufont
       tags: true
       all_branches: true
-      python: 3.5
+      python: 3.6
     user: anthrotype
     password:
       secure: M/9CZvaOp6q61GpRTGur4XmWomTs+2d89k89Fk7tPH0zedQ0czEKzNu0UFCWLhvGa+cCvYj0fWOUIaoLngfxqgAHBovAKXryRdPgJIoBp2XOTJiSbHWoGOitzxQPrsxtK1H9HgaPCaKiey1Gbh5/GhA/PCJfzW6ZhU0PZ5QIF6l3xj1dtyRjXia87KxUIxNuRgLwiY0Mu6lM70qNdbAGKoXWm5vcIv+ne1KCS4O5e0Uztp2Sftb022Z9AT5wBEGlDPtZjMt3xNhY0FDZaj+fciynIr/KwEOSemU+fK50KoDQe4RXpOvQWoiQKafxBtcI/eCmw0ENYYTmzeypsqu3QM7iYrGBnYeruRrRsxnjI592Pm1kbATzJdg2sm2S8X4ZryfanlwuAjTvEqIwNY3nsvf8MJi7FLI5REYsf3DBTyEUKjpJJ1M8OzihLell5hPGl85GxxxWR+2VPW4V/pYShDaGQxL26fx41PLAKr7KOh6c00/iy+nsSDyQXo/JBPmzCbsM2KQWa8kPoP4jDSiy4vhHaN0t6E6kPya9ZlzCxSd20J147zja3vfw547Aira9BdHOIsTy13+gk4kZhinbb88jQSAvq/6YpBN0dNYNl2FlGt7C4p5MLc1jYrbbqPVS11Vin5CF1Iq7mBQmxDqf7pul44ylL8kLDFH6La9yP6Y=
@@ -59,4 +52,4 @@ deploy:
       repo: trufont/trufont
       tags: true
       all_branches: true
-      python: 3.5
+      python: 3.6
