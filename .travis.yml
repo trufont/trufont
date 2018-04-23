@@ -34,7 +34,7 @@ before_script:
   # give xvfb some time to start
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi 
 script:
-  - flake8 --config=setup.cfg Lib/trufont
+  - pylint Lib/trufont
   - pytest
 
 deploy:
