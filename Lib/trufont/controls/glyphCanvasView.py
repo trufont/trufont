@@ -306,7 +306,8 @@ class GlyphCanvasView(GlyphContextView):
             if url.isLocalFile():
                 path = url.toLocalFile()
                 ext = os.path.splitext(path)[1][1:]
-                if ext.lower() in QImageReader.supportedImageFormats() + ['glif']:
+                formats = QImageReader.supportedImageFormats() + ['glif']
+                if ext.lower() in formats:
                     event.acceptProposedAction()
             return
         super().dragEnterEvent(event)
