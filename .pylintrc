@@ -1,0 +1,27 @@
+[MASTER]
+# A comma-separated list of package or module names from where C extensions may
+# be loaded. Extensions are loading into the active Python interpreter and may
+# run arbitrary code
+extension-pkg-whitelist=PyQt5
+
+
+[MESSAGES CONTROL]
+# Run a minimal set of tests over the code. The set is taken from Visual
+# Studio Code's default pylint set; also check for unused imports and line 
+# length.
+# https://code.visualstudio.com/docs/python/linting#_default-pylint-rules
+disable=all
+enable=
+  F,
+  E,
+  unreachable,
+  duplicate-key,
+  unnecessary-semicolon,
+  global-variable-not-assigned,
+  unused-variable,
+  binary-op-exception,
+  bad-format-string,
+  anomalous-backslash-in-string,
+  bad-open-mode,
+  unused-import,
+  line-too-long,
