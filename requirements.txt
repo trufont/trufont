@@ -7,4 +7,4 @@ ufo-extractor==0.2.0
 ufo2ft==2.2.0
 booleanOperations==0.8.0
 hsluv==0.0.2
-brotli==0.6.0
+brotli==1.0.4
