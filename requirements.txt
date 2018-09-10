@@ -1,0 +1,5 @@
+tfont==0.1.0
+uharfbuzz==0.2.0
+fonttools==3.9.1
+skia-pathops==0.1.4
+wxPython==4.0.3
