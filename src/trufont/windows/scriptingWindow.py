@@ -118,7 +118,7 @@ class ScriptingWindow(wx.Frame):
         try:
             code = compile(script, "<string>", "exec")
             exec(code, global_vars)
-        except:
+        except Exception:
             traceback.print_exc()
         trufont.TruFont.updateUI()
 

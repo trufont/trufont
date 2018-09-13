@@ -51,7 +51,7 @@ try:
     gitShortLog = subprocess.check_output(
         ["git", "shortlog", "-sn"], cwd=PATH, stderr=subprocess.DEVNULL
     ).decode()
-except:
+except Exception:
     gitShortLog = ""
 
 
