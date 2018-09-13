@@ -14,6 +14,7 @@ class FontStatusBar(wx.Panel):
         self.SetDoubleBuffered(True)
         self.SetForegroundColour(wx.Colour(37, 37, 37))
 
+        self._selectionText = ""
         self._titleText = ""
         self._titleWidth = None
 

@@ -54,7 +54,9 @@ class BaseTool(object):
         canvas = self.canvas
         w = wx.SystemSettings.GetMetric(wx.SYS_CURSOR_X, canvas)
         h = wx.SystemSettings.GetMetric(wx.SYS_CURSOR_Y, canvas)
-        # NOTE: size is 32 (or 64) on Windows, 24 on GNU
+        if w == -1 or h == -1:
+            w = h = 32
+        # NOTE: size is 32 (or 64) on Windows, -1 on OSX, 24 on GNU
         # TODO: we should probably call GetContentScaleFactor instead
         s = 2 if w > 32 else 0
 

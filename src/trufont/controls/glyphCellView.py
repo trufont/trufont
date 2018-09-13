@@ -430,5 +430,8 @@ class GlyphCellView(wx.ScrolledCanvas):
             event.Skip()
 
     def OnSize(self, event):
+        # on OSX, OnSize is called once before the ctor (nice)
+        if not hasattr(self, "_glyphs"):
+            return
         self._adjustSize()
         self._calculateExtraCellWidth()
