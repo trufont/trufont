@@ -1,0 +1,22 @@
+# Byte-compiled files
+__pycache__/
+*.pyc
+
+# Packaging
+*.egg
+*.egg-info
+*.eggs
+build
+dist
+_version.py
+
+# Unit test
+.cache/
+.tox/
+.coverage*
+htmlcov
+.pytest*
+.mypy*
+
+# Autosaved files
+*~

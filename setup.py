@@ -7,7 +7,7 @@ with open('README.rst', 'r', encoding="utf-8") as f:
 
 setup(
     name="trufont",
-    version="1.0.0.dev0",
+    use_scm_version={"write_to": "src/trufont/_version.py"},
     description="TruFont is a streamlined and hackable font editor.",
     long_description=long_description,
     author="Adrien Tétar",
@@ -22,6 +22,7 @@ setup(
         ]
     },
     include_package_data=True,
+    setup_requires=["setuptools_scm"],
     install_requires=[
         #"tfont>=0.1.0",
         "uharfbuzz>=0.2.0",
