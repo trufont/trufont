@@ -16,11 +16,15 @@ ToolModifiedEvent, EVT_TOOL_MODIFIED = wx.lib.newevent.NewEvent()
 def GetCanvasPosition(event):
     canvas = event.GetEventObject()
     return canvas.clientToCanvas(canvas.ScreenToClient(wx.GetMousePosition()))
+
+
 wx.ContextMenuEvent.GetCanvasPosition = GetCanvasPosition
 
 
 def GetCanvasPosition(event):
     return event.GetEventObject().clientToCanvas(event.GetPosition())
+
+
 wx.MouseEvent.GetCanvasPosition = GetCanvasPosition
 
 
@@ -97,8 +101,11 @@ class GlyphCanvasView(GlyphContextView):
     def OnKeyDown(self, event):
         tool = self._currentTool
         tool.OnKeyDown(event)
-        if event.GetKeyCode() == wx.WXK_SPACE and not tool.grabKeyboard and \
-                event.GetSkipped():
+        if (
+            event.GetKeyCode() == wx.WXK_SPACE
+            and not tool.grabKeyboard
+            and event.GetSkipped()
+        ):
             if not isinstance(tool, PreviewTool):
                 self.__priorTool = self._currentTool
                 self._currentTool = PreviewTool(self)
@@ -107,8 +114,11 @@ class GlyphCanvasView(GlyphContextView):
     def OnKeyUp(self, event):
         tool = self._currentTool
         tool.OnKeyUp(event)
-        if event.GetKeyCode() == wx.WXK_SPACE and not tool.grabKeyboard and \
-                event.GetSkipped():
+        if (
+            event.GetKeyCode() == wx.WXK_SPACE
+            and not tool.grabKeyboard
+            and event.GetSkipped()
+        ):
             self._currentTool = self.__priorTool
             del self.__priorTool
             self.Refresh()
@@ -189,16 +199,20 @@ class GlyphCanvasView(GlyphContextView):
         mHalfSize = -halfSize
         # anchors
         for anchor in layer._anchors.values():
-            if mHalfSize <= anchor.x - x <= halfSize and \
-                    mHalfSize <= anchor.y - y <= halfSize:
+            if (
+                mHalfSize <= anchor.x - x <= halfSize
+                and mHalfSize <= anchor.y - y <= halfSize
+            ):
                 return anchor
         # points
         for path in layer._paths:
             for index, point in enumerate(path._points):
                 if point is skipElement:
                     continue
-                if mHalfSize <= point.x - x <= halfSize and \
-                        mHalfSize <= point.y - y <= halfSize:
+                if (
+                    mHalfSize <= point.x - x <= halfSize
+                    and mHalfSize <= point.y - y <= halfSize
+                ):
                     return PointRecord(point, index)
         # components
         wr = wx.WINDING_RULE
@@ -212,8 +226,10 @@ class GlyphCanvasView(GlyphContextView):
         else:
             guidelines = layer._guidelines
         for guideline in guidelines:
-            if mHalfSize <= guideline.x - x <= halfSize and \
-                    mHalfSize <= guideline.y - y <= halfSize:
+            if (
+                mHalfSize <= guideline.x - x <= halfSize
+                and mHalfSize <= guideline.y - y <= halfSize
+            ):
                 return guideline
 
     def segmentAt(self, pos):
@@ -253,8 +269,8 @@ class GlyphCanvasView(GlyphContextView):
             ax = math.cos(angle)
             ay = math.sin(angle)
             projection = bezierMath.lineProjection(
-                gx - ax * dl, gy - ay * dl,
-                gx + ax * dl, gy + ay * dl, x, y)
+                gx - ax * dl, gy - ay * dl, gx + ax * dl, gy + ay * dl, x, y
+            )
             if projection is not None:
                 px, py, _ = projection
                 dx = px - x

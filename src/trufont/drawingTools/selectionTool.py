@@ -1,13 +1,13 @@
 from functools import partial
 import math
 import trufont
-#from trufont.controls.layerDialogs import AddComponentDialog, RenameDialog
+
+# from trufont.controls.layerDialogs import AddComponentDialog, RenameDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.misc import GuidelineSegment, PointRecord, SegmentRecord
 from trufont.util import platformSpecific
 from trufont.util.canvasMorph import atOpenBoundary, joinPaths
-from trufont.util.canvasMove import (
-    moveUILayerSelection, rotateUIPointAroundRefLine)
+from trufont.util.canvasMove import moveUILayerSelection, rotateUIPointAroundRefLine
 from trufont.util.drawing import CreatePath
 from tfont.objects import Anchor, Component, Guideline, Layer, Point
 import wx
@@ -37,9 +37,7 @@ _cursor.AddLineToPoint(12.2, 15)
 _cursor.AddLineToPoint(16.75, 15)
 _cursor.CloseSubpath()
 
-_commands = (
-    (_cursor, 255, 25),
-)
+_commands = ((_cursor, 255, 25),)
 
 _point = CreatePath()
 _point.AddRectangle(19, 19, 5, 5)
@@ -75,7 +73,8 @@ class SelectionTool(BaseTool):
         if cursor is None:
             suppl = ((_point, 255, 90),)
             cursor = self._pointCursor = self.makeCursor(
-                _commands+suppl, 6, 4, shadowColor=255, shadowPath=_point)
+                _commands + suppl, 6, 4, shadowColor=255, shadowPath=_point
+            )
         return cursor
 
     # helpers
@@ -166,26 +165,34 @@ class SelectionTool(BaseTool):
                 self._targetPath = item.path
                 if item.point.type is not None:
                     canvas.Bind(
-                        wx.EVT_MENU, self.setStartPoint,
-                        menu.Append(wx.ID_ANY, tr("Set Start Point")))
+                        wx.EVT_MENU,
+                        self.setStartPoint,
+                        menu.Append(wx.ID_ANY, tr("Set Start Point")),
+                    )
             elif cls is Component:
                 canvas.Bind(
-                    wx.EVT_MENU, self.decomposeComponent,
-                    menu.Append(wx.ID_ANY, tr("Decompose")))
+                    wx.EVT_MENU,
+                    self.decomposeComponent,
+                    menu.Append(wx.ID_ANY, tr("Decompose")),
+                )
                 canvas.Bind(
-                    wx.EVT_MENU, self.lockComponent,
-                    menu.Append(wx.ID_ANY, tr("Lock Component")))
+                    wx.EVT_MENU,
+                    self.lockComponent,
+                    menu.Append(wx.ID_ANY, tr("Lock Component")),
+                )
             elif cls is Guideline:
                 if item._parent.__class__ is Layer:
                     text = tr("Make Global Guideline")
                 else:
                     text = tr("Make Local Guideline")
                 canvas.Bind(
-                    wx.EVT_MENU, self.toggleGuideline,
-                    menu.Append(wx.ID_ANY, text))
+                    wx.EVT_MENU, self.toggleGuideline, menu.Append(wx.ID_ANY, text)
+                )
                 canvas.Bind(
-                    wx.EVT_MENU, self.lockGuideline,
-                    menu.Append(wx.ID_ANY, tr("Lock Guideline")))
+                    wx.EVT_MENU,
+                    self.lockGuideline,
+                    menu.Append(wx.ID_ANY, tr("Lock Guideline")),
+                )
         if self.layer:
             if self._targetPath is not None:
                 reverseText = tr("Reverse Path")
@@ -194,19 +201,21 @@ class SelectionTool(BaseTool):
                     reverseText = tr("Reverse Selected Paths")
                 else:
                     reverseText = tr("Reverse All Paths")
-            canvas.Bind(
-                wx.EVT_MENU, self.reverse,
-                menu.Append(wx.ID_ANY, reverseText))
+            canvas.Bind(wx.EVT_MENU, self.reverse, menu.Append(wx.ID_ANY, reverseText))
             menu.AppendSeparator()
         canvas.Bind(
-            wx.EVT_MENU, self.createComponent,
-            menu.Append(wx.ID_ANY, tr("Add Component…")))
+            wx.EVT_MENU,
+            self.createComponent,
+            menu.Append(wx.ID_ANY, tr("Add Component…")),
+        )
         canvas.Bind(
-            wx.EVT_MENU, self.createAnchor,
-            menu.Append(wx.ID_ANY, tr("Add Anchor")))
+            wx.EVT_MENU, self.createAnchor, menu.Append(wx.ID_ANY, tr("Add Anchor"))
+        )
         canvas.Bind(
-            wx.EVT_MENU, self.createGuideline,
-            menu.Append(wx.ID_ANY, tr("Add Guideline")))
+            wx.EVT_MENU,
+            self.createGuideline,
+            menu.Append(wx.ID_ANY, tr("Add Guideline")),
+        )
         self._cachedPos = event.GetCanvasPosition()
         canvas.PopupMenu(menu)
         del self._cachedPos
@@ -224,7 +233,7 @@ class SelectionTool(BaseTool):
             return
         canvas = self.canvas
         layer = self.layer
-        #self.layer.beginUndoGroup()
+        # self.layer.beginUndoGroup()
         self.origin = pos = event.GetCanvasPosition()
         item = self.mouseItem
         if item is not None:
@@ -247,8 +256,7 @@ class SelectionTool(BaseTool):
             handleSelection = False
             if item.__class__ is SegmentRecord:
                 firstPoint = item.points[0]
-                self.deltaToSegment = pos - wx.RealPoint(
-                    firstPoint.x, firstPoint.y)
+                self.deltaToSegment = pos - wx.RealPoint(firstPoint.x, firstPoint.y)
                 if event.AltDown():
                     item.segment.addOffCurves()
                 handleSelection = not item.segment.selected
@@ -256,9 +264,9 @@ class SelectionTool(BaseTool):
                 handleSelection = layer is not None
             if handleSelection:
                 if event.ControlDown():
-                    self.oldSelection = set(
-                        elem for elem in layer.selection if \
-                        elem.__class__ is Point)
+                    self.oldSelection = {
+                        elem for elem in layer.selection if elem.__class__ is Point
+                    }
                 else:
                     layer.clearSelection()
         if self.mouseItem is not None:
@@ -300,11 +308,14 @@ class SelectionTool(BaseTool):
                 # single offCurve in which case we clamp it against
                 # its parent
                 onPoint = False
-                if cls is PointRecord and item.point.type is None \
-                        and len(layer.selection) == 1:
+                if (
+                    cls is PointRecord
+                    and item.point.type is None
+                    and len(layer.selection) == 1
+                ):
                     points, index = item.points, item.index
                     point = points[index]
-                    otherPoint = points[index-1]
+                    otherPoint = points[index - 1]
                     if otherPoint.type is None:
                         otherIndex = index + 1
                         # tbh bin modulo might just be faster than this fuss
@@ -314,7 +325,8 @@ class SelectionTool(BaseTool):
                         otherPoint = points[otherIndex]
                     if otherPoint.type is not None:
                         pos = self.clampToOrigin(
-                            pos, wx.RealPoint(otherPoint.x, otherPoint.y))
+                            pos, wx.RealPoint(otherPoint.x, otherPoint.y)
+                        )
                         onPoint = True
                 if not onPoint:
                     pos = self.clampToOrigin(pos, self.origin)
@@ -376,7 +388,7 @@ class SelectionTool(BaseTool):
             self.oldPath = None
             self.oldSelection = set()
             self.rubberBandRect = None
-            #self.layer.endUndoGroup()
+            # self.layer.endUndoGroup()
             self.canvas.Refresh()
         else:
             super().OnMouseUp(event)
@@ -388,7 +400,7 @@ class SelectionTool(BaseTool):
         canvas = self.canvas
         pos = event.GetCanvasPosition()
         self.mouseItem = item = canvas.itemAt(pos)
-        #self.layer.beginUndoGroup()
+        # self.layer.beginUndoGroup()
         if item is not None:
             cls = item.__class__
             if cls is PointRecord:
@@ -414,7 +426,8 @@ class SelectionTool(BaseTool):
                             if onS.type is None:
                                 offS, onS = onS, offS
                             rotateUIPointAroundRefLine(
-                                onS.x, onS.y, point.x, point.y, offS)
+                                onS.x, onS.y, point.x, point.y, offS
+                            )
                     point.smooth = value
                     # tbh I feel updateUI could just always be called for tools
                     trufont.TruFont.updateUI()

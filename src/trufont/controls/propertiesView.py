@@ -210,8 +210,7 @@ def makePropertiesLayout(parent, font):
     path.AddLineToPoint(3.999, 4.0)
     path.AddCurveToPoint(4.013, 3.44, 4.484, 2.989, 5.044, 3.0)
     path.CloseSubpath()
-    btns.append(Button(
-        path, _alignHCenter, tr("Push selection to hz. center")))
+    btns.append(Button(path, _alignHCenter, tr("Push selection to hz. center")))
     path = CreatePath()
     path.MoveToPoint(10.958, 13.0)
     path.AddLineToPoint(2.042, 13.0)
@@ -302,8 +301,7 @@ def makePropertiesLayout(parent, font):
     path.AddCurveToPoint(9.0, 10.003, 9.0, 10.0, 9.0, 9.996)
     path.AddLineToPoint(9.0, 8.0)
     path.CloseSubpath()
-    btns.append(Button(
-        path, _alignVCenter, tr("Push selection to vert. center")))
+    btns.append(Button(path, _alignVCenter, tr("Push selection to vert. center")))
     path = CreatePath()
     path.MoveToPoint(12.0, 12.013)
     path.AddLineToPoint(10.0, 12.013)
@@ -352,7 +350,7 @@ def makePropertiesLayout(parent, font):
     sizer.Add(TransformHeader(parent, font), 0, wx.EXPAND)
     sizer.AddSpacer(1)
     sizer.Add(LayersHeader(parent, font), 1, wx.EXPAND)
-    #sizer.Add(PadControl(parent), 1, wx.EXPAND)
+    # sizer.Add(PadControl(parent), 1, wx.EXPAND)
     return sizer
 
 
@@ -377,7 +375,7 @@ class ButtonBar(wx.Window):
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        #self.SetBackgroundColor(wx.Colour(240, 240, 240))
+        # self.SetBackgroundColor(wx.Colour(240, 240, 240))
         self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
         self.SetDoubleBuffered(True)
 
@@ -426,7 +424,7 @@ class ButtonBar(wx.Window):
                 return
             btn = self._buttons[index]
             text = btn.tooltip
-            #if btn.shortcut:
+            # if btn.shortcut:
             #    text += f" ({btn.shortcut})"
         else:
             text = None
@@ -437,7 +435,7 @@ class ButtonBar(wx.Window):
         self.DoSetToolTip(None)
         self.CaptureMouse()
         self.Refresh()
-        #event.Skip()
+        # event.Skip()
 
     def OnMotion(self, event):
         index = self.DoGetIndexForPos(event.GetPosition())
@@ -501,7 +499,6 @@ def _DrawText_Spacing(ctx, text, x, y, sp=1.2):
 
 
 class TransformHeader(wx.Panel):
-
     def __init__(self, parent, font):
         super().__init__(parent)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDown)
@@ -658,7 +655,7 @@ class TransformHeader(wx.Panel):
         self.DoSetToolTip(None)
         self.CaptureMouse()
         self.Refresh()
-        #event.Skip()
+        # event.Skip()
 
     def OnMotion(self, event):
         index = self.DoGetIndexForPos(event.GetPosition())
@@ -686,8 +683,11 @@ class TransformHeader(wx.Panel):
                 yScale = xScale
             px, py = self._alignmentCtrl.origin
             self.transform(
-                xScale=xScale, yScale=yScale,
-                xOffset=px * (1 - xScale), yOffset=py * (1 - yScale))
+                xScale=xScale,
+                yScale=yScale,
+                xOffset=px * (1 - xScale),
+                yOffset=py * (1 - yScale),
+            )
         elif index == 1:
             xScale = 1 + .01 * self._scaleCtrl.number
             if self._yScaleCtrl.Enabled:
@@ -696,31 +696,44 @@ class TransformHeader(wx.Panel):
                 yScale = xScale
             px, py = self._alignmentCtrl.origin
             self.transform(
-                xScale=xScale, yScale=yScale,
-                xOffset=px * (1 - xScale), yOffset=py * (1 - yScale))
+                xScale=xScale,
+                yScale=yScale,
+                xOffset=px * (1 - xScale),
+                yOffset=py * (1 - yScale),
+            )
         elif index == 2:
             self._yScaleCtrl.Enabled = not self._yScaleCtrl.Enabled
             self.Refresh()
         elif index == 3:
             ca, sa = cos_sin_deg(self._rotationCtrl.number)
             px, py = self._alignmentCtrl.origin
-            self.transform(xScale=ca, xyScale=sa, yxScale=-sa, yScale=ca,
-                           xOffset=px - px * ca + py * sa,
-                           yOffset=py - px * sa - py * ca)
+            self.transform(
+                xScale=ca,
+                xyScale=sa,
+                yxScale=-sa,
+                yScale=ca,
+                xOffset=px - px * ca + py * sa,
+                yOffset=py - px * sa - py * ca,
+            )
         elif index == 4:
             ca, sa = cos_sin_deg(-self._rotationCtrl.number)
             px, py = self._alignmentCtrl.origin
-            self.transform(xScale=ca, xyScale=sa, yxScale=-sa, yScale=ca,
-                           xOffset=px - px * ca + py * sa,
-                           yOffset=py - px * sa - py * ca)
+            self.transform(
+                xScale=ca,
+                xyScale=sa,
+                yxScale=-sa,
+                yScale=ca,
+                xOffset=px - px * ca + py * sa,
+                yOffset=py - px * sa - py * ca,
+            )
         elif index == 5:
             angle = math.radians(-self._skewCtrl.number)
             px, py = self._alignmentCtrl.origin
-            self.transform(yxScale=angle, xOffset=-py*angle)
+            self.transform(yxScale=angle, xOffset=-py * angle)
         elif index == 6:
             angle = math.radians(self._skewCtrl.number)
             px, py = self._alignmentCtrl.origin
-            self.transform(yxScale=angle, xOffset=-py*angle)
+            self.transform(yxScale=angle, xOffset=-py * angle)
         elif index == 7:
             self.removeOverlap()
         elif index == 8:
@@ -731,16 +744,15 @@ class TransformHeader(wx.Panel):
             self.binaryPathOp(pathops.xor)
         elif index == 11:
             px, _ = self._alignmentCtrl.origin
-            self.transform(xScale=-1, xOffset=2*px)
+            self.transform(xScale=-1, xOffset=2 * px)
         elif index == 12:
             _, py = self._alignmentCtrl.origin
-            self.transform(yScale=-1, yOffset=2*py)
+            self.transform(yScale=-1, yOffset=2 * py)
 
     def OnPaint(self, event):
         ctx = wx.GraphicsContext.Create(self)
         font = self.GetFont()
-        font.SetPixelSize(
-            wx.Size(0, 10 * platformSpecific.typeSizeScale()))
+        font.SetPixelSize(wx.Size(0, 10 * platformSpecific.typeSizeScale()))
         ctx.SetFont(font, wx.Colour(120, 120, 120))
         yOffset = 6 - ctx.GetTextExtent("x")[1] // 2
 
@@ -1152,7 +1164,6 @@ class TransformHeader(wx.Panel):
 
 
 class LayersHeader(wx.Panel):
-
     def __init__(self, parent, font):
         super().__init__(parent)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDown)
@@ -1207,8 +1218,7 @@ class LayersHeader(wx.Panel):
     def OnPaint(self, event):
         ctx = wx.GraphicsContext.Create(self)
         font = self.GetFont()
-        font.SetPixelSize(
-            wx.Size(0, 10 * platformSpecific.typeSizeScale()))
+        font.SetPixelSize(wx.Size(0, 10 * platformSpecific.typeSizeScale()))
         ctx.SetFont(font, wx.Colour(120, 120, 120))
         yOffset = 6 - ctx.GetTextExtent("x")[1] // 2
         width, _ = self.GetSize()
@@ -1226,7 +1236,6 @@ class LayersHeader(wx.Panel):
 
 
 class PadControl(wx.Window):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.Bind(wx.EVT_PAINT, self.OnPaint)

@@ -52,8 +52,7 @@ class LayoutEngine:
     @property
     def features(self):
         # XXX: for now we only list GSUB, default script, default language
-        return hb.ot_layout_language_get_feature_tags(
-            self._hbFont.face, "GSUB")
+        return hb.ot_layout_language_get_feature_tags(self._hbFont.face, "GSUB")
 
     @property
     def font(self):
@@ -73,8 +72,7 @@ class LayoutEngine:
     # Engine API
     # ----------
 
-    def process(
-            self, text, direction=None, script=None, language=None, features=None):
+    def process(self, text, direction=None, script=None, language=None, features=None):
         # TODO: reuse buffer?
         buf = hb.Buffer.create()
         if not text:

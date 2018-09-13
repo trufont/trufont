@@ -2,7 +2,6 @@ import wx
 
 
 class AlignmentControl(wx.Window):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)

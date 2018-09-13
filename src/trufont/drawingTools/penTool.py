@@ -65,10 +65,7 @@ _bg_ = CreatePath()
 _bg_.AddRectangle(13, 20, 4, 4)
 _bg_.AddPath(_cursor)
 
-_commands = (
-    (_cursor, 230, 0),
-    (_cursor_, 0, 0),
-)
+_commands = ((_cursor, 230, 0), (_cursor_, 0, 0))
 
 _plus = CreatePath()
 _plus.MoveToPoint(20, 25)
@@ -104,7 +101,8 @@ class PenTool(BaseTool):
         if cursor is None:
             suppl = ((_plus, 255, 0),)
             cursor = self._addCursor = self.makeCursor(
-                _commands+suppl, 15, 8, shadowColor=255, shadowPath=_bg_)
+                _commands + suppl, 15, 8, shadowColor=255, shadowPath=_bg_
+            )
         return cursor
 
     @property
@@ -112,7 +110,8 @@ class PenTool(BaseTool):
         cursor = self._cursor
         if cursor is None:
             cursor = self._cursor = self.makeCursor(
-                _commands, 15, 8, shadowColor=255, shadowPath=_bg_)
+                _commands, 15, 8, shadowColor=255, shadowPath=_bg_
+            )
         return cursor
 
     @property
@@ -124,7 +123,8 @@ class PenTool(BaseTool):
             bg.AddPath(_point)
             suppl = ((_point, 255, 0),)
             cursor = self._pointCursor = self.makeCursor(
-                _commands+suppl, 15, 8, shadowColor=255, shadowPath=bg)
+                _commands + suppl, 15, 8, shadowColor=255, shadowPath=bg
+            )
         return cursor
 
     def OnToolDisabled(self):
@@ -224,7 +224,7 @@ class PenTool(BaseTool):
         layer = self.layer
         if layer is None:
             return
-        #self.layer.beginUndoGroup()
+        # self.layer.beginUndoGroup()
         self.origin = pos = event.GetCanvasPosition()
         mouseItem = self.mouseItem
         selPoint = self.selectedPoint()
@@ -233,8 +233,7 @@ class PenTool(BaseTool):
             mousePoint = mouseItem.point
             mousePath = mousePoint.path
             if atOpenBoundary(mousePoint):
-                if selPoint and selPoint is not mousePoint and atOpenBoundary(
-                        selPoint):
+                if selPoint and selPoint is not mousePoint and atOpenBoundary(selPoint):
                     selPath = selPoint.path
                     selPoints = selPath.points
                     if selPoint.type is None:
@@ -242,8 +241,12 @@ class PenTool(BaseTool):
                         lastOn = selPoints[-1]
                         self.stashedOffCurve = (selPoint, lastOn.smooth)
                         lastOn.smooth = False
-                    joinPaths(selPath, selPoints[0] is selPoint,
-                              mousePath, mousePath.points[0] is mousePoint)
+                    joinPaths(
+                        selPath,
+                        selPoints[0] is selPoint,
+                        mousePath,
+                        mousePath.points[0] is mousePoint,
+                    )
                     self.targetPath = selPath
             else:
                 # the api could even just be the point...
@@ -275,7 +278,8 @@ class PenTool(BaseTool):
                     lastPoint = lastOn
                 if event.ShiftDown():
                     pos = self.clampToOrigin(
-                        pos, wx.RealPoint(lastPoint.x, lastPoint.y))
+                        pos, wx.RealPoint(lastPoint.x, lastPoint.y)
+                    )
                     x, y = pos.x, pos.y
                 pointType = "line"
             # or create a new one
@@ -300,8 +304,7 @@ class PenTool(BaseTool):
                 super().OnMotion(event)
             else:
                 item = canvas.itemAt(pos)
-                if item.__class__ is PointRecord and \
-                        item.point.type is not None:
+                if item.__class__ is PointRecord and item.point.type is not None:
                     self.mouseItem = item
                     canvas.SetCursor(self.pointCursor)
                 else:
@@ -326,8 +329,9 @@ class PenTool(BaseTool):
                     pt = pt_
         if pt.type is not None and not self.shouldMoveOnCurve:
             # don't make a curve until enough distance is reached
-            diff = wx.RealPoint(
-                event.GetPosition()) - canvas.canvasToClient(self.origin)
+            diff = wx.RealPoint(event.GetPosition()) - canvas.canvasToClient(
+                self.origin
+            )
             if abs(diff.x) < wx.SYS_DRAG_X and abs(diff.y) < wx.SYS_DRAG_Y:
                 return
             onSmooth = not event.AltDown()
@@ -361,19 +365,18 @@ class PenTool(BaseTool):
                 onCurveIndex = -1
                 onCurve = points[onCurveIndex]
             if event.ShiftDown():
-                pos = self.clampToOrigin(
-                    pos, wx.RealPoint(onCurve.x, onCurve.y))
+                pos = self.clampToOrigin(pos, wx.RealPoint(onCurve.x, onCurve.y))
             if self.shouldMoveOnCurve:
                 dx = pos.x - pt.x
                 dy = pos.y - pt.y
                 onCurve.x += dx
                 onCurve.y += dy
                 if len(points) >= 3:
-                    prev = points[onCurveIndex-1]
+                    prev = points[onCurveIndex - 1]
                     if prev.type is None:
                         prev.x += dx
                         prev.y += dy
-                next_ = points[onCurveIndex+1]
+                next_ = points[onCurveIndex + 1]
                 if next_.type is None:
                     next_.x += dx
                     next_.y += dy
@@ -394,6 +397,6 @@ class PenTool(BaseTool):
             self.shouldMoveOnCurve = False
             self.stashedOffCurve = None
             self.targetPath = None
-            #self.layer.endUndoGroup()
+            # self.layer.endUndoGroup()
         else:
             super().OnMouseUp(event)

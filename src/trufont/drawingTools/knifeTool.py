@@ -32,10 +32,7 @@ _cpath2.AddLineToPoint(15.5, 12.0)
 _cpath2.AddLineToPoint(15.5, 14.5)
 _cpath2.CloseSubpath()
 
-_commands = (
-    (_cpath1, 0, 0),
-    (_cpath2, 230, 0),
-)
+_commands = ((_cpath1, 0, 0), (_cpath2, 230, 0))
 
 
 class KnifeTool(BaseTool):
@@ -74,8 +71,7 @@ class KnifeTool(BaseTool):
             if layer is None:
                 self.points = [(origin.x, origin.y), (pos.x, pos.y)]
             else:
-                self.points = self.layer.intersectLine(
-                    origin.x, origin.y, pos.x, pos.y)
+                self.points = self.layer.intersectLine(origin.x, origin.y, pos.x, pos.y)
             self.canvas.Refresh()
         else:
             super().OnMotion(event)

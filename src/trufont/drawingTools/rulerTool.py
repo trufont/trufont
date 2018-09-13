@@ -64,9 +64,7 @@ _cpath.AddLineToPoint(10.0, 14.5)
 _cpath.MoveToPoint(14.75, 14.75)
 _cpath.AddLineToPoint(12.25, 12.25)
 
-_commands = (
-    (_cpath, 255, 0),
-)
+_commands = ((_cpath, 255, 0),)
 
 
 def pairwise(iterable):
@@ -138,8 +136,7 @@ class RulerTool(BaseTool):
             if event.AltDown() or layer is None:
                 self.points = [(origin.x, origin.y), (pos.x, pos.y)]
             else:
-                self.points = layer.intersectLine(
-                    origin.x, origin.y, pos.x, pos.y)
+                self.points = layer.intersectLine(origin.x, origin.y, pos.x, pos.y)
             self.canvas.Refresh()
         else:
             super().OnMotion(event)
@@ -190,15 +187,13 @@ class RulerTool(BaseTool):
             length = round(bezierMath.distance(x1, y1, x2, y2), 1)
             if length:
                 x, y = .5 * (x1 + x2), .5 * (y1 + y2)
-                drawing.drawTextAtPoint(
-                    ctx, str(length), x, y, scale, xAlign, yAlign)
-        angleText = "%sº" % round(
-            math.degrees(math.atan2(p2y - p1y, p2x - p1x)), 1)
+                drawing.drawTextAtPoint(ctx, str(length), x, y, scale, xAlign, yAlign)
+        angleText = "%sº" % round(math.degrees(math.atan2(p2y - p1y, p2x - p1x)), 1)
         xAlign, yAlign = "left", "top"
         px = size
         if p2x < p1x:
             xAlign = "right"
             px = -px
         drawing.drawTextAtPoint(
-            ctx, angleText, p2x + px, p2y + size, scale,
-            xAlign, yAlign)
+            ctx, angleText, p2x + px, p2y + size, scale, xAlign, yAlign
+        )

@@ -25,7 +25,7 @@ def breakPath(path, index):
     points = path.points
     otherPoint = copy(point)
     otherPoint._parent = None  # we should define __copy__ on Point to not
-                               # have to do this
+    # have to do this
     otherPoint.selected = False
     points.append(otherPoint)
     point.type = "move"

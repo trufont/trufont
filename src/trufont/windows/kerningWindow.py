@@ -5,7 +5,7 @@ from wx import dataview, GetTranslation as tr
 
 # should be kerning key, not necessarily a group
 class LeftKerningGroup:
-    __slots__ = "key",
+    __slots__ = ("key",)
 
     def __init__(self, key):
         self.key = key
@@ -25,12 +25,11 @@ class RightKerningGroup:
 
 
 class KerningModel(dataview.PyDataViewModel):
-
     def __init__(self, data):
         super().__init__()
         self.data = data
 
-    #def GetAttr(self, item, col, attr):
+    # def GetAttr(self, item, col, attr):
     #    pass
 
     def GetChildren(self, parent, children):
@@ -45,8 +44,7 @@ class KerningModel(dataview.PyDataViewModel):
             lkey = node.key
             keys = self.data[lkey].keys()
             for key in keys:
-                children.append(
-                    self.ObjectToItem(RightKerningGroup(key, lkey, node)))
+                children.append(self.ObjectToItem(RightKerningGroup(key, lkey, node)))
             return len(keys)
         return 0
 
@@ -76,25 +74,22 @@ class KerningModel(dataview.PyDataViewModel):
             return node.key
 
     def IsContainer(self, item):
-        return not item or self.ItemToObject(
-            item).__class__ is LeftKerningGroup
+        return not item or self.ItemToObject(item).__class__ is LeftKerningGroup
 
 
 class KerningWindow(wx.Frame):
-
     def __init__(self, parent, font):
         super().__init__(parent)
         self.SetIcon(icons.GetUserIcon("app.png", 32, 32, self))
         self.SetTitle(tr("Kerning – %s") % wx.GetApp().GetAppDisplayName())
 
-        self.dataCtrl = dataview.DataViewCtrl(
-            self, style=dataview.DV_NO_HEADER)
+        self.dataCtrl = dataview.DataViewCtrl(self, style=dataview.DV_NO_HEADER)
         data = font.selectedMaster.hKerning
         self.dataModel = KerningModel(data)
         self.dataCtrl.AssociateModel(self.dataModel)
         col = self.dataCtrl.AppendTextColumn(wx.EmptyString, 0)
         self.dataCtrl.AppendTextColumn(wx.EmptyString, 1)
-        #col.Sortable = True
+        # col.Sortable = True
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.dataCtrl, 1, wx.EXPAND)

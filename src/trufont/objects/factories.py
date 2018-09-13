@@ -9,16 +9,14 @@ from tfont.objects import Component, Font, Layer, Path
 def componentClosedGraphicsPathFactory(component):
     graphicsPath = CreatePath()
     graphicsPath.AddPath(component.layer.closedGraphicsPath)
-    graphicsPath.Transform(
-        CreateMatrix(*component.transformation))
+    graphicsPath.Transform(CreateMatrix(*component.transformation))
     return graphicsPath
 
 
 def componentOpenGraphicsPathFactory(component):
     graphicsPath = CreatePath()
     graphicsPath.AddPath(component.layer.openGraphicsPath)
-    graphicsPath.Transform(
-        CreateMatrix(*component.transformation))
+    graphicsPath.Transform(CreateMatrix(*component.transformation))
     return graphicsPath
 
 
@@ -26,9 +24,10 @@ def fontLayoutEngineFactory(font):
     # this could be font.buildFeatures() although we might
     # want a pluggable generator so one can write custom codegen...
     features = "\n".join(
-        [str(featHdr) for featHdr in font.featureHeaders] +
-        [str(featCls) for featCls in font.featureClasses] +
-        [str(feature) for feature in font.features])
+        [str(featHdr) for featHdr in font.featureHeaders]
+        + [str(featCls) for featCls in font.featureClasses]
+        + [str(feature) for feature in font.features]
+    )
     glyphOrder = [glyph.name for glyph in font.glyphs]
     tables = {}
     # TODO: no kernWriter, but markWriter?
@@ -107,13 +106,9 @@ def registerAllFactories():
     Component.closedGraphicsPathFactory = componentClosedGraphicsPathFactory
     Component.openGraphicsPathFactory = componentOpenGraphicsPathFactory
     Font.layoutEngineFactory = fontLayoutEngineFactory
-    Layer.closedComponentsGraphicsPathFactory = \
-        layerClosedComponentsGraphicsPathFactory
-    Layer.closedGraphicsPathFactory = \
-        layerClosedGraphicsPathFactory
-    Layer.openComponentsGraphicsPathFactory = \
-        layerOpenComponentsGraphicsPathFactory
-    Layer.openGraphicsPathFactory = \
-        layerOpenGraphicsPathFactory
+    Layer.closedComponentsGraphicsPathFactory = layerClosedComponentsGraphicsPathFactory
+    Layer.closedGraphicsPathFactory = layerClosedGraphicsPathFactory
+    Layer.openComponentsGraphicsPathFactory = layerOpenComponentsGraphicsPathFactory
+    Layer.openGraphicsPathFactory = layerOpenGraphicsPathFactory
     Layer.selectedPathsFactory = lambda layer: filterSelection(layer._paths)
     Path.graphicsPathFactory = pathGraphicsPathFactory

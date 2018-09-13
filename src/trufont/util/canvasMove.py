@@ -7,10 +7,10 @@ def nudgeUICurve(on1, off1, off2, on2, dx, dy):
         sdx = sign * dx
         sdy = sign * dy
         # factor
-        xFactor = (on2.x - on1.x - sdx)
+        xFactor = on2.x - on1.x - sdx
         if xFactor:
             xFactor = (on2.x - on1.x) / xFactor
-        yFactor = (on2.y - on1.y - sdy)
+        yFactor = on2.y - on1.y - sdy
         if yFactor:
             yFactor = (on2.y - on1.y) / yFactor
         # apply
@@ -45,8 +45,9 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
     pt.x = x1 + (x2 - x1) * t
     pt.y = y1 + (y2 - y1) * t
 
+
 def moveUILayerSelection(layer, dx, dy, option=None):
-    #layer.beginUndoGroup()
+    # layer.beginUndoGroup()
     for anchor in layer.anchors:
         if anchor.selected:
             anchor.x += dx
@@ -66,15 +67,16 @@ def moveUILayerSelection(layer, dx, dy, option=None):
             guideline.x += dx
             guideline.y += dy
     for path in layer.paths:
-        moveUIPathSelection(path, dx, dy, nudgePoints=option == "nudge",
-                            slidePoints=option == "slide")
+        moveUIPathSelection(
+            path, dx, dy, nudgePoints=option == "nudge", slidePoints=option == "slide"
+        )
         path.points.applyChange()
     """
     image = layer.image
     if image.selected:
         image.move(delta)
     """
-    #layer.endUndoGroup()
+    # layer.endUndoGroup()
 
 
 def moveUIPathSelection(path, dx, dy, nudgePoints=False, slidePoints=False):
@@ -104,8 +106,7 @@ def moveUIPathSelection(path, dx, dy, nudgePoints=False, slidePoints=False):
         if not slidePoints:
             if point.type is not None:
                 if selected:
-                    if prev.type is None and not prev.selected and \
-                            point.type != "move":
+                    if prev.type is None and not prev.selected and point.type != "move":
                         prev.x += dx
                         prev.y += dy
                     if next_.type is None and not next_.selected:
@@ -120,8 +121,7 @@ def moveUIPathSelection(path, dx, dy, nudgePoints=False, slidePoints=False):
         return
     # second pass: constrain
     for next_ in points:
-        atNode = point.type is not None and prev.type is None or \
-                 next_.type is None
+        atNode = point.type is not None and prev.type is None or next_.type is None
         # slide points
         if atNode and slidePoints:
             p1, p2, p3 = prev, point, next_

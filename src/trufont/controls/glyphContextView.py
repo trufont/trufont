@@ -7,7 +7,7 @@ import wx.lib.newevent
 
 # TODO: forbid scrolling past scene boundary
 
-__all__ = "GlyphContextView",
+__all__ = ("GlyphContextView",)
 
 MinSizeForDetails = 175
 MinSizeForGuidelines = 100
@@ -144,7 +144,8 @@ class GlyphContextView(wx.Window):
         manager = self._layoutManager
         textCursor = self.textCursor
         index = manager.indexAt(
-            (point.x - self._offset.x) * self._inverseScale, lOffset)
+            (point.x - self._offset.x) * self._inverseScale, lOffset
+        )
         if index is not None:
             textCursor.setPosition(index)
 
@@ -193,10 +194,8 @@ class GlyphContextView(wx.Window):
                 break
             otherWidth += otherLayer.width
         scale = self._scale
-        dx = .5 * (
-            fitWidth - activeWidth * scale) - otherWidth * scale
-        dy = .5 * (
-            fitHeight - height * scale) + ascender * scale
+        dx = .5 * (fitWidth - activeWidth * scale) - otherWidth * scale
+        dy = .5 * (fitHeight - height * scale) + ascender * scale
         self._offset = wx.RealPoint(dx, dy)
         self.Refresh()
 
@@ -284,8 +283,9 @@ class GlyphContextView(wx.Window):
         showMetrics = self.drawingAttribute("showMetrics")
         if showMetrics:
             if self._pointSize > MinSizeForGrid:
-                viewportRect = self.clientRectToCanvas(
-                    wx.Rect(self.GetSize())).Inflate(2, 2).Get()
+                viewportRect = (
+                    self.clientRectToCanvas(wx.Rect(self.GetSize())).Inflate(2, 2).Get()
+                )
                 drawing.drawGrid(ctx, scale, viewportRect)
         if layer is None:
             return
@@ -309,7 +309,7 @@ class GlyphContextView(wx.Window):
                 if not otherLayer.visible or otherLayer is layer:
                     continue
                 # image
-                #drawing.drawLayerImage(ctx, otherLayer, self._inverseScale)
+                # drawing.drawLayerImage(ctx, otherLayer, self._inverseScale)
                 # stroke
                 color = otherLayer.color
                 if color:
@@ -322,14 +322,15 @@ class GlyphContextView(wx.Window):
                 if color:
                     ctx.SetPen(pen)
         # image
-        #drawing.drawLayerImage(ctx, layer, self._inverseScale)
+        # drawing.drawLayerImage(ctx, layer, self._inverseScale)
         # guidelines
         if self._pointSize > MinSizeForGuidelines and self.drawingAttribute(
-                "showGuidelines"):
-            viewportRect = self.clientRectToCanvas(
-                wx.Rect(self.GetSize())).Inflate(2, 2).Get()
-            drawing.drawLayerGuidelines(
-                ctx, layer, self._inverseScale, viewportRect)
+            "showGuidelines"
+        ):
+            viewportRect = (
+                self.clientRectToCanvas(wx.Rect(self.GetSize())).Inflate(2, 2).Get()
+            )
+            drawing.drawLayerGuidelines(ctx, layer, self._inverseScale, viewportRect)
         # layer
         if layer:
             # components
@@ -338,24 +339,29 @@ class GlyphContextView(wx.Window):
             # fill
             # drawn in the background
             # selection
-            if self._pointSize > MinSizeForDetails and \
-                    self.drawingAttribute("showSelection"):
-                selectionColor = wx.Colour(
-                    *self.drawingAttribute("selectionColor"))
+            if self._pointSize > MinSizeForDetails and self.drawingAttribute(
+                "showSelection"
+            ):
+                selectionColor = wx.Colour(*self.drawingAttribute("selectionColor"))
                 ctx.SetPen(wx.Pen(selectionColor, 3.5 * scale))
                 for path in layer.selectedPaths:
                     ctx.StrokePath(path.graphicsPath)
             # points
-            if self._pointSize > MinSizeForDetails and \
-                    self.drawingAttribute("showPoints"):
+            if self._pointSize > MinSizeForDetails and self.drawingAttribute(
+                "showPoints"
+            ):
                 backgroundColor = self.GetBackgroundColour()
                 if self.drawingAttribute("showCoordinates"):
                     coordinatesColor = None
                 else:
                     coordinatesColor = wx.NullColour
                 drawing.drawLayerPoints(
-                    ctx, layer, scale, backgroundColor=backgroundColor,
-                    coordinatesColor=coordinatesColor)
+                    ctx,
+                    layer,
+                    scale,
+                    backgroundColor=backgroundColor,
+                    coordinatesColor=coordinatesColor,
+                )
             # stroke
             # if we show fill but not stroke, we still stroke open paths
             showStroke = self.drawingAttribute("showStroke")
@@ -365,14 +371,18 @@ class GlyphContextView(wx.Window):
                 if showStroke:
                     ctx.StrokePath(layer.closedGraphicsPath)
                 ctx.StrokePath(layer.openGraphicsPath)
-            if self._pointSize > MinSizeForDetails and \
-                self.drawingAttribute("showSelectionBounds"):
+            if self._pointSize > MinSizeForDetails and self.drawingAttribute(
+                "showSelectionBounds"
+            ):
                 drawing.drawLayerSelectionBounds(ctx, layer, scale)
         else:
             drawing.drawLayerTemplate(ctx, layer, scale)
         # anchors
-        if layer.anchors and self._pointSize > MinSizeForDetails and \
-                self.drawingAttribute("showAnchors"):
+        if (
+            layer.anchors
+            and self._pointSize > MinSizeForDetails
+            and self.drawingAttribute("showAnchors")
+        ):
             drawing.drawLayerAnchors(ctx, layer, scale)
 
     # ----------
@@ -411,8 +421,9 @@ class GlyphContextView(wx.Window):
 
         activeIndex = manager.activeIndex
         caretIndex = manager.caretIndex + 1  # adjust to not have to shift
-        drawTextMetrics = self._pointSize > MinSizeForDetails and \
-            self.drawingAttribute("showTextMetrics")
+        drawTextMetrics = self._pointSize > MinSizeForDetails and self.drawingAttribute(
+            "showTextMetrics"
+        )
         # draw cursor + active background
         ctx.PushState()
         for idx, layer, xOff, yOff, xAdv, yAdv in manager.records:

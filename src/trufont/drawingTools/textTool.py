@@ -30,7 +30,7 @@ _path.CloseSubpath()
 
 
 def _isUnicodeChar(text):
-        return len(text) and unicodedata.category(text) != "Cc"
+    return len(text) and unicodedata.category(text) != "Cc"
 
 
 class TextTool(BaseTool):
@@ -76,8 +76,9 @@ class TextTool(BaseTool):
                 clipboard.Close()
         # ! attn on mac etc. physical keyboard layout is different so we
         # probably wanna use Ctrl (Meta) instead of Command
-        elif (event.ControlDown() or event.AltDown()) and \
-                (key == wx.WXK_LEFT or key == wx.WXK_RIGHT):
+        elif (event.ControlDown() or event.AltDown()) and (
+            key == wx.WXK_LEFT or key == wx.WXK_RIGHT
+        ):
             layer = self.layer
             if layer is None:
                 return

@@ -110,7 +110,6 @@ class FeatureDropdown(wx.Window):
 
 
 class FeaturePopup(wx.PopupTransientWindow):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDown)
@@ -163,8 +162,7 @@ class FeaturePopup(wx.PopupTransientWindow):
         if index is not None:
             feat = self._featureList[index]
             value = not self._features[feat]
-            wx.PostEvent(self.GetParent(), FeatureModifiedEvent(
-                feat=feat, value=value))
+            wx.PostEvent(self.GetParent(), FeatureModifiedEvent(feat=feat, value=value))
             self.Refresh()
 
     def OnMotion(self, event):
@@ -195,7 +193,6 @@ class FeaturePopup(wx.PopupTransientWindow):
             origin = wx.Point(ox + 8, oy + 6)
             value = self._features[feat] * wx.CONTROL_CHECKED
             # TODO: checkbox size is OS dependent
-            rdr.DrawCheckBox(
-                self, dc, wx.Rect(origin, wx.Size(13, 13)), value)
+            rdr.DrawCheckBox(self, dc, wx.Rect(origin, wx.Size(13, 13)), value)
             ctx.DrawText(feat, 28, 4)
             ctx.Translate(0, 24)

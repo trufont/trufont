@@ -38,7 +38,7 @@ class TextCursor:
         self._canvas.applyTextChange()
 
     def popPreviousChar(self):
-        pos = self._position-1
+        pos = self._position - 1
         if pos < 0:
             return
         elem = self._text[pos]
@@ -128,7 +128,7 @@ class TextCursor:
         for i, ch in enumerate(text):
             if slash > 0:
                 if ch == "/" or ch == " ":
-                    buf.append(text[slash:i+1])
+                    buf.append(text[slash : i + 1])
             elif slash < 0:
                 if ch == "/":
                     buf.append("//")

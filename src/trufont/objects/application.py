@@ -61,7 +61,10 @@ class Application:
 
     def __repr__(self):
         return "%s(%s, %d fonts)" % (
-            self._app.GetAppDisplayName(), __version__, len(self.fonts))
+            self._app.GetAppDisplayName(),
+            __version__,
+            len(self.fonts),
+        )
 
     @property
     def font(self) -> Optional[Font]:
@@ -90,9 +93,13 @@ class Application:
         # make sure observer has the relevant callback
         callbackName = f"On{key.capitalize()}"
         if not hasattr(observer, callbackName) and (
-                key == "updateUI" and not hasattr(observer, "Refresh")):
-            raise ValueError("observer %r does not implement %r method" % (
-                observer, callbackName))
+            key == "updateUI" and not hasattr(observer, "Refresh")
+        ):
+            raise ValueError(
+                "observer {!r} does not implement {!r} method".format(
+                    observer, callbackName
+                )
+            )
         observers.add(observer)
 
     def newFont(self) -> Font:
@@ -104,9 +111,11 @@ class Application:
     def openFont(self, path=None) -> Optional[Font]:
         if path is None:
             with wx.FileDialog(
-                    None, tr("Load Font File"),
-                    wildcard="Font Files (*.tfont)|*.tfont",
-                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
+                None,
+                tr("Load Font File"),
+                wildcard="Font Files (*.tfont)|*.tfont",
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+            ) as dialog:
                 if dialog.ShowModal() == wx.ID_CANCEL:
                     return
                 path = dialog.GetPath()

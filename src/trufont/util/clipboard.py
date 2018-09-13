@@ -23,24 +23,16 @@ def retrieve(layer: Layer) -> bool:
     conv = TFontConverter()
     anchors = data.get("anchors")
     if anchors:
-        layer.anchors.update(
-            {a.name: a for a in conv.structure(anchors, List[Anchor])}
-        )
+        layer.anchors.update({a.name: a for a in conv.structure(anchors, List[Anchor])})
     components = data.get("components")
     if components:
-        layer.components.extend(
-            conv.structure(components, List[Component])
-        )
+        layer.components.extend(conv.structure(components, List[Component]))
     guidelines = data.get("guidelines")
     if guidelines:
-        layer.guidelines.extend(
-            conv.structure(guidelines, List[Guideline])
-        )
+        layer.guidelines.extend(conv.structure(guidelines, List[Guideline]))
     paths = data.get("paths")
     if paths:
-        layer.paths.extend(
-            conv.structure(paths, List[Path])
-        )
+        layer.paths.extend(conv.structure(paths, List[Path]))
     return bool(anchors or components or guidelines or paths)
 
 

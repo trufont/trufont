@@ -7,6 +7,7 @@ class ColorButton(wx.Window):
     """
     TODO: kbd focus and focus ring
     """
+
     COLOR_MODIFIED = EVT_COLOR_MODIFIED
 
     def __init__(self, parent):
@@ -50,9 +51,10 @@ class ColorButton(wx.Window):
     @staticmethod
     def DoDraw(parent, dc, rect, color):
         wx.RendererNative.Get().DrawTextCtrl(
-            parent, dc,
+            parent,
+            dc,
             rect
-            #wx.CONTROL_FOCUSED
+            # wx.CONTROL_FOCUSED
         )
 
         dc.SetPen(wx.TRANSPARENT_PEN)

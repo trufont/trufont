@@ -5,8 +5,13 @@ import subprocess
 import trufont
 from trufont import __file__ as modulePath, __version__
 from trufont.controls import (
-    GlyphCanvasView, GlyphCellView, FontStatusBar, GlyphStatusBar, FontTabBar,
-    FontToolBar)
+    GlyphCanvasView,
+    GlyphCellView,
+    FontStatusBar,
+    GlyphStatusBar,
+    FontTabBar,
+    FontToolBar,
+)
 from trufont.controls.glyphDialog import AddGlyphsDialog
 from trufont.controls.glyphStatusBar import ID_ZOOM_IN, ID_ZOOM_OUT
 from trufont.controls.propertiesView import makePropertiesLayout
@@ -44,7 +49,7 @@ ID_TOOLS = []
 try:
     PATH = os.path.abspath(os.path.join(modulePath, "../.."))
     gitShortLog = subprocess.check_output(
-        ['git', 'shortlog', '-sn'], cwd=PATH, stderr=subprocess.DEVNULL
+        ["git", "shortlog", "-sn"], cwd=PATH, stderr=subprocess.DEVNULL
     ).decode()
 except:
     gitShortLog = ""
@@ -60,13 +65,12 @@ def authors():
 
 def prepareNewFont(font):
     glyphs = font.glyphs
-    for char in string.ascii_uppercase+string.ascii_lowercase+" ":
+    for char in string.ascii_uppercase + string.ascii_lowercase + " ":
         name = "space" if char == " " else char
         glyphs.append(Glyph(name, unicodes=["%04X" % ord(char)]))
 
 
 class FontWindowTab(wx.Panel):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.SetBackgroundColour(wx.Colour(235, 235, 235))
@@ -110,6 +114,7 @@ class FontWindowTab(wx.Panel):
 
     # TODO: add more things like GetTextDirection etc.?
 
+
 ActiveLayerChangedEvent, EVT_ACTIVE_LAYER_CHANGED = wx.lib.newevent.NewEvent()
 
 
@@ -143,9 +148,9 @@ class FontWindow(wx.Frame):
 
         statusBar = FontStatusBar(tab)
         statusBar.OnCountChanged(len(font.glyphs))
-        #slider = wx.Slider(statusBar)
-        #slider.SetSize(150, 10)
-        #slider.CenterOnParent(wx.VERTICAL)
+        # slider = wx.Slider(statusBar)
+        # slider.SetSize(150, 10)
+        # slider.CenterOnParent(wx.VERTICAL)
 
         tab.statusBar = statusBar
         tab.view = self.cellView
@@ -155,8 +160,10 @@ class FontWindow(wx.Frame):
         contentSizer.Add(self.tabBar, 0, wx.EXPAND)
         contentSizer.Add(self.bookCtrl, 1, wx.EXPAND)
         propertiesSizer = makePropertiesLayout(self, font)
-        self.Bind(self.ACTIVE_LAYER_CHANGED, propertiesSizer.GetChildren(
-            )[-1].GetWindow().OnActiveLayerChanged)
+        self.Bind(
+            self.ACTIVE_LAYER_CHANGED,
+            propertiesSizer.GetChildren()[-1].GetWindow().OnActiveLayerChanged,
+        )
         workspSizer = wx.BoxSizer(wx.HORIZONTAL)
         workspSizer.Add(self.toolBar, 0, wx.EXPAND)
         workspSizer.AddSpacer(1)
@@ -223,10 +230,12 @@ class FontWindow(wx.Frame):
             canvas.textCursor.insertGlyph(glyph)
         #
         statusBar = GlyphStatusBar(tab, canvas)
-        statusBar.Bind(statusBar.ZOOM_MODIFIED,
-                       partial(self.OnChangeZoom, 1), id=ID_ZOOM_IN)
-        statusBar.Bind(statusBar.ZOOM_MODIFIED,
-                       partial(self.OnChangeZoom, -1), id=ID_ZOOM_OUT)
+        statusBar.Bind(
+            statusBar.ZOOM_MODIFIED, partial(self.OnChangeZoom, 1), id=ID_ZOOM_IN
+        )
+        statusBar.Bind(
+            statusBar.ZOOM_MODIFIED, partial(self.OnChangeZoom, -1), id=ID_ZOOM_OUT
+        )
         tab.statusBar = statusBar
         tab.view = canvas
         self.bookCtrl.ShowNewPage(tab)
@@ -264,17 +273,17 @@ class FontWindow(wx.Frame):
 
     def setupAccelerators(self):
         table = [
-            wx.AcceleratorEntry(wx.ACCEL_CTRL, ord('D'), ID_DESELECT),
-            wx.AcceleratorEntry(wx.ACCEL_CTRL, ord('T'), ID_NEW_TAB),
+            wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("D"), ID_DESELECT),
+            wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("T"), ID_NEW_TAB),
             wx.AcceleratorEntry(wx.ACCEL_CTRL, wx.WXK_TAB, ID_NEXT_TAB),
             wx.AcceleratorEntry(
-                wx.ACCEL_CTRL|wx.ACCEL_SHIFT, wx.WXK_TAB, ID_PREV_TAB),
-            wx.AcceleratorEntry(wx.ACCEL_CTRL, ord('W'), wx.ID_CLOSE),
+                wx.ACCEL_CTRL | wx.ACCEL_SHIFT, wx.WXK_TAB, ID_PREV_TAB
+            ),
+            wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("W"), wx.ID_CLOSE),
         ]
-        base = ord('1')
+        base = ord("1")
         for idx, ID_TAB in enumerate(ID_TABS):
-            table.append(
-                wx.AcceleratorEntry(wx.ACCEL_CTRL, base+idx, ID_TAB))
+            table.append(wx.AcceleratorEntry(wx.ACCEL_CTRL, base + idx, ID_TAB))
             self.Bind(wx.EVT_MENU, partial(self.OnChangeTab, idx), id=ID_TAB)
         self.SetAcceleratorTable(wx.AcceleratorTable(table))
         # NOTE for when we want to re-enter this function: we only need to bind
@@ -294,11 +303,15 @@ class FontWindow(wx.Frame):
         fileMenu.AppendSeparator()
         self.Bind(wx.EVT_MENU, self.OnSave, fileMenu.Append(wx.ID_SAVE))
         self.Bind(
-            wx.EVT_MENU, self.OnSaveAs,
-            fileMenu.Append(wx.ID_SAVEAS, tr("Save &As...\tCtrl+Shift+S")))
+            wx.EVT_MENU,
+            self.OnSaveAs,
+            fileMenu.Append(wx.ID_SAVEAS, tr("Save &As...\tCtrl+Shift+S")),
+        )
         self.Bind(
-            wx.EVT_MENU, self.OnRevert,
-            fileMenu.Append(wx.ID_REVERT_TO_SAVED, tr("&Revert")))
+            wx.EVT_MENU,
+            self.OnRevert,
+            fileMenu.Append(wx.ID_REVERT_TO_SAVED, tr("&Revert")),
+        )
         fileMenu.AppendSeparator()
         item = fileMenu.Append(wx.ID_ANY, tr("&Export...\tCtrl+E"))
         item.Enable(False)
@@ -313,13 +326,14 @@ class FontWindow(wx.Frame):
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRedo, item)
         editMenu.AppendSeparator()
-        self.Bind(
-            wx.EVT_MENU, self.OnCut, editMenu.Append(wx.ID_CUT))
+        self.Bind(wx.EVT_MENU, self.OnCut, editMenu.Append(wx.ID_CUT))
         self.Bind(wx.EVT_MENU, self.OnCopy, editMenu.Append(wx.ID_COPY))
         self.Bind(wx.EVT_MENU, self.OnPaste, editMenu.Append(wx.ID_PASTE))
         self.Bind(
-            wx.EVT_MENU, self.OnSelectAll,
-            editMenu.Append(wx.ID_SELECTALL, tr("Select &All\tCtrl+A")))
+            wx.EVT_MENU,
+            self.OnSelectAll,
+            editMenu.Append(wx.ID_SELECTALL, tr("Select &All\tCtrl+A")),
+        )
         item = editMenu.Append(wx.ID_FIND, tr("Find...\tCtrl+F"))
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnFind, item)
@@ -337,55 +351,73 @@ class FontWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFontInfo, item)
         fontMenu.AppendSeparator()
         self.Bind(
-            wx.EVT_MENU, self.OnAddGlyphs,
-            fontMenu.Append(wx.ID_ANY, tr("Add Glyphs...\tCtrl+G")))
+            wx.EVT_MENU,
+            self.OnAddGlyphs,
+            fontMenu.Append(wx.ID_ANY, tr("Add Glyphs...\tCtrl+G")),
+        )
 
         viewMenu = wx.Menu()
         self.Bind(
-            wx.EVT_MENU, partial(self.OnChangeZoom, 1),
-            viewMenu.Append(ID_ZOOM_IN, tr("Zoom In\tCtrl++")))
+            wx.EVT_MENU,
+            partial(self.OnChangeZoom, 1),
+            viewMenu.Append(ID_ZOOM_IN, tr("Zoom In\tCtrl++")),
+        )
         self.Bind(
-            wx.EVT_MENU, partial(self.OnChangeZoom, -1),
-            viewMenu.Append(ID_ZOOM_OUT, tr("Zoom Out\tCtrl+-")))
+            wx.EVT_MENU,
+            partial(self.OnChangeZoom, -1),
+            viewMenu.Append(ID_ZOOM_OUT, tr("Zoom Out\tCtrl+-")),
+        )
         self.Bind(
-            wx.EVT_MENU, self.OnResetZoom,
-            viewMenu.Append(wx.ID_ANY, tr("Reset Zoom\tCtrl+0")))
+            wx.EVT_MENU,
+            self.OnResetZoom,
+            viewMenu.Append(wx.ID_ANY, tr("Reset Zoom\tCtrl+0")),
+        )
         viewMenu.AppendSeparator()
         self.Bind(
-            wx.EVT_MENU, partial(self.OnShiftGlyph, 1),
-            viewMenu.Append(wx.ID_ANY, tr("Next Glyph\tEnd")))
+            wx.EVT_MENU,
+            partial(self.OnShiftGlyph, 1),
+            viewMenu.Append(wx.ID_ANY, tr("Next Glyph\tEnd")),
+        )
         self.Bind(
-            wx.EVT_MENU, partial(self.OnShiftGlyph, -1),
-            viewMenu.Append(wx.ID_ANY, tr("Previous Glyph\tHome")))
+            wx.EVT_MENU,
+            partial(self.OnShiftGlyph, -1),
+            viewMenu.Append(wx.ID_ANY, tr("Previous Glyph\tHome")),
+        )
         viewMenu.AppendSeparator()
         item = viewMenu.Append(
-            wx.ID_ANY, tr("Show Points\tCtrl+Shift+P"), kind=wx.ITEM_CHECK)
+            wx.ID_ANY, tr("Show Points\tCtrl+Shift+P"), kind=wx.ITEM_CHECK
+        )
         item.Check(True)
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnAttributeChange, item)
         item = viewMenu.Append(
-            wx.ID_ANY, tr("Show Metrics\tCtrl+Shift+M"), kind=wx.ITEM_CHECK)
+            wx.ID_ANY, tr("Show Metrics\tCtrl+Shift+M"), kind=wx.ITEM_CHECK
+        )
+        item.Check(True)
+        item.Enable(False)
+        self.Bind(wx.EVT_MENU, self.OnAttributeChange, item)
+        item = viewMenu.Append(wx.ID_ANY, tr("Show Images"), kind=wx.ITEM_CHECK)
         item.Check(True)
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnAttributeChange, item)
         item = viewMenu.Append(
-            wx.ID_ANY, tr("Show Images"), kind=wx.ITEM_CHECK)
-        item.Check(True)
-        item.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnAttributeChange, item)
-        item = viewMenu.Append(
-            wx.ID_ANY, tr("Show Guidelines\tCtrl+Shift+G"), kind=wx.ITEM_CHECK)
+            wx.ID_ANY, tr("Show Guidelines\tCtrl+Shift+G"), kind=wx.ITEM_CHECK
+        )
         item.Check(True)
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnAttributeChange, item)
 
         windowMenu = wx.Menu()
         self.Bind(
-            wx.EVT_MENU, self.OnKerning,
-            windowMenu.Append(wx.ID_ANY, tr("Kerning\tCtrl+Alt+K")))
+            wx.EVT_MENU,
+            self.OnKerning,
+            windowMenu.Append(wx.ID_ANY, tr("Kerning\tCtrl+Alt+K")),
+        )
         self.Bind(
-            wx.EVT_MENU, self.OnScripting,
-            windowMenu.Append(wx.ID_ANY, tr("Scripting\tCtrl+Alt+R")))
+            wx.EVT_MENU,
+            self.OnScripting,
+            windowMenu.Append(wx.ID_ANY, tr("Scripting\tCtrl+Alt+R")),
+        )
         windowMenu.AppendSeparator()
         item = windowMenu.Append(wx.ID_ANY, tr("Output\tCtrl+Alt+O"))
         item.Enable(False)
@@ -393,11 +425,15 @@ class FontWindow(wx.Frame):
 
         helpMenu = wx.Menu()
         self.Bind(
-            wx.EVT_MENU, self.OnDocumentation,
-            helpMenu.Append(wx.ID_ANY, tr("Documentation")))
+            wx.EVT_MENU,
+            self.OnDocumentation,
+            helpMenu.Append(wx.ID_ANY, tr("Documentation")),
+        )
         self.Bind(
-            wx.EVT_MENU, self.OnReportIssue,
-            helpMenu.Append(wx.ID_ANY, tr("Report an Issue")))
+            wx.EVT_MENU,
+            self.OnReportIssue,
+            helpMenu.Append(wx.ID_ANY, tr("Report an Issue")),
+        )
         helpMenu.AppendSeparator()
         self.Bind(wx.EVT_MENU, self.OnAbout, helpMenu.Append(wx.ID_ABOUT))
 
@@ -406,8 +442,9 @@ class FontWindow(wx.Frame):
         app = wx.GetApp()
         app.fileHistory.UseMenu(recentFiles)
         app.fileHistory.AddFilesToMenu(recentFiles)
-        self.Bind(wx.EVT_MENU_RANGE, self.OnFileHistory,
-                  id=wx.ID_FILE1, id2=wx.ID_FILE9)
+        self.Bind(
+            wx.EVT_MENU_RANGE, self.OnFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9
+        )
         recentFiles.AppendSeparator()
         recentFiles.Append(wx.ID_CLEAR, tr("Clear Menu"))
 
@@ -426,8 +463,7 @@ class FontWindow(wx.Frame):
         focusWindow = wx.Window.FindFocus()
         # clear to engage?
         # we could even unsub from this event on focus out and sub on focus in
-        if isinstance(focusWindow, GlyphCanvasView) and \
-                focusWindow._font is self._font:
+        if isinstance(focusWindow, GlyphCanvasView) and focusWindow._font is self._font:
             # toolbar
             self.toolBar.DoProcessCharHook(event)
             if not event.GetSkipped():
@@ -435,7 +471,7 @@ class FontWindow(wx.Frame):
         event.Skip()
 
     def OnUpdateUI(self):
-        #self.cellView.glyphs = self._font._glyphs
+        # self.cellView.glyphs = self._font._glyphs
         self.updateTitle()
 
     def OnClose(self, event):
@@ -466,7 +502,7 @@ class FontWindow(wx.Frame):
                 self.tabBar.setCurrentTab(i)
                 return
         canvas = self._newTab(glyph)
-        #canvas.textCursor.insertGlyph(glyph)
+        # canvas.textCursor.insertGlyph(glyph)
 
     def OnSelectionChanged(self, event):
         statusBar = self.bookCtrl.GetPage(0).statusBar
@@ -489,13 +525,13 @@ class FontWindow(wx.Frame):
         font = self._font
         if not font.modified:
             return True
-        text = tr(
-            "Do you want to save your changes to “%s” before closing?"
-            ) % self._title
+        text = (
+            tr("Do you want to save your changes to “%s” before closing?") % self._title
+        )
         caption = tr("Your changes will be lost if you don’t save them.")
         with wx.MessageDialog(
-                self, text,
-                style=wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION) as dialog:
+            self, text, style=wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION
+        ) as dialog:
             dialog.SetExtendedMessage(caption)
             ret = dialog.ShowModal()
         if ret == wx.ID_YES:
@@ -551,9 +587,11 @@ class FontWindow(wx.Frame):
 
     def OnSaveAs(self, event):
         with wx.FileDialog(
-                self, tr("Save Font File"),
-                wildcard="Font Files (*.tfont)|*.tfont",
-                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dialog:
+            self,
+            tr("Save Font File"),
+            wildcard="Font Files (*.tfont)|*.tfont",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as dialog:
             if dialog.ShowModal() == wx.ID_CANCEL:
                 return
             path = dialog.GetPath()
@@ -719,23 +757,21 @@ class FontWindow(wx.Frame):
         wx.LaunchDefaultBrowser("http://trufont.github.io/")
 
     def OnReportIssue(self, event):
-        wx.LaunchDefaultBrowser(
-            "https://github.com/trufont/trufont/issues/new")
+        wx.LaunchDefaultBrowser("https://github.com/trufont/trufont/issues/new")
 
     def OnAbout(self, event):
         name = wx.GetApp().GetAppDisplayName()
         info = wx.adv.AboutDialogInfo()
         info.SetIcon(icons.GetUserIcon("app.png", 128, 128, self))
         info.SetVersion(__version__)
-        info.SetDescription(tr(
-            "%s is a streamlined and hackable font editor.") % name)
-        info.SetCopyright(
-            "(C) 2018 The TruFont Project Developers")
+        info.SetDescription(tr("%s is a streamlined and hackable font editor.") % name)
+        info.SetCopyright("(C) 2018 The TruFont Project Developers")
         info.SetLicense(
             "Licensed under the Mozilla Public License, Version 2.0.\n"
             "\n"
             "If a copy of the MPL was not distributed with this program,\n"
-            "you can obtain one at <https://mozilla.org/MPL/2.0/>.")
+            "you can obtain one at <https://mozilla.org/MPL/2.0/>."
+        )
         info.SetWebSite("https://trufont.github.io", tr("TruFont website"))
         info.SetDevelopers(list(authors()))
         wx.adv.AboutBox(info, self)

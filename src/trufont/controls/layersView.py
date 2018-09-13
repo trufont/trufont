@@ -47,7 +47,7 @@ class LayersView(wx.Window):
     """
 
     def __init__(self, parent, font):
-        super().__init__(parent) #, style=wx.FULL_REPAINT_ON_RESIZE
+        super().__init__(parent)  # , style=wx.FULL_REPAINT_ON_RESIZE
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeave)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDClick)
@@ -119,7 +119,7 @@ class LayersView(wx.Window):
             self._textCtrl.Show()
         self._renamedLayer = layer
         _, h = self._textCtrl.GetSize()
-        self._textCtrl.SetPosition(wx.Point(36, 14 + 28*index - int(.5*h)))
+        self._textCtrl.SetPosition(wx.Point(36, 14 + 28 * index - int(.5 * h)))
         self._textCtrl.SetValue(layer.name)
         self._textCtrl.SelectAll()
         self._textCtrl.SetFocus()
@@ -136,8 +136,10 @@ class LayersView(wx.Window):
             return
         menu = wx.Menu()
         self.Bind(
-            wx.EVT_MENU, self._setMasterLayer,
-            menu.Append(wx.ID_ANY, tr("Use as Master")))
+            wx.EVT_MENU,
+            self._setMasterLayer,
+            menu.Append(wx.ID_ANY, tr("Use as Master")),
+        )
         item = menu.Append(wx.ID_ANY, tr("Set Location…"))
         item.Enabled = False
         self.Bind(wx.EVT_MENU, self._setLocation, item)
@@ -183,8 +185,7 @@ class LayersView(wx.Window):
         rect = wx.Rect(12, 6, 16, 16)
         for i, layer in enumerate(self._layers):
             if rect.Contains(pos):
-                color = ColorButton.DoPickColor(
-                    self, wx.Colour(layer.color))
+                color = ColorButton.DoPickColor(self, wx.Colour(layer.color))
                 if color is not None:
                     layer.color = color.Get()
                     trufont.TruFont.updateUI()
@@ -240,8 +241,7 @@ class LayersView(wx.Window):
             if color is not None or hover or masterLayer:
                 if color is not None:
                     color = wx.Colour(color)
-                ColorButton.DoDraw(
-                    self, dc, wx.Rect(*origin, 16, 16), color)
+                ColorButton.DoDraw(self, dc, wx.Rect(*origin, 16, 16), color)
             ctx.Translate(24, 0)
             if not masterLayer:
                 ctx.Translate(10, 0)

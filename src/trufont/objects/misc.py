@@ -1,7 +1,5 @@
-
-
 class GuidelineSegment:
-    __slots__ = ("guideline")
+    __slots__ = "guideline"
 
     def __init__(self, guideline):
         self.guideline = guideline
