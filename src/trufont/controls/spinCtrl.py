@@ -1,4 +1,3 @@
-from functools import partial
 import wx
 
 NumberModifiedEvent, EVT_NUMBER_MODIFIED = wx.lib.newevent.NewEvent()

@@ -7,7 +7,7 @@ from trufont.controls.spinCtrl import SpinCtrl
 from trufont.util import platformSpecific
 from trufont.util.drawing import CreatePath, cos_sin_deg
 from trufont.util.pathops import PathPen
-from tfont.objects import Layer, Point, Transformation
+from tfont.objects import Point, Transformation
 import wx
 from wx import GetTranslation as tr
 

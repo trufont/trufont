@@ -1,4 +1,3 @@
-import io
 from trufont.util.drawing import CreateMeasuringContext
 import wx
 from wx import GetTranslation as tr

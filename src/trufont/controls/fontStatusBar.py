@@ -1,5 +1,3 @@
-from trufont.controls.featureDropdown import FeatureDropdown
-from trufont.controls.spinCtrl import SpinCtrl
 import wx
 from wx import GetTranslation as tr
 

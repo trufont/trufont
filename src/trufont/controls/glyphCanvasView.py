@@ -5,7 +5,6 @@ from trufont.drawingTools.baseTool import BaseTool
 from trufont.drawingTools.previewTool import PreviewTool
 from trufont.objects.misc import GuidelineSegment, PointRecord, SegmentRecord
 from trufont.util import bezierMath
-from trufont.util.drawing import CreatePath
 from tfont.objects import Guideline
 import wx
 import wx.lib.newevent

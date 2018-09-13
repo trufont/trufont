@@ -1,5 +1,4 @@
 import trufont
-from trufont.objects.misc import PointRecord
 from trufont.util import platformSpecific
 from trufont.util.drawing import CreatePath
 from trufont.util.canvasDelete import deleteUILayerSelection
