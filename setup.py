@@ -21,6 +21,7 @@ setup(
             "trufont =  trufont.__main__:main"
         ]
     },
+    include_package_data=True,
     install_requires=[
         #"tfont>=0.1.0",
         "uharfbuzz>=0.2.0",

@@ -1,4 +1,4 @@
 include LICENSE.md
 include README.rst
 
-include requirements.txt
+include src/trufont/resources/*.png
