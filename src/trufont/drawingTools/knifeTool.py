@@ -83,6 +83,7 @@ class KnifeTool(BaseTool):
                 layer = self.layer
                 if layer is not None:
                     origin = self.origin
+                    layer.clearSelection()
                     layer.sliceLine(origin.x, origin.y, *points[-1])
                     trufont.TruFont.updateUI()
                 else:

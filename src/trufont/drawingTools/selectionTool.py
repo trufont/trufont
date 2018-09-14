@@ -410,6 +410,8 @@ class SelectionTool(BaseTool):
                 if point.type is not None:
                     value = not point.smooth
                     if value:
+                        if atOpenBoundary(point):
+                            return
                         # we could add a method points.siblings(index)
                         len_points = len(points)
                         prev = points[index - 1]
