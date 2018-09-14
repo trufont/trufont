@@ -1,11 +1,8 @@
-from trufont.controls.featureDropdown import FeatureDropdown
-from trufont.controls.spinCtrl import SpinCtrl
 import wx
 from wx import GetTranslation as tr
 
 
 class FontStatusBar(wx.Panel):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
@@ -57,7 +54,6 @@ class FontStatusBar(wx.Panel):
             return
         width = self._titleWidth
         if width is None:
-            width = self._titleWidth = 12 + ctx.GetTextExtent(
-                "00000 glyphs")[0]
+            width = self._titleWidth = 12 + ctx.GetTextExtent("00000 glyphs")[0]
         ctx.Translate(width, 0)
         ctx.DrawText(text, 0, 0)

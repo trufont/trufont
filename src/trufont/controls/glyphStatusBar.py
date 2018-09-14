@@ -37,8 +37,7 @@ class GlyphStatusBar(wx.Panel):
         ctrl.SetSize(ctrl.GetBestSize())
         ctrl.Bind(ctrl.FEATURE_MODIFIED, self.OnFeatureModified)
 
-        ctrl = self._ptSizeCtrl = SpinCtrl(
-            self, style=wx.TE_CENTRE | wx.NO_BORDER)
+        ctrl = self._ptSizeCtrl = SpinCtrl(self, style=wx.TE_CENTRE | wx.NO_BORDER)
         ctrl.SetForegroundColour(self.GetForegroundColour())
         ctrl.SetToolTip(tr("Zoom"))
         ctrl.number = canvas.pointSize
@@ -199,7 +198,8 @@ class GlyphStatusBar(wx.Panel):
         path.AddCurveToPoint(6.0, 12.226, 6.226, 12.0, 6.5, 12.0)
         ctx.Translate(-30, 5)
         if canvas and (canvas.direction == "rtl") ^ (
-                self._mouseDownElem == self._underMouseElem == 2):
+            self._mouseDownElem == self._underMouseElem == 2
+        ):
             ctx.SetBrush(selectedBrush)
         else:
             ctx.SetBrush(brush)
@@ -237,7 +237,8 @@ class GlyphStatusBar(wx.Panel):
         path.AddCurveToPoint(2.0, 12.226, 2.226, 12.0, 2.5, 12.0)
         ctx.Translate(-26, 0)
         if canvas and (canvas.direction == "ltr") ^ (
-                self._mouseDownElem == self._underMouseElem == 3):
+            self._mouseDownElem == self._underMouseElem == 3
+        ):
             ctx.SetBrush(selectedBrush)
         else:
             ctx.SetBrush(brush)
@@ -284,7 +285,8 @@ class GlyphStatusBar(wx.Panel):
         path.CloseSubpath()
         ctx.Translate(-26, 0)
         if canvas and canvas.applyKerning ^ (
-                self._mouseDownElem == self._underMouseElem == 4):
+            self._mouseDownElem == self._underMouseElem == 4
+        ):
             ctx.SetBrush(selectedBrush)
         else:
             ctx.SetBrush(brush)

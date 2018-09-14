@@ -3,7 +3,6 @@ import wx
 
 
 class PreviewTool(BaseTool):
-
     def drawingAttribute(self, attr):
         if attr == "showFill":
             return True

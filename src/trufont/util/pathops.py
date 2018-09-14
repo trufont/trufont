@@ -13,8 +13,8 @@ class PathPen:
         last = self.points[-1]
         lastOff = self.points[-2]
         angle = abs(
-            atan2(p1y - last.y, p1x - last.x) -
-            atan2(lastOff.y - last.y, lastOff.x - last.x)
+            atan2(p1y - last.y, p1x - last.x)
+            - atan2(lastOff.y - last.y, lastOff.x - last.x)
         )
         return isclose(angle, pi)
 
@@ -54,29 +54,31 @@ class PathPen:
 
 
 def draw(self, pen):
-        points = self._points
-        if not points:
-            return
-        start = points[0]
-        open_ = skip = start.type == "move"
-        if open_:
-            pen.moveTo((start.x, start.y))
+    points = self._points
+    if not points:
+        return
+    start = points[0]
+    open_ = skip = start.type == "move"
+    if open_:
+        pen.moveTo((start.x, start.y))
+    else:
+        start = points[-1]
+        assert start.type is not None
+        pen.moveTo((start.x, start.y))
+    stack = []
+    for point in points:
+        if skip:
+            skip = False
+        elif point.type == "line":
+            assert not stack
+            pen.lineTo((point.x, point.y))
         else:
-            start = points[-1]
-            assert start.type is not None
-            pen.moveTo((start.x, start.y))
-        stack = []
-        for point in points:
-            if skip:
-                skip = False
-            elif point.type == "line":
-                assert not stack
-                pen.lineTo((point.x, point.y))
-            else:
-                stack.append((point.x, point.y))
-                if point.type == "curve":
-                    pen.curveTo(*stack)
-                    stack = []
-        if not open_:
-            pen.closePath()
+            stack.append((point.x, point.y))
+            if point.type == "curve":
+                pen.curveTo(*stack)
+                stack = []
+    if not open_:
+        pen.closePath()
+
+
 Path.draw = draw

@@ -79,7 +79,7 @@ class GlyphCellView(wx.ScrolledCanvas):
     def activeCell(self, value):
         assert value in self._selection
         self._activeCell = value
-        #self.Refresh()
+        # self.Refresh()
 
     @property
     def activeLayer(self):
@@ -213,8 +213,7 @@ class GlyphCellView(wx.ScrolledCanvas):
         glyphCount = len(self._glyphs)
         visibleWidth = min(glyphCount, self._columnCount) * (cellWidth - 1)
         _, height = self.GetVirtualSize()
-        if (not allowAllViewport or self._activeCell is None) and \
-                pos.x >= visibleWidth:
+        if (not allowAllViewport or self._activeCell is None) and pos.x >= visibleWidth:
             return None
         x = max(0, min(pos.x, visibleWidth - 1))
         y = max(0, min(pos.y, height - 1))
@@ -315,8 +314,7 @@ class GlyphCellView(wx.ScrolledCanvas):
         first = (ty // (cellHeight + 1)) * columnCount
         last = ceil(by / (cellHeight + 1)) * columnCount
 
-        attr = wx.SYS_COLOUR_HIGHLIGHT if self.HasFocus(
-            ) else wx.SYS_COLOUR_BTNSHADOW
+        attr = wx.SYS_COLOUR_HIGHLIGHT if self.HasFocus() else wx.SYS_COLOUR_BTNSHADOW
         selectionColor = wx.SystemSettings.GetColour(attr)
         r, g, b, a = selectionColor.Get()
         selectionColor.Set(r, g, b, int(.2 * a))
@@ -328,8 +326,7 @@ class GlyphCellView(wx.ScrolledCanvas):
             color = selectionColor if index in selection else None
             ctx.PushState()
             ctx.Translate(left, top)
-            drawing.drawGlyphFigure(
-                ctx, glyph, cellWidth, cellHeight, color)
+            drawing.drawGlyphFigure(ctx, glyph, cellWidth, cellHeight, color)
             ctx.PopState()
 
             left += cellWidth + 1
@@ -349,8 +346,7 @@ class GlyphCellView(wx.ScrolledCanvas):
         elif key == wx.WXK_RETURN:
             index = self._activeCell
             if index is not None:
-                wx.PostEvent(
-                    self, GlyphActivatedEvent(glyph=self._glyphs[index]))
+                wx.PostEvent(self, GlyphActivatedEvent(glyph=self._glyphs[index]))
         else:
             # let char event proceed
             event.Skip()
@@ -369,8 +365,7 @@ class GlyphCellView(wx.ScrolledCanvas):
         # let focus be set
         event.Skip()
         if index is None:
-            if not (modifiers & wx.MOD_CONTROL or
-                    modifiers & wx.MOD_SHIFT):
+            if not (modifiers & wx.MOD_CONTROL or modifiers & wx.MOD_SHIFT):
                 self.selection = set()
             return
 
@@ -390,12 +385,13 @@ class GlyphCellView(wx.ScrolledCanvas):
     def OnLeftUp(self, event):
         if hasattr(self, "_mouseDownCell"):
             # XXX: use modifiers registered on click?
-            if not event.GetModifiers() & (wx.MOD_SHIFT | wx.MOD_CONTROL) and \
-                    self._mouseDownCell == self._activeCell and \
-                    self._mouseDownCell in self._oldSelection:
+            if (
+                not event.GetModifiers() & (wx.MOD_SHIFT | wx.MOD_CONTROL)
+                and self._mouseDownCell == self._activeCell
+                and self._mouseDownCell in self._oldSelection
+            ):
                 self._selection = {self._activeCell}
-                wx.PostEvent(
-                    self, SelectionChangedEvent(selection=self._selection))
+                wx.PostEvent(self, SelectionChangedEvent(selection=self._selection))
                 self.Refresh()
             del self._mouseDownCell
         if hasattr(self, "_oldActiveCell"):
@@ -415,16 +411,14 @@ class GlyphCellView(wx.ScrolledCanvas):
             if modifiers & wx.MOD_CONTROL:
                 if index in self._selection and index in self._oldSelection:
                     self._selection.remove(index)
-                elif index not in self._selection and \
-                        index not in self._oldSelection:
+                elif index not in self._selection and index not in self._oldSelection:
                     self._selection.add(index)
             elif modifiers & wx.MOD_SHIFT:
                 self._selection = self._linearSelection(index)
             else:
                 self._selection = {index}
             self._activeCell = index
-            wx.PostEvent(
-                self, SelectionChangedEvent(selection=self._selection))
+            wx.PostEvent(self, SelectionChangedEvent(selection=self._selection))
             self.Refresh()
         else:
             event.Skip()

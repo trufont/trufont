@@ -15,7 +15,6 @@ for key in list(objects_dict.keys()):
 
 
 class ScriptingWindow(wx.Frame):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.SetIcon(icons.GetUserIcon("app.png", 32, 32, self))
@@ -43,12 +42,10 @@ class ScriptingWindow(wx.Frame):
         editor.StyleSetSize(stc.STC_STYLE_DEFAULT, 11)
 
         editor.StyleSetForeground(stc.STC_STYLE_LINENUMBER, "Grey")
-        editor.StyleSetBackground(
-            stc.STC_STYLE_LINENUMBER, wx.Colour(228, 228, 228))
+        editor.StyleSetBackground(stc.STC_STYLE_LINENUMBER, wx.Colour(228, 228, 228))
 
         # Comments
-        editor.StyleSetForeground(
-            stc.STC_P_COMMENTLINE, wx.Colour(104, 104, 104))
+        editor.StyleSetForeground(stc.STC_P_COMMENTLINE, wx.Colour(104, 104, 104))
         # Number
         editor.StyleSetForeground(stc.STC_P_NUMBER, wx.Colour(227, 98, 9))
         # String
@@ -61,7 +58,7 @@ class ScriptingWindow(wx.Frame):
         # Keyword
         editor.StyleSetForeground(stc.STC_P_WORD, wx.Colour(45, 95, 235))
         # Identifier
-        #wx.Colour(120, 91, 160))
+        # wx.Colour(120, 91, 160))
         editor.StyleSetForeground(stc.STC_P_CLASSNAME, wx.Colour(96, 106, 161))
         editor.StyleSetForeground(stc.STC_P_DEFNAME, wx.Colour(96, 106, 161))
         # Misc
@@ -71,21 +68,33 @@ class ScriptingWindow(wx.Frame):
         if ENABLE_FOLD:
             editor.SetProperty("fold", "1")
             fgColor = wx.Colour(243, 243, 243)
-            editor.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,
-                                stc.STC_MARK_BOXMINUS, fgColor, "Grey")
-            editor.MarkerDefine(stc.STC_MARKNUM_FOLDER,
-                                stc.STC_MARK_BOXPLUS,  fgColor, "Grey")
-            editor.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,
-                                stc.STC_MARK_VLINE, fgColor, "Grey")
-            editor.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,
-                                stc.STC_MARK_LCORNER, fgColor, "Grey")
-            editor.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,
-                                stc.STC_MARK_BOXPLUSCONNECTED, fgColor, "Grey")
-            editor.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID,
-                                stc.STC_MARK_BOXMINUSCONNECTED, fgColor,
-                                "Grey")
-            editor.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL,
-                                stc.STC_MARK_TCORNER, fgColor, "Grey")
+            editor.MarkerDefine(
+                stc.STC_MARKNUM_FOLDEROPEN, stc.STC_MARK_BOXMINUS, fgColor, "Grey"
+            )
+            editor.MarkerDefine(
+                stc.STC_MARKNUM_FOLDER, stc.STC_MARK_BOXPLUS, fgColor, "Grey"
+            )
+            editor.MarkerDefine(
+                stc.STC_MARKNUM_FOLDERSUB, stc.STC_MARK_VLINE, fgColor, "Grey"
+            )
+            editor.MarkerDefine(
+                stc.STC_MARKNUM_FOLDERTAIL, stc.STC_MARK_LCORNER, fgColor, "Grey"
+            )
+            editor.MarkerDefine(
+                stc.STC_MARKNUM_FOLDEREND,
+                stc.STC_MARK_BOXPLUSCONNECTED,
+                fgColor,
+                "Grey",
+            )
+            editor.MarkerDefine(
+                stc.STC_MARKNUM_FOLDEROPENMID,
+                stc.STC_MARK_BOXMINUSCONNECTED,
+                fgColor,
+                "Grey",
+            )
+            editor.MarkerDefine(
+                stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_TCORNER, fgColor, "Grey"
+            )
             editor.MarkerEnableHighlight(stc.STC_MARKNUM_FOLDEROPEN)
 
         editor.IndicatorSetStyle(1, stc.STC_INDIC_HIDDEN)
@@ -104,15 +113,12 @@ class ScriptingWindow(wx.Frame):
 
     def runScript(self):
         script = self.editor.GetText()
-        global_vars = {
-            "__builtins__": __builtins__,
-            "TruFont": trufont.TruFont,
-        }
+        global_vars = {"__builtins__": __builtins__, "TruFont": trufont.TruFont}
         global_vars.update(objects_dict)
         try:
             code = compile(script, "<string>", "exec")
             exec(code, global_vars)
-        except:
+        except Exception:
             traceback.print_exc()
         trufont.TruFont.updateUI()
 

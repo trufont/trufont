@@ -1,7 +1,13 @@
 import wx
 from trufont.controls.glyphContextView import GlyphContextView
 from trufont.drawingTools import (
-    SelectionTool, PenTool, RulerTool, KnifeTool, ShapesTool, TextTool)
+    SelectionTool,
+    PenTool,
+    RulerTool,
+    KnifeTool,
+    ShapesTool,
+    TextTool,
+)
 
 color = wx.Colour(102, 102, 102)
 selectedColor = wx.Colour(20, 146, 230)
@@ -19,6 +25,7 @@ class ToolBar(wx.Window):
     """
     TODO: allow all orientations
     """
+
     TOOL_MODIFIED = EVT_TOOL_MODIFIED
 
     def __init__(self, parent):
@@ -27,7 +34,7 @@ class ToolBar(wx.Window):
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        #self.SetBackgroundColor(wx.Colour(240, 240, 240))
+        # self.SetBackgroundColor(wx.Colour(240, 240, 240))
         self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
         self.SetDoubleBuffered(True)
 
@@ -100,8 +107,9 @@ class ToolBar(wx.Window):
                 if char == tool.shortcut:
                     if self._currentTool != i:
                         self._currentTool = i
-                        wx.PostEvent(self, ToolModifiedEvent(
-                            tool=self._tools[self._currentTool]))
+                        wx.PostEvent(
+                            self, ToolModifiedEvent(tool=self._tools[self._currentTool])
+                        )
                         self.Refresh()
                     return
         event.Skip()
@@ -138,8 +146,9 @@ class ToolBar(wx.Window):
         if self._underMouseTool == self._mouseDownTool:
             if self._mouseDownTool != self._currentTool:
                 self._currentTool = self._mouseDownTool
-                wx.PostEvent(self, ToolModifiedEvent(
-                    tool=self._tools[self._currentTool]))
+                wx.PostEvent(
+                    self, ToolModifiedEvent(tool=self._tools[self._currentTool])
+                )
             self.Refresh()
         self.DoSetToolTip(self._mouseDownTool)
         self._mouseDownTool = None
@@ -159,7 +168,8 @@ class ToolBar(wx.Window):
             if i >= size:
                 break
             if (i == self._currentTool) ^ (
-                    i == self._mouseDownTool == self._underMouseTool):
+                i == self._mouseDownTool == self._underMouseTool
+            ):
                 b = selectedBrush
             else:
                 b = brush
@@ -169,7 +179,6 @@ class ToolBar(wx.Window):
 
 
 class FontToolBar(ToolBar):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.__ctrl = None
@@ -215,8 +224,7 @@ class FontToolBar(ToolBar):
 
     def resetCurrentTool(self):
         self._currentTool = 0
-        wx.PostEvent(self, ToolModifiedEvent(
-            tool=self._tools[self._currentTool]))
+        wx.PostEvent(self, ToolModifiedEvent(tool=self._tools[self._currentTool]))
         self.Refresh()
 
     def DoGetToolsSize(self):
@@ -235,8 +243,9 @@ class FontToolBar(ToolBar):
                 key = event.GetKeyCode()
                 if key == wx.WXK_ESCAPE:
                     self._currentTool = self.__previousTool
-                    wx.PostEvent(self, ToolModifiedEvent(
-                        tool=self._tools[self._currentTool]))
+                    wx.PostEvent(
+                        self, ToolModifiedEvent(tool=self._tools[self._currentTool])
+                    )
                     self.Refresh()
                     return
             event.Skip()

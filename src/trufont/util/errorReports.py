@@ -5,7 +5,8 @@ import wx
 
 def showExceptionError(parent, exc, message=None):
     _displayException(
-        parent, exc.__class__, exc, exc.__traceback__, wx.ICON_ERROR, message)
+        parent, exc.__class__, exc, exc.__traceback__, wx.ICON_ERROR, message
+    )
 
 
 def _displayException(parent, etype, value, tb, icon, message):

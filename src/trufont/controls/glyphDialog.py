@@ -5,7 +5,6 @@ from wx import GetTranslation as tr
 
 
 class AddGlyphsDialog(wx.Dialog):
-
     def __init__(self, parent, font):
         super().__init__(parent)
         self.SetTitle(tr("Add Glyphs…"))
@@ -34,7 +33,7 @@ class AddGlyphsDialog(wx.Dialog):
 
     def OnOK(self, event):
         text = self.textCtrl.GetValue()
-        names = text.split(' ')
+        names = text.split(" ")
         if not names:
             self.Close()
             return
@@ -44,8 +43,8 @@ class AddGlyphsDialog(wx.Dialog):
             text = tr("Some glyphs are already present in the font.")
             caption = " ".join(existing)
             with wx.MessageDialog(
-                    self, text,
-                    style=wx.YES_NO | wx.CANCEL | wx.ICON_WARNING) as dialog:
+                self, text, style=wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
+            ) as dialog:
                 dialog.SetExtendedMessage(caption)
                 dialog.SetYesNoLabels(tr("Replace"), tr("Ignore"))
                 ret = dialog.ShowModal()

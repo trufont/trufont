@@ -24,8 +24,9 @@ def cos_sin_deg(deg):
     return cos(rad), sin(rad)
 
 
-def drawTextAtPoint(ctx, text, x, y, scale, xAlign="left", yAlign="bottom",
-                    flipped=True):
+def drawTextAtPoint(
+    ctx, text, x, y, scale, xAlign="left", yAlign="bottom", flipped=True
+):
     # TODO: can we natively draw multiline text?
     _, lineHeight = ctx.GetTextExtent("x")
     lines = text.splitlines()
@@ -86,13 +87,15 @@ def trianglePath(ctx, x, y, size, angle):
     cSize, sSize = c * size, s * size
     cThirdSize, sThirdSize = c * thirdSize, s * thirdSize
     path.MoveToPoint(
-        -cThirdSize - sSize + x, cSize - sThirdSize + y)  # -thirdSize, size
+        -cThirdSize - sSize + x, cSize - sThirdSize + y
+    )  # -thirdSize, size
     path.AddLineToPoint(
-        -cThirdSize + sSize + x, -cSize - sThirdSize + y)  # -thirdSize, -size
-    path.AddLineToPoint(
-        2 * cThirdSize + x, 2 * sThirdSize + y)  # 2 * thirdSize, 0
+        -cThirdSize + sSize + x, -cSize - sThirdSize + y
+    )  # -thirdSize, -size
+    path.AddLineToPoint(2 * cThirdSize + x, 2 * sThirdSize + y)  # 2 * thirdSize, 0
     path.CloseSubpath()
     return path
+
 
 # ----------
 # Main sauce
@@ -117,7 +120,7 @@ def drawGlyphFigure(ctx, glyph, width, height, selectionColor=None):
     ctx.SetPen(wx.NullPen)
     if glyphColor is not None:
         r, g, b, a = glyphColor
-        if (2*r + 5*g + b) * (a / 255) <= 1024:
+        if (2 * r + 5 * g + b) * (a / 255) <= 1024:
             captionColor = wx.WHITE
         color = wx.Colour(r, g, b, a)
         ctx.SetBrush(wx.Brush(color))
@@ -138,8 +141,8 @@ def drawGlyphFigure(ctx, glyph, width, height, selectionColor=None):
     text = glyph.name
     textW, textH = ctx.GetTextExtent(text)
     ctx.DrawText(
-        text, (width - textW) // 2,
-        figureHeight + (captionHeight - textH) // 2 - 2)
+        text, (width - textW) // 2, figureHeight + (captionHeight - textH) // 2 - 2
+    )
     # content
     master = glyph._parent.selectedMaster
     layer = glyph.layerForMaster(master)
@@ -216,14 +219,14 @@ def drawLayerAnchors(ctx, layer, scale, color=None):
             # offset the drawing region from origin regardless of whether we
             # are aligning to top or bottom.
             y += 6 * scale
-            drawTextAtPoint(ctx, anchor.name, x, y, scale,
-                            xAlign="center", yAlign="top")
+            drawTextAtPoint(
+                ctx, anchor.name, x, y, scale, xAlign="center", yAlign="top"
+            )
             # TODO: draw marks overlay
             # we oughta get mark glyph from unicode db
 
 
-def drawLayerComponents(ctx, layer, scale, fillColor=None,
-                        selectedFillColor=None):
+def drawLayerComponents(ctx, layer, scale, fillColor=None, selectedFillColor=None):
     if fillColor is None:
         fillColor = wx.Colour(90, 90, 90, 135)
     if selectedFillColor is None:
@@ -278,9 +281,11 @@ def drawLayerGuidelines(ctx, layer, scale, rect, color=None, masterColor=None):
                 ctx.SetBrush(brush)
                 ctx.SetPen(pen)
             ctx.StrokeLine(
-                x - ax * dl, y - ay * dl, x - ax * halfSize, y - ay * halfSize)
+                x - ax * dl, y - ay * dl, x - ax * halfSize, y - ay * halfSize
+            )
             ctx.StrokeLine(
-                x + ax * halfSize, y + ay * halfSize, x + ax * dl, y + ay * dl)
+                x + ax * halfSize, y + ay * halfSize, x + ax * dl, y + ay * dl
+            )
             x -= halfSize
             y -= halfSize
             path = ctx.CreatePath()
@@ -291,8 +296,7 @@ def drawLayerGuidelines(ctx, layer, scale, rect, color=None, masterColor=None):
                 ctx.StrokePath(path)
 
 
-def drawLayerImage(
-        ctx, layer, scale, drawSelection=True, selectionColor=None):
+def drawLayerImage(ctx, layer, scale, drawSelection=True, selectionColor=None):
     image = layer.image
     bitmap = None  # XXX: impl
     if bitmap is None:
@@ -354,9 +358,17 @@ def drawLayerMetrics(ctx, layer, scale, color=None, zonesColor=None):
 
 
 def drawLayerPoints(
-        ctx, layer, scale, coordinatesColor=None, markersColor=None,
-        offCurveColor=None, onCurveColor=None, onCurveSmoothColor=None,
-        selectionColor=None, backgroundColor=None):
+    ctx,
+    layer,
+    scale,
+    coordinatesColor=None,
+    markersColor=None,
+    offCurveColor=None,
+    onCurveColor=None,
+    onCurveSmoothColor=None,
+    selectionColor=None,
+    backgroundColor=None,
+):
     if coordinatesColor is None:
         coordinatesColor = wx.Colour(140, 140, 140, 240)
     if markersColor is None:
@@ -437,10 +449,10 @@ def drawLayerPoints(
                 if isOff:
                     if point.selected:
                         selectedOffPath.AddEllipse(
-                            point.x - four, point.y - four, eight, eight)
+                            point.x - four, point.y - four, eight, eight
+                        )
                     else:
-                        offPath.AddEllipse(
-                            point.x - three, point.y - three, six, six)
+                        offPath.AddEllipse(point.x - three, point.y - three, six, six)
                 else:
                     x, y = point.x, point.y
                     if point.smooth:
@@ -451,18 +463,14 @@ def drawLayerPoints(
                         if point is start:
                             continue
                         if point.selected:
-                            selectedSmoothPath.AddEllipse(
-                                x - five, y - five, ten, ten)
+                            selectedSmoothPath.AddEllipse(x - five, y - five, ten, ten)
                         else:
-                            smoothPath.AddEllipse(
-                                x - four, y - four, eight, eight)
+                            smoothPath.AddEllipse(x - four, y - four, eight, eight)
                     elif point is not start:
                         if point.selected:
-                            selectedPath.AddRectangle(
-                                x - four, y - four, eight, eight)
+                            selectedPath.AddRectangle(x - four, y - four, eight, eight)
                         else:
-                            pointPath.AddRectangle(
-                                x - three, y - three, six, six)
+                            pointPath.AddRectangle(x - three, y - three, six, six)
                     if master is not None:
                         # TODO: we could add a non-overlapping interval tree
                         # special cased for borders
@@ -471,11 +479,9 @@ def drawLayerPoints(
                             yMax = yMin + zone.size
                             if not (y >= yMin and y <= yMax):
                                 continue
-                            if yMin > 0 and y == yMin or yMin <= 0 and \
-                                    y == yMax:
+                            if yMin > 0 and y == yMin or yMin <= 0 and y == yMax:
                                 size = twenty if point.selected else seventeen
-                                markerPath.AddPath(
-                                    lozengePath(ctx, x, y, size))
+                                markerPath.AddPath(lozengePath(ctx, x, y, size))
                             else:
                                 if point.selected:
                                     halfSize = seven
@@ -484,7 +490,8 @@ def drawLayerPoints(
                                     halfSize = six
                                     size = twelve
                                 markerPath.AddEllipse(
-                                    x - halfSize, y - halfSize, size, size)
+                                    x - halfSize, y - halfSize, size, size
+                                )
                 prev = point
         # markers
         ctx.SetBrush(wx.Brush(markersColor))
@@ -522,7 +529,7 @@ def drawLayerPoints(
         # - draw onCurve and segment len
         # - use angles around points to place the text in the clear
         ctx.PushState()
-        font = ctx.GetFont()#wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font = ctx.GetFont()  # wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         font.SetPixelSize(wx.Size(0, 10))
         ctx.SetFont(font, otherColor)
         for path in paths:
@@ -544,9 +551,9 @@ def drawLayerPoints(
                 ctx.Translate(point.x, point.y)
                 ctx.Scale(scale, -scale)
                 w, h = ctx.GetTextExtent(tx)
-                ctx.Translate(0, -h-4)
+                ctx.Translate(0, -h - 4)
                 ctx.DrawText(ty, 4, 0)
-                ctx.DrawText(tx, -w-4, 0)
+                ctx.DrawText(tx, -w - 4, 0)
                 ctx.PopState()
         ctx.PopState()
 
@@ -654,13 +661,13 @@ def drawLayerTextMetrics(ctx, layer, scale, color=None):
         leftMargin = layer.leftMargin
         if leftMargin is not None:
             text = str(round(leftMargin))
-            ctx.DrawText(text, pw, ph-descender)
+            ctx.DrawText(text, pw, ph - descender)
         text = str(round(layer.width))
         w, _ = ctx.GetTextExtent(text)
-        ctx.DrawText(text, .5 * (layer.width - w), ph-descender)
+        ctx.DrawText(text, .5 * (layer.width - w), ph - descender)
         rightMargin = layer.rightMargin
         if rightMargin is not None:
             text = str(round(rightMargin))
             w, _ = ctx.GetTextExtent(text)
-            ctx.DrawText(text, layer.width - w - pw, ph-descender)
+            ctx.DrawText(text, layer.width - w - pw, ph - descender)
         ctx.PopState()

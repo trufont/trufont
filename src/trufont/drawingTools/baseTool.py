@@ -1,5 +1,4 @@
 import trufont
-from trufont.objects.misc import PointRecord
 from trufont.util import platformSpecific
 from trufont.util.drawing import CreatePath
 from trufont.util.canvasDelete import deleteUILayerSelection
@@ -49,8 +48,7 @@ class BaseTool(object):
             pos.y = origin.y
         return pos
 
-    def makeCursor(
-            self, cmds, x, y, shadowColor=0, shadowPath=None, shadowRadius=1):
+    def makeCursor(self, cmds, x, y, shadowColor=0, shadowPath=None, shadowRadius=1):
         canvas = self.canvas
         w = wx.SystemSettings.GetMetric(wx.SYS_CURSOR_X, canvas)
         h = wx.SystemSettings.GetMetric(wx.SYS_CURSOR_Y, canvas)
@@ -70,8 +68,9 @@ class BaseTool(object):
                 ctx.Scale(s, s)
             ctx.PushState()
             ctx.Translate(1, 1)
-            ctx.SetBrush(wx.Brush(
-                wx.Colour(shadowColor, shadowColor, shadowColor, 200)))
+            ctx.SetBrush(
+                wx.Brush(wx.Colour(shadowColor, shadowColor, shadowColor, 200))
+            )
             ctx.DrawPath(shadowPath, wx.WINDING_RULE)
             ctx.PopState()
             dc.SelectObject(wx.NullBitmap)
@@ -152,20 +151,20 @@ class BaseTool(object):
                 layer.clearSelection()
                 newPoint.selected = True
         elif event.GetKeyCode() == wx.WXK_RETURN:
-            #self.layer.beginUndoGroup()
+            # self.layer.beginUndoGroup()
             for path in self.layer.paths:
                 points = path.points
                 for index, point in enumerate(points):
                     if point.type is None or not point.selected:
                         continue
-                    if points[index-1].type is not None:
+                    if points[index - 1].type is not None:
                         ptIndex = index + 1
                         if ptIndex >= len(points):
                             ptIndex -= len(points)
                         if points[ptIndex].type is not None:
                             continue
                     point.smooth = not point.smooth
-            #self.layer.endUndoGroup()
+            # self.layer.endUndoGroup()
         else:
             event.Skip()
             return

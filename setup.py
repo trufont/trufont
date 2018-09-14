@@ -2,12 +2,12 @@
 from setuptools import setup, find_packages
 
 
-with open('README.rst', 'r', encoding="utf-8") as f:
+with open("README.rst", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
     name="trufont",
-    version="1.0.0.dev0",
+    use_scm_version={"write_to": "src/trufont/_version.py"},
     description="TruFont is a streamlined and hackable font editor.",
     long_description=long_description,
     author="Adrien Tétar",
@@ -16,14 +16,11 @@ setup(
     license="MPL 2.0",
     package_dir={"": "src"},
     packages=find_packages("src"),
-    entry_points={
-        "gui_scripts": [
-            "trufont =  trufont.__main__:main"
-        ]
-    },
+    entry_points={"gui_scripts": ["trufont =  trufont.__main__:main"]},
     include_package_data=True,
+    setup_requires=["setuptools_scm"],
     install_requires=[
-        #"tfont>=0.1.0",
+        # "tfont>=0.1.0",
         "uharfbuzz>=0.2.0",
         "fonttools>=3.9.1",
         "skia-pathops>=0.1.4",

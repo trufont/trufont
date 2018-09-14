@@ -1,5 +1,3 @@
-
-
 class LayoutManager:
     __slots__ = "_canvas", "_buffer", "_caretIndex", "_layers"
 
@@ -45,8 +43,8 @@ class LayoutManager:
             features = canvas._features
             features["kern"] = canvas._applyKerning
             buffer = self._buffer = engine.process(
-                canvas._textBuffer, direction=canvas._direction,
-                features=features)
+                canvas._textBuffer, direction=canvas._direction, features=features
+            )
             del features["kern"]
         return buffer
 
@@ -60,8 +58,11 @@ class LayoutManager:
             overrides = canvas._layerOverrides
             for idx, info in enumerate(self.buffer.glyph_infos):
                 ol = overrides.get(idx)
-                layers.append(ol if ol is not None else
-                              glyphs[info.codepoint].layerForMaster(None))
+                layers.append(
+                    ol
+                    if ol is not None
+                    else glyphs[info.codepoint].layerForMaster(None)
+                )
             self._layers = layers
         return layers
 
@@ -107,10 +108,10 @@ class LayoutManager:
     @property
     def records(self):
         # TODO: apply kerning
-        for idx, (layer, pos) in enumerate(zip(
-                self.layers, self.buffer.glyph_positions)):
-            yield idx, layer, pos.x_offset, pos.y_offset, \
-                pos.x_advance, pos.y_advance
+        for idx, (layer, pos) in enumerate(
+            zip(self.layers, self.buffer.glyph_positions)
+        ):
+            yield idx, layer, pos.x_offset, pos.y_offset, pos.x_advance, pos.y_advance
 
     def clear(self):
         self._buffer = self._caretIndex = self._layers = None
@@ -131,10 +132,10 @@ class LayoutManager:
                 if self._canvas._direction == "rtl":
                     if not idx:
                         return infos[idx].cluster + 1
-                    return infos[idx-1].cluster
+                    return infos[idx - 1].cluster
                 else:
                     try:
-                        return infos[idx+1].cluster
+                        return infos[idx + 1].cluster
                     except IndexError:
                         return infos[idx].cluster + 1
             left += w

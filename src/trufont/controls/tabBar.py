@@ -1,4 +1,3 @@
-import io
 from trufont.util.drawing import CreateMeasuringContext
 import wx
 from wx import GetTranslation as tr
@@ -18,10 +17,10 @@ class TabBar(wx.Window):
     def __init__(self, parent):
         super().__init__(parent)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        #self.Bind(wx.EVT_MOTION, self.OnMotion)
-        #self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        # self.Bind(wx.EVT_MOTION, self.OnMotion)
+        # self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        #self.SetBackgroundColor(wx.Colour(240, 240, 240))
+        # self.SetBackgroundColor(wx.Colour(240, 240, 240))
         self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
         self.SetDoubleBuffered(True)
 
@@ -137,7 +136,6 @@ class TabBar(wx.Window):
 
 
 class FontTabBar(TabBar):
-
     def __init__(self, parent, font):
         super().__init__(parent)
         self._contents = [font]

@@ -137,28 +137,32 @@ class ShapesTool(BaseTool):
             if points:
                 x1, y1, x2, y2 = points
                 if self.drawRectangle:
-                    path = Path([
-                        Point(x1, y1, "line"),
-                        Point(x2, y1, "line"),
-                        Point(x2, y2, "line"),
-                        Point(x1, y2, "line"),
-                    ])
+                    path = Path(
+                        [
+                            Point(x1, y1, "line"),
+                            Point(x2, y1, "line"),
+                            Point(x2, y2, "line"),
+                            Point(x1, y2, "line"),
+                        ]
+                    )
                 else:
                     dx, dy = x2 - x1, y2 - y1
-                    path = Path([
-                        Point(x1 + .225 * dx, y2),
-                        Point(x1, y1 + .775 * dy),
-                        Point(x1, y1 + .5 * dy, "curve", smooth=True),
-                        Point(x1, y1 + .225 * dy),
-                        Point(x1 + .225 * dx, y1),
-                        Point(x1 + .5 * dx, y1, "curve", smooth=True),
-                        Point(x1 + .775 * dx, y1),
-                        Point(x2, y1 + .225 * dy),
-                        Point(x2, y1 + .5 * dy, "curve", smooth=True),
-                        Point(x2, y1 + .775 * dy),
-                        Point(x1 + .775 * dx, y2),
-                        Point(x1 + .5 * dx, y2, "curve", smooth=True),
-                    ])
+                    path = Path(
+                        [
+                            Point(x1 + .225 * dx, y2),
+                            Point(x1, y1 + .775 * dy),
+                            Point(x1, y1 + .5 * dy, "curve", smooth=True),
+                            Point(x1, y1 + .225 * dy),
+                            Point(x1 + .225 * dx, y1),
+                            Point(x1 + .5 * dx, y1, "curve", smooth=True),
+                            Point(x1 + .775 * dx, y1),
+                            Point(x2, y1 + .225 * dy),
+                            Point(x2, y1 + .5 * dy, "curve", smooth=True),
+                            Point(x2, y1 + .775 * dy),
+                            Point(x1 + .775 * dx, y2),
+                            Point(x1 + .5 * dx, y2, "curve", smooth=True),
+                        ]
+                    )
                 self.layer.paths.append(path)
                 path.selected = True
                 trufont.TruFont.updateUI()
