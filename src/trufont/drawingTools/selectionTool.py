@@ -257,7 +257,7 @@ class SelectionTool(BaseTool):
                 firstPoint = item.points[0]
                 self.deltaToSegment = pos - wx.RealPoint(firstPoint.x, firstPoint.y)
                 if event.AltDown():
-                    item.segment.addOffCurves()
+                    item.segment.intoCurve()
                 handleSelection = not item.segment.selected
             elif item is None:
                 handleSelection = layer is not None

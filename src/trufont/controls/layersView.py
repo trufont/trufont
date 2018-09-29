@@ -75,8 +75,9 @@ class LayersView(wx.Window):
     @property
     def _layers(self):
         activeLayer = self._fontWindow.activeLayer
-        if activeLayer is not None:
-            return activeLayer._parent.layers
+        if activeLayer is None:
+            return []
+        return activeLayer._parent.layers
 
     def _layerNameModified(self, event):
         self._renamedLayer.name = self._textCtrl.GetValue()

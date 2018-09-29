@@ -139,7 +139,7 @@ def foldSelection(paths):
                     forwardMove = True
                 del segments[idx]
             elif segment.offSelected:
-                segment.removeOffCurves()
+                segment.intoLine()
         points = path._points
         if not points:
             continue
