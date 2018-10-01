@@ -5,6 +5,6 @@ defcon==0.5.3
 defconQt==0.5.4
 ufo-extractor==0.2.0
 ufo2ft==2.3.1
-booleanOperations==0.7.1
+booleanOperations==0.8.0
 hsluv==0.0.2
 brotli==0.6.0
