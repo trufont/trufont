@@ -249,7 +249,8 @@ class FontWindow(wx.Frame):
             path = self._path
         if path is None:
             self.OnSaveAs(None)
-        TFontConverter().save(self._font, path)
+        else:
+            TFontConverter().save(self._font, path)
 
     def close(self):
         self.Close()
