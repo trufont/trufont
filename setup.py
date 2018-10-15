@@ -20,7 +20,7 @@ setup(
     include_package_data=True,
     setup_requires=["setuptools_scm"],
     install_requires=[
-        # "tfont>=0.1.0",
+        "tfont>=0.1.0",
         "uharfbuzz>=0.2.0",
         "fonttools>=3.9.1",
         "skia-pathops>=0.1.4",
