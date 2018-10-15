@@ -5,18 +5,20 @@ import os
 
 import wx
 import logging
+import logging.handlers
+
 
 # constants
 STR_FMT = '%(asctime)s : %(levelname)s : %(filename)20s[%(lineno)03d)] : %(message)s'
 DATE_FMT = '%d/%m/%Y %H:%M:%S'
 
-_LOGGER_BASE = "trufont"
-LOGGER_LOGGING = _LOGGER_BASE + ".logging"
-LOGGER_UNDOREDO = _LOGGER_BASE + ".undoredomgr"
-LOGGER_CLASSFUNCS = _LOGGER_BASE + ".classfuncs"
+LOGGER_BASE = "trufont"
+LOGGER_LOGGING = LOGGER_BASE + ".logging"
+LOGGER_UNDOREDO = LOGGER_BASE + ".undoredomgr"
+LOGGER_CLASSFUNCS = LOGGER_BASE + ".classfuncs"
 
 
-def create_stream_logger(logger_name: str, fmt: str=STR_FMT, 
+def create_stream_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT, 
                         date_fmt: str=DATE_FMT) -> logging.Logger:
     """ Create an local logger """
     logger = logging.getLogger(logger_name)
@@ -27,6 +29,22 @@ def create_stream_logger(logger_name: str, fmt: str=STR_FMT,
     logger.setLevel(logging.DEBUG)
 
     return logger
+
+
+def create_timedrotating_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT, 
+                                date_fmt: str=DATE_FMT) -> logging.Logger:
+    """ Create an TimedRotatingFileHandler on 7 daysfor a main logger """
+    logger = logging.getLogger(logger_name)
+    where = os.getenv("trufont_logpath") or os.path.join(os.getcwd(), 'logs')
+    hdlr = logging.handlers.TimedRotatingFileHandler(os.path.join(where, 'trufont.log'), 
+                                                    'midnight', 1, 7)
+    fmtr = logging.Formatter(fmt, date_fmt)
+    hdlr.setFormatter(fmtr)
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.DEBUG)
+
+    return logger
+
 
 
 class WxTextCtrlHandler(logging.Handler):

@@ -10,7 +10,7 @@ def test_loggingwindows(log: logging.Logger=logstuff.create_stream_logger(logstu
                         app: wx.PySimpleApp= wx.PySimpleApp()):
     """ test a window wx with a multiline handler """
 
-    wxLog = loggingWindows.wxLoggerFrame(logger=log, autolog_msg=True)
+    wxLog = loggingWindows.LoggingWindow(None, logger=log, autolog_msg=True)
     log.info(sys.version)
     log.info("levels -> {}".format(loggingWindows.LEVELS))
     log.info("strlevels -> {}".format(loggingWindows.STR_LEVELS))
@@ -23,5 +23,6 @@ if __name__ == "__main__":
     # constants
 
     app = wx.PySimpleApp()
-    logger = logstuff.create_stream_logger("")
+    #logger = logstuff.create_stream_logger("")
+    logger = logstuff.create_timedrotating_logger("")
     test_loggingwindows(logger, app)

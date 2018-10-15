@@ -6,6 +6,7 @@ from tfont.objects import Font
 from weakref import WeakSet
 import wx
 from wx import GetTranslation as tr
+import trufont.util.loggingstuff as logstuff
 
 # drawingTools, with a tracker
 
@@ -21,7 +22,7 @@ from wx import GetTranslation as tr
 
 
 class Application:
-    __slots__ = "_app", "_observers", "_settings"
+    __slots__ = "_app", "_observers", "_settings", "_logger"
 
     def __init__(self, app):
         self._app = app
@@ -58,6 +59,9 @@ class Application:
             "tabWillClose": WeakSet(),
             "updateUI": WeakSet(),
         }
+
+        # create a logger 
+        self._logger = logstuff.create_timedrotating_logger(logstuff.LOGGER_BASE)
 
     def __repr__(self):
         return "%s(%s, %d fonts)" % (
@@ -105,7 +109,9 @@ class Application:
     def newFont(self) -> Font:
         font = Font()
         prepareNewFont(font)
-        FontWindow(None, font).Show()
+        window = FontWindow(None, font, None, self._logger).Show()
+        # window.logger(self._logger)
+        # window.Show()
         return font
 
     def openFont(self, path=None) -> Optional[Font]:

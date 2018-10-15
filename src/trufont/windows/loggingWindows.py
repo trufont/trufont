@@ -11,18 +11,23 @@ LEVELS = tuple(value for value in logging._levelToName if value != logging.NOTSE
 STR_LEVELS = tuple(logging._levelToName[value] for value in LEVELS)
 START_LEVEL = LEVELS.index(logging.DEBUG)   
 
+def start_logging():
+    """ open the logging Windows """
+    pass
+
 
 @deco4class.decorator_classfunc()
-class wxLoggerFrame(wx.Frame):
+class LoggingWindow(wx.Frame):
 
-    def __init__(self, logger: logging.Logger, fmt: str=logstuff.STR_FMT, 
+    def __init__(self, parent, logger: logging.Logger, fmt: str=logstuff.STR_FMT, 
                 date_fmt: str=logstuff.DATE_FMT, autolog_msg: bool=False):
         """ init of log frame"""
         self._logger = logger
+        logger.debug("In __init__")
 
         # build the window        
         TITLE = "Logging To ListBox"
-        wx.Frame.__init__(self, None, wx.ID_ANY, TITLE)
+        wx.Frame.__init__(self, parent, wx.ID_ANY, TITLE)
 
         # control in the window
         panel = wx.Panel(self, wx.ID_ANY)

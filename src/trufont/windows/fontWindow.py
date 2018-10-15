@@ -21,6 +21,7 @@ from trufont.util import clipboard, platformSpecific
 from trufont.util.canvasDelete import deleteUILayerSelection
 from trufont.windows.kerningWindow import KerningWindow
 from trufont.windows.scriptingWindow import ScriptingWindow
+from trufont.windows.loggingWindows import LoggingWindow
 from tfont.converters import TFontConverter
 from tfont.objects import Glyph, Layer
 from typing import Optional
@@ -121,7 +122,7 @@ ActiveLayerChangedEvent, EVT_ACTIVE_LAYER_CHANGED = wx.lib.newevent.NewEvent()
 class FontWindow(wx.Frame):
     ACTIVE_LAYER_CHANGED = EVT_ACTIVE_LAYER_CHANGED
 
-    def __init__(self, parent, font, path=None, **kwargs):
+    def __init__(self, parent, font, path=None, logger=None, **kwargs):
         super().__init__(parent, **kwargs)
         self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -130,6 +131,7 @@ class FontWindow(wx.Frame):
 
         self._font = font
         self._path = path
+        self._logger = logger
 
         self.toolBar = FontToolBar(self)
 
@@ -182,6 +184,16 @@ class FontWindow(wx.Frame):
         self.updateTitle()
 
         trufont.TruFont.addObserver("updateUI", self)
+        
+    #     self._logger = None 
+
+    # @property
+    # def logger(self):
+    #     return self._logger
+
+    # @logger.setter
+    # def logger(self, log):
+    #     self._logger = log
 
     @property
     def activeLayer(self) -> Optional[Layer]:
@@ -417,6 +429,12 @@ class FontWindow(wx.Frame):
             wx.EVT_MENU,
             self.OnScripting,
             windowMenu.Append(wx.ID_ANY, tr("Scripting\tCtrl+Alt+R")),
+        )
+        windowMenu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            self.OnLogging,
+            windowMenu.Append(wx.ID_ANY, tr("Logging...\tCtrl+Alt+L")),
         )
         windowMenu.AppendSeparator()
         item = windowMenu.Append(wx.ID_ANY, tr("Output\tCtrl+Alt+O"))
@@ -747,6 +765,9 @@ class FontWindow(wx.Frame):
 
     def OnScripting(self, event):
         ScriptingWindow(self).Show()
+
+    def OnLogging(self, event):
+        LoggingWindow(self, self._logger).Show()
 
     def OnOutput(self, event):
         raise NotImplementedError
