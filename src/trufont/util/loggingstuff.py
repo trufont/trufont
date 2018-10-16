@@ -35,7 +35,13 @@ def create_timedrotating_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT,
                                 date_fmt: str=DATE_FMT) -> logging.Logger:
     """ Create an TimedRotatingFileHandler on 7 daysfor a main logger """
     logger = logging.getLogger(logger_name)
-    where = os.getenv("trufont_logpath") or os.path.join(os.getcwd(), 'logs')
+    where = os.getenv("trufont_logpath")
+    # where are create log file
+    if not where:
+        where = os.path.join(os.getcwd(), 'logs')
+        if not os.path.exists(where):
+            os.mkdir(where)
+
     hdlr = logging.handlers.TimedRotatingFileHandler(os.path.join(where, 'trufont.log'), 
                                                     'midnight', 1, 7)
     fmtr = logging.Formatter(fmt, date_fmt)
