@@ -17,7 +17,7 @@ import trufont.objects.undoredomgr as undoredomgr
 def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_UNDOREDO)):
     """ Untis Tests for UndoRedoMgr"""
     logger.info("======== Start of test")
-    mgr = undoredomgr.UndoRedoMgr(logger)
+    mgr = undoredomgr.UndoRedoMgr("test", logger)
     mgr.set_callback_after_undo(print, "\t"*3, "callback on undo")
     mgr.set_callback_after_redo(print, "\t"*4, "CALLBACK ON REDO")
 
@@ -32,6 +32,7 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
 
     seq += 1
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.show_undo(), mgr.show_redo()))
+    logger.info(mgr.state())
     mgr.append_action(("A", None))
     mgr.append_action(("B", logger))
     assert mgr.len_undo() == 2 and mgr.len_redo() == 0
