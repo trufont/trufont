@@ -12,7 +12,17 @@ def main():
     factories.registerAllFactories()
     # could just create the object in __init__ and set app
     # here, this would avoid the trufont.TruFont.xxx all over the place
-    trufont.TruFont = TruFont = Application(app)
+
+    # check sys.argv
+    _debug = False
+    _log = False
+    for arg in sys.argv[1:]:
+        if "debug" in arg.lower():
+            _debug = True
+        elif "loggingrotate" in arg.lower():
+            _log = True 
+
+    trufont.TruFont = TruFont = Application(app, _debug, _log)
     TruFont.newFont()
     sys.exit(app.MainLoop())
 

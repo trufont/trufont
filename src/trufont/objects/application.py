@@ -6,7 +6,9 @@ from tfont.objects import Font
 from weakref import WeakSet
 import wx
 from wx import GetTranslation as tr
+
 import trufont.util.loggingstuff as logstuff
+import logging
 
 # drawingTools, with a tracker
 
@@ -22,9 +24,9 @@ import trufont.util.loggingstuff as logstuff
 
 
 class Application:
-    __slots__ = "_app", "_observers", "_settings", "_logger"
+    __slots__ = "_app", "_observers", "_settings", "_logger", "_debug", "_log"
 
-    def __init__(self, app):
+    def __init__(self, app, debug: bool=False, log: bool=False):
         self._app = app
         self._settings = {
             "backgroundStrokeColor": (210, 210, 210, 255),
@@ -60,8 +62,17 @@ class Application:
             "updateUI": WeakSet(),
         }
 
-        # create a logger 
-        self._logger = logstuff.create_timedrotating_logger(logstuff.LOGGER_BASE)
+        # create a logger
+        self._log = log
+        if self._log:
+            self._logger = logstuff.create_timedrotating_logger("")
+        else:
+            logging.basicConfig(level=logging.INFO, format=STR_FMT, datefmt=DATE_FMT)
+            self.logger = logging.getLogger()
+        self._debug  = debug
+        if self._debug:
+            self._logger.setLevel(logging.DEBUG)
+        # DEBUG
 
     def __repr__(self):
         return "%s(%s, %d fonts)" % (
@@ -109,9 +120,7 @@ class Application:
     def newFont(self) -> Font:
         font = Font()
         prepareNewFont(font)
-        window = FontWindow(None, font, None, self._logger).Show()
-        # window.logger(self._logger)
-        # window.Show()
+        FontWindow(None, font, None, self._logger, self._debug).Show()
         return font
 
     def openFont(self, path=None) -> Optional[Font]:
@@ -132,7 +141,7 @@ class Application:
                     return
         font = TFontConverter().open(path)
         wx.GetApp().fileHistory.AddFileToHistory(path)
-        FontWindow(None, font, path).Show()
+        FontWindow(None, font, path, self._logger, self._debug).Show()
         return font
 
     def removeObserver(self, key, observer):
