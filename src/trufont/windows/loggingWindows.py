@@ -23,11 +23,13 @@ class LoggingWindow(wx.Frame):
                 date_fmt: str=logstuff.DATE_FMT, autolog_msg: bool=False):
         """ init of log frame"""
         self._logger = logger
-        logger.debug("In __init__")
+        self._parent = parent 
+        logger.debug("LOGGING: In __init__")
 
         # build the window        
         TITLE = "Logging To ListBox"
         wx.Frame.__init__(self, parent, wx.ID_ANY, TITLE)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         # control in the window
         panel = wx.Panel(self, wx.ID_ANY)
@@ -65,9 +67,21 @@ class LoggingWindow(wx.Frame):
         # add an handler to the current logger
         self.handler = logstuff.WxTextCtrlHandler(self.ctrl_log)
         self.handler.setFormatter(logging.Formatter(fmt, date_fmt))
-        self.handler.setLevel(LEVELS[START_LEVEL])
+        self.handler.setLevel(logging.DEBUG)
         self._logger.addHandler(self.handler)
 
+        # size windows
+        if self._parent:
+            self._logger.debug("LOGGING: Resize windows")
+            size = parent.GetSize()
+            self.SetSize((size[0], size[1]//3))
+
+    def OnClose(self, event):
+        """ close this windows """
+        if self._parent:
+            self._logger.debug("LOGGING: Close windows")
+            self._parent.OnloggingClosed()
+        self.Destroy() 
 
     def on_button(self, event: wx.Event):
         self._logger.log(random.choice(LEVELS), "More messages ?")
