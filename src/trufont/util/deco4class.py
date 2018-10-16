@@ -25,17 +25,17 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
         logger = logging.getLogger()
     # logger = logging.getLogger()
     
-    def method_decorator(fn):
+    def method_decorator(fn, class_name):
         """ Example of a method decorator """
        
         def decorator(*args, **kwargs):
             global tab
             try:
                 tab += 1
-                logger.debug("{}Inside {}({})".format('\t'*tab, fn.__name__, args))
+                logger.debug("{}Inside {}.{}({})".format('\t'*tab, class_name, fn.__name__, args))
                 return fn(*args, **kwargs)
             finally:
-                logger.debug("{}Outside {}".format('\t'*tab,fn.__name__))
+                logger.debug("{}Outside {}.{}".format('\t'*tab, class_name, fn.__name__))
                 tab -= 1
 		
         return decorator
@@ -51,10 +51,8 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
             
             def __getattribute__(self, attr_name):
                 obj = super().__getattribute__(attr_name)
-#                if hasattr(obj, '__call__') and attr_name not in excluded_method_names:
-#                logger.debug("{} -> type:{}".format(cls.__name__,type(obj)))
                 if isinstance(obj, CALLABLES) and attr_name not in excluded_method_names:
-                    return method_decorator(obj)
+                    return method_decorator(obj, cls.__name__)
                 return obj
 
         return NewClass
