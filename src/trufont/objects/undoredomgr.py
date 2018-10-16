@@ -14,21 +14,30 @@ class UndoRedoMgr(object):
     """ Manage memory and event abour undo/redo/append 
     actions """
 
-    __slots__ = ("_logger", "_undo", "_redo", "_group", "callback_after_undo", "callback_after_redo", "callback_after_append")
+    __slots__ = ("_logger", "_name", "_undo", "_redo", "_group",  
+                "callback_on_activated", "callback_after_undo", "callback_after_redo", 
+                "callback_after_append")
 
-    def __init__(self, logger: logging.Logger=logstuff.create_stream_logger(logstuff.LOGGER_UNDOREDO)):
+    def __init__(self, name: str, logger: logging.Logger=logstuff.create_stream_logger(logstuff.LOGGER_UNDOREDO)):
         """ init for mgr: logger for messages 
         actions store in base system: stack """
 
         self._logger = logger
+        self._name = name 
         self._undo = []
         self._redo = []
         self._group = None
+        self.callback_on_activated = None
         self.callback_after_undo = None
         self.callback_after_redo = None
         self.callback_after_append = None
 		
 		
+    def set_callback_on_activated(self, callback, *args, **kwargs):
+        if isinstance(callback, Callable):
+           self.callback_on_activated = functools.partial(callback, *args, *kwargs) 
+
+
     def set_callback_after_undo(self, callback, *args, **kwargs):
         if isinstance(callback, Callable):
            self.callback_after_undo = functools.partial(callback, *args, *kwargs) 
@@ -43,6 +52,9 @@ class UndoRedoMgr(object):
         if isinstance(callback, Callable):
         	self.callback_after_append = functools.partial(callback, *args, *kwargs)
 
+    def state(self):
+        """ show state of mgr """
+        return  "{} - undo[{}]/redo[{}]".format(self._name, self.len_undo(), self.len_redo())
 
     def append_action(self, action):
         """ append action to the undo stack """
@@ -87,14 +99,19 @@ class UndoRedoMgr(object):
 
     def show_undo(self) -> str:
         """ show undo contents """
-        return str(self._undo) 
+        return "{} -> {}".format(self._name, str(self._undo)) 
 
 		
     def show_redo(self) -> str:
         """ show redo contents """ 
-        return str(self._redo)
+        return "{} -> {}".format(self._name, str(self._redo)) 
+
+
+    def on_activated(self):
+        if self.callback_on_activated:
+            self.callback_on_activated()
 		
-		
+
     def _after_append_action(self):
         """ play this partial function after append action"""
         if self.callback_after_append:
