@@ -18,5 +18,6 @@ htmlcov
 .pytest*
 .mypy*
 
-# Autosaved files
-*~
+#logging
+logs/
+*.log*
