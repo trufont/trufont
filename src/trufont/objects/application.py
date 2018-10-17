@@ -67,8 +67,7 @@ class Application:
         if self._log:
             self._logger = logstuff.create_timedrotating_logger("")
         else:
-            logging.basicConfig(level=logging.INFO, format=STR_FMT, datefmt=DATE_FMT)
-            self.logger = logging.getLogger()
+            self._logger = logstuff.create_stream_logger("")
         self._debug  = debug
         if self._debug:
             self._logger.setLevel(logging.DEBUG)
