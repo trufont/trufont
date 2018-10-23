@@ -19,7 +19,7 @@ TextChangedEvent, EVT_TEXT_CHANGED = wx.lib.newevent.NewEvent()
 
 # maybe clientToCanvas etc. and scrollBy could be capitalized back, idk
 
-
+# @deco4class.decorator_classfunc('OnMotion', 'OnPaint', "drawBackground", "drawForeground")
 class GlyphContextView(wx.Window):
     OPTIONS_CHANGED = EVT_OPTIONS_CHANGED
     PT_SIZE_CHANGED = EVT_PT_SIZE_CHANGED

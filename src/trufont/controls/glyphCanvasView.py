@@ -9,6 +9,8 @@ from tfont.objects import Guideline
 import wx
 import wx.lib.newevent
 
+import trufont.util.deco4class as deco4class
+
 ToolModifiedEvent, EVT_TOOL_MODIFIED = wx.lib.newevent.NewEvent()
 
 
@@ -26,7 +28,7 @@ def GetCanvasPosition(event):
 
 wx.MouseEvent.GetCanvasPosition = GetCanvasPosition
 
-
+# @deco4class.decorator_classfunc('OnMotion', 'OnPaint', "drawBackground", "drawForeground")
 class GlyphCanvasView(GlyphContextView):
     TOOL_MODIFIED = EVT_TOOL_MODIFIED
 
