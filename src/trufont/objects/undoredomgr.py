@@ -52,7 +52,7 @@ class UndoRedoMgr(object):
         if isinstance(callback, Callable):
         	self.callback_after_append = functools.partial(callback, *args, *kwargs)
 
-    def state(self):
+    def str_state(self) -> str:
         """ show state of mgr """
         return  "{} - undo[{}]/redo[{}]".format(self._name, self.len_undo(), self.len_redo())
 
