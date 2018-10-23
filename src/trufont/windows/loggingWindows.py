@@ -83,12 +83,12 @@ class LoggingWindow(wx.Frame):
             self._parent.OnloggingClosed()
         self.Destroy() 
 
-    def on_button(self, event: wx.Event):
-        self._logger.log(random.choice(LEVELS), "More messages ?")
+    def on_button(self, event: wx.  Event):
+        self._logger.log(random.choice(LEVELS), "LOGGING: More messages ?")
 
 
     def on_reset_list(self, event: wx.Event):
-        self._logger.info("Reset list ok")
+        self._logger.info("LOGGING: Reset list ok")
         self.ctrl_log.Clear()
 
         
@@ -97,9 +97,9 @@ class LoggingWindow(wx.Frame):
         try:
             pos = self.ctrl_level.GetSelection()
             
-            self._logger.info("Level changed to '{}'".format(STR_LEVELS[pos]))
+            self._logger.info("LOGGING: Level changed to '{}'".format(STR_LEVELS[pos]))
             self.handler.setLevel(LEVELS[pos])
                 
         except Exception as e:
-            self._logger.error("Error as {}".format(e))
+            self._logger.error("LOGGING: Error as {}".format(e))
 

@@ -20,8 +20,8 @@ class MySecondClass(object):
     
     def __repr__(self):
         if hasattr(self,'_origin'):
-            return "<{}-{}>".format(self._origin, id(self))
-        return "<{}-{}>".format(self.__class__.__name__, id(self))
+            return "<O{}-0x{:X}>".format(self._origin, id(self))
+        return "<C{}-0x{:X}>".format(self.__class__.__name__, id(self))
     
     
     def first_method(self, *args, **kwargs):
@@ -32,7 +32,7 @@ class MySecondClass(object):
         logger.debug("\t\tthis is the MySecondClass.second_method")
 
 
-@deco4class.decorator_classfunc('second_m')
+@deco4class.decorator_classfunc('second_m', logger=logger)
 class MyThirdClass(object):
     """
     This class is decorated
@@ -59,7 +59,7 @@ class Inner(object):
         pass
 
 
-def test_decoclass(logger: logging.Logger=logstuff.create_stream_logger(logstuff.LOGGER_CLASSFUNCS)):
+def test_decoclass(logger: logging.Logger=logger):
     """ tests the deco on 3 class """
     logger.info(sys.version)
     logger.info(":Test a decorated for class")
@@ -79,4 +79,4 @@ def test_decoclass(logger: logging.Logger=logstuff.create_stream_logger(logstuff
 
 if __name__ == "__main__":
     """ main fomr python launcher .... """    
-    test_decoclass(logger)
+    test_decoclass()

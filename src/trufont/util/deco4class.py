@@ -1,17 +1,11 @@
 # file:  class_decorator.py
-
+import functools
 import logging
 import types
 
 # from typing import Callable
 
 # constants
-STR_FMT = '%(asctime)s - %(levelname)s : %(message)s'
-DATE_FMT = '%d/%m/%Y %H:%M:%S'
-
-#logging.basicConfig(level=logging.INFO, format=STR_FMT, datefmt=DATE_FMT)
-logger = logging.getLogger()
-
 CALLABLES = (types.FunctionType, types.BuiltinFunctionType, types.MethodType,\
              types.BuiltinMethodType)
 LOGGER = "logger"
@@ -23,11 +17,11 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
         logger = kwargs[LOGGER]
     else:
         logger = logging.getLogger()
-    # logger = logging.getLogger()
     
     def method_decorator(fn, class_name):
         """ Example of a method decorator """
-       
+
+        @functools.wraps(fn)       
         def decorator(*args, **kwargs):
             global tab
             try:
@@ -45,14 +39,17 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
         """ The class decorator function useful to redefined a new child
         class from cls  """
         
+#        @functools.wraps(cls)       
         class NewClass(cls):
             """ This is the overwritten class """
             _origin = cls.__name__
+            __name__ = cls.__name__
             
             def __getattribute__(self, attr_name):
                 obj = super().__getattribute__(attr_name)
                 if isinstance(obj, CALLABLES) and attr_name not in excluded_method_names:
-                    return method_decorator(obj, cls.__name__)
+#                    return method_decorator(obj, cls.__name__)
+                    return method_decorator(obj, NewClass._origin)
                 return obj
 
         return NewClass
