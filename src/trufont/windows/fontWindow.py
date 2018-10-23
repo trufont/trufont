@@ -23,7 +23,9 @@ from trufont.windows.kerningWindow import KerningWindow
 from trufont.windows.scriptingWindow import ScriptingWindow
 from trufont.windows.loggingWindows import LoggingWindow
 from tfont.converters import TFontConverter
-from tfont.objects import Glyph, Layer
+# from tfont.objects import Glyph, Layer
+from tfont.objects import Layer
+from trufont.objects.truglyph import TruGlyph
 from typing import Optional
 import wx
 import wx.adv
@@ -31,6 +33,7 @@ from wx import GetTranslation as tr
 
 import trufont.util.deco4class as deco4class
 import trufont.objects.undoredomgr as undoredomgr
+import sys
 
 ID_DESELECT = wx.NewId()
 ID_NEW_TAB = wx.NewId()
@@ -72,7 +75,7 @@ def prepareNewFont(font):
     glyphs = font.glyphs
     for char in string.ascii_uppercase + string.ascii_lowercase + " ":
         name = "space" if char == " " else char
-        glyphs.append(Glyph(name, unicodes=["%04X" % ord(char)]))
+        glyphs.append(TruGlyph(name, unicodes=["%04X" % ord(char)]))
 
 
 @deco4class.decorator_classfunc()
@@ -122,6 +125,7 @@ class FontWindowTab(wx.Panel):
 
 
 ActiveLayerChangedEvent, EVT_ACTIVE_LAYER_CHANGED = wx.lib.newevent.NewEvent()
+EVT_UPDATE_UNDOREDO = wx.lib.newevent.NewEvent()
 
 @deco4class.decorator_classfunc()
 class FontWindow(wx.Frame):
@@ -142,6 +146,7 @@ class FontWindow(wx.Frame):
         self._debug = debug
         self._logwin = None
         self.dict_undoredomdgr = {}
+        # self.Bind(EVT_UPDATE_UNDOREDO, self.OnUpdateUndoRedoMenu)
 
         self.toolBar = FontToolBar(self)
 
@@ -151,6 +156,8 @@ class FontWindow(wx.Frame):
 
         self.bookCtrl = wx.Simplebook(self)
         tab = FontWindowTab(self.bookCtrl)
+
+        # undoredo for this font
         tab.undoredo = undoredomgr.UndoRedoMgr(self._title, self._logger)
 
         self.cellView = w = GlyphCellView(tab)
@@ -257,13 +264,12 @@ class FontWindow(wx.Frame):
         self.tabBar.addCanvasTab(canvas)
         # set an undoredo manager to that new glyph 
         if glyph:
-            #may be undoredo exists ?
+            # may be undoredo already stores in local dict ?
             if glyph.name not in self.dict_undoredomdgr:
-                self.dict_undoredomdgr[glyph.name] = undoredomgr.UndoRedoMgr(glyph.name, self._logger)
-                self._logger.debug("Create an undoredo for glyph({})".format(glyph.name))
-            else:
-                self._logger.debug("Get the previous undoredo for glyph({})".format(glyph.name))
-            tab.undoredo = self.dict_undoredomdgr[glyph.name]
+                self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
+                self._logger.debug("UNDOREDO: Append in dict from TruGlyph ('{}')".format(glyph.name))
+            self._logger.debug("UNDOREDO: class {} ->  ('{}') size is {} bytes".format(glyph.__class__.__name__, glyph.__slots__, sys.getsizeof(glyph)))
+            tab.undoredo = glyph.get_undoredo()
 
         return canvas
 
@@ -345,17 +351,19 @@ class FontWindow(wx.Frame):
         item = editMenu.Append(wx.ID_UNDO)
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnUndo, item)
+        # store menu_undo 
         self.menu_undo = item 
         item = editMenu.Append(wx.ID_REDO)
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnRedo, item)
-
-        # undoredo part 
+        # store menu_undo 
         self.menu_redo = item 
+
+        # undoredo debug menu 
         if self._debug:
             self._logger.info("UNDOREDO: Append an debug menu")
             editMenu.AppendSeparator()
-            self.menu_undoredo = editMenu.Append(ID_DEBUG_UNDOREDO, tr("undoredo debug"))
+            self.menu_undoredo = editMenu.Append(ID_DEBUG_UNDOREDO, tr("DEBUG: undoredo"))
             self.menu_undoredo.Enable(True)
 
         editMenu.AppendSeparator()
@@ -451,12 +459,12 @@ class FontWindow(wx.Frame):
             self.OnScripting,
             windowMenu.Append(wx.ID_ANY, tr("Scripting\tCtrl+Alt+R")),
         )
-        windowMenu.AppendSeparator()
-        self.Bind(
-            wx.EVT_MENU,
-            self.OnLogging,
-            windowMenu.Append(wx.ID_ANY, tr("Logging...\tCtrl+Alt+L")),
-        )
+        if self._debug:
+            windowMenu.AppendSeparator()
+            self.Bind(wx.EVT_MENU,
+			          self.OnLogging,
+		              windowMenu.Append(wx.ID_ANY, tr("Logging...\tCtrl+Alt+L")),
+            )
         windowMenu.AppendSeparator()
         item = windowMenu.Append(wx.ID_ANY, tr("Output\tCtrl+Alt+O"))
         item.Enable(False)
@@ -497,14 +505,14 @@ class FontWindow(wx.Frame):
         self.SetMenuBar(menuBar)
 
 
-    def OnActivatedUndoRedo(self, len_undo: int, len_redo: int, state: str):
+    def OnUpdateUndoRedoMenu(self, undoredo: undoredomgr.UndoRedoMgr):
         """ update redo/undo status menu on each activation """
-        self._logger.info("UNDOREDO: OnActivated {}".format(state))
+        self._logger.info("UNDOREDO: OnUpdateUndoRedoMenu {}".format(undoredo.str_state()))
 
-        self.menu_redo.Enable(len_undo > 0)
-        self.menu_redo.Enable(len_redo > 0)
+        self.menu_undo.Enable(undoredo.len_undo() > 0)
+        self.menu_redo.Enable(undoredo.len_redo() > 0)
         if self._debug:
-            self.menu_undoredo.SetText(state)
+            self.menu_undoredo.SetText("DEBUG: " + undoredo.str_state())
 
          
     # self
@@ -568,8 +576,8 @@ class FontWindow(wx.Frame):
         # activate the undoredomgr of current tab (Here a glyph or the font) 
         tab = self.bookCtrl.GetCurrentPage()
         try: 
-            self.OnActivatedUndoRedo(tab.undoredo.len_undo(), tab.undoredo.len_redo(), 
-                                     tab.undoredo.state())
+            # wx.SendEvent(self, EVT_UPDATE_UNDOREDO)
+            self.OnUpdateUndoRedoMenu(tab.undoredo)
         except Exception as e:
             self._logger.info("UNDOREDO: exception on {}".format(str(e)))
 
@@ -683,10 +691,33 @@ class FontWindow(wx.Frame):
     # Edit
 
     def OnUndo(self, event):
-        raise NotImplementedError
+        """ undo opertion let's go ....."""
+        tab = self.bookCtrl.GetCurrentPage()
+        self.Refresh()
+        try:
+            action = tab.undoredo.undo()
+            call_func = action[-1]
+            self._logger.info("UNDOREDO: undo on {}".format(str(action[0])))
+            call_func()
+        except Exception as e:
+            self._logger.info("UNDOREDO: undo exception on {}".format(str(e)))
+        trufont.TruFont.updateUI()
+        self.OnUpdateUndoRedoMenu(tab.undoredo)
+
+
 
     def OnRedo(self, event):
-        raise NotImplementedError
+        tab = self.bookCtrl.GetCurrentPage()
+        self.Refresh()
+        try:
+            action = tab.undoredo.redo()
+            call_func = action[-1]
+            self._logger.info("UNDOREDO: redo on {}".format(str(action[0])))
+            call_func()
+        except Exception as e:
+            self._logger.info("UNDOREDO: redo exception on {}".format(str(e)))
+        trufont.TruFont.updateUI()
+        self.OnUpdateUndoRedoMenu(tab.undoredo)
 
     def OnCut(self, event):
         layer = self.activeLayer
