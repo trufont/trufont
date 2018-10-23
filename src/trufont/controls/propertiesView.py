@@ -7,9 +7,17 @@ from trufont.controls.spinCtrl import SpinCtrl
 from trufont.util import platformSpecific
 from trufont.util.drawing import CreatePath, cos_sin_deg
 from trufont.util.pathops import PathPen
-from tfont.objects import Point, Transformation
+from tfont.objects import Point, Transformation, Layer, Path
+
 import wx
 from wx import GetTranslation as tr
+
+from trufont.objects.truglyph import TruGlyph
+import copy 
+import functools
+import logging
+from typing import Any, Collection, Tuple, List
+MAX_DEEP=5
 
 path = CreatePath()
 path.MoveToPoint(12.0, 9.0)
@@ -31,7 +39,85 @@ path.AddCurveToPoint(12.549, 7.0, 13.0, 7.451, 13.0, 8.0)
 path.CloseSubpath()
 
 
-def _alignHLeft(layer):
+def get_items(obj: Any) -> Tuple[str]:
+    """ get items of objects """
+    #Does it contain other object 
+    if hasattr(obj, '__slots__'):
+        return obj.__slots__
+    
+    if hasattr(obj, '__dict__'): 
+        return obj.__dict__
+
+    # implicit but ....
+    return None
+
+LAYER_EXCLUDED_ITEMS = ('__weakref__','_parent', '_closedGraphicsPath', '_openGraphicsPath')
+PATH_EXCLUDED_ITEMS =('__weakref__','_parent', '_graphicsPath')
+POINT_EXCLUDED_ITEMS =('__weakref__','_parent')
+
+def deepcopyitems(fromobj: Any, copyobj: Any, *excluded_items) -> Any:
+    """ deep copy of all items except excluded items """
+
+    # simple copy of object
+    if type(fromobj) != type(copyobj):
+        msg = "DEEPCOPYITEMS: Type source {} is not equal to dest source {}".format(type(fromobj), type(copyobj))
+        logging.debug(msg)
+        raise TypeError(msg)
+    
+    # get items lists
+    items = get_items(fromobj)
+    logging.debug("DEEPCOPYITEMS: Items are: {}".format(items))
+
+    if items:
+        logging.debug("DEEPCOPYITEMS: excluded items are: {}".format(excluded_items))
+        for item in items:
+            logging.debug("DEEPCOPYITEMS: Item is : {}".format(item))
+            if item in excluded_items:
+                logging.debug("DEEPCOPYITEMS: Item excluded : {}".format(item))
+                setattr(copyobj, item, getattr(fromobj, item))
+            else:
+                logging.debug("DEEPCOPYITEMS: Item included : {}".format(item))
+                setattr(copyobj, item, copy.deepcopy(getattr(fromobj, item))) #, { id(getattr(fromobj,'_parent')):1 } ))
+    else:
+        copyobj = copy.deepcopy(fromobj)            
+    return copyobj
+
+
+def deepcopypathsfromlayer(layer: Layer) -> List[Path]:
+    """ deep copy of paths of layer """
+    lpaths = []
+    for path in layer._paths:  
+        lpaths.append(deepcopyitems(path, path.__class__(), *PATH_EXCLUDED_ITEMS))
+
+    return lpaths
+
+def copypathsfromlayer(layer: Layer) -> List[Path]:
+    """ deep copy of paths of layer """
+    lpaths = []
+    for path in layer._paths:
+        new_path = Path()
+        new_path._bounds = copy.copy(path._bounds)
+        lpoints = [copy.copy(pt) for pt in path._points] 
+        new_path._points = lpoints
+        new_path._parent = path._parent 
+        new_path._id = path._id
+        new_path._graphicsPath = path._graphicsPath
+
+        lpaths.append(new_path)
+
+    return lpaths
+
+
+
+def logger_all_contents_paths(paths: Path, msg: str):
+
+    for path in paths[:1]:
+        logging.info("ALIGN: {} path after transform {}".format(msg, path))
+        logging.info("ALIGN: {} bounds after transform {}".format(msg, path.bounds))
+
+
+
+def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all = None
     for path in layer._paths:
@@ -42,6 +128,10 @@ def _alignHLeft(layer):
                 xMin_all = xMin
     if not selectedPaths:
         return
+
+    # store action
+
+    # modify selected paths 
     for path in selectedPaths:
         xMin = path.bounds[0]
         if xMin > xMin_all:
@@ -49,7 +139,8 @@ def _alignHLeft(layer):
             path.transform(Transformation(xOffset=delta))
 
 
-def _alignHCenter(layer):
+
+def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all, xMax_all = None, None
     for path in layer._paths:
@@ -62,6 +153,17 @@ def _alignHCenter(layer):
                 xMax_all = xMax
     if not selectedPaths:
         return
+
+    # store action
+#    old_layer = mydeepcopy(layer, MAX_DEEP, wx._core.Object, wx._core.GraphicsPath, trufont.objects.truglyph.TruGlyph)
+    logger_all_contents_paths(layer._paths, "++++++ Layer Before transform")
+    old_paths = copypathsfromlayer(layer)
+    tglyph.get_undoredo().append_action((operation, 
+                                        tglyph, 
+                                        functools.partial(undo_align, layer, layer._paths, old_paths, operation)))
+
+    # modify selected paths 
+    logger_all_contents_paths(old_paths, "===== Old_layer Before Transform")
     xAvg_all = xMin_all + round(.5 * (xMax_all - xMin_all))
     for path in selectedPaths:
         xMin, _, xMax, _ = path.bounds
@@ -69,9 +171,11 @@ def _alignHCenter(layer):
         if xAvg != xAvg_all:
             delta = xAvg_all - xAvg
             path.transform(Transformation(xOffset=delta))
+    logger_all_contents_paths(layer._paths, "------ Layer After Transform")
+    logger_all_contents_paths(old_paths, "===== Old_layer after Transform")
 
 
-def _alignHRight(layer):
+def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMax_all = None
     for path in layer._paths:
@@ -82,6 +186,10 @@ def _alignHRight(layer):
                 xMax_all = xMax
     if not selectedPaths:
         return
+
+    # store action
+
+    # modify selected paths 
     for path in selectedPaths:
         xMax = path.bounds[2]
         if xMax < xMax_all:
@@ -89,7 +197,7 @@ def _alignHRight(layer):
             path.transform(Transformation(xOffset=delta))
 
 
-def _alignVTop(layer):
+def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMax_all = None
     for path in layer._paths:
@@ -100,14 +208,20 @@ def _alignVTop(layer):
                 yMax_all = yMax
     if not selectedPaths:
         return
+
+    # store action
+
+    # modify selected paths 
     for path in selectedPaths:
         yMax = path.bounds[3]
         if yMax < yMax_all:
             delta = yMax_all - yMax
             path.transform(Transformation(yOffset=delta))
 
+    logging.info("ALIGN: actual paths == old paths is {}".format(layer._paths == paths))
 
-def _alignVCenter(layer):
+
+def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all, yMax_all = None, None
     for path in layer._paths:
@@ -120,6 +234,14 @@ def _alignVCenter(layer):
                 yMax_all = yMax
     if not selectedPaths:
         return
+
+    # store action
+    old_paths = copypathsfromlayer(layer)
+    tglyph.get_undoredo().append_action((operation, 
+                                        tglyph, 
+                                        functools.partial(undo_align, layer, layer._paths, old_paths, operation)))
+
+    # modify selected paths 
     yAvg_all = yMin_all + round(.5 * (yMax_all - yMin_all))
     for path in selectedPaths:
         _, yMin, _, yMax = path.bounds
@@ -128,8 +250,11 @@ def _alignVCenter(layer):
             delta = yAvg_all - yAvg
             path.transform(Transformation(yOffset=delta))
 
+    logger_all_contents_paths(layer._paths, "actual")
+    logger_all_contents_paths(old_paths, "before")
 
-def _alignVBottom(layer):
+
+def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all = None
     for path in layer._paths:
@@ -140,11 +265,40 @@ def _alignVBottom(layer):
                 yMin_all = yMin
     if not selectedPaths:
         return
+
+    # store action
+
+    # modify selected paths 
     for path in selectedPaths:
         yMin = path.bounds[1]
         if yMin > yMin_all:
             delta = yMin_all - yMin
             path.transform(Transformation(yOffset=delta))
+
+
+def undo_align(layer: Layer, paths: Path, old_paths: Path, old_operation:str):
+    """ restore data paths from an undo or redo actions """
+    logging.info("ALIGN: undo_align .....")
+    layer._paths = old_paths
+    for path in layer._paths:
+        path.points.applyChange()
+
+    # same fct calling for redo ;-))
+    paths, old_paths = old_paths, path 
+
+    logging.info("ALIGN: actual paths after undo {}".format(layer._paths))
+
+
+def _alignRestore(tglyph: TruGlyph, layer: Layer, old_paths: Path, old_operation:str):
+    """ restore data paths from an undo or redo actions """
+    logger_all_contents_paths(layer._paths, "actual")
+    logger_all_contents_paths(old_paths, "before")
+    for path in layer._paths:
+        for opath in old_paths:
+            if path.id == opath.id:
+                path._graphicPath = opath._graphicPath
+
+    logging.info("ALIGN: actual paths after undo {}".format(layer._paths))
 
 
 def makePropertiesLayout(parent, font):
@@ -383,6 +537,9 @@ class ButtonBar(wx.Window):
         self._underMouseBtn = None
         self._mouseDownBtn = None
 
+        self._logger = parent._logger
+
+
     @property
     def buttons(self):
         return self._buttons
@@ -454,8 +611,11 @@ class ButtonBar(wx.Window):
             return
         self.Refresh()
         layer = self.layer
-        if layer is not None:
-            self._buttons[index].callback(layer)
+        if layer:
+            glyph = self.layer._parent
+            self._logger.info("ALIGN: class {} {} -> operation {}".format(glyph.__class__.__name__ ,glyph.name, self._buttons[index].tooltip))
+            self._buttons[index].callback(layer, glyph, self._buttons[index].tooltip)
+
             trufont.TruFont.updateUI()
 
     def OnPaint(self, event):
@@ -537,6 +697,8 @@ class TransformHeader(wx.Panel):
 
         self._mouseDownBtn = None
         self._underMouseBtn = None
+
+        self._logger = parent._logger
 
     @property
     def layer(self):
