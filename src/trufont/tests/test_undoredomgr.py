@@ -32,9 +32,9 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
 
     seq += 1
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.show_undo(), mgr.show_redo()))
-    logger.info(mgr.state())
-    mgr.append_action(("A", None))
-    mgr.append_action(("B", logger))
+    logger.info(mgr.str_state())
+    mgr.append_action(undoredomgr.Action("A"))
+    mgr.append_action(undoredomgr.Action("B", logger.info("test callback undo")))
     assert mgr.len_undo() == 2 and mgr.len_redo() == 0
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.show_undo(), mgr.show_redo()))
 
@@ -56,7 +56,7 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
 
     seq += 1
     mgr.append_action(action)
-    mgr.append_action(('C', mgr))
+    mgr.append_action(undoredomgr.Action('C', mgr))
     assert mgr.len_undo() == 3 and mgr.len_redo() == 0
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.show_undo(), mgr.show_redo()))
 

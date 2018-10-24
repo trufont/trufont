@@ -696,8 +696,8 @@ class FontWindow(wx.Frame):
         self.Refresh()
         try:
             action = tab.undoredo.undo()
-            call_func = action[-1]
-            self._logger.info("UNDOREDO: undo on {}".format(str(action[0])))
+            call_func = action.callback_undo
+            self._logger.info("UNDOREDO: undo on {}".format(str(action.operation)))
             call_func()
         except Exception as e:
             self._logger.info("UNDOREDO: undo exception on {}".format(str(e)))
@@ -711,8 +711,8 @@ class FontWindow(wx.Frame):
         self.Refresh()
         try:
             action = tab.undoredo.redo()
-            call_func = action[-1]
-            self._logger.info("UNDOREDO: redo on {}".format(str(action[0])))
+            call_func = action.callback_redo
+            self._logger.info("UNDOREDO: undo on {}".format(str(action.operation)))
             call_func()
         except Exception as e:
             self._logger.info("UNDOREDO: redo exception on {}".format(str(e)))

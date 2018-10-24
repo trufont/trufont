@@ -6,10 +6,19 @@ import trufont.util.deco4class as deco4class
 import trufont.util.loggingstuff as logstuff
 
 from typing import Optional, Any, Union, Tuple, Callable
-
+import dataclasses
 # constants
 
 #@deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')
+
+
+class Action(object):
+    def __init__(self, operation: str="", callback_undo: Callable=None, callback_redo: Callable=None):
+        self.operation = operation
+        self.callback_undo = callback_undo
+        self.callback_redo = callback_redo
+
+
 class UndoRedoMgr(object):
     """ Manage memory and event abour undo/redo/append 
     actions """
@@ -56,14 +65,14 @@ class UndoRedoMgr(object):
         """ show state of mgr """
         return  "{} - undo[{}]/redo[{}]".format(self._name, self.len_undo(), self.len_redo())
 
-    def append_action(self, action):
+    def append_action(self, action: Action):
         """ append action to the undo stack """
         self._undo.append(action)
         if self._redo:
             self._redo = []
         self._after_append_action()
 			
-    def undo(self) -> Optional[Tuple]:
+    def undo(self) -> Action:
         """ play undo, if undo stack is empty raises an exception (indexError)"""
         last_action = self._undo.pop()
         self._redo.append(last_action)
@@ -78,19 +87,26 @@ class UndoRedoMgr(object):
         """ run undo from group of undo""" 
         pass    	
 
-    def redo(self) -> Optional[Tuple]:
+    def redo(self) -> Action:
         """ play redo, if redo stack is empty raises an exception (indexError)"""
         last_action  = self._redo.pop()
         self._undo.append(last_action)
         self._after_append_action()            
         self._after_redo()
         return last_action
-        
+    
+    def can_undo(self) -> bool:
+        return self._undo
+
         
     def len_undo(self) -> int:
         """ show len of stack undo """
         return len(self._undo)
 			
+
+    def can_redo(self) -> bool:
+        return self._redo 
+
 
     def len_redo(self) -> int:
         """ show len of redo stack """

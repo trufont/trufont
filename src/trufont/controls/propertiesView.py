@@ -17,6 +17,7 @@ import copy
 import functools
 import logging
 from typing import Any, Collection, Tuple, List
+import trufont.objects.undoredomgr as undoredomgr
 MAX_DEEP=5
 
 path = CreatePath()
@@ -39,74 +40,88 @@ path.AddCurveToPoint(12.549, 7.0, 13.0, 7.451, 13.0, 8.0)
 path.CloseSubpath()
 
 
-def get_items(obj: Any) -> Tuple[str]:
-    """ get items of objects """
-    #Does it contain other object 
-    if hasattr(obj, '__slots__'):
-        return obj.__slots__
+
+# def get_items(obj: Any) -> Tuple[str]:
+#     """ get items of objects """
+#     #Does it contain other object 
+#     if hasattr(obj, '__slots__'):
+#         return obj.__slots__
     
-    if hasattr(obj, '__dict__'): 
-        return obj.__dict__
+#     if hasattr(obj, '__dict__'): 
+#         return obj.__dict__
 
-    # implicit but ....
-    return None
+#     # implicit but ....
+#     return None
 
-LAYER_EXCLUDED_ITEMS = ('__weakref__','_parent', '_closedGraphicsPath', '_openGraphicsPath')
-PATH_EXCLUDED_ITEMS =('__weakref__','_parent', '_graphicsPath')
-POINT_EXCLUDED_ITEMS =('__weakref__','_parent')
+# LAYER_EXCLUDED_ITEMS = ('__weakref__','_parent', '_closedGraphicsPath', '_openGraphicsPath')
+# PATH_EXCLUDED_ITEMS =('__weakref__','_parent', '_graphicsPath')
+# POINT_EXCLUDED_ITEMS =('__weakref__','_parent')
 
-def deepcopyitems(fromobj: Any, copyobj: Any, *excluded_items) -> Any:
-    """ deep copy of all items except excluded items """
+# def deepcopyitems(fromobj: Any, copyobj: Any, *excluded_items) -> Any:
+#     """ deep copy of all items except excluded items """
 
-    # simple copy of object
-    if type(fromobj) != type(copyobj):
-        msg = "DEEPCOPYITEMS: Type source {} is not equal to dest source {}".format(type(fromobj), type(copyobj))
-        logging.debug(msg)
-        raise TypeError(msg)
+
+#     # simple copy of object
+#     if type(fromobj) != type(copyobj):
+#         msg = "DEEPCOPYITEMS: Type source {} is not equal to dest source {}".format(type(fromobj), type(copyobj))
+#         logging.debug(msg)
+#         raise TypeError(msg)
     
-    # get items lists
-    items = get_items(fromobj)
-    logging.debug("DEEPCOPYITEMS: Items are: {}".format(items))
+#     # get items lists
+#     items = get_items(fromobj)
+#     logging.debug("DEEPCOPYITEMS: Items are: {}".format(items))
 
-    if items:
-        logging.debug("DEEPCOPYITEMS: excluded items are: {}".format(excluded_items))
-        for item in items:
-            logging.debug("DEEPCOPYITEMS: Item is : {}".format(item))
-            if item in excluded_items:
-                logging.debug("DEEPCOPYITEMS: Item excluded : {}".format(item))
-                setattr(copyobj, item, getattr(fromobj, item))
-            else:
-                logging.debug("DEEPCOPYITEMS: Item included : {}".format(item))
-                setattr(copyobj, item, copy.deepcopy(getattr(fromobj, item))) #, { id(getattr(fromobj,'_parent')):1 } ))
-    else:
-        copyobj = copy.deepcopy(fromobj)            
-    return copyobj
+#     if items:
+#         logging.debug("DEEPCOPYITEMS: excluded items are: {}".format(excluded_items))
+#         for item in items:
+#             logging.debug("DEEPCOPYITEMS: Item is : {}".format(item))
+#             if item in excluded_items:
+#                 logging.debug("DEEPCOPYITEMS: Item excluded : {}".format(item))
+#                 setattr(copyobj, item, getattr(fromobj, item))
+#             else:
+#                 logging.debug("DEEPCOPYITEMS: Item included : {}".format(item))
+#                 setattr(copyobj, item, copy.deepcopy(getattr(fromobj, item))) #, { id(getattr(fromobj,'_parent')):1 } ))
+#     else:
+#         copyobj = copy.deepcopy(fromobj)            
+#     return copyobj
 
 
-def deepcopypathsfromlayer(layer: Layer) -> List[Path]:
-    """ deep copy of paths of layer """
-    lpaths = []
-    for path in layer._paths:  
-        lpaths.append(deepcopyitems(path, path.__class__(), *PATH_EXCLUDED_ITEMS))
+# def deepcopypathsfromlayer(layer: Layer) -> List[Path]:
+#     """ deep copy of paths of layer """
+#     lpaths = []
+#     for path in layer._paths:  
+#         lpaths.append(deepcopyitems(path, path.__class__(), *PATH_EXCLUDED_ITEMS))
 
-    return lpaths
+#     return lpaths
+
+def inverse_selected(point: Point):
+    """ """
+    point.selected ^= True
+    return point
 
 def copypathsfromlayer(layer: Layer) -> List[Path]:
     """ deep copy of paths of layer """
     lpaths = []
     for path in layer._paths:
         new_path = Path()
+        # copy bounds
         new_path._bounds = copy.copy(path._bounds)
-        lpoints = [copy.copy(pt) for pt in path._points] 
+
+        # copy points
+        lpoints = [copy.copy(pt) for pt in path._points]
+        # do something on selection
+        # lpoints = list(map(lambda x: inverse_selected(x), lpoints))
         new_path._points = lpoints
+
+        #parents etc ...
         new_path._parent = path._parent 
         new_path._id = path._id
         new_path._graphicsPath = path._graphicsPath
 
+        # keep it
         lpaths.append(new_path)
 
     return lpaths
-
 
 
 def logger_all_contents_paths(paths: Path, msg: str):
@@ -129,15 +144,12 @@ def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # store action
-
     # modify selected paths 
     for path in selectedPaths:
         xMin = path.bounds[0]
         if xMin > xMin_all:
             delta = xMin_all - xMin
             path.transform(Transformation(xOffset=delta))
-
 
 
 def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
@@ -154,13 +166,8 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # store action
-#    old_layer = mydeepcopy(layer, MAX_DEEP, wx._core.Object, wx._core.GraphicsPath, trufont.objects.truglyph.TruGlyph)
-    logger_all_contents_paths(layer._paths, "++++++ Layer Before transform")
+    # save actual paths
     old_paths = copypathsfromlayer(layer)
-    tglyph.get_undoredo().append_action((operation, 
-                                        tglyph, 
-                                        functools.partial(undo_align, layer, layer._paths, old_paths, operation)))
 
     # modify selected paths 
     logger_all_contents_paths(old_paths, "===== Old_layer Before Transform")
@@ -171,8 +178,18 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
         if xAvg != xAvg_all:
             delta = xAvg_all - xAvg
             path.transform(Transformation(xOffset=delta))
-    logger_all_contents_paths(layer._paths, "------ Layer After Transform")
-    logger_all_contents_paths(old_paths, "===== Old_layer after Transform")
+
+    #save news paths
+    new_paths = copypathsfromlayer(layer)    
+
+    # store action
+    action = undoredomgr.Action(operation, 
+                                functools.partial(undo_align_mem, layer, old_paths, operation), 
+                                functools.partial(undo_align_mem, layer, new_paths, operation))
+    tglyph.get_undoredo().append_action(action)
+
+    logger_all_contents_paths(new_paths, "------ New_Layer After Transform")
+    logger_all_contents_paths(old_paths, "===== Old_path after Transform")
 
 
 def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
@@ -235,11 +252,8 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # store action
+    # save actual paths
     old_paths = copypathsfromlayer(layer)
-    tglyph.get_undoredo().append_action((operation, 
-                                        tglyph, 
-                                        functools.partial(undo_align, layer, layer._paths, old_paths, operation)))
 
     # modify selected paths 
     yAvg_all = yMin_all + round(.5 * (yMax_all - yMin_all))
@@ -250,7 +264,16 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = yAvg_all - yAvg
             path.transform(Transformation(yOffset=delta))
 
-    logger_all_contents_paths(layer._paths, "actual")
+    # save new paths
+    new_paths = copypathsfromlayer(layer)
+
+    # store action
+    action = undoredomgr.Action(operation, 
+                                functools.partial(undo_align_mem, layer, old_paths, operation), 
+                                functools.partial(undo_align_mem, layer, new_paths, operation))
+    tglyph.get_undoredo().append_action(action)
+
+    logger_all_contents_paths(new_paths, "actual")
     logger_all_contents_paths(old_paths, "before")
 
 
@@ -266,8 +289,6 @@ def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # store action
-
     # modify selected paths 
     for path in selectedPaths:
         yMin = path.bounds[1]
@@ -276,17 +297,24 @@ def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(yOffset=delta))
 
 
-def undo_align(layer: Layer, paths: Path, old_paths: Path, old_operation:str):
+def undo_align_mem(layer: Layer, old_paths: Path, old_operation:str):
     """ restore data paths from an undo or redo actions """
     logging.info("ALIGN: undo_align .....")
-    layer._paths = old_paths
-    for path in layer._paths:
-        path.points.applyChange()
 
-    # same fct calling for redo ;-))
-    paths, old_paths = old_paths, path 
+    #set old values
+    layer.paths[:] = old_paths
+    
+    # layer.paths.clear()
+    # for pos, path in enumerate(old_paths):
+    #     layer.paths.insert(pos, path)
+    # #layer._selectedPath = None
 
-    logging.info("ALIGN: actual paths after undo {}".format(layer._paths))
+    # update points
+    # for path in layer._paths:
+        # path.points.applyChange()
+    layer.paths.applyChange()
+
+    logging.info("ALIGN: actual paths after {} {}".format("undo" if undo else "redo", layer._paths[0]))
 
 
 def _alignRestore(tglyph: TruGlyph, layer: Layer, old_paths: Path, old_operation:str):
