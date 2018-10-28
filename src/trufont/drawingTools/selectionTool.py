@@ -12,6 +12,7 @@ from tfont.objects import Anchor, Component, Guideline, Layer, Point
 import wx
 from wx import GetTranslation as tr
 
+# The icon for the tool's button
 _path = CreatePath()
 _path.MoveToPoint(3.018, 1.167)
 _path.AddLineToPoint(3.0, 15.0)
@@ -26,6 +27,7 @@ _path.AddLineToPoint(3.018, 1.167)
 _path.AddLineToPoint(3.018, 1.167)
 _path.CloseSubpath()
 
+# The tool's mouse cursor
 _cursor = CreatePath()
 _cursor.MoveToPoint(6, 4)
 _cursor.AddLineToPoint(6, 19)

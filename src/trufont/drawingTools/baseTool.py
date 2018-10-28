@@ -37,6 +37,8 @@ class BaseTool(object):
     # helper functions
 
     def clampToOrigin(self, pos, origin):
+        """Projects the point |pos| onto the closest axis.
+        Returns the projected position."""
         deltaX = pos.x - origin.x
         deltaY = pos.y - origin.y
         # go into the first quadrant to simplify our study
@@ -152,15 +154,14 @@ class BaseTool(object):
                 newPoint.selected = True
         elif event.GetKeyCode() == wx.WXK_RETURN:
             # self.layer.beginUndoGroup()
+            # FIXME: can't we directly access the indices of the selected points?
             for path in self.layer.paths:
                 points = path.points
                 for index, point in enumerate(points):
                     if point.type is None or not point.selected:
                         continue
                     if points[index - 1].type is not None:
-                        ptIndex = index + 1
-                        if ptIndex >= len(points):
-                            ptIndex -= len(points)
+                        ptIndex = (index + 1) % len(points)
                         if points[ptIndex].type is not None:
                             continue
                     point.smooth = not point.smooth

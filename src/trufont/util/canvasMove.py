@@ -1,5 +1,5 @@
 from trufont.util import bezierMath
-
+from trufont.objects.undoredomgr import Action
 
 def nudgeUICurve(on1, off1, off2, on2, dx, dy):
     if on2.selected != on1.selected:
@@ -47,7 +47,7 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
 
 
 def moveUILayerSelection(layer, dx, dy, option=None):
-    # layer.beginUndoGroup()
+    before = layer.snapshot()
     for anchor in layer.anchors:
         if anchor.selected:
             anchor.x += dx
@@ -76,8 +76,9 @@ def moveUILayerSelection(layer, dx, dy, option=None):
     if image.selected:
         image.move(delta)
     """
-    # layer.endUndoGroup()
-
+    after = layer.snapshot()
+    # layer._parent is a Truglyph
+    layer._parent.get_undoredo().append_action(Action("Move", before, after))
 
 def moveUIPathSelection(path, dx, dy, nudgePoints=False, slidePoints=False):
     points = path._points

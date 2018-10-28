@@ -6,7 +6,7 @@ import trufont.util.deco4class as deco4class
 import trufont.util.loggingstuff as logstuff
 
 from typing import Optional, Any, Union, Tuple, Callable
-import dataclasses
+#import dataclasses
 # constants
 
 #@deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')

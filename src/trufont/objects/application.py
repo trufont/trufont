@@ -69,8 +69,7 @@ class Application:
         else:
             self._logger = logstuff.create_stream_logger("")
         self._debug  = debug
-        if self._debug:
-            self._logger.setLevel(logging.DEBUG)
+        self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
         # DEBUG
 
     def __repr__(self):
