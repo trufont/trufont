@@ -22,8 +22,6 @@ from typing import Any, Collection, Tuple, List, Dict, Callable
 import trufont.objects.undoredomgr as undoredomgr
 import trufont.util.deco4class as deco4class
 from tfont.converters.tfontConverter import TFontConverter
-import functools
-import inspect
 
 TFONT_CONV = TFontConverter(None)
 
@@ -46,85 +44,6 @@ path.AddLineToPoint(12.0, 7.0)
 path.AddCurveToPoint(12.549, 7.0, 13.0, 7.451, 13.0, 8.0)
 path.CloseSubpath()
 
-
-def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
-    logging.getLogger().setLevel(logging.DEBUG)
-    # logging.info("DECORATE_UNDOREDO: {}".format(params_deco))
-
-    def decorate_fn(fn):
-        """ func decorate"""
-        logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
-
-        @functools.wraps(fn)
-        def decorate_args(*args, **kwargs):
-            """ """
-            ret = None
-            try:
-                sig = inspect.signature(fn)
-                logging.debug("DECORATE_UNDOREDO: signature{}".format(sig)) 
-
-                # datas from calling func
-                # layer = args[0]
-                # undoredo = args[1].get_undoredo()
-                # operation = args[-1]
-
-                #functions from dict
-                key = None 
-                if fn.__name__ in params_deco:
-                    key = fn.__name__
-                elif "{}Default".format(fn.__name__[:6]) in params_deco:
-                    key = "{}Default".format(fn.__name__[:6])
-
-                logging.debug("DECORATE_UNDOREDO: key is {}".format(key)) 
-
-                if key:
-                    params = params_deco[key]
-#                    func_expand = params['expand']
-                    func_copy = params['copy'][0]
-                    func_undo = params['undo'][0]
-                    func_redo = params['redo'][0]
-
-                    logging.debug("DECORATE_UNDOREDO: func copy:{}".format(func_copy.__name__)) 
-                    logging.debug("DECORATE_UNDOREDO: func undo:{}".format(func_undo.__name__)) 
-                    logging.debug("DECORATE_UNDOREDO: func redo:{}".format(func_redo.__name__)) 
-
-                    # expand params as layer, undoredomgr and operation
-                    logging.debug("DECORATE_UNDOREDO: expand params") 
-                    layer, undoredo, operation = func_expand_params(*args)
-
-                    #save datas before function call
-                    logging.debug("DECORATE_UNDOREDO: copy before func") 
-                    old_datas = func_copy(layer)
-
-                    # call func
-                    logging.debug("DECORATE_UNDOREDO: call func") 
-                    ret = fn(*args, **kwargs)
-
-                    #save datas after function call
-                    logging.debug("DECORATE_UNDOREDO: copy after func") 
-                    new_datas = func_copy(layer)
-
-                    # append action to undoredomgr
-                    logging.debug("DECORATE_UNDOREDO: create action") 
-                    action = undoredomgr.Action(operation, 
-                                                functools.partial(func_undo, layer, old_datas, operation), 
-                                                functools.partial(func_redo, layer, new_datas, operation))
-                    logging.debug("DECORATE_UNDOREDO: append action") 
-                    undoredo.append_action(action)
-
-                else:
-                    # decorated but params not found !!!
-                    ret = fn(*args, **kwargs)
-
-            except Exception as e:
-                logging.debug("DECORATE_UNDOREDO exception {}".format(str(e)))
-
-            finally:
-                return ret
-
-        return decorate_args
-
-    return decorate_fn
 
 
 def copypathsfromlayer(layer: Layer) -> List[Path]:
@@ -211,10 +130,11 @@ params_undoredo = {
                  }
 
 def align_expand_params(layer: Layer, tglyph: TruGlyph, operation: str):
+    """Used with align functions -  Nothing to """
     return layer, tglyph.get_undoredo(), operation 
     
 
-@decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
 def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all = None
@@ -234,7 +154,7 @@ def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = xMin_all - xMin
             path.transform(Transformation(xOffset=delta))
 
-@decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
 def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all, xMax_all = None, None
@@ -259,7 +179,7 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(xOffset=delta))
 
 
-@decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
 def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMax_all = None
@@ -280,7 +200,7 @@ def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(xOffset=delta))
 
 
-@decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
 def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMax_all = None
@@ -300,7 +220,7 @@ def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = yMax_all - yMax
             path.transform(Transformation(yOffset=delta))
 
-@decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
 def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all, yMax_all = None, None
@@ -325,7 +245,7 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(yOffset=delta))
 
 
-@decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
 def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all = None
@@ -755,7 +675,7 @@ class TransformHeader(wx.Panel):
     def layer(self):
         return wx.GetTopLevelParent(self).activeLayer
 
-    @decorate_undoredo(params_undoredo, transformheader_expand_params)
+    @undoredomgr.decorate_undoredo(params_undoredo, transformheader_expand_params)
     def binaryPathOp(self, func):
         layer = self.layer
         paths = layer._paths
@@ -780,7 +700,7 @@ class TransformHeader(wx.Panel):
         paths.extend(open_)
         trufont.TruFont.updateUI()
 
-    @decorate_undoredo(params_undoredo, transformheader_expand_params)
+    @undoredomgr.decorate_undoredo(params_undoredo, transformheader_expand_params)
     def removeOverlap(self):
         layer = self.layer
         paths = layer._paths
@@ -799,7 +719,7 @@ class TransformHeader(wx.Panel):
         paths.extend(others)
         trufont.TruFont.updateUI()
 
-    @decorate_undoredo(params_undoredo, transformheader_expand_params)
+    @undoredomgr.decorate_undoredo(params_undoredo, transformheader_expand_params)
     def transform(self, **kwargs):
         layer = self.layer
         transformation = Transformation(**kwargs)

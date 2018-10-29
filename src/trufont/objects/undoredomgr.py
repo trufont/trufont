@@ -5,11 +5,125 @@ import functools
 import trufont.util.deco4class as deco4class
 import trufont.util.loggingstuff as logstuff
 
-from typing import Optional, Any, Union, Tuple, Callable
+from typing import Optional, Any, Union, Tuple, Callable, Dict
+import functools
+import inspect
+
 #import dataclasses
 # constants
 
-#@deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')
+# @deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')
+def sample_copypathsfromlayer(layer: "Layer"):
+    pass 
+
+def sample_undoredo_align_fromcopy(layer: "Layer", old_paths: "Path", old_operation:str):
+    pass 
+
+params_undoredo = { 
+                  '_alignDefault':{'copy': (sample_copypathsfromlayer, 'layer'),
+                                'undo': (sample_undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                'redo': (sample_undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                                },
+                  'transform':{'copy': (sample_copypathsfromlayer, 'layer'),
+                                 'undo': (sample_undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                 'redo': (sample_undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                                 }
+                 } 
+
+logger = logstuff.create_stream_logger("")
+def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
+    """  decorate functions that modify a glyph 
+    make a save of a glyph (or a part) before the function call
+    call the function
+    make a save of glyph (or a part) after the function call 
+    append an action - the modification -- to the undoredo manager of the glyph 
+    params_deco is a dict where:
+        key is the function name 
+        values is a dict with 3 entries as tuple where first item is: 
+            copy function to make the save    
+            undo function calling when undo 
+            redo function calling when redo
+    func_expand_params is a function that decompose from *args and **kwargs of the decorated function 
+    to expand to the param need by the copy, undo and redo functions - 
+    Actually 3 func_expand_params erturn 3 values: Layer, UndoRedoMgr and an a sring (name of current operation)  
+
+    WARNING: It is the same format for all decorated function, at this time -  HAVE TO CHANGE SOON
+    Note here that the Action class, the callback function give to undoredo mgr are partial function.
+    So on undo or redo, you have just to call these 2 partials
+    """
+
+    def decorate_fn(fn):
+        """ func decorate"""
+        logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
+
+        @functools.wraps(fn)
+        def decorate_args(*args, **kwargs):
+            """ """
+            if logger:
+                del logger
+                logger = None
+            ret = None
+            try:
+                sig = inspect.signature(fn)
+                logging.debug("DECORATE_UNDOREDO: signature{}".format(sig)) 
+
+                #functions from dict
+                key = None 
+                if fn.__name__ in params_deco:
+                    key = fn.__name__
+                elif "{}Default".format(fn.__name__[:6]) in params_deco:
+                    key = "{}Default".format(fn.__name__[:6])
+
+                logging.debug("DECORATE_UNDOREDO: key is {}".format(key)) 
+
+                if key:
+                    params = params_deco[key]
+                    func_copy = params['copy'][0]
+                    func_undo = params['undo'][0]
+                    func_redo = params['redo'][0]
+
+                    logging.debug("DECORATE_UNDOREDO: func copy:{}".format(func_copy.__name__)) 
+                    logging.debug("DECORATE_UNDOREDO: func undo:{}".format(func_undo.__name__)) 
+                    logging.debug("DECORATE_UNDOREDO: func redo:{}".format(func_redo.__name__)) 
+
+                    # expand params as layer, undoredomgr and operation
+                    logging.debug("DECORATE_UNDOREDO: expand params") 
+                    layer, undoredo, operation = func_expand_params(*args)
+
+                    #save datas before function call
+                    logging.debug("DECORATE_UNDOREDO: copy before func") 
+                    old_datas = func_copy(layer)
+
+                    # call func
+                    logging.debug("DECORATE_UNDOREDO: call func") 
+                    ret = fn(*args, **kwargs)
+
+                    #save datas after function call
+                    logging.debug("DECORATE_UNDOREDO: copy after func") 
+                    new_datas = func_copy(layer)
+
+                    # append action to undoredomgr
+                    logging.debug("DECORATE_UNDOREDO: create action") 
+                    action = Action(operation, 
+                                    functools.partial(func_undo, layer, old_datas, operation), 
+                                    functools.partial(func_redo, layer, new_datas, operation))
+                    logging.debug("DECORATE_UNDOREDO: append action") 
+                    undoredo.append_action(action)
+
+                else:
+                    # decorated but params not found !!!
+                    ret = fn(*args, **kwargs)
+
+            except Exception as e:
+                logging.debug("DECORATE_UNDOREDO exception {}".format(str(e)))
+
+            finally:
+                return ret
+
+        return decorate_args
+
+    return decorate_fn
+
 
 
 class Action(object):
