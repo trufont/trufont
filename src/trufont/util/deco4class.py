@@ -31,7 +31,7 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
     else:
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
-    # logger.debug("DECO4CLASS init......")
+    logger.debug("DECO4CLASS init......")
 
     def method_decorator(fn, class_name):
         """ Example of a method decorator """

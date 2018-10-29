@@ -13,12 +13,14 @@ from tfont.objects import Point, Transformation, Layer, Path
 import wx
 from wx import GetTranslation as tr
 
-import logging
 from trufont.objects.truglyph import TruGlyph
+
+import copy 
+import functools
+import logging
 from typing import Any, Collection, Tuple, List, Dict, Callable
 import trufont.objects.undoredomgr as undoredomgr
 import trufont.util.deco4class as deco4class
-import trufont.util.func_copy as func_copy
 from tfont.converters.tfontConverter import TFontConverter
 
 TFONT_CONV = TFontConverter(None)
@@ -41,6 +43,40 @@ path.AddLineToPoint(9.0, 7.0)
 path.AddLineToPoint(12.0, 7.0)
 path.AddCurveToPoint(12.549, 7.0, 13.0, 7.451, 13.0, 8.0)
 path.CloseSubpath()
+
+
+
+def copypathsfromlayer(layer: Layer) -> List[Path]:
+    """ manual deep copy of paths of layer """
+    lpaths = []
+    for path in layer._paths:
+        new_path = Path()
+        # copy bounds
+        new_path._bounds = copy.copy(path._bounds)
+
+        # copy points
+        new_path._points = [copy.copy(pt) for pt in path._points]
+
+        # parents etc ...
+        new_path._parent = path._parent 
+        new_path._id = path._id
+        new_path._graphicsPath = path._graphicsPath
+
+        # keep it
+        lpaths.append(new_path)
+
+    return lpaths
+
+
+def undoredo_align_fromcopy(layer: Layer, old_paths: Path, old_operation:str):
+    """ restore data paths from an undo or redo actions """
+#    logging.debug("ALIGN: undoredo_align_fromcopy.....")
+
+    #set old values
+    layer.paths[:] = old_paths
+    layer.paths.applyChange()
+
+#    logging.debug("ALIGN: actual paths after {} {}".format(old_operation, layer._paths[:1]))
 
 
 def copypathsfromlayer_asdict(layer: Layer) -> Dict:
@@ -66,23 +102,27 @@ def undoredo_align_fromcopy_asdict(layer: Layer, old_layer_dict: Dict, old_opera
     logging.debug("ALIGN: actual paths after {} {}".format(old_operation, layer._paths[:1]))
 
 
-params_undoredo = {
-                  'alignDefault':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+params_undoredo = { 
+                  '_alignDefault':{'copy': (copypathsfromlayer, 'layer'),
+                                'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
                                 },
-                  'transform':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                  'transform':{'copy': (copypathsfromlayer, 'layer'),
+                                 'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                 'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
                                  },
-                  'removeOverlap':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                  'removeOverlap':{'copy': (copypathsfromlayer, 'layer'),
+                                 'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                 'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
                                  },
-                  'binaryPathOp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                  'binaryPathOp':{'copy': (copypathsfromlayer, 'layer'),
+                                 'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                 'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
                                  },
+                  # '_alignVRight':{'copy': (copypathsfromlayer, 'layer'),
+                  #               'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                  #               'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                  #               },
                   '_alignVCenter':{'copy': (copypathsfromlayer_asdict, 'layer'),
                                 'undo': (undoredo_align_fromcopy_asdict, 'layer', 'old_datas', 'operation'), 
                                 'redo': (undoredo_align_fromcopy_asdict, 'layer', 'new_datas', 'operation')

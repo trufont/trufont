@@ -1,14 +1,10 @@
 from math import copysign
-from tfont.objects import Path, Point, Layer
+from tfont.objects import Path, Point
 import trufont
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.util.drawing import CreatePath
 import wx
 from wx import GetTranslation as tr
-
-import trufont.objects.undoredomgr as undoredomgr
-import trufont.util.func_copy as func_copy
-
 
 _path = CreatePath()
 _path.MoveToPoint(5.831, 11.829)
@@ -35,27 +31,6 @@ _path.AddLineToPoint(5.831, 6.927)
 _path.AddCurveToPoint(5.831, 6.384, 6.274, 5.94, 6.817, 5.94)
 _path.CloseSubpath()
 
-
-
-
-params_undoredo = { 
-                  'OnMouseUpLeftUp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                                }
-                  }
-
-def mouseup_expand_params(obj, *args):
-    """ use by decorator to get three params aselif 
-    layer, undoredomgr and operation """
-    if obj.drawRectangle:
-        operation =  "Draw rectangle"
-    elif obj.originAtCenter:
-        operation = "Draw Circle"
-    else:
-        operation = "Draw ellipsis"
-
-    return obj.layer, obj.layer._parent.get_undoredo(), operation 
 
 class ShapesTool(BaseTool):
     icon = _path
@@ -156,46 +131,42 @@ class ShapesTool(BaseTool):
         else:
             super().OnMotion(event)
 
-    @undoredomgr.decorate_undoredo(params_undoredo, mouseup_expand_params)
-    def OnMouseUpLeftUp(self, event):
-        points = self.points
-        if points:
-            x1, y1, x2, y2 = points
-            if self.drawRectangle:
-                path = Path(
-                    [
-                        Point(x1, y1, "line"),
-                        Point(x2, y1, "line"),
-                        Point(x2, y2, "line"),
-                        Point(x1, y2, "line"),
-                    ]
-                )
-            else:
-                dx, dy = x2 - x1, y2 - y1
-                path = Path(
-                    [
-                        Point(x1 + .225 * dx, y2),
-                        Point(x1, y1 + .775 * dy),
-                        Point(x1, y1 + .5 * dy, "curve", smooth=True),
-                        Point(x1, y1 + .225 * dy),
-                        Point(x1 + .225 * dx, y1),
-                        Point(x1 + .5 * dx, y1, "curve", smooth=True),
-                        Point(x1 + .775 * dx, y1),
-                        Point(x2, y1 + .225 * dy),
-                        Point(x2, y1 + .5 * dy, "curve", smooth=True),
-                        Point(x2, y1 + .775 * dy),
-                        Point(x1 + .775 * dx, y2),
-                        Point(x1 + .5 * dx, y2, "curve", smooth=True),
-                    ]
-                )
-            self.layer.paths.append(path)
-            path.selected = True
-            trufont.TruFont.updateUI()
-        self.origin = self.anchor = None
-
     def OnMouseUp(self, event):
         if event.LeftUp():
-            self.OnMouseUpLeftUp(event)
+            points = self.points
+            if points:
+                x1, y1, x2, y2 = points
+                if self.drawRectangle:
+                    path = Path(
+                        [
+                            Point(x1, y1, "line"),
+                            Point(x2, y1, "line"),
+                            Point(x2, y2, "line"),
+                            Point(x1, y2, "line"),
+                        ]
+                    )
+                else:
+                    dx, dy = x2 - x1, y2 - y1
+                    path = Path(
+                        [
+                            Point(x1 + .225 * dx, y2),
+                            Point(x1, y1 + .775 * dy),
+                            Point(x1, y1 + .5 * dy, "curve", smooth=True),
+                            Point(x1, y1 + .225 * dy),
+                            Point(x1 + .225 * dx, y1),
+                            Point(x1 + .5 * dx, y1, "curve", smooth=True),
+                            Point(x1 + .775 * dx, y1),
+                            Point(x2, y1 + .225 * dy),
+                            Point(x2, y1 + .5 * dy, "curve", smooth=True),
+                            Point(x2, y1 + .775 * dy),
+                            Point(x1 + .775 * dx, y2),
+                            Point(x1 + .5 * dx, y2, "curve", smooth=True),
+                        ]
+                    )
+                self.layer.paths.append(path)
+                path.selected = True
+                trufont.TruFont.updateUI()
+            self.origin = self.anchor = None
         else:
             super().OnMouseUp(event)
 
