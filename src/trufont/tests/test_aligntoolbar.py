@@ -13,6 +13,9 @@ def tr(str):
     return str
 
 def makePropertiesLayout(parent):
+    
+    # dc = wx.PaintDC(parent)
+    # ctx = wx.GraphicsContext.Create(dc)
     sizer = wx.BoxSizer(wx.VERTICAL)
     alignmentBar = ButtonBar(parent)
     btns = []
@@ -245,7 +248,7 @@ class ButtonBar(wx.Window):
 
     @property
     def layer(self):
-        return wx.GetTopLevelParent(self).activeLayer
+        return None # wx.GetTopLevelParent(self).activeLayer
 
     # ----------
     # wx methods
@@ -312,7 +315,12 @@ class ButtonBar(wx.Window):
             # trufont.TruFont.updateUI()
 
     def OnPaint(self, event):
-        ctx = wx.GraphicsContext.Create(self)
+        if graphicsContext_frompaintdc:
+            self._logger.info("ButtonBar: graphicsContext_frompaintdc")
+            ctx = wx.GraphicsContext.Create(wx.PaintDC(self))        
+        else:
+            self._logger.info("ButtonBar: graphicsContext_fromframe")
+            ctx = wx.GraphicsContext.Create(self)
 
         ctx.SetBrush(wx.Brush(self.GetBackgroundColour()))
         ctx.DrawRectangle(0, 0, *self.GetSize())
@@ -331,7 +339,7 @@ class ButtonBar(wx.Window):
             ctx.Translate(32, 0)
 
 class Frame(wx.Frame):
-     def __init__(self, logger, title):
+    def __init__(self, logger, title):
         super().__init__(None, title=title, size=(650,400))
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self._logger = logger
@@ -341,7 +349,7 @@ class Frame(wx.Frame):
         except Exception as e:
             self._logger.error(str(e))
 
-     def OnClose(self, event):
+    def OnClose(self, event):
         dlg = wx.MessageDialog(self, 
                      "Do you really want to close this application?",
                      "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
@@ -369,6 +377,7 @@ if __name__ == "__main__":
     # constants
     logging.basicConfig(level=logging.DEBUG, format=STR_FMT, datefmt=DATE_FMT)
     logger = logging.getLogger()
+    graphicsContext_frompaintdc = True if len(sys.argv) > 1 else False
     test_toolbar(logger)
 
 

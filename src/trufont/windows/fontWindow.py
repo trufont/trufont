@@ -78,7 +78,7 @@ def prepareNewFont(font):
         glyphs.append(TruGlyph(name, unicodes=["%04X" % ord(char)]))
 
 
-@deco4class.decorator_classfunc()
+# @deco4class.decorator_classfunc()
 class FontWindowTab(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -127,7 +127,7 @@ class FontWindowTab(wx.Panel):
 ActiveLayerChangedEvent, EVT_ACTIVE_LAYER_CHANGED = wx.lib.newevent.NewEvent()
 EVT_UPDATE_UNDOREDO = wx.lib.newevent.NewEvent()
 
-@deco4class.decorator_classfunc()
+# @deco4class.decorator_classfunc()
 class FontWindow(wx.Frame):
     ACTIVE_LAYER_CHANGED = EVT_ACTIVE_LAYER_CHANGED
 

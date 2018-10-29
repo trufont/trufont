@@ -7,18 +7,25 @@ from trufont.controls.spinCtrl import SpinCtrl
 from trufont.util import platformSpecific
 from trufont.util.drawing import CreatePath, cos_sin_deg
 from trufont.util.pathops import PathPen
+
 from tfont.objects import Point, Transformation, Layer, Path
 
 import wx
 from wx import GetTranslation as tr
 
 from trufont.objects.truglyph import TruGlyph
+
 import copy 
 import functools
 import logging
-from typing import Any, Collection, Tuple, List
+from typing import Any, Collection, Tuple, List, Dict, Callable
 import trufont.objects.undoredomgr as undoredomgr
-MAX_DEEP=5
+import trufont.util.deco4class as deco4class
+from tfont.converters.tfontConverter import TFontConverter
+import functools
+import inspect
+
+TFONT_CONV = TFontConverter(None)
 
 path = CreatePath()
 path.MoveToPoint(12.0, 9.0)
@@ -40,67 +47,88 @@ path.AddCurveToPoint(12.549, 7.0, 13.0, 7.451, 13.0, 8.0)
 path.CloseSubpath()
 
 
+def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
+    logging.getLogger().setLevel(logging.DEBUG)
+    # logging.info("DECORATE_UNDOREDO: {}".format(params_deco))
 
-# def get_items(obj: Any) -> Tuple[str]:
-#     """ get items of objects """
-#     #Does it contain other object 
-#     if hasattr(obj, '__slots__'):
-#         return obj.__slots__
-    
-#     if hasattr(obj, '__dict__'): 
-#         return obj.__dict__
+    def decorate_fn(fn):
+        """ func decorate"""
+        logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
 
-#     # implicit but ....
-#     return None
+        @functools.wraps(fn)
+        def decorate_args(*args, **kwargs):
+            """ """
+            ret = None
+            try:
+                sig = inspect.signature(fn)
+                logging.debug("DECORATE_UNDOREDO: signature{}".format(sig)) 
 
-# LAYER_EXCLUDED_ITEMS = ('__weakref__','_parent', '_closedGraphicsPath', '_openGraphicsPath')
-# PATH_EXCLUDED_ITEMS =('__weakref__','_parent', '_graphicsPath')
-# POINT_EXCLUDED_ITEMS =('__weakref__','_parent')
+                # datas from calling func
+                # layer = args[0]
+                # undoredo = args[1].get_undoredo()
+                # operation = args[-1]
 
-# def deepcopyitems(fromobj: Any, copyobj: Any, *excluded_items) -> Any:
-#     """ deep copy of all items except excluded items """
+                #functions from dict
+                key = None 
+                if fn.__name__ in params_deco:
+                    key = fn.__name__
+                elif "{}Default".format(fn.__name__[:6]) in params_deco:
+                    key = "{}Default".format(fn.__name__[:6])
 
+                logging.debug("DECORATE_UNDOREDO: key is {}".format(key)) 
 
-#     # simple copy of object
-#     if type(fromobj) != type(copyobj):
-#         msg = "DEEPCOPYITEMS: Type source {} is not equal to dest source {}".format(type(fromobj), type(copyobj))
-#         logging.debug(msg)
-#         raise TypeError(msg)
-    
-#     # get items lists
-#     items = get_items(fromobj)
-#     logging.debug("DEEPCOPYITEMS: Items are: {}".format(items))
+                if key:
+                    params = params_deco[key]
+#                    func_expand = params['expand']
+                    func_copy = params['copy'][0]
+                    func_undo = params['undo'][0]
+                    func_redo = params['redo'][0]
 
-#     if items:
-#         logging.debug("DEEPCOPYITEMS: excluded items are: {}".format(excluded_items))
-#         for item in items:
-#             logging.debug("DEEPCOPYITEMS: Item is : {}".format(item))
-#             if item in excluded_items:
-#                 logging.debug("DEEPCOPYITEMS: Item excluded : {}".format(item))
-#                 setattr(copyobj, item, getattr(fromobj, item))
-#             else:
-#                 logging.debug("DEEPCOPYITEMS: Item included : {}".format(item))
-#                 setattr(copyobj, item, copy.deepcopy(getattr(fromobj, item))) #, { id(getattr(fromobj,'_parent')):1 } ))
-#     else:
-#         copyobj = copy.deepcopy(fromobj)            
-#     return copyobj
+                    logging.debug("DECORATE_UNDOREDO: func copy:{}".format(func_copy.__name__)) 
+                    logging.debug("DECORATE_UNDOREDO: func undo:{}".format(func_undo.__name__)) 
+                    logging.debug("DECORATE_UNDOREDO: func redo:{}".format(func_redo.__name__)) 
 
+                    # expand params as layer, undoredomgr and operation
+                    logging.debug("DECORATE_UNDOREDO: expand params") 
+                    layer, undoredo, operation = func_expand_params(*args)
 
-# def deepcopypathsfromlayer(layer: Layer) -> List[Path]:
-#     """ deep copy of paths of layer """
-#     lpaths = []
-#     for path in layer._paths:  
-#         lpaths.append(deepcopyitems(path, path.__class__(), *PATH_EXCLUDED_ITEMS))
+                    #save datas before function call
+                    logging.debug("DECORATE_UNDOREDO: copy before func") 
+                    old_datas = func_copy(layer)
 
-#     return lpaths
+                    # call func
+                    logging.debug("DECORATE_UNDOREDO: call func") 
+                    ret = fn(*args, **kwargs)
 
-def inverse_selected(point: Point):
-    """ """
-    point.selected ^= True
-    return point
+                    #save datas after function call
+                    logging.debug("DECORATE_UNDOREDO: copy after func") 
+                    new_datas = func_copy(layer)
+
+                    # append action to undoredomgr
+                    logging.debug("DECORATE_UNDOREDO: create action") 
+                    action = undoredomgr.Action(operation, 
+                                                functools.partial(func_undo, layer, old_datas, operation), 
+                                                functools.partial(func_redo, layer, new_datas, operation))
+                    logging.debug("DECORATE_UNDOREDO: append action") 
+                    undoredo.append_action(action)
+
+                else:
+                    # decorated but params not found !!!
+                    ret = fn(*args, **kwargs)
+
+            except Exception as e:
+                logging.debug("DECORATE_UNDOREDO exception {}".format(str(e)))
+
+            finally:
+                return ret
+
+        return decorate_args
+
+    return decorate_fn
+
 
 def copypathsfromlayer(layer: Layer) -> List[Path]:
-    """ deep copy of paths of layer """
+    """ manual deep copy of paths of layer """
     lpaths = []
     for path in layer._paths:
         new_path = Path()
@@ -108,12 +136,9 @@ def copypathsfromlayer(layer: Layer) -> List[Path]:
         new_path._bounds = copy.copy(path._bounds)
 
         # copy points
-        lpoints = [copy.copy(pt) for pt in path._points]
-        # do something on selection
-        # lpoints = list(map(lambda x: inverse_selected(x), lpoints))
-        new_path._points = lpoints
+        new_path._points = [copy.copy(pt) for pt in path._points]
 
-        #parents etc ...
+        # parents etc ...
         new_path._parent = path._parent 
         new_path._id = path._id
         new_path._graphicsPath = path._graphicsPath
@@ -124,14 +149,72 @@ def copypathsfromlayer(layer: Layer) -> List[Path]:
     return lpaths
 
 
-def logger_all_contents_paths(paths: Path, msg: str):
+def undoredo_align_fromcopy(layer: Layer, old_paths: Path, old_operation:str):
+    """ restore data paths from an undo or redo actions """
+#    logging.debug("ALIGN: undoredo_align_fromcopy.....")
 
-    for path in paths[:1]:
-        logging.info("ALIGN: {} path after transform {}".format(msg, path))
-        logging.info("ALIGN: {} bounds after transform {}".format(msg, path.bounds))
+    #set old values
+    layer.paths[:] = old_paths
+    layer.paths.applyChange()
+
+#    logging.debug("ALIGN: actual paths after {} {}".format(old_operation, layer._paths[:1]))
 
 
+def copypathsfromlayer_asdict(layer: Layer) -> Dict:
+    """ produce tfont dict from obj as layer, path or .... """
+#    logging.debug("dirs of obj -> {}".format(dir(layer)[:5]))
 
+    return TFONT_CONV.unstructure_attrs_asdict(layer)
+
+
+def undoredo_align_fromcopy_asdict(layer: Layer, old_layer_dict: Dict, old_operation:str):
+    """ restore data paths from an undo or redo actions """
+    logging.debug("ALIGN: undoredo_align_fromdict .....")
+    logging.debug("ALIGN: OBJ AS DICT {}".format(old_layer_dict))
+
+    # get old values
+    old_layer = TFONT_CONV.structure_attrs_fromdict(old_layer_dict, Layer)
+    logging.debug("ALIGN: PATH AS MEM {}".format(old_layer))
+
+    logging.debug("ALIGN: {}".format(old_layer))        
+    layer.paths[:] = old_layer.paths
+    layer.paths.applyChange()
+
+    logging.debug("ALIGN: actual paths after {} {}".format(old_operation, layer._paths[:1]))
+
+
+params_undoredo = { 
+                  '_alignDefault':{'copy': (copypathsfromlayer, 'layer'),
+                                'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                                },
+                  'transform':{'copy': (copypathsfromlayer, 'layer'),
+                                 'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                 'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                                 },
+                  'removeOverlap':{'copy': (copypathsfromlayer, 'layer'),
+                                 'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                 'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                                 },
+                  'binaryPathOp':{'copy': (copypathsfromlayer, 'layer'),
+                                 'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                 'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                                 },
+                  # '_alignVRight':{'copy': (copypathsfromlayer, 'layer'),
+                  #               'undo': (undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
+                  #               'redo': (undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
+                  #               },
+                  '_alignVCenter':{'copy': (copypathsfromlayer_asdict, 'layer'),
+                                'undo': (undoredo_align_fromcopy_asdict, 'layer', 'old_datas', 'operation'), 
+                                'redo': (undoredo_align_fromcopy_asdict, 'layer', 'new_datas', 'operation')
+                                }
+                 }
+
+def align_expand_params(layer: Layer, tglyph: TruGlyph, operation: str):
+    return layer, tglyph.get_undoredo(), operation 
+    
+
+@decorate_undoredo(params_undoredo, align_expand_params)
 def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all = None
@@ -151,7 +234,7 @@ def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = xMin_all - xMin
             path.transform(Transformation(xOffset=delta))
 
-
+@decorate_undoredo(params_undoredo, align_expand_params)
 def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all, xMax_all = None, None
@@ -166,11 +249,7 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # save actual paths
-    old_paths = copypathsfromlayer(layer)
-
     # modify selected paths 
-    logger_all_contents_paths(old_paths, "===== Old_layer Before Transform")
     xAvg_all = xMin_all + round(.5 * (xMax_all - xMin_all))
     for path in selectedPaths:
         xMin, _, xMax, _ = path.bounds
@@ -179,19 +258,8 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = xAvg_all - xAvg
             path.transform(Transformation(xOffset=delta))
 
-    #save news paths
-    new_paths = copypathsfromlayer(layer)    
 
-    # store action
-    action = undoredomgr.Action(operation, 
-                                functools.partial(undo_align_mem, layer, old_paths, operation), 
-                                functools.partial(undo_align_mem, layer, new_paths, operation))
-    tglyph.get_undoredo().append_action(action)
-
-    logger_all_contents_paths(new_paths, "------ New_Layer After Transform")
-    logger_all_contents_paths(old_paths, "===== Old_path after Transform")
-
-
+@decorate_undoredo(params_undoredo, align_expand_params)
 def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMax_all = None
@@ -204,8 +272,6 @@ def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # store action
-
     # modify selected paths 
     for path in selectedPaths:
         xMax = path.bounds[2]
@@ -214,6 +280,7 @@ def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(xOffset=delta))
 
 
+@decorate_undoredo(params_undoredo, align_expand_params)
 def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMax_all = None
@@ -226,8 +293,6 @@ def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # store action
-
     # modify selected paths 
     for path in selectedPaths:
         yMax = path.bounds[3]
@@ -235,9 +300,7 @@ def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = yMax_all - yMax
             path.transform(Transformation(yOffset=delta))
 
-    logging.info("ALIGN: actual paths == old paths is {}".format(layer._paths == paths))
-
-
+@decorate_undoredo(params_undoredo, align_expand_params)
 def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all, yMax_all = None, None
@@ -252,9 +315,6 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     if not selectedPaths:
         return
 
-    # save actual paths
-    old_paths = copypathsfromlayer(layer)
-
     # modify selected paths 
     yAvg_all = yMin_all + round(.5 * (yMax_all - yMin_all))
     for path in selectedPaths:
@@ -264,19 +324,8 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = yAvg_all - yAvg
             path.transform(Transformation(yOffset=delta))
 
-    # save new paths
-    new_paths = copypathsfromlayer(layer)
 
-    # store action
-    action = undoredomgr.Action(operation, 
-                                functools.partial(undo_align_mem, layer, old_paths, operation), 
-                                functools.partial(undo_align_mem, layer, new_paths, operation))
-    tglyph.get_undoredo().append_action(action)
-
-    logger_all_contents_paths(new_paths, "actual")
-    logger_all_contents_paths(old_paths, "before")
-
-
+@decorate_undoredo(params_undoredo, align_expand_params)
 def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all = None
@@ -295,38 +344,6 @@ def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
         if yMin > yMin_all:
             delta = yMin_all - yMin
             path.transform(Transformation(yOffset=delta))
-
-
-def undo_align_mem(layer: Layer, old_paths: Path, old_operation:str):
-    """ restore data paths from an undo or redo actions """
-    logging.info("ALIGN: undo_align .....")
-
-    #set old values
-    layer.paths[:] = old_paths
-    
-    # layer.paths.clear()
-    # for pos, path in enumerate(old_paths):
-    #     layer.paths.insert(pos, path)
-    # #layer._selectedPath = None
-
-    # update points
-    # for path in layer._paths:
-        # path.points.applyChange()
-    layer.paths.applyChange()
-
-    logging.info("ALIGN: actual paths after {} {}".format("undo" if undo else "redo", layer._paths[0]))
-
-
-def _alignRestore(tglyph: TruGlyph, layer: Layer, old_paths: Path, old_operation:str):
-    """ restore data paths from an undo or redo actions """
-    logger_all_contents_paths(layer._paths, "actual")
-    logger_all_contents_paths(old_paths, "before")
-    for path in layer._paths:
-        for opath in old_paths:
-            if path.id == opath.id:
-                path._graphicPath = opath._graphicPath
-
-    logging.info("ALIGN: actual paths after undo {}".format(layer._paths))
 
 
 def makePropertiesLayout(parent, font):
@@ -685,7 +702,13 @@ def _DrawText_Spacing(ctx, text, x, y, sp=1.2):
         ctx.DrawText(ch, x + offset, y)
         offset += ctx.GetTextExtent(ch)[0] + sp
 
+def transformheader_expand_params(obj, *args):
+    """ use by decorator to get three params as
+    layer, undoredomgr and operation """
+    return obj.layer, obj.layer._parent.get_undoredo(), obj._tooltips[obj._underMouseBtn]
 
+
+# @deco4class.decorator_classfunc()
 class TransformHeader(wx.Panel):
     def __init__(self, parent, font):
         super().__init__(parent)
@@ -732,6 +755,7 @@ class TransformHeader(wx.Panel):
     def layer(self):
         return wx.GetTopLevelParent(self).activeLayer
 
+    @decorate_undoredo(params_undoredo, transformheader_expand_params)
     def binaryPathOp(self, func):
         layer = self.layer
         paths = layer._paths
@@ -756,6 +780,7 @@ class TransformHeader(wx.Panel):
         paths.extend(open_)
         trufont.TruFont.updateUI()
 
+    @decorate_undoredo(params_undoredo, transformheader_expand_params)
     def removeOverlap(self):
         layer = self.layer
         paths = layer._paths
@@ -774,6 +799,7 @@ class TransformHeader(wx.Panel):
         paths.extend(others)
         trufont.TruFont.updateUI()
 
+    @decorate_undoredo(params_undoredo, transformheader_expand_params)
     def transform(self, **kwargs):
         layer = self.layer
         transformation = Transformation(**kwargs)
@@ -891,9 +917,11 @@ class TransformHeader(wx.Panel):
                 xOffset=px * (1 - xScale),
                 yOffset=py * (1 - yScale),
             )
+
         elif index == 2:
             self._yScaleCtrl.Enabled = not self._yScaleCtrl.Enabled
             self.Refresh()
+
         elif index == 3:
             ca, sa = cos_sin_deg(self._rotationCtrl.number)
             px, py = self._alignmentCtrl.origin
@@ -924,14 +952,17 @@ class TransformHeader(wx.Panel):
             angle = math.radians(self._skewCtrl.number)
             px, py = self._alignmentCtrl.origin
             self.transform(yxScale=angle, xOffset=-py * angle)
+
         elif index == 7:
             self.removeOverlap()
+
         elif index == 8:
             self.binaryPathOp(pathops.difference)
         elif index == 9:
             self.binaryPathOp(pathops.intersection)
         elif index == 10:
             self.binaryPathOp(pathops.xor)
+
         elif index == 11:
             px, _ = self._alignmentCtrl.origin
             self.transform(xScale=-1, xOffset=2 * px)

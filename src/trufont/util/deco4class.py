@@ -10,6 +10,19 @@ CALLABLES = (types.FunctionType, types.BuiltinFunctionType, types.MethodType,\
              types.BuiltinMethodType)
 LOGGER = "logger"
 
+# def append_action(operation: str, name_obj_to_save: str):
+
+#     def decorate(fn):
+    
+#         def params(*args, **kwargs)
+#             logging.debug("{} {} ({})".format(fn.__name__, operation, (",").join(str(arg for arg in args))))
+#             return fn(*args, **kwargs) 
+
+#         return params  
+
+#     return decorate
+
+
 tab = 0
 def decorator_classfunc(*excluded_method_names, **kwargs):
     """ Decorator used by class """
@@ -17,7 +30,9 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
         logger = kwargs[LOGGER]
     else:
         logger = logging.getLogger()
-    
+        logger.setLevel(logging.DEBUG)
+    logger.debug("DECO4CLASS init......")
+
     def method_decorator(fn, class_name):
         """ Example of a method decorator """
 
@@ -26,7 +41,7 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
             global tab
             try:
                 tab += 1
-                logger.debug("{}Inside {}.{}({})".format('\t'*tab, class_name, fn.__name__, args))
+                logger.debug("{}Inside {}.{}(nb args:{})".format('\t'*tab, class_name, fn.__name__, len(args)))
                 return fn(*args, **kwargs)
             finally:
                 logger.debug("{}Outside {}.{}".format('\t'*tab, class_name, fn.__name__))
