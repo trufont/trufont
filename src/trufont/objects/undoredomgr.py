@@ -12,7 +12,6 @@ import inspect
 #import dataclasses
 # constants
 
-# @deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')
 def sample_copypathsfromlayer(layer: "Layer"):
     pass 
 
@@ -30,7 +29,6 @@ params_undoredo = {
                                  }
                  } 
 
-logger = logstuff.create_stream_logger("")
 def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
     """  decorate functions that modify a glyph 
     make a save of a glyph (or a part) before the function call
@@ -54,14 +52,14 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
 
     def decorate_fn(fn):
         """ func decorate"""
-        logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
+        # logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
 
         @functools.wraps(fn)
         def decorate_args(*args, **kwargs):
             """ """
-            if logger:
-                del logger
-                logger = None
+            # if logger:
+            #     del logger
+            #     logger = None
             ret = None
             try:
                 sig = inspect.signature(fn)
@@ -85,10 +83,12 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
                     logging.debug("DECORATE_UNDOREDO: func copy:{}".format(func_copy.__name__)) 
                     logging.debug("DECORATE_UNDOREDO: func undo:{}".format(func_undo.__name__)) 
                     logging.debug("DECORATE_UNDOREDO: func redo:{}".format(func_redo.__name__)) 
+                    logging.debug("DECORATE_UNDOREDO: func expand:{}".format(func_expand_params.__name__)) 
 
                     # expand params as layer, undoredomgr and operation
                     logging.debug("DECORATE_UNDOREDO: expand params") 
                     layer, undoredo, operation = func_expand_params(*args)
+                    logging.debug("DECORATE_UNDOREDO: operation is {}".format(operation)) 
 
                     #save datas before function call
                     logging.debug("DECORATE_UNDOREDO: copy before func") 
@@ -115,7 +115,7 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
                     ret = fn(*args, **kwargs)
 
             except Exception as e:
-                logging.debug("DECORATE_UNDOREDO exception {}".format(str(e)))
+                logging.error("DECORATE_UNDOREDO exception {}".format(str(e)))
 
             finally:
                 return ret
@@ -133,6 +133,7 @@ class Action(object):
         self.callback_redo = callback_redo
 
 
+# @deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')
 class UndoRedoMgr(object):
     """ Manage memory and event abour undo/redo/append 
     actions """
@@ -141,7 +142,7 @@ class UndoRedoMgr(object):
                 "callback_on_activated", "callback_after_undo", "callback_after_redo", 
                 "callback_after_append")
 
-    def __init__(self, name: str, logger: logging.Logger=logstuff.create_stream_logger(logstuff.LOGGER_UNDOREDO)):
+    def __init__(self, name: str, logger: logging.Logger=None):
         """ init for mgr: logger for messages 
         actions store in base system: stack """
 

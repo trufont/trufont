@@ -264,6 +264,7 @@ class FontWindow(wx.Frame):
         self.tabBar.addCanvasTab(canvas)
         # set an undoredo manager to that new glyph 
         if glyph:
+            glyph.setFrame(self)
             # may be undoredo already stores in local dict ?
             if glyph.name not in self.dict_undoredomdgr:
                 self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
@@ -361,7 +362,7 @@ class FontWindow(wx.Frame):
 
         # undoredo debug menu 
         if self._debug:
-            self._logger.info("UNDOREDO: Append an debug menu")
+            self._logger.debug("UNDOREDO: Append an debug menu")
             editMenu.AppendSeparator()
             self.menu_undoredo = editMenu.Append(ID_DEBUG_UNDOREDO, tr("DEBUG: undoredo"))
             self.menu_undoredo.Enable(True)
