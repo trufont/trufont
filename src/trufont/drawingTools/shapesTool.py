@@ -158,6 +158,8 @@ class ShapesTool(BaseTool):
 
     @undoredomgr.decorate_undoredo(params_undoredo, mouseup_expand_params)
     def OnMouseUpLeftUp(self, event):
+        """ make thios method to be sure that the super().OnMouseUp() call do not 
+        bloc process of wx msgs  """
         points = self.points
         if points:
             x1, y1, x2, y2 = points

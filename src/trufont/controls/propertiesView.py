@@ -83,6 +83,7 @@ params_undoredo = {
                                  'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
                                  'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
                                  },
+                  # here just to test copy with 'unstructure_attrs_asdict'
                   '_alignVCenter':{'copy': (copypathsfromlayer_asdict, 'layer'),
                                 'undo': (undoredo_align_fromcopy_asdict, 'layer', 'old_datas', 'operation'), 
                                 'redo': (undoredo_align_fromcopy_asdict, 'layer', 'new_datas', 'operation')

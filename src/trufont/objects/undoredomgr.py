@@ -41,6 +41,8 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
             copy function to make the save    
             undo function calling when undo 
             redo function calling when redo
+        NOTE: The end of the tuple (as 'layer','old_datas', etc ...) is not useful for the moment
+
     func_expand_params is a function that decompose from *args and **kwargs of the decorated function 
     to expand to the param need by the copy, undo and redo functions - 
     Actually 3 func_expand_params erturn 3 values: Layer, UndoRedoMgr and an a sring (name of current operation)  

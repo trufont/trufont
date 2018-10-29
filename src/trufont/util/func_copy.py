@@ -27,8 +27,6 @@ def copypathsfromlayer(layer: Layer) -> List[Path]:
 
 def undoredo_fromcopy(layer: Layer, old_paths: Path, old_operation:str):
     """ restore data paths from an undo or redo actions """
-#    logging.debug("ALIGN: undoredo_align_fromcopy.....")
-
     #set old values
     layer.paths[:] = old_paths
     layer.paths.applyChange()
