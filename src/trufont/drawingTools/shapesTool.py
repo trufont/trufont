@@ -37,14 +37,9 @@ _path.CloseSubpath()
 
 
 
-
-params_undoredo = { 
-                  'OnMouseUpLeftUp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                                }
-                  }
-
+#-------------------------
+# About undoredo decorator
+#-------------------------
 def mouseup_expand_params(obj, *args):
     """ use by decorator to get three params aselif 
     layer, undoredomgr and operation """
@@ -56,6 +51,14 @@ def mouseup_expand_params(obj, *args):
         operation = "Draw ellipsis"
 
     return obj.layer, obj.layer._parent.get_undoredo(), operation 
+
+shape_params_undoredo = { 
+                       'OnMouseUpLeftUp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
+                                         'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                         'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                                         }
+                        }
+#-------------------------
 
 class ShapesTool(BaseTool):
     icon = _path

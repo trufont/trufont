@@ -47,7 +47,7 @@ def copypathsfromlayer_asdict(layer: Layer) -> Dict:
     """ produce tfont dict from obj as layer, path or .... """
 #    logging.debug("dirs of obj -> {}".format(dir(layer)[:5]))
 
-    return TFONT_CONV.unstructure_attrs_asdict(layer)
+    return TFONT_CONV.unstructure(layer)
 
 
 def undoredo_align_fromcopy_asdict(layer: Layer, old_layer_dict: Dict, old_operation:str):
@@ -56,7 +56,7 @@ def undoredo_align_fromcopy_asdict(layer: Layer, old_layer_dict: Dict, old_opera
     logging.debug("ALIGN: OBJ AS DICT {}".format(old_layer_dict))
 
     # get old values
-    old_layer = TFONT_CONV.structure_attrs_fromdict(old_layer_dict, Layer)
+    old_layer = TFONT_CONV.structure(old_layer_dict, Layer)
     logging.debug("ALIGN: PATH AS MEM {}".format(old_layer))
 
     logging.debug("ALIGN: {}".format(old_layer))        
@@ -66,36 +66,28 @@ def undoredo_align_fromcopy_asdict(layer: Layer, old_layer_dict: Dict, old_opera
     logging.debug("ALIGN: actual paths after {} {}".format(old_operation, layer._paths[:1]))
 
 
-params_undoredo = {
-                  'alignDefault':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                                },
-                  'transform':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                                 },
-                  'removeOverlap':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                                 },
-                  'binaryPathOp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                                 },
-                  # here just to test copy with 'unstructure_attrs_asdict'
-                  '_alignVCenter':{'copy': (copypathsfromlayer_asdict, 'layer'),
-                                'undo': (undoredo_align_fromcopy_asdict, 'layer', 'old_datas', 'operation'), 
-                                'redo': (undoredo_align_fromcopy_asdict, 'layer', 'new_datas', 'operation')
-                                }
-                 }
-
+#-------------------------
+# Used by undoredo decorator
+#-------------------------
 def align_expand_params(layer: Layer, tglyph: TruGlyph, operation: str):
     """Used with align functions -  Nothing to """
     return layer, tglyph.get_undoredo(), operation 
+
+align_params_undoredo = {
+                        'default':{'copy': (func_copy.copypathsfromlayer, 'layer'),
+                                  'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                  'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                                  },
+                        # here just to test copy with 'unstructure_attrs_asdict'
+                        '_alignVCenter':{'copy': (copypathsfromlayer_asdict, 'layer'),
+                                        'undo': (undoredo_align_fromcopy_asdict, 'layer', 'old_datas', 'operation'), 
+                                        'redo': (undoredo_align_fromcopy_asdict, 'layer', 'new_datas', 'operation')
+                                        }
+                        }
+#-------------------------
     
 
-@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(align_params_undoredo, align_expand_params)
 def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all = None
@@ -115,7 +107,7 @@ def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = xMin_all - xMin
             path.transform(Transformation(xOffset=delta))
 
-@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(align_params_undoredo, align_expand_params)
 def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMin_all, xMax_all = None, None
@@ -140,7 +132,7 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(xOffset=delta))
 
 
-@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(align_params_undoredo, align_expand_params)
 def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     xMax_all = None
@@ -161,7 +153,7 @@ def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(xOffset=delta))
 
 
-@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(align_params_undoredo, align_expand_params)
 def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMax_all = None
@@ -181,7 +173,7 @@ def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = yMax_all - yMax
             path.transform(Transformation(yOffset=delta))
 
-@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(align_params_undoredo, align_expand_params)
 def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all, yMax_all = None, None
@@ -206,7 +198,7 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(yOffset=delta))
 
 
-@undoredomgr.decorate_undoredo(params_undoredo, align_expand_params)
+@undoredomgr.decorate_undoredo(align_params_undoredo, align_expand_params)
 def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
     selectedPaths = []
     yMin_all = None
@@ -583,11 +575,34 @@ def _DrawText_Spacing(ctx, text, x, y, sp=1.2):
         ctx.DrawText(ch, x + offset, y)
         offset += ctx.GetTextExtent(ch)[0] + sp
 
+
+#-------------------------
+# Used by undoredo decorator
+#-------------------------
 def transformheader_expand_params(obj, *args):
     """ use by decorator to get three params as
     layer, undoredomgr and operation """
     return obj.layer, obj.layer._parent.get_undoredo(), obj._tooltips[obj._underMouseBtn]
 
+header_params_undoredo = {
+                         'default':{'copy': (func_copy.copypathsfromlayer, 'layer'),
+                                    'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
+                                    'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                                    },
+                         # 'transform':{'copy': (func_copy.copypathsfromlayer, 'layer'),
+                         #              'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
+                         #              'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                         #             },
+                         # 'removeOverlap':{'copy': (func_copy.copypathsfromlayer, 'layer'),
+                         #                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
+                         #                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                         #                 },
+                         # 'binaryPathOp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
+                         #                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
+                         #                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                         #                 },
+                        }
+#-------------------------
 
 # @deco4class.decorator_classfunc()
 class TransformHeader(wx.Panel):
@@ -636,7 +651,7 @@ class TransformHeader(wx.Panel):
     def layer(self):
         return wx.GetTopLevelParent(self).activeLayer
 
-    @undoredomgr.decorate_undoredo(params_undoredo, transformheader_expand_params)
+    @undoredomgr.decorate_undoredo(header_params_undoredo, transformheader_expand_params)
     def binaryPathOp(self, func):
         layer = self.layer
         paths = layer._paths
@@ -661,7 +676,7 @@ class TransformHeader(wx.Panel):
         paths.extend(open_)
         trufont.TruFont.updateUI()
 
-    @undoredomgr.decorate_undoredo(params_undoredo, transformheader_expand_params)
+    @undoredomgr.decorate_undoredo(header_params_undoredo, transformheader_expand_params)
     def removeOverlap(self):
         layer = self.layer
         paths = layer._paths
@@ -680,7 +695,7 @@ class TransformHeader(wx.Panel):
         paths.extend(others)
         trufont.TruFont.updateUI()
 
-    @undoredomgr.decorate_undoredo(params_undoredo, transformheader_expand_params)
+    @undoredomgr.decorate_undoredo(header_params_undoredo, transformheader_expand_params)
     def transform(self, **kwargs):
         layer = self.layer
         transformation = Transformation(**kwargs)

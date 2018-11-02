@@ -19,7 +19,7 @@ def sample_undoredo_align_fromcopy(layer: "Layer", old_paths: "Path", old_operat
     pass 
 
 params_undoredo = { 
-                  '_alignDefault':{'copy': (sample_copypathsfromlayer, 'layer'),
+                  'default':{'copy': (sample_copypathsfromlayer, 'layer'),
                                 'undo': (sample_undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
                                 'redo': (sample_undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
                                 },
@@ -29,6 +29,7 @@ params_undoredo = {
                                  }
                  } 
 
+DEFAULT_KEY="default"
 def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
     """  decorate functions that modify a glyph 
     make a save of a glyph (or a part) before the function call
@@ -71,8 +72,8 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
                 key = None 
                 if fn.__name__ in params_deco:
                     key = fn.__name__
-                elif "{}Default".format(fn.__name__[:6]) in params_deco:
-                    key = "{}Default".format(fn.__name__[:6])
+                elif DEFAULT_KEY in params_deco:
+                    key = DEFAULT_KEY
 
                 logging.debug("DECORATE_UNDOREDO: key is {}".format(key)) 
 
