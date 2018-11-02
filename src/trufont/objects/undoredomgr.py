@@ -188,7 +188,7 @@ class UndoRedoMgr(object):
         if self._redo:
             self._redo = []
         self._after_append_action()
-			
+
     def undo(self) -> Action:
         """ play undo, if undo stack is empty raises an exception (indexError)"""
         last_action = self._undo.pop()
