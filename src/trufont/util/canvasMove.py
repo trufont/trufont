@@ -47,7 +47,7 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
 
 
 def moveUILayerSelection(layer, dx, dy, option=None):
-    layer.beginUndoGroup(paths=True, anchors=True, components=True, guidelines=True)
+    layer.beginUndoGroup()
     for anchor in layer.anchors:
         if anchor.selected:
             anchor.x += dx
@@ -78,7 +78,7 @@ def moveUILayerSelection(layer, dx, dy, option=None):
     """
     undoLambda, redoLambda = layer.endUndoGroup()
     # layer._parent is an instance of class Truglyph
-    layer._parent.get_undoredo().append_action(Action("Move", undoLambda, redoLambda))
+    layer._parent.get_undoredo().append_action(Action("Move selection", undoLambda, redoLambda))
 
 def moveUIPathSelection(path, dx, dy, nudgePoints=False, slidePoints=False):
     points = path._points
