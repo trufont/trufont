@@ -2,8 +2,28 @@ from copy import copy
 from tfont.objects import Path
 
 # TODO: fold this into canvasOps when ready?
+import trufont.util.deco4class as deco4class
 
+import trufont.objects.undoredomgr as undoredomgr
+import trufont.util.func_copy as func_copy
 
+#-------------------------
+# Used by undoredo decorator
+#-------------------------
+def deleteUILayer_expand_params(obj, *args):
+    """ use by decorator to get three params as  
+    layer, undoredomgr and operation """
+
+    return obj, obj._parent.get_undoredo(), "Delete selection" 
+
+deleteUILayer_params_undoredo = { 
+                       'deleteUILayerSelection':{'copy': (func_copy.copylayerfromlayer, 'layer'),
+                                                'undo': (func_copy.undoredo_copylayerfromlayer, 'layer', 'old_layer', 'operation'), 
+                                                'redo': (func_copy.undoredo_copylayerfromlayer, 'layer', 'new_layer', 'operation')
+                                                }
+                        }
+# @deco4class.func_decorator
+@undoredomgr.decorate_undoredo(deleteUILayer_params_undoredo, deleteUILayer_expand_params)
 def deleteUILayerSelection(layer, breakPaths=False):
     # layer.beginUndoGroup()
     anchors = layer._anchors
