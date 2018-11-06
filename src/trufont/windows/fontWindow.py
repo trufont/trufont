@@ -31,9 +31,10 @@ import wx
 import wx.adv
 from wx import GetTranslation as tr
 
-import trufont.util.deco4class as deco4class
 import trufont.objects.undoredomgr as undoredomgr
 import sys
+
+import trufont.util.deco4class as deco4class
 
 ID_DESELECT = wx.NewId()
 ID_NEW_TAB = wx.NewId()
