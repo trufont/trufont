@@ -12,6 +12,8 @@ from tfont.objects import Anchor, Component, Guideline, Layer, Point
 import wx
 from wx import GetTranslation as tr
 
+import trufont.util.deco4class as deco4class
+
 # The icon for the tool's button
 _path = CreatePath()
 _path.MoveToPoint(3.018, 1.167)
@@ -43,7 +45,7 @@ _commands = ((_cursor, 255, 25),)
 _point = CreatePath()
 _point.AddRectangle(19, 19, 5, 5)
 
-
+# @deco4class.decorator_classfunc()
 class SelectionTool(BaseTool):
     icon = _path
     name = tr("Selection")
