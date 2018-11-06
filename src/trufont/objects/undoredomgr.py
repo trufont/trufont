@@ -90,12 +90,12 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
 
                     # expand params as layer, undoredomgr and operation
                     logging.debug("DECORATE_UNDOREDO: expand params") 
-                    layer, undoredo, operation = func_expand_params(*args)
-                    logging.debug("DECORATE_UNDOREDO: operation is {}".format(operation)) 
+                    obj, undoredo, operation = func_expand_params(*args)
+                    logging.debug("DECORATE_UNDOREDO: operation is {} ob {}".format(operation, obj.__class__.__name__)) 
 
                     #save datas before function call
                     logging.debug("DECORATE_UNDOREDO: copy before func") 
-                    old_datas = func_copy(layer)
+                    old_obj = func_copy(obj)
 
                     # call func
                     logging.debug("DECORATE_UNDOREDO: call func") 
@@ -103,13 +103,13 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
 
                     #save datas after function call
                     logging.debug("DECORATE_UNDOREDO: copy after func") 
-                    new_datas = func_copy(layer)
+                    new_obj = func_copy(obj)
 
                     # append action to undoredomgr
                     logging.debug("DECORATE_UNDOREDO: create action") 
                     action = Action(operation, 
-                                    functools.partial(func_undo, layer, old_datas, operation), 
-                                    functools.partial(func_redo, layer, new_datas, operation))
+                                    functools.partial(func_undo, obj, old_obj, operation), 
+                                    functools.partial(func_redo, obj, new_obj, operation))
                     logging.debug("DECORATE_UNDOREDO: append action") 
                     undoredo.append_action(action)
 
