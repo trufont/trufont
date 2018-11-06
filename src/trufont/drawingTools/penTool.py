@@ -7,6 +7,11 @@ from tfont.objects import Path, Point
 import wx
 from wx import GetTranslation as tr
 
+import trufont.objects.undoredomgr as undoredomgr
+import trufont.util.func_copy as func_copy
+
+import trufont.util.deco4class as deco4class
+
 _path = CreatePath()
 _path.MoveToPoint(14.958, 4.56)
 _path.AddLineToPoint(13.108, 2.647)
@@ -77,6 +82,7 @@ _point = CreatePath()
 _point.AddRectangle(21, 22, 5, 5)
 
 
+# @deco4class.decorator_classfunc('OnPaint', 'addCursor', 'pointCursor', 'addCursor', 'OnKeyDown', 'OnKeyUp')
 class PenTool(BaseTool):
     icon = _path
     name = tr("Pen")
