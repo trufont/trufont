@@ -16,12 +16,15 @@ from wx import GetTranslation as tr
 import logging
 from trufont.objects.truglyph import TruGlyph
 from typing import Any, Collection, Tuple, List, Dict, Callable
-import trufont.objects.undoredomgr as undoredomgr
-import trufont.util.deco4class as deco4class
-import trufont.util.func_copy as func_copy
-from tfont.converters.tfontConverter import TFontConverter
 
-TFONT_CONV = TFontConverter(None)
+import trufont.objects.undoredomgr as undoredomgr
+import trufont.util.func_copy as func_copy
+
+from tfont.converters.tfontConverter import TFontConverter
+TFONT_CONV = TFontConverter(indent=None)
+TFONT_CONVU = TFontConverter()
+
+import trufont.util.deco4class as deco4class
 
 path = CreatePath()
 path.MoveToPoint(12.0, 9.0)
@@ -47,20 +50,19 @@ def copypathsfromlayer_asdict(layer: Layer) -> Dict:
     """ produce tfont dict from obj as layer, path or .... """
 #    logging.debug("dirs of obj -> {}".format(dir(layer)[:5]))
 
-    return TFONT_CONV.unstructure(layer)
+    return TFONT_CONV.unstructure(layer._paths)
 
 
-def undoredo_align_fromcopy_asdict(layer: Layer, old_layer_dict: Dict, old_operation:str):
+def undoredo_align_fromcopy_asdict(layer: Layer, old_path_dict: Dict, old_operation:str):
     """ restore data paths from an undo or redo actions """
     logging.debug("ALIGN: undoredo_align_fromdict .....")
-    logging.debug("ALIGN: OBJ AS DICT {}".format(old_layer_dict))
+    logging.debug("ALIGN: OBJ AS DICT {}".format(old_path_dict))
 
     # get old values
-    old_layer = TFONT_CONV.structure(old_layer_dict, Layer)
-    logging.debug("ALIGN: PATH AS MEM {}".format(old_layer))
-
-    logging.debug("ALIGN: {}".format(old_layer))        
-    layer.paths[:] = old_layer.paths
+    old_paths = TFONT_CONVU.structure(old_path_dict, List[Path])
+    logging.debug("ALIGN: PATH AS MEM {}".format(old_paths))
+     
+    layer.paths[:] = old_paths
     layer.paths.applyChange()
 
     logging.debug("ALIGN: actual paths after {} {}".format(old_operation, layer._paths[:1]))
@@ -75,13 +77,13 @@ def align_expand_params(layer: Layer, tglyph: TruGlyph, operation: str):
 
 align_params_undoredo = {
                         'default':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                  'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                  'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                                  'undo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'old_paths', 'operation'), 
+                                  'redo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'new_paths', 'operation')
                                   },
                         # here just to test copy with 'unstructure_attrs_asdict'
                         '_alignVCenter':{'copy': (copypathsfromlayer_asdict, 'layer'),
-                                        'undo': (undoredo_align_fromcopy_asdict, 'layer', 'old_datas', 'operation'), 
-                                        'redo': (undoredo_align_fromcopy_asdict, 'layer', 'new_datas', 'operation')
+                                        'undo': (undoredo_align_fromcopy_asdict, 'layer', 'old_paths', 'operation'), 
+                                        'redo': (undoredo_align_fromcopy_asdict, 'layer', 'new_paths', 'operation')
                                         }
                         }
 #-------------------------
@@ -586,8 +588,8 @@ def transformheader_expand_params(obj, *args):
 
 header_params_undoredo = {
                          'default':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                    'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                    'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                                    'undo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'old_paths', 'operation'), 
+                                    'redo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'new_paths', 'operation')
                                     },
                          # 'transform':{'copy': (func_copy.copypathsfromlayer, 'layer'),
                          #              'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
