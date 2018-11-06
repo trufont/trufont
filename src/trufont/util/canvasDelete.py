@@ -25,7 +25,7 @@ deleteUILayer_params_undoredo = {
 # @deco4class.func_decorator
 @undoredomgr.decorate_undoredo(deleteUILayer_params_undoredo, deleteUILayer_expand_params)
 def deleteUILayerSelection(layer, breakPaths=False):
-    # layer.beginUndoGroup()
+    layer.beginUndoGroup()
     anchors = layer._anchors
     for name in list(anchors):
         if anchors[name].selected:
@@ -49,7 +49,9 @@ def deleteUILayerSelection(layer, breakPaths=False):
     if layer.image.selected:
         layer.image = None
     """
-    # layer.endUndoGroup()
+    undoLambda, redoLambda = layer.endUndoGroup()
+    # layer._parent is an instance of class Truglyph
+    layer._parent.get_undoredo().append_action(Action("Delete selection", undoLambda, redoLambda))
 
 
 def deleteSelection(paths):
