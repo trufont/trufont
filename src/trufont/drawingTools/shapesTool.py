@@ -38,7 +38,7 @@ _path.CloseSubpath()
 
 
 #-------------------------
-# About undoredo decorator
+# Used by undoredo decorator
 #-------------------------
 def mouseup_expand_params(obj, *args):
     """ use by decorator to get three params aselif 
@@ -54,8 +54,8 @@ def mouseup_expand_params(obj, *args):
 
 shape_params_undoredo = { 
                        'OnMouseUpLeftUp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                         'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                                         'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
+                                         'undo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'old_paths', 'operation'), 
+                                         'redo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'new_paths', 'operation')
                                          }
                         }
 #-------------------------
@@ -159,7 +159,7 @@ class ShapesTool(BaseTool):
         else:
             super().OnMotion(event)
 
-    @undoredomgr.decorate_undoredo(params_undoredo, mouseup_expand_params)
+    @undoredomgr.decorate_undoredo(shape_params_undoredo, mouseup_expand_params)
     def OnMouseUpLeftUp(self, event):
         """ make thios method to be sure that the super().OnMouseUp() call do not 
         bloc process of wx msgs  """
