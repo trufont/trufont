@@ -18,15 +18,9 @@ def sample_copypathsfromlayer(layer: "Layer"):
 def sample_undoredo_align_fromcopy(layer: "Layer", old_paths: "Path", old_operation:str):
     pass
 
-<<<<<<< HEAD
 params_undoredo = { 
-                  'default':{'copy': (sample_copypathsfromlayer, 'layer'),
+                  'default':{'copy': (sample_copypathsfromlayer, 'layer', True),
                                 'undo': (sample_undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
-=======
-params_undoredo = {
-                  '_alignDefault':{'copy': (sample_copypathsfromlayer, 'layer'),
-                                'undo': (sample_undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'),
->>>>>>> fe195648ca3c81d4d6882cd70c865bbd277a93cb
                                 'redo': (sample_undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
                                 },
                   'transform':{'copy': (sample_copypathsfromlayer, 'layer'),
@@ -86,16 +80,17 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
                 if key:
                     params = params_deco[key]
                     func_copy = params['copy'][0]
+                    params_copy = params['copy'][1:]
                     func_undo = params['undo'][0]
                     func_redo = params['redo'][0]
 
                     logging.debug("DECORATE_UNDOREDO: func copy:{}".format(func_copy.__name__))
+                    logging.debug("DECORATE_UNDOREDO: func copy:{}".format(params_copy))
                     logging.debug("DECORATE_UNDOREDO: func undo:{}".format(func_undo.__name__))
                     logging.debug("DECORATE_UNDOREDO: func redo:{}".format(func_redo.__name__))
                     logging.debug("DECORATE_UNDOREDO: func expand:{}".format(func_expand_params.__name__))
 
                     # expand params as layer, undoredomgr and operation
-<<<<<<< HEAD
                     logging.debug("DECORATE_UNDOREDO: expand params") 
                     obj, undoredo, operation = func_expand_params(*args)
                     logging.debug("DECORATE_UNDOREDO: operation is {} ob {}".format(operation, obj.__class__.__name__)) 
@@ -103,22 +98,12 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
                     #save datas before function call
                     logging.debug("DECORATE_UNDOREDO: copy before func") 
                     old_obj = func_copy(obj)
-=======
-                    logging.debug("DECORATE_UNDOREDO: expand params")
-                    layer, undoredo, operation = func_expand_params(*args)
-                    logging.debug("DECORATE_UNDOREDO: operation is {}".format(operation))
-
-                    #save datas before function call
-                    logging.debug("DECORATE_UNDOREDO: copy before func")
-                    old_datas = func_copy(layer)
->>>>>>> fe195648ca3c81d4d6882cd70c865bbd277a93cb
 
                     # call func
                     logging.debug("DECORATE_UNDOREDO: call func")
                     ret = fn(*args, **kwargs)
 
                     #save datas after function call
-<<<<<<< HEAD
                     logging.debug("DECORATE_UNDOREDO: copy after func") 
                     new_obj = func_copy(obj)
 
@@ -128,17 +113,7 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
                                     functools.partial(func_undo, obj, old_obj, operation), 
                                     functools.partial(func_redo, obj, new_obj, operation))
                     logging.debug("DECORATE_UNDOREDO: append action") 
-=======
-                    logging.debug("DECORATE_UNDOREDO: copy after func")
-                    new_datas = func_copy(layer)
 
-                    # append action to undoredomgr
-                    logging.debug("DECORATE_UNDOREDO: create action")
-                    action = Action(operation,
-                                    functools.partial(func_undo, layer, old_datas, operation),
-                                    functools.partial(func_redo, layer, new_datas, operation))
-                    logging.debug("DECORATE_UNDOREDO: append action")
->>>>>>> fe195648ca3c81d4d6882cd70c865bbd277a93cb
                     undoredo.append_action(action)
 
                 else:
@@ -209,7 +184,11 @@ class UndoRedoMgr(object):
 
     def str_state(self) -> str:
         """ show state of mgr """
-        return  "{} - undo[{}]/redo[{}]".format(self._name, self.len_undo(), self.len_redo())
+        return  "{} - UNDO[{}]->{} - REDO[{}]->{}".format(self._name, 
+                                                        self.len_undo(), 
+                                                        self._undo[-1].operation if self.len_undo() else "Nothing",
+                                                        self.len_redo(), 
+                                                        self._redo[-1].operation if self.len_redo() else "Nothing")
 
     def append_action(self, action: Action):
         """ append action to the undo stack """
