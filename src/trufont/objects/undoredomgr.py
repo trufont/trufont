@@ -2,8 +2,8 @@
 import logging
 import functools
 
-import trufont.util.deco4class as deco4class
-import trufont.util.loggingstuff as logstuff
+from tfont.objects import Layer
+# import trufont.util.deco4class as deco4class
 
 from typing import Optional, Any, Union, Tuple, Callable, Dict
 import functools
@@ -30,6 +30,7 @@ params_undoredo = {
                  }
 
 DEFAULT_KEY="default"
+
 def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
     """  decorate functions that modify a glyph:
     1. make a save of a glyph (or a part) before the function call
@@ -122,6 +123,56 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
 
             except Exception as e:
                 logging.error("DECORATE_UNDOREDO exception {}".format(str(e)))
+
+            finally:
+                return ret
+
+        return decorate_args
+
+    return decorate_fn
+
+
+def layer_decorate_undoredo(func_get_layer: Callable,  paths=True, anchors=True, components=True, guidelines=True):
+    """ work with the methods of layer as below 
+    layer.snapshot      -> make a copy of the layer (partial or not)
+    layer.setToSnapshot -> restore the copy of layer (partial or not)
+    layer.beginUndoGroup -> make a first sanpshot via layer.snaphot before a call to a decorated function 
+    layer.endUndoGroup -> make a new snapshot after the call to a decorated function
+                        -> and create two lambda functions used as undo and redo function (call on undo/redo)  
+    """ 
+    def decorate_fn(fn):
+        """ func decorate"""
+        # logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
+
+        @functools.wraps(fn)
+        def decorate_args(*args, **kwargs):
+            """ """
+            try:
+                sig = inspect.signature(fn)
+                logging.debug("LAYER_DECORATE_UNDOREDO: signature{}".format(sig))
+
+                # get layer obj 
+                logging.debug("LAYER_DECORATE_UNDOREDO: get layer and operation") 
+                layer, operation = func_get_layer(*args, **kwargs)
+                undoredo = layer._parent.get_undoredo()
+
+                logging.debug("LAYER_DECORATE_UNDOREDO: copy before func") 
+                layer.beginUndoGroup(paths, anchors, components, guidelines)
+
+                # call func
+                logging.debug("LAYER_DECORATE_UNDOREDO: call func")
+                ret = fn(*args, **kwargs)
+
+                #save datas after function call
+                logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
+                undo, redo = layer.endUndoGroup()
+
+                # append action to undoredomgr
+                logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(operation)) 
+                undoredo.append_action(Action(operation, undo, redo))
+
+            except Exception as e:
+                logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
 
             finally:
                 return ret

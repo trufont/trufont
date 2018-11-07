@@ -10,11 +10,11 @@ import trufont.util.func_copy as func_copy
 #-------------------------
 # Used by undoredo decorator
 #-------------------------
-def deleteUILayer_expand_params(obj, *args):
+def deleteUILayer_expand_params(obj, *args, **kwargs):
     """ use by decorator to get three params as  
     layer, undoredomgr and operation """
 
-    return obj, obj._parent.get_undoredo(), "Delete selection" 
+    return obj, "Delete selection" 
 
 deleteUILayer_params_undoredo = { 
                        'deleteUILayerSelection':{'copy': (func_copy.copylayerfromlayer, 'layer'),
@@ -23,9 +23,9 @@ deleteUILayer_params_undoredo = {
                                                 }
                         }
 # @deco4class.func_decorator
-@undoredomgr.decorate_undoredo(deleteUILayer_params_undoredo, deleteUILayer_expand_params)
+@undoredomgr.layer_decorate_undoredo(deleteUILayer_expand_params)
 def deleteUILayerSelection(layer, breakPaths=False):
-    layer.beginUndoGroup()
+#    layer.beginUndoGroup()
     anchors = layer._anchors
     for name in list(anchors):
         if anchors[name].selected:
@@ -49,9 +49,9 @@ def deleteUILayerSelection(layer, breakPaths=False):
     if layer.image.selected:
         layer.image = None
     """
-    undoLambda, redoLambda = layer.endUndoGroup()
+ #   undoLambda, redoLambda = layer.endUndoGroup()
     # layer._parent is an instance of class Truglyph
-    layer._parent.get_undoredo().append_action(Action("Delete selection", undoLambda, redoLambda))
+ #   layer._parent.get_undoredo().append_action(undoredomgr.Action("Delete selection", undoLambda, redoLambda))
 
 
 def deleteSelection(paths):
