@@ -132,12 +132,16 @@ class BaseTool(object):
         elif event.IsKeyInCategory(wx.WXK_CATEGORY_CUT):
             deleteUILayerSelection(self.layer, breakPaths=event.AltDown())
         elif event.GetKeyCode() == wx.WXK_TAB:
+            # Changes only the selection
+            # TODO: make this undo-able (in particular the current
+            # layer.selection may contain many things, not just one point)
             layer = self.layer
             point = None
-            for sel in layer.selection:
+            for sel in layer.selection: # find any selected point
                 if isinstance(sel, Point):
                     point = sel
             if point is not None:
+                # select next or previous point
                 # typical case where point.nextPoint/point.prevPoint
                 # would make a lot of sense
                 path = point.path
@@ -146,26 +150,25 @@ class BaseTool(object):
                 if event.ShiftDown():
                     newPoint = points[index - 1]
                 else:
-                    ptIndex = index + 1
-                    if ptIndex >= len(points):
-                        ptIndex -= len(points)
+                    ptIndex = (index + 1) % len(points)
                     newPoint = points[ptIndex]
                 layer.clearSelection()
                 newPoint.selected = True
         elif event.GetKeyCode() == wx.WXK_RETURN:
-            # self.layer.beginUndoGroup()
+            layer = self.layer
+            layer.beginUndoGroup(paths=True, anchors=False, components=False, guidelines=False)
             # FIXME: can't we directly access the indices of the selected points?
             for path in self.layer.paths:
                 points = path.points
                 for index, point in enumerate(points):
                     if point.type is None or not point.selected:
                         continue
-                    if points[index - 1].type is not None:
-                        ptIndex = (index + 1) % len(points)
-                        if points[ptIndex].type is not None:
-                            continue
+                    if (points[index - 1].type is not None) and \
+                        (points[(index+1)%len(points)].type is not None):
+                        continue
                     point.smooth = not point.smooth
-            # self.layer.endUndoGroup()
+            undoLambda, redoLambda = layer.endUndoGroup()
+            layer._parent.get_undoredo().append_action(Action("Toggle smooth", undoLambda, redoLambda))
         else:
             event.Skip()
             return
