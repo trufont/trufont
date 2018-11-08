@@ -67,7 +67,7 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
             ret = None
             try:
                 sig = inspect.signature(fn)
-                logging.debug("DECORATE_UNDOREDO: signature{}".format(sig))
+                logging.debug("DECORATE_UNDOREDO: {}{}".format(fn.__name__, sig))
 
                 #functions from dict
                 key = None
@@ -132,7 +132,7 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
     return decorate_fn
 
 
-def layer_decorate_undoredo(func_get_layer: Callable,  paths=True, anchors=True, components=True, guidelines=True):
+def layer_decorate_undoredo(func_get_layer: Callable, operation="None", paths=True, anchors=True, components=True, guidelines=True):
     """ work with the methods of layer as below 
     layer.snapshot      -> make a copy of the layer (partial or not)
     layer.setToSnapshot -> restore the copy of layer (partial or not)
@@ -153,7 +153,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,  paths=True, anchors=True,
 
                 # get layer obj 
                 logging.debug("LAYER_DECORATE_UNDOREDO: get layer and operation") 
-                layer, operation = func_get_layer(*args, **kwargs)
+                layer = func_get_layer(*args, **kwargs)
                 undoredo = layer._parent.get_undoredo()
 
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy before func") 
