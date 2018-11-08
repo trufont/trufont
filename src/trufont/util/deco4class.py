@@ -22,7 +22,7 @@ LOGGER = "logger"
 
 #     return decorate
 
-tabf = 0
+tab = 0
 def func_decorator(fn):
     """ Example of a method decorator """
     logger = logging.getLogger()
@@ -30,18 +30,17 @@ def func_decorator(fn):
 
     @functools.wraps(fn)       
     def decorator(*args, **kwargs):
-        global tabf
+        global tab
         try:
-            tabf += 1
-            logger.debug("{}Inside {}(nb args:{})".format('\t'*tabf, fn.__name__, len(args)))
+            tab += 1
+            logger.debug("{}Inside {}(nb args:{})".format('\t'*tab, fn.__name__, len(args)))
             return fn(*args, **kwargs)
         finally:
-            logger.debug("{}Outside {}".format('\t'*tabf, fn.__name__))
-            tabf -= 1
+            logger.debug("{}Outside {}".format('\t'*tab, fn.__name__))
+            tab -= 1
     
     return decorator
 
-tabd = 0
 def decorator_classfunc(*excluded_method_names, **kwargs):
     """ Decorator used by class """
     if LOGGER in kwargs:
@@ -55,14 +54,14 @@ def decorator_classfunc(*excluded_method_names, **kwargs):
 
         @functools.wraps(fn)       
         def decorator(*args, **kwargs):
-            global tabd
+            global tab
             try:
-                tabd += 1
-                logger.debug("{}Inside {}.{}(nb args:{})".format('\t'*tabd, class_name, fn.__name__, len(args)))
+                tab += 1
+                logger.debug("{}Inside {}.{}(nb args:{})".format('\t'*tab, class_name, fn.__name__, len(args)))
                 return fn(*args, **kwargs)
             finally:
-                logger.debug("{}Outside {}.{}".format('\t'*tabd, class_name, fn.__name__))
-                tabd -= 1
+                logger.debug("{}Outside {}.{}".format('\t'*tab, class_name, fn.__name__))
+                tab -= 1
 		
         return decorator
     
