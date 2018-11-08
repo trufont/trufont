@@ -31,7 +31,7 @@ params_undoredo = {
 
 DEFAULT_KEY="default"
 
-def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
+def old_decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
     """  decorate functions that modify a glyph:
     1. make a save of a glyph (or a part) before the function call
     2. call the function
@@ -148,13 +148,20 @@ def layer_decorate_undoredo(func_get_layer: Callable, operation="None", paths=Tr
         def decorate_args(*args, **kwargs):
             """ """
             try:
-                sig = inspect.signature(fn)
-                logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, sig))
+                logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
                 # get layer obj 
-                logging.debug("LAYER_DECORATE_UNDOREDO: get layer and operation") 
-                layer = func_get_layer(*args, **kwargs)
+                logging.debug("LAYER_DECORATE_UNDOREDO: get params") 
+                params = func_get_layer(*args, **kwargs)
+                logging.debug("LAYER_DECORATE_UNDOREDO: ->{}".format(params)) 
+                if isinstance(params, Tuple):
+                    layer = params[0]
+                    op = params[-1]
+                else:
+                    op = operation
+                    layer = params
                 undoredo = layer._parent.get_undoredo()
+                logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}".format(op))
 
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy before func") 
                 layer.beginUndoGroup(paths, anchors, components, guidelines)
@@ -168,8 +175,8 @@ def layer_decorate_undoredo(func_get_layer: Callable, operation="None", paths=Tr
                 undo, redo = layer.endUndoGroup()
 
                 # append action to undoredomgr
-                logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(operation)) 
-                undoredo.append_action(Action(operation, undo, redo))
+                logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
+                undoredo.append_action(Action(op, undo, redo))
 
             except Exception as e:
                 logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
