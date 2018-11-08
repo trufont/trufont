@@ -5,7 +5,6 @@ import wx
 from wx import GetTranslation as tr
 
 import trufont.objects.undoredomgr as undoredomgr
-import trufont.util.func_copy as func_copy
 
 _path = CreatePath()
 _path.MoveToPoint(1.0, 0.975)
@@ -36,29 +35,6 @@ _cpath2.AddLineToPoint(15.5, 14.5)
 _cpath2.CloseSubpath()
 
 _commands = ((_cpath1, 0, 0), (_cpath2, 230, 0))
-
-#-------------------------
-# Used by undoredo decorator
-#-------------------------
-def mouseup_expand_params(obj, *args):
-    """ use by decorator to get three params aselif 
-    layer, undoredomgr and operation """
-    if obj.drawRectangle:
-        operation =  "Draw rectangle"
-    elif obj.originAtCenter:
-        operation = "Draw Circle"
-    else:
-        operation = "Draw ellipsis"
-
-    return obj.layer, obj.layer._parent.get_undoredo(), operation 
-
-knife_params_undoredo = { 
-                       'OnMouseUpLeftUp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                         'undo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'old_datas', 'operation'), 
-                                         'redo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'new_datas', 'operation')
-                                         }
-                        }
-#-------------------------
 
 class KnifeTool(BaseTool):
     icon = _path
@@ -101,21 +77,23 @@ class KnifeTool(BaseTool):
         else:
             super().OnMotion(event)
 
-@undoredomgr.decorate_undoredo(knife_params_undoredo, mouseup_expand_params)
-def OnMouseUpLeftUp(self, event):
-    """ make thios method to be sure that the super().OnMouseUp() call do not 
-    bloc process of wx msgs  """
-    points = self.points
-    if points: #  is not None:
-        layer = self.layer
-        if layer: # is not None:
-            origin = self.origin
-            layer.clearSelection()
-            layer.sliceLine(origin.x, origin.y, *points[-1])
-            trufont.TruFont.updateUI()
-        else:
-            self.canvas.Refresh()
-    self.origin = self.points = None
+    @undoredomgr.layer_decorate_undoredo((lambda *args, **kwargs: args[0].layer), 
+                                         operation="Knife cut something",
+                                         paths=True, guidelines=False, components=False, anchors=False)
+    def OnMouseUpLeftUp(self, event):
+        """ make thios method to be sure that the super().OnMouseUp() call do not 
+        bloc process of wx msgs  """
+        points = self.points
+        if points: #  is not None:
+            layer = self.layer
+            if layer: # is not None:
+                origin = self.origin
+                layer.clearSelection()
+                layer.sliceLine(origin.x, origin.y, *points[-1])
+                trufont.TruFont.updateUI()
+            else:
+                self.canvas.Refresh()
+        self.origin = self.points = None
 
     def OnMouseUp(self, event):
         if event.LeftUp():
