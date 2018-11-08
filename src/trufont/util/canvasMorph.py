@@ -1,6 +1,8 @@
 from copy import copy
 from tfont.objects import Path
 
+import trufont.objects.undoredomgr as undoredomgr
+
 
 def atOpenBoundary(point):
     path = point._parent
@@ -10,7 +12,16 @@ def atOpenBoundary(point):
     return False
 
 
-# Path.breakAt(index) ?
+#-------------------------
+# Used by undoredo decorator
+#-------------------------
+def path_expand_params(obj, *args, **kwargs):
+    """ return layer of object here a path"""
+    return obj._parent
+#-------------------------
+
+@undoredomgr.layer_decorate_undoredo(path_expand_params, operation="Break path", 
+                                     paths=True, guidelines=False, components=False, anchors=False)
 def breakPath(path, index):
     points = path._points
     point = points[index]
@@ -34,6 +45,8 @@ def breakPath(path, index):
 
 
 # Layer.joinPaths() ?
+@undoredomgr.layer_decorate_undoredo(path_expand_params, operation="Join paths", 
+                                     paths=True, guidelines=False, components=False, anchors=False)
 def joinPaths(path, atStart, otherPath, atOtherStart, mergeJoin=False):
     if path is otherPath:
         if atStart == atOtherStart:

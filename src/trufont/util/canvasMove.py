@@ -1,5 +1,6 @@
 from trufont.util import bezierMath
-from trufont.objects.undoredomgr import Action
+import trufont.objects.undoredomgr as undoredomgr
+
 
 def nudgeUICurve(on1, off1, off2, on2, dx, dy):
     if on2.selected != on1.selected:
@@ -35,7 +36,7 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
     Given three points p1, p2, pt this rotates pt around p2 such that p1,p2 and
     p1,pt are collinear.
     """
-    # we could probably use squared distance here, at least inline the calculus
+    # we could probably use squared distance here, atlambda *args, **kwargs: args[0] least inline the calculus
     p2p_l = bezierMath.distance(pt.x, pt.y, x2, y2)
     p1p2_l = bezierMath.distance(x1, y1, x2, y2)
     if not p1p2_l:
@@ -45,9 +46,10 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
     pt.x = x1 + (x2 - x1) * t
     pt.y = y1 + (y2 - y1) * t
 
-
+@undoredomgr.layer_decorate_undoredo(lambda *args, **kwargs: args[0], operation="Move selection", 
+                                     paths=True, guidelines=True, components=True, anchors=True)
 def moveUILayerSelection(layer, dx, dy, option=None):
-    layer.beginUndoGroup()
+#    layer.beginUndoGroup()
     for anchor in layer.anchors:
         if anchor.selected:
             anchor.x += dx
@@ -76,9 +78,9 @@ def moveUILayerSelection(layer, dx, dy, option=None):
     if image.selected:
         image.move(delta)
     """
-    undoLambda, redoLambda = layer.endUndoGroup()
+#    undoLambda, redoLambda = layer.endUndoGroup()
     # layer._parent is an instance of class Truglyph
-    layer._parent.get_undoredo().append_action(Action("Move selection", undoLambda, redoLambda))
+#    layer._parent.get_undoredo().append_action(Action("Move selection", undoLambda, redoLambda))
 
 def moveUIPathSelection(path, dx, dy, nudgePoints=False, slidePoints=False):
     points = path._points
