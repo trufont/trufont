@@ -67,7 +67,7 @@ def decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
             ret = None
             try:
                 sig = inspect.signature(fn)
-                logging.debug("DECORATE_UNDOREDO: {}{}".format(fn.__name__, sig))
+                logging.debug("DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, sig))
 
                 #functions from dict
                 key = None
@@ -149,7 +149,7 @@ def layer_decorate_undoredo(func_get_layer: Callable, operation="None", paths=Tr
             """ """
             try:
                 sig = inspect.signature(fn)
-                logging.debug("LAYER_DECORATE_UNDOREDO: signature{}".format(sig))
+                logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, sig))
 
                 # get layer obj 
                 logging.debug("LAYER_DECORATE_UNDOREDO: get layer and operation") 
