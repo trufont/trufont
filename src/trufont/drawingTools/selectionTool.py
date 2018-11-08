@@ -13,6 +13,7 @@ import wx
 from wx import GetTranslation as tr
 
 import trufont.util.deco4class as deco4class
+import trufont.objects.undoredomgr as undoredomgr
 
 # The icon for the tool's button
 _path = CreatePath()
@@ -44,6 +45,13 @@ _commands = ((_cursor, 255, 25),)
 
 _point = CreatePath()
 _point.AddRectangle(19, 19, 5, 5)
+
+#-------------------------
+# Used by undoredo decorator
+#-------------------------
+def selectionTool_expand_params(obj, *args, **kwargs):
+    return obj.layer 
+#-------------------------
 
 # @deco4class.decorator_classfunc()
 class SelectionTool(BaseTool):
@@ -81,12 +89,15 @@ class SelectionTool(BaseTool):
         return cursor
 
     # helpers
-
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Create anchor", 
+                                         paths=False, guidelines=False, components=False, anchors=True)
     def createAnchor(self, *_):
         pos = self._cachedPos
         self.layer.anchors["new anchor"] = Anchor(pos.x, pos.y)
         trufont.TruFont.updateUI()
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Create component", 
+                                         paths=False, guidelines=False, components=True, anchors=False)
     def createComponent(self, *_):
         raise NotImplementedError
         layer = self.layer
@@ -95,22 +106,32 @@ class SelectionTool(BaseTool):
             layer.components.append(Component(newGlyph.name))
             trufont.TruFont.updateUI()
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Delete guideline", 
+                                     paths=False, guidelines=False, components=True, anchors=False)
     def createGuideline(self, *_):
         pos = self._cachedPos
         self.layer.guidelines.append(Guideline(pos.x, pos.y, 0))
         trufont.TruFont.updateUI()
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Decompose component", 
+                                     paths=False, guidelines=False, components=True, anchors=False)
     def decomposeComponent(self, *_):
         item = self.mouseItem
         item.decompose()
         trufont.TruFont.updateUI()
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Lock component", 
+                                     paths=False, guidelines=False, components=True, anchors=False)
     def lockComponent(self, *_):
         raise NotImplementedError
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Toggle guideline", 
+                                     paths=False, guidelines=True, components=False, anchors=False)
     def lockGuideline(self, *_):
         raise NotImplementedError
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Toggle guideline", 
+                                     paths=False, guidelines=True, components=False, anchors=False)
     def toggleGuideline(self, *_):
         item = self.mouseItem
         parent = item._parent
@@ -129,12 +150,15 @@ class SelectionTool(BaseTool):
         item_ = self.canvas.itemAt(pos, skipElement=item.point)
         if not (item_.__class__ is PointRecord and atOpenBoundary(item_.point)):
             return
+        # joinPaths is decorated
         joinPaths(item.path, not item.index, item_.path, not item_.index, True)
         trufont.TruFont.updateUI()
 
     def renameItem(self, item):
         raise NotImplementedError
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Reverse path", 
+                                         paths=True, guidelines=False, components=False, anchors=False)
     def reverse(self, *_):
         target = self._targetPath
         if target is not None:
@@ -150,6 +174,8 @@ class SelectionTool(BaseTool):
                 path.reverse()
         trufont.TruFont.updateUI()
 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Set start point", 
+                                         paths=True, guidelines=False, components=False, anchors=False)
     def setStartPoint(self, *_):
         item = self.mouseItem
         item.path.setStartPoint(item.index)
