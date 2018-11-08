@@ -46,7 +46,7 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
     pt.x = x1 + (x2 - x1) * t
     pt.y = y1 + (y2 - y1) * t
 
-@undoredomgr.layer_decorate_undoredo(lambda *args, **kwargs: args[0], operation="Move selection", 
+@undoredomgr.layer_decorate_undoredo((lambda *args, **kwargs: args[0]), operation="Move selection", 
                                      paths=True, guidelines=True, components=True, anchors=True)
 def moveUILayerSelection(layer, dx, dy, option=None):
 #    layer.beginUndoGroup()

@@ -7,7 +7,7 @@ import wx
 from wx import GetTranslation as tr
 
 import trufont.objects.undoredomgr as undoredomgr
-import trufont.util.func_copy as func_copy
+
 
 
 _path = CreatePath()
@@ -50,14 +50,7 @@ def mouseup_expand_params(obj, *args):
     else:
         operation = "Draw ellipsis"
 
-    return obj.layer, obj.layer._parent.get_undoredo(), operation 
-
-shape_params_undoredo = { 
-                       'OnMouseUpLeftUp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                         'undo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'old_paths', 'operation'), 
-                                         'redo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'new_paths', 'operation')
-                                         }
-                        }
+    return obj.layer, operation 
 #-------------------------
 
 class ShapesTool(BaseTool):
@@ -159,7 +152,8 @@ class ShapesTool(BaseTool):
         else:
             super().OnMotion(event)
 
-    @undoredomgr.decorate_undoredo(shape_params_undoredo, mouseup_expand_params)
+    @undoredomgr.layer_decorate_undoredo(mouseup_expand_params, 
+                                         paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseUpLeftUp(self, event):
         """ make thios method to be sure that the super().OnMouseUp() call do not 
         bloc process of wx msgs  """

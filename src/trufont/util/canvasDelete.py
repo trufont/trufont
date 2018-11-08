@@ -7,7 +7,7 @@ import trufont.objects.undoredomgr as undoredomgr
 
 
 # @deco4class.func_decorator
-@undoredomgr.layer_decorate_undoredo(lambda *args, **kwargs: args[0], operation="Delete selection")
+@undoredomgr.layer_decorate_undoredo((lambda *args, **kwargs: args[0]), operation="Delete selection")
 def deleteUILayerSelection(layer, breakPaths=False):
     anchors = layer._anchors
     for name in list(anchors):
