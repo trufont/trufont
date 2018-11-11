@@ -4,6 +4,7 @@ import trufont
 # from trufont.controls.layerDialogs import AddComponentDialog, RenameDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.misc import GuidelineSegment, PointRecord, SegmentRecord
+from trufont.objects.undoredomgr import Action
 from trufont.util import platformSpecific
 from trufont.util.canvasMorph import atOpenBoundary, joinPaths
 from trufont.util.canvasMove import moveUILayerSelection, rotateUIPointAroundRefLine
@@ -66,6 +67,8 @@ class SelectionTool(BaseTool):
         self.oldPath = None
         self.oldSelection = set()
         self.rubberBandRect = None
+
+        self.preparedUndo = False
 
         # TODO flush on dpi change event. need wx 3.1 and beyond...
         self._cursor = None
@@ -256,13 +259,21 @@ class SelectionTool(BaseTool):
         else:
             canvas.SetCursor(self.cursor)
 
+    def prepareUndo(self):
+        """A local function to ask the layer to prepare for undo but doing so
+        only once if prepareUndo() is called several time during event handling.
+        Also layer.endUndoGroup() will be called once, and only if prepareUndo()
+        was called."""
+        if not self.preparedUndo:
+            layer.beginUndoGroup()
+            self.preparedUndo = True
+
     def OnMouseDown(self, event):
         if not event.LeftDown():
             super().OnMouseDown(event)
             return
         canvas = self.canvas
         layer = self.layer
-        # self.layer.beginUndoGroup()
         self.origin = pos = event.GetCanvasPosition()
         item = self.mouseItem
         if item is not None:
@@ -381,6 +392,7 @@ class SelectionTool(BaseTool):
                 option = "slide"
             else:
                 option = None
+            self.prepareUndo()
             moveUILayerSelection(layer, dx, dy, option=option)
         else:
             x2, y2 = pos.Get()
@@ -417,7 +429,10 @@ class SelectionTool(BaseTool):
             self.oldPath = None
             self.oldSelection = set()
             self.rubberBandRect = None
-            # self.layer.endUndoGroup()
+            if self.preparedUndo:
+                self.preparedUndo = False
+                layer = self.layer
+                layer._parent.get_undoredo().append_action(Action("Move selection", *layer.endUndoGroup()))
             self.canvas.Refresh()
         else:
             super().OnMouseUp(event)
