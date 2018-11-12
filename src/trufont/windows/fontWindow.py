@@ -505,14 +505,23 @@ class FontWindow(wx.Frame):
         menuBar.Append(windowMenu, tr("&Window"))
         menuBar.Append(helpMenu, wx.GetStockLabel(wx.ID_HELP))
         self.SetMenuBar(menuBar)
-
+# 
 
     def OnUpdateUndoRedoMenu(self, undoredo: undoredomgr.UndoRedoMgr):
         """ update redo/undo status menu on each activation """
         self._logger.info("UNDOREDO: OnUpdateUndoRedoMenu {}".format(undoredo.str_state()))
+        self.menu_undo.Enable(undoredo.can_undo())
+        if undoredo.can_undo():
+            self.menu_undo.SetText("Undo '{}'\tCtrl+Z".format(undoredo.undo_next()))
+        else:
+            self.menu_undo.SetText("Undo\tCtrl+Z") 
 
-        self.menu_undo.Enable(undoredo.len_undo() > 0)
-        self.menu_redo.Enable(undoredo.len_redo() > 0)
+        self.menu_redo.Enable(undoredo.can_redo())
+        if undoredo.can_redo():
+            self.menu_redo.SetText("Redo '{}'\tCtrl+Shift+Z".format(undoredo.redo_next()))
+        else:
+            self.menu_redo.SetText("Redo\ttCtrl+Shift+Z") 
+
         if self._debug:
             self.menu_undoredo.SetText("DEBUG: " + undoredo.str_state())
 
@@ -707,7 +716,6 @@ class FontWindow(wx.Frame):
         self.OnUpdateUndoRedoMenu(tab.undoredo)
 
 
-
     def OnRedo(self, event):
         tab = self.bookCtrl.GetCurrentPage()
         self.Refresh()
@@ -730,7 +738,8 @@ class FontWindow(wx.Frame):
             raise NotImplementedError
         else:
             clipboard.store(layer)
-            deleteUILayerSelection(layer, breakPaths=True)
+            # undoredo acion done in deleteUILayerSelection
+            deleteUILayerSelection(layer, origin="Cut selection", breakPaths=True)
             trufont.TruFont.updateUI()
 
     def OnCopy(self, event):
@@ -751,6 +760,7 @@ class FontWindow(wx.Frame):
         if self.currentTab.view is cellView:
             raise NotImplementedError
         else:
+            # undoredo acion done in retrieve
             if clipboard.retrieve(layer):
                 trufont.TruFont.updateUI()
 

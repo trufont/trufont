@@ -3,10 +3,11 @@ from tfont.converters import TFontConverter
 from tfont.objects import Anchor, Component, Guideline, Layer, Path
 import wx
 from typing import List
+import trufont.objects.undoredomgr as undoredomgr
 
 # we need to serialize the selected attribute
 
-
+@undoredomgr.layer_decorate_undoredo((lambda *args: args[0]), operation="Paste selection") 
 def retrieve(layer: Layer) -> bool:
     data = wx.TextDataObject()
     clipboard = wx.Clipboard.Get()
