@@ -5,10 +5,12 @@ from tfont.objects import Path
 import trufont.util.deco4class as deco4class
 import trufont.objects.undoredomgr as undoredomgr
 
+def expands_params(layer, origin="Delete selection", breakPaths=False):
+    return layer, origin
 
 # @deco4class.func_decorator
-@undoredomgr.layer_decorate_undoredo((lambda *args, **kwargs: args[0]), operation="Delete selection")
-def deleteUILayerSelection(layer, breakPaths=False):
+@undoredomgr.layer_decorate_undoredo(expands_params)
+def deleteUILayerSelection(layer, origin="Delete selection", breakPaths=False):
     anchors = layer._anchors
     for name in list(anchors):
         if anchors[name].selected:
