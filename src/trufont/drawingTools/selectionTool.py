@@ -109,8 +109,8 @@ class SelectionTool(BaseTool):
             layer.components.append(Component(newGlyph.name))
             trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Delete guideline", 
-                                     paths=False, guidelines=False, components=True, anchors=False)
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Create guideline", 
+                                     paths=False, guidelines=True, components=False, anchors=False)
     def createGuideline(self, *_):
         pos = self._cachedPos
         self.layer.guidelines.append(Guideline(pos.x, pos.y, 0))
@@ -128,7 +128,7 @@ class SelectionTool(BaseTool):
     def lockComponent(self, *_):
         raise NotImplementedError
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Toggle guideline", 
+    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Lock guideline", 
                                      paths=False, guidelines=True, components=False, anchors=False)
     def lockGuideline(self, *_):
         raise NotImplementedError
@@ -265,7 +265,7 @@ class SelectionTool(BaseTool):
         Also layer.endUndoGroup() will be called once, and only if prepareUndo()
         was called."""
         if not self.preparedUndo:
-            layer.beginUndoGroup()
+            self.layer.beginUndoGroup()
             self.preparedUndo = True
 
     def OnMouseDown(self, event):
@@ -434,6 +434,7 @@ class SelectionTool(BaseTool):
                 layer = self.layer
                 layer._parent.get_undoredo().append_action(Action("Move selection", *layer.endUndoGroup()))
             self.canvas.Refresh()
+            trufont.TruFont.updateUI()
         else:
             super().OnMouseUp(event)
 
