@@ -6,6 +6,7 @@ from typing import Any, Tuple, List
 import logging
 
 class TruGlyph(Glyph):
+	__slots__ = ("_logger", "_undoredo", "_frame" )
 	""" class from tfontGlyph to intercep """
 	def __init__(self, name: str, unicodes: List, logger: logging.Logger=logging.getLogger(), 
 				*args: Tuple):
@@ -20,11 +21,6 @@ class TruGlyph(Glyph):
 		return self._logger
 
 	
-    # def setFrame(self, frame):
-    #     self._frame = frame
-    #     if frame:
-    #         self._undoredo.set_callback_after_append(frame.OnUpdateUndoRedoMenu, self)
-
 	def get_undoredo(self):
 		if not self._undoredo:
 			self._undoredo = undoredomgr.UndoRedoMgr(self.name, self._logger)
