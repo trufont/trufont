@@ -555,25 +555,6 @@ def header_expand_params(obj, *args, **kwargs):
     """ use by decorator to get three params as
     layer, undoredomgr and operation """
     return obj.layer, obj._tooltips[obj._underMouseBtn]
-
-header_params_undoredo = {
-                         'default':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                                    'undo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'old_paths', 'operation'), 
-                                    'redo': (func_copy.undoredo_copypathsfromlayer, 'layer', 'new_paths', 'operation')
-                                    },
-                         # 'transform':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                         #              'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                         #              'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                         #             },
-                         # 'removeOverlap':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                         #                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                         #                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                         #                 },
-                         # 'binaryPathOp':{'copy': (func_copy.copypathsfromlayer, 'layer'),
-                         #                 'undo': (func_copy.undoredo_fromcopy, 'layer', 'old_datas', 'operation'), 
-                         #                 'redo': (func_copy.undoredo_fromcopy, 'layer', 'new_datas', 'operation')
-                         #                 },
-                        }
 #-------------------------
 
 # @deco4class.decorator_classfunc()
