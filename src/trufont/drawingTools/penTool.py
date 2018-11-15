@@ -12,6 +12,8 @@ import trufont.util.func_copy as func_copy
 
 import trufont.util.deco4class as deco4class
 
+import logging
+
 _path = CreatePath()
 _path.MoveToPoint(14.958, 4.56)
 _path.AddLineToPoint(13.108, 2.647)
@@ -236,6 +238,7 @@ class PenTool(BaseTool):
         selPoint = self.selectedPoint()
         # if we click an on curve, join it at boundaries or break the path
         if isinstance(mouseItem, PointRecord):
+            logging.info("PENTOOL: OnMouseDown point record")
             mousePoint = mouseItem.point
             mousePath = mousePoint.path
             if atOpenBoundary(mousePoint):
@@ -247,27 +250,27 @@ class PenTool(BaseTool):
                         lastOn = selPoints[-1]
                         self.stashedOffCurve = (selPoint, lastOn.smooth)
                         lastOn.smooth = False
-                    joinPaths(
-                        selPath,
-                        selPoints[0] is selPoint,
-                        mousePath,
-                        mousePath.points[0] is mousePoint,
-                    )
+                    logging.info("PENTOOL: OnMouseDown point record - join path")
+                    joinPaths(selPath, selPoints[0] is selPoint, mousePath, mousePath.points[0] is mousePoint)
                     self.targetPath = selPath
             else:
+                logging.info("PENTOOL: OnMouseDown point record - break path")
                 # the api could even just be the point...
                 breakPath(mousePath, mousePath.points.index(mousePoint))
             if selPoint:
                 selPoint.selected = False
             mousePoint.selected = True
         elif isinstance(mouseItem, SegmentRecord):
+            logging.info("PENTOOL: OnMouseDown segment record")
             # sucks that we gotta reproject (canvas.segmentAt does it already),
             # save projection tValue in the SegmentRecord?
             _, _, t = mouseItem.segment.projectPoint(pos.x, pos.y)
+            logging.info("PENTOOL: OnMouseDown segment record - split segment")
             segment = mouseItem.segments.splitSegment(mouseItem.index, t)
             layer.clearSelection()
             segment.onCurve.selected = True
         else:
+            logging.info("PENTOOL: other record")
             x, y = pos.x, pos.y
             # otherwise, add a point to current path if applicable
             if selPoint and atOpenBoundary(selPoint):
@@ -283,9 +286,7 @@ class PenTool(BaseTool):
                     # for shift origin, always use an onCurve
                     lastPoint = lastOn
                 if event.ShiftDown():
-                    pos = self.clampToOrigin(
-                        pos, wx.RealPoint(lastPoint.x, lastPoint.y)
-                    )
+                    pos = self.clampToOrigin(pos, wx.RealPoint(lastPoint.x, lastPoint.y))
                     x, y = pos.x, pos.y
                 pointType = "line"
             # or create a new one
@@ -294,12 +295,15 @@ class PenTool(BaseTool):
                 points = path.points
                 layer.paths.append(path)
                 pointType = "move"
+            
+            logging.info("PENTOOL: OnMouseDown other record - add point")
             # in any case, unselect all points (*click*) and enable new point
             layer.clearSelection()
             point = Point(x, y, pointType)
             point.selected = True
             points.append(point)
             self.targetPath = path
+
         trufont.TruFont.updateUI()
 
     def OnMotion(self, event):
@@ -403,6 +407,7 @@ class PenTool(BaseTool):
             self.shouldMoveOnCurve = False
             self.stashedOffCurve = None
             self.targetPath = None
+            logging.info("PENTOOL: OnMouseUp end")
             # self.layer.endUndoGroup()
         else:
             super().OnMouseUp(event)
