@@ -68,8 +68,6 @@ class SelectionTool(BaseTool):
         self.oldSelection = set()
         self.rubberBandRect = None
 
-        self.preparedUndo = False
-
         # TODO flush on dpi change event. need wx 3.1 and beyond...
         self._cursor = None
         self._pointCursor = None
@@ -110,7 +108,7 @@ class SelectionTool(BaseTool):
             trufont.TruFont.updateUI()
 
     @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Create guideline", 
-                                     paths=False, guidelines=True, components=False, anchors=False)
+                                      paths=False, guidelines=True, components=False, anchors=False)
     def createGuideline(self, *_):
         pos = self._cachedPos
         self.layer.guidelines.append(Guideline(pos.x, pos.y, 0))
@@ -384,7 +382,7 @@ class SelectionTool(BaseTool):
                 option = "slide"
             else:
                 option = None
-#-------            self.prepareUndo()
+            self.prepareUndo()
             moveUILayerSelection(layer, dx, dy, option=option)
         else:
             x2, y2 = pos.Get()
@@ -421,7 +419,7 @@ class SelectionTool(BaseTool):
             self.oldPath = None
             self.oldSelection = set()
             self.rubberBandRect = None
-#-------            self.performUndo("Move selection")
+            self.performUndo("Move selection")
             self.canvas.Refresh()
             trufont.TruFont.updateUI()
         else:
@@ -461,9 +459,7 @@ class SelectionTool(BaseTool):
                             offS, onS = prev, next_
                             if onS.type is None:
                                 offS, onS = onS, offS
-                            rotateUIPointAroundRefLine(
-                                onS.x, onS.y, point.x, point.y, offS
-                            )
+                            rotateUIPointAroundRefLine(onS.x, onS.y, point.x, point.y, offS)
                     point.smooth = value
                     # tbh I feel updateUI could just always be called for tools
                     trufont.TruFont.updateUI()
