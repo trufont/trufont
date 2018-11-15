@@ -59,9 +59,10 @@ def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
 
             except Exception as e:
                 logging.error("PREPARE_LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
-
+                if ret is None:
+                    ret = fn(*args, **kwargs)
             finally:
-                return ret or fn(*args, **kwargs)
+                return ret
 
         return decorate_args
 
@@ -111,9 +112,10 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
 
             except Exception as e:
                 logging.error("START_LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
-
+                if ret is None:
+                    ret = fn(*args, **kwargs)
             finally:
-                return ret or fn(*args, **kwargs)
+                return ret
 
         return decorate_args
 
@@ -172,9 +174,10 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
             except Exception as e:
                 logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
-
+                if ret is None:
+                    ret = fn(*args, **kwargs)
             finally:
-                return ret or fn(*args, **kwargs)
+                return ret
 
         return decorate_args
 
