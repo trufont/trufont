@@ -17,8 +17,11 @@ class BaseTool(object):
     shortcut = None
     grabKeyboard = False
 
+
+
     def __init__(self, canvas=None):
         self.canvas = canvas
+        self.preparedUndo = False
 
     @property
     def cursor(self):
@@ -145,7 +148,7 @@ class BaseTool(object):
                 option = None
             # prepare undo
             self.prepareUndo()
-            moveUILayerSelection(l, dx, dy, option=option)
+            moveUILayerSelection(self.layer, dx, dy, option=option)
             #layer._parent is an instance of class Truglyph
             self.performUndo("Move selection")
         elif event.IsKeyInCategory(wx.WXK_CATEGORY_CUT):
