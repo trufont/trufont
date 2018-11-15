@@ -2,6 +2,9 @@
 import logging
 import sys
 import functools
+import itertools
+import os
+import pickle
 
 from tfont.objects import Layer
 # import trufont.util.deco4class as deco4class
@@ -179,10 +182,11 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
 
 class Action(object):
-    def __init__(self, operation: str="", callback_undo: Callable=None, callback_redo: Callable=None):
+    def __init__(self, operation: str="", callback_undo: Callable=None, callback_redo: Callable=None, *args):
         self.operation = operation
         self.callback_undo = callback_undo
         self.callback_redo = callback_redo
+        self.args = args
 
 
 ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
@@ -258,10 +262,9 @@ class UndoRedoMgr(object):
 
     def str_state(self) -> str:
         """ show state of mgr """
-#        return  "{}-size: {:.02f} Kb - UNDO[{}] - REDO[{}]".format(self._name, (sys.getsizeof(self._undo)+sys.getsizeof(self._redo))/1024, 
         return  "{}-size: {:.02f} Kb - UNDO[{}] - REDO[{}]".format(self._name, self._size/1024, 
-                                                        self.len_undo(), 
-                                                        self.len_redo())
+                                                                   self.len_undo(), 
+                                                                   self.len_redo())
     def append_action(self, action: Action):
         """ append action to the undo stack """
         self._undo.append(action)
@@ -269,6 +272,7 @@ class UndoRedoMgr(object):
             self._redo = []
         self._size = _getsize(self)
         self._after_append_action()
+        self.save()
 
     def undo(self) -> Action:
         """ play undo, if undo stack is empty raises an exception (indexError)"""
@@ -342,3 +346,39 @@ class UndoRedoMgr(object):
         if self.callback_after_redo:
             self.callback_after_redo()
 	
+    def save(self):
+        """ save to play again later """
+        all_actions = [(x.operation, inspect.signature(x.callback_undo), inspect.signature(x.callback_redo)) \
+                        for x in itertools.chain(self._undo, self._redo)]
+        self._save_as_pickle(all_actions, os.getcwd(), "undoredo-{}".format(self._name))
+
+    def _save_as_pickle(self, tag:Any, path:str, name_pickle: str=None):
+        """
+        """
+        if name_pickle is None:
+            name_pickle = type(tag).__name__ +'.pickle'
+        name = os.path.join(path, name_pickle)
+        try:
+            with open(name, 'wb') as fp:
+                pickle.dump(tag, fp)
+        except Exception as e:
+            logging.error("UNDOREDO: pickle write error -> {}".format(str(e)))       
+        return name 
+    
+
+    def load(self):
+        """ load to play now """
+        pass
+
+    def read_from_pickle(self, tag: Any, path: str, name_pickle: str):
+        """
+        """
+        name = os.path.join(path, name_pickle)
+        if os.path.isfile(name):
+            try:
+                with open(name, 'rb') as fp:
+                    tag = pickle.load(fp)
+            except Exception as e:
+                logging.error("UNDOREDO: pickle read error -> {}".format(str(e)))       
+        return tag 
+
