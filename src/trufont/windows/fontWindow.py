@@ -707,13 +707,12 @@ class FontWindow(wx.Frame):
         self.Refresh()
         try:
             action = tab.undoredo.undo()
-            call_func = action.callback_undo
             self._logger.info("UNDOREDO: undo on {}".format(str(action.operation)))
-            call_func()
+            call_func = action.callback_undo()
         except Exception as e:
             self._logger.info("UNDOREDO: undo exception on {}".format(str(e)))
-        trufont.TruFont.updateUI()
         self.OnUpdateUndoRedoMenu(tab.undoredo)
+        trufont.TruFont.updateUI()
 
 
     def OnRedo(self, event):
@@ -721,13 +720,12 @@ class FontWindow(wx.Frame):
         self.Refresh()
         try:
             action = tab.undoredo.redo()
-            call_func = action.callback_redo
-            self._logger.info("UNDOREDO: undo on {}".format(str(action.operation)))
-            call_func()
+            self._logger.info("UNDOREDO: redo on {}".format(str(action.operation)))
+            action.callback_redo()
         except Exception as e:
             self._logger.info("UNDOREDO: redo exception on {}".format(str(e)))
-        trufont.TruFont.updateUI()
         self.OnUpdateUndoRedoMenu(tab.undoredo)
+        trufont.TruFont.updateUI()
 
     def OnCut(self, event):
         layer = self.activeLayer
@@ -738,7 +736,7 @@ class FontWindow(wx.Frame):
             raise NotImplementedError
         else:
             clipboard.store(layer)
-            # undoredo acion done in deleteUILayerSelection
+            # undoredo action done in deleteUILayerSelection
             deleteUILayerSelection(layer, origin="Cut selection", breakPaths=True)
             trufont.TruFont.updateUI()
 

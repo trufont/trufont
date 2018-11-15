@@ -40,10 +40,10 @@ _path.CloseSubpath()
 #-------------------------
 # Used by undoredo decorator
 #-------------------------
-def mouseup_expand_params(obj, *args):
+def mouseup_expand_params(self, *args):
     """ use by decorator to get three params aselif 
     layer, undoredomgr and operation """
-    if obj.drawRectangle:
+    if self.drawRectangle:
         if self.linkAxes:
             operation = "Draw square"
         else: 
@@ -54,7 +54,7 @@ def mouseup_expand_params(obj, *args):
         else: 
             operation = "Draw ellipsis"
 
-    return obj.layer, operation 
+    return self.layer, operation 
 #-------------------------
 
 class ShapesTool(BaseTool):

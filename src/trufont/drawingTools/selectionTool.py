@@ -175,6 +175,7 @@ class SelectionTool(BaseTool):
             target = selectedPaths or layer.paths
             for path in target:
                 path.reverse()
+        self.layer.paths.applyChange()
         trufont.TruFont.updateUI()
 
     @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Set start point", 
@@ -383,7 +384,7 @@ class SelectionTool(BaseTool):
                 option = "slide"
             else:
                 option = None
-            self.prepareUndo()
+#-------            self.prepareUndo()
             moveUILayerSelection(layer, dx, dy, option=option)
         else:
             x2, y2 = pos.Get()
@@ -420,7 +421,7 @@ class SelectionTool(BaseTool):
             self.oldPath = None
             self.oldSelection = set()
             self.rubberBandRect = None
-            self.performUndo("Move selection")
+#-------            self.performUndo("Move selection")
             self.canvas.Refresh()
             trufont.TruFont.updateUI()
         else:
