@@ -13,163 +13,14 @@ import inspect
 #import dataclasses
 # constants
 
-# def sample_copypathsfromlayer(layer: "Layer"):
-#     pass
-
-# def sample_undoredo_align_fromcopy(layer: "Layer", old_paths: "Path", old_operation:str):
-#     pass
-
-# params_undoredo = { 
-#                   'default':{'copy': (sample_copypathsfromlayer, 'layer', True),
-#                                 'undo': (sample_undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'), 
-#                                 'redo': (sample_undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
-#                                 },
-#                   'transform':{'copy': (sample_copypathsfromlayer, 'layer'),
-#                                  'undo': (sample_undoredo_align_fromcopy, 'layer', 'old_datas', 'operation'),
-#                                  'redo': (sample_undoredo_align_fromcopy, 'layer', 'new_datas', 'operation')
-#                                  }
-#                  }
-
-# DEFAULT_KEY="default"
-
-# def old_decorate_undoredo(params_deco: Dict, func_expand_params: Callable):
-#     """  decorate functions that modify a glyph:
-#     1. make a save of a glyph (or a part) before the function call
-#     2. call the function
-#     3. make a save of glyph (or a part) after the function call
-#     4. append an action - the modification -- to the undoredo manager of the glyph
-#     params_deco is a dict where:
-#         key is the function name
-#         values is a dict with 3 entries as tuple where first item is:
-#             copy function to make the save
-#             undo function calling when undo
-#             redo function calling when redo
-#         NOTE: The end of the tuple (as 'layer','old_datas', etc ...) is not useful for the moment
-
-#     func_expand_params is a function that decompose from *args and **kwargs of the decorated function
-#     to expand to the param need by the copy, undo and redo functions -
-#     Actually func_expand_params returns 3 values: Layer, UndoRedoMgr and an a sring (name of current operation)
-
-#     WARNING: It is the same format for all decorated function, at this time -  HAVE TO CHANGE SOON
-#     Note here that the Action class, the callback function give to undoredo mgr are partial function.
-#     So on undo or redo, you have just to call these 2 partials
-#     """
-
-#     def decorate_fn(fn):
-#         """ func decorate"""
-#         # logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
-
-#         @functools.wraps(fn)
-#         def decorate_args(*args, **kwargs):
-#             """ """
-#             # if logger:
-#             #     del logger
-#             #     logger = None
-#             ret = None
-#             try:
-#                 sig = inspect.signature(fn)
-#                 logging.debug("DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, sig))
-
-#                 #functions from dict
-#                 key = None
-#                 if fn.__name__ in params_deco:
-#                     key = fn.__name__
-#                 elif DEFAULT_KEY in params_deco:
-#                     key = DEFAULT_KEY
-
-#                 logging.debug("DECORATE_UNDOREDO: key is {}".format(key))
-
-#                 if key:
-#                     params = params_deco[key]
-#                     func_copy = params['copy'][0]
-#                     params_copy = params['copy'][1:]
-#                     func_undo = params['undo'][0]
-#                     func_redo = params['redo'][0]
-
-#                     logging.debug("DECORATE_UNDOREDO: func copy:{}".format(func_copy.__name__))
-#                     logging.debug("DECORATE_UNDOREDO: func copy:{}".format(params_copy))
-#                     logging.debug("DECORATE_UNDOREDO: func undo:{}".format(func_undo.__name__))
-#                     logging.debug("DECORATE_UNDOREDO: func redo:{}".format(func_redo.__name__))
-#                     logging.debug("DECORATE_UNDOREDO: func expand:{}".format(func_expand_params.__name__))
-
-#                     # expand params as layer, undoredomgr and operation
-#                     logging.debug("DECORATE_UNDOREDO: expand params") 
-#                     obj, undoredo, operation = func_expand_params(*args)
-#                     logging.debug("DECORATE_UNDOREDO: operation is {} ob {}".format(operation, obj.__class__.__name__)) 
-
-#                     #save datas before function call
-#                     logging.debug("DECORATE_UNDOREDO: copy before func") 
-#                     old_obj = func_copy(obj)
-
-#                     # call func
-#                     logging.debug("DECORATE_UNDOREDO: call func")
-#                     ret = fn(*args, **kwargs)
-
-#                     #save datas after function call
-#                     logging.debug("DECORATE_UNDOREDO: copy after func") 
-#                     new_obj = func_copy(obj)
-
-#                     # append action to undoredomgr
-#                     logging.debug("DECORATE_UNDOREDO: create action") 
-#                     action = Action(operation, 
-#                                     functools.partial(func_undo, obj, old_obj, operation), 
-#                                     functools.partial(func_redo, obj, new_obj, operation))
-#                     logging.debug("DECORATE_UNDOREDO: append action") 
-
-#                     undoredo.append_action(action)
-
-#                 else:
-#                     # decorated but params not found !!!
-#                     ret = fn(*args, **kwargs)
-
-#             except Exception as e:
-#                 logging.error("DECORATE_UNDOREDO exception {}".format(str(e)))
-
-#             finally:
-#                 return ret
-
-#         return decorate_args
-
-#     return decorate_fn
-
-import sys
 from numbers import Number
 from collections import Set, Mapping, deque
 
-zero_depth_bases = (str, bytes, Number, range, bytearray)
-iteritems = 'items'
-
-def getsize(obj_0):
-    """Recursively iterate to sum size of object & members."""
-    _seen_ids = set()
-    def inner(obj):
-        obj_id = id(obj)
-        if obj_id in _seen_ids:
-            return 0
-        _seen_ids.add(obj_id)
-        size = sys.getsizeof(obj)
-        if isinstance(obj, zero_depth_bases):
-            pass # bypass remaining control flow and return
-        elif isinstance(obj, (tuple, list, Set, deque)):
-            size += sum(inner(i) for i in obj)
-        elif isinstance(obj, Mapping) or hasattr(obj, iteritems):
-            size += sum(inner(k) + inner(v) for k, v in getattr(obj, iteritems)())
-        # Check for custom object instances - may subclass above too
-        if hasattr(obj, '__dict__'):
-            size += inner(vars(obj))
-        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
-            size += sum(inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s))
-        return size
-    return inner(obj_0)
-
-def layer_decorate_undoredo(func_get_layer: Callable,\
-	operation="None", paths=True, anchors=True, components=True, guidelines=True):
+def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
+    operation="None", paths=True, anchors=True, components=True, guidelines=True):
     """ work with the methods of layer as below 
-    layer.snapshot      -> make a copy of the layer (partial or not)
-    layer.setToSnapshot -> restore the copy of layer (partial or not)
     layer.beginUndoGroup -> make a first sanpshot via layer.snaphot before a call to a decorated function 
-    layer.endUndoGroup -> make a new snapshot after the call to a decorated function
-                        -> and create two lambda functions used as undo and redo function (call on undo/redo)  
+    this snapshot is stored in a dict in layer object associated with key=name
     """ 
     def decorate_fn(fn):
         """ func decorate"""
@@ -178,6 +29,112 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
         @functools.wraps(fn)
         def decorate_args(*args, **kwargs):
             """ """
+            ret = None 
+            try:
+                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
+
+                # get layer obj 
+                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO:  name is {}".format(name)) 
+                params = func_get_layer(*args, **kwargs)
+                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: ->{}".format(params)) 
+                if isinstance(params, Tuple):
+                    layer = params[0]
+                    op = params[-1]
+                else:
+                    layer = params
+                    op = operation
+                undoredo = layer._parent.get_undoredo()
+
+                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: decorated on {}".format(op))
+
+                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: copy before func on name {}".format(name))
+                layer.beginUndoGroup(name, paths, anchors, components, guidelines)
+
+                # call func
+                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: call func")
+                ret = fn(*args, **kwargs)
+
+            except Exception as e:
+                logging.error("PREPARE_LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
+
+            finally:
+                return ret or fn(*args, **kwargs)
+
+        return decorate_args
+
+    return decorate_fn
+
+def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
+    operation="None", paths=True, anchors=True, components=True, guidelines=True):
+    """ work with the methods of layer as below 
+    layer.endUndoGroup -> make a new snapshot after the call to a decorated function
+                        -> retrieve the original snapshot in the dict of layer with the key=name
+                        -> and get two lambda functions (from endGroupUndo) used as undo and redo function (call on undo/redo)  
+    """ 
+    def decorate_fn(fn):
+        """ func decorate"""
+        # logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
+
+        @functools.wraps(fn)
+        def decorate_args(*args, **kwargs):
+            """ """
+            ret = None 
+            try:
+                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
+
+                # get layer obj 
+                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: name is {}".format(name)) 
+                pPERFORM = func_get_layer(*args, **kwargs)
+                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: {}->{}".format(params)) 
+                if isinstance(params, Tuple):
+                    layer = params[0]
+                    op = params[-1]
+                else:
+                    layer = params
+                    op = operation
+
+                undoredo = layer._parent.get_undoredo()
+                # call PERFORM                
+                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: call func")
+                ret = fn(*args, **kwargs)
+
+                #save datas after function call
+                logging.debug("LAYER_DECORATE_UNDOREDO: copy after func on name {}".format(name)) 
+                undo, redo = layer.endUndoGroup(name_group=name)
+
+                # append action to undoredomgr
+                logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
+                undoredo.append_action(Action(op, undo, redo))
+
+            except Exception as e:
+                logging.error("START_LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
+
+            finally:
+                return ret or fn(*args, **kwargs)
+
+        return decorate_args
+
+    return decorate_fn
+
+NONAME='noname'
+
+def layer_decorate_undoredo(func_get_layer: Callable,\
+	operation="None", paths=True, anchors=True, components=True, guidelines=True):
+    """ work with the methods of layer as below 
+    layer.snapshot      -> make a copy of the layer (partial or not)
+    layer.setToSnapshot -> restore the copy of layer (partial or not)
+    layer.beginUndoGroup -> make a first sanpshot via layer.snaphot before a call to a decorated function 
+    layer.endUndoGroup -> make a new snapshot after the call to a decorated function
+                        -> and create two lambda functions used as undo and redo functions (call on undo/redo)  
+    """ 
+    def decorate_fn(fn):
+        """ func decorate"""
+        # logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
+
+        @functools.wraps(fn)
+        def decorate_args(*args, **kwargs):
+            """ """
+            ret = None 
             try:
                 logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
@@ -189,13 +146,14 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
                     layer = params[0]
                     op = params[-1]
                 else:
-                    op = operation
                     layer = params
+                    op = operation
                 undoredo = layer._parent.get_undoredo()
+
                 logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}".format(op))
 
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy before func") 
-                layer.beginUndoGroup(paths, anchors, components, guidelines)
+                layer.beginUndoGroup(NONAME, paths, anchors, components, guidelines)
 
                 # call func
                 logging.debug("LAYER_DECORATE_UNDOREDO: call func")
@@ -203,7 +161,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
                 #save datas after function call
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
-                undo, redo = layer.endUndoGroup()
+                undo, redo = layer.endUndoGroup(NONAME)
 
                 # append action to undoredomgr
                 logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
@@ -213,7 +171,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
                 logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
 
             finally:
-                return ret
+                return ret or fn(*args, **kwargs)
 
         return decorate_args
 
@@ -225,6 +183,33 @@ class Action(object):
         self.operation = operation
         self.callback_undo = callback_undo
         self.callback_redo = callback_redo
+
+
+ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
+ITERITEMS = 'items'
+
+def _getsize(obj_0):
+    """Recursively iterate to sum size of object & members."""
+    _seen_ids = set()
+    def inner(obj):
+        obj_id = id(obj)
+        if obj_id in _seen_ids:
+            return 0
+        _seen_ids.add(obj_id)
+        size = sys.getsizeof(obj)
+        if isinstance(obj, ZERO_DEPTH_BASES):
+            pass # bypass remaining control flow and return
+        elif isinstance(obj, (tuple, list, Set, deque)):
+            size += sum(inner(i) for i in obj)
+        elif isinstance(obj, Mapping) or hasattr(obj, ITERITEMS):
+            size += sum(inner(k) + inner(v) for k, v in getattr(obj, ITERITEMS)())
+        # Check for custom object instances - may subclass above too
+        if hasattr(obj, '__dict__'):
+            size += inner(vars(obj))
+        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
+            size += sum(inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s))
+        return size
+    return inner(obj_0)
 
 
 # @deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')
@@ -282,7 +267,7 @@ class UndoRedoMgr(object):
         self._undo.append(action)
         if self._redo:
             self._redo = []
-        self._size = getsize(self)
+        self._size = _getsize(self)
         self._after_append_action()
 
     def undo(self) -> Action:
@@ -316,8 +301,7 @@ class UndoRedoMgr(object):
         return len(self._undo)
 			
     def undo_next(self) -> str:
-        return self._undo[-1].operation 
-			
+        return self._undo[-1].operation 			
 
     def can_redo(self) -> bool:
         return self.len_redo() > 0
