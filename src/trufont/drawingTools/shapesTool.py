@@ -44,11 +44,15 @@ def mouseup_expand_params(obj, *args):
     """ use by decorator to get three params aselif 
     layer, undoredomgr and operation """
     if obj.drawRectangle:
-        operation =  "Draw rectangle"
-    elif obj.originAtCenter:
-        operation = "Draw Circle"
+        if self.linkAxes:
+            operation = "Draw square"
+        else: 
+            operation =  "Draw rectangle"
     else:
-        operation = "Draw ellipsis"
+        if self.linkAxes:
+            operation = "Draw circle"
+        else: 
+            operation = "Draw ellipsis"
 
     return obj.layer, operation 
 #-------------------------
