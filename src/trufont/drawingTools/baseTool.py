@@ -103,6 +103,20 @@ class BaseTool(object):
     def OnChar(self, event):
         event.Skip()
 
+    def prepareUndo(self, group_name: str="unknown"):
+        """A local function to ask the layer to prepare for undo but doing so
+        only once if prepareUndo() is called several time during event handling.
+        Also layer.endUndoGroup() will be called once, and only if prepareUndo()
+        was called."""
+        if not self.preparedUndo:
+            self.layer.beginUndoGroup(group_name)
+            self.preparedUndo = True
+
+    def performUndo(self, operation:str, group_name: str="unknown"):
+        if self.preparedUndo:
+            self.layer._parent.get_undoredo().append_action(Action(operation, *self.layer.endUndoGroup(group_name)))
+            self.preparedUndo = False
+
     # we oughta eat the modifiers down/up events in baseTool to stop the
     # system from using them
     def OnKeyDown(self, event):
@@ -129,11 +143,11 @@ class BaseTool(object):
                 option = "slide"
             else:
                 option = None
-            l = self.layer
-            l.beginUndoGroup()
+            # prepare undo
+            self.prepareUndo()
             moveUILayerSelection(l, dx, dy, option=option)
             #layer._parent is an instance of class Truglyph
-            l._parent.get_undoredo().append_action(Action("Move selection", *l.endUndoGroup()))
+            self.performUndo("Move selection")
         elif event.IsKeyInCategory(wx.WXK_CATEGORY_CUT):
             deleteUILayerSelection(self.layer, breakPaths=event.AltDown())
         elif event.GetKeyCode() == wx.WXK_TAB:
@@ -160,8 +174,9 @@ class BaseTool(object):
                 layer.clearSelection()
                 newPoint.selected = True
         elif event.GetKeyCode() == wx.WXK_RETURN:
-            layer = self.layer
-            layer.beginUndoGroup(paths=True, anchors=False, components=False, guidelines=False)
+            # layer = self.layer
+            self.prepareUndo()
+            # layer.beginUndoGroup(paths=True, anchors=False, components=False, guidelines=False)
             # FIXME: can't we directly access the indices of the selected points?
             for path in self.layer.paths:
                 points = path.points
@@ -172,8 +187,10 @@ class BaseTool(object):
                         (points[(index+1)%len(points)].type is not None):
                         continue
                     point.smooth = not point.smooth
-            undoLambda, redoLambda = layer.endUndoGroup()
-            layer._parent.get_undoredo().append_action(Action("Toggle smooth", undoLambda, redoLambda))
+
+            # undoLambda, redoLambda = layer.endUndoGroup()
+            # layer._parent.get_undoredo().append_action(Action("Toggle smooth", undoLambda, redoLambda))
+            self.performUndo("Toggle smooth")
         else:
             event.Skip()
             return

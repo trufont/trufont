@@ -259,15 +259,6 @@ class SelectionTool(BaseTool):
         else:
             canvas.SetCursor(self.cursor)
 
-    def prepareUndo(self):
-        """A local function to ask the layer to prepare for undo but doing so
-        only once if prepareUndo() is called several time during event handling.
-        Also layer.endUndoGroup() will be called once, and only if prepareUndo()
-        was called."""
-        if not self.preparedUndo:
-            self.layer.beginUndoGroup()
-            self.preparedUndo = True
-
     def OnMouseDown(self, event):
         if not event.LeftDown():
             super().OnMouseDown(event)
@@ -429,10 +420,7 @@ class SelectionTool(BaseTool):
             self.oldPath = None
             self.oldSelection = set()
             self.rubberBandRect = None
-            if self.preparedUndo:
-                self.preparedUndo = False
-                layer = self.layer
-                layer._parent.get_undoredo().append_action(Action("Move selection", *layer.endUndoGroup()))
+            self.performUndo("Move selection")
             self.canvas.Refresh()
             trufont.TruFont.updateUI()
         else:
