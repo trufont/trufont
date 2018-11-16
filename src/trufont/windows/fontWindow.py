@@ -520,7 +520,7 @@ class FontWindow(wx.Frame):
         if undoredo.can_redo():
             self.menu_redo.SetText("Redo '{}'\tCtrl+Shift+Z".format(undoredo.redo_next()))
         else:
-            self.menu_redo.SetText("Redo\ttCtrl+Shift+Z") 
+            self.menu_redo.SetText("Redo\tCtrl+Shift+Z") 
 
         if self._debug:
             self.menu_undoredo.SetText("DEBUG: " + undoredo.str_state())

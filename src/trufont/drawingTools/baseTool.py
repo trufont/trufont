@@ -17,8 +17,6 @@ class BaseTool(object):
     shortcut = None
     grabKeyboard = False
 
-
-
     def __init__(self, canvas=None):
         self.canvas = canvas
         self.preparedUndo = False
