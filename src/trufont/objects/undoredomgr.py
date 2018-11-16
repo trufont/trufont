@@ -104,11 +104,11 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
 
                 #save datas after function call
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy after func on name {}".format(name)) 
-                undo, redo = layer.endUndoGroup(name_group=name)
+                undo, redo, datas = layer.endUndoGroup(name_group=name)
 
                 # append action to undoredomgr
                 logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, undo, redo))
+                undoredo.append_action(Action(op, undo, redo, datas))
 
             except Exception as e:
                 logging.error("START_LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
@@ -166,11 +166,12 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
                 #save datas after function call
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
-                undo, redo = layer.endUndoGroup(NONAME)
+                undo, redo, datas = layer.endUndoGroup(NONAME)
+                logging.debug("LAYER_DECORATE_UNDOREDO: all datas after func {}".format(datas)) 
 
                 # append action to undoredomgr
                 logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, undo, redo))
+                undoredo.append_action(Action(op, undo, redo, datas))
 
             except Exception as e:
                 logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
@@ -185,7 +186,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
 
 class Action(object):
-    def __init__(self, operation: str="", callback_undo: Callable=None, callback_redo: Callable=None, *args):
+    def __init__(self, operation: str, callback_undo: Callable, callback_redo: Callable, *args):
         self.operation = operation
         self.callback_undo = callback_undo
         self.callback_redo = callback_redo
@@ -350,10 +351,15 @@ class UndoRedoMgr(object):
             self.callback_after_redo()
 	
     def save(self):
-        """ save to play again later """
-        all_actions = [(x.operation, inspect.signature(x.callback_undo), inspect.signature(x.callback_redo)) \
+        """ save all datas to play again later """
+        save_path = os.path.join(os.getcwd(), 'pickles')
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+            logging.info("UNDOREDO: create pcikles filder as {}".format(folder))
+
+        all_actions = [(x.operation, x.args) \
                         for x in itertools.chain(self._undo, self._redo)]
-        self._save_as_pickle(all_actions, os.getcwd(), "undoredo-{}".format(self._name))
+        self._save_as_pickle(all_actions, save_path, "undoredo-{}.pickle".format(self._name))
 
     def _save_as_pickle(self, tag:Any, path:str, name_pickle: str=None):
         """
