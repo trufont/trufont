@@ -109,12 +109,12 @@ class BaseTool(object):
         only once if prepareUndo() is called several time during event handling.
         Also layer.endUndoGroup() will be called once, and only if prepareUndo()
         was called."""
-        if not self.preparedUndo:
+        if not self.preparedUndo and self.layer:
             self.layer.beginUndoGroup(group_name)
             self.preparedUndo = True
 
     def performUndo(self, operation:str, group_name: str="unknown"):
-        if self.preparedUndo:
+        if self.preparedUndo and self.layer:
             self.layer._parent.get_undoredo().append_action(Action(operation, *self.layer.endUndoGroup(group_name)))
             self.preparedUndo = False
 
