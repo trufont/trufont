@@ -21,3 +21,8 @@ htmlcov
 #logging
 logs/
 *.log*
+
+# save datas form undoredo manager
+pickles/
+*.pickle
+*.json
