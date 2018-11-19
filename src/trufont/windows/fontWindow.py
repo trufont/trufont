@@ -74,9 +74,10 @@ def authors():
 
 def prepareNewFont(font):
     glyphs = font.glyphs
+    fontname = font.familyName
     for char in string.ascii_uppercase + string.ascii_lowercase + " ":
         name = "space" if char == " " else char
-        glyphs.append(TruGlyph(name, unicodes=["%04X" % ord(char)]))
+        glyphs.append(TruGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)]))
 
 
 # @deco4class.decorator_classfunc()
