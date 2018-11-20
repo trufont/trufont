@@ -11,6 +11,7 @@ import trufont.objects.undoredomgr as undoredomgr
 import trufont.util.func_copy as func_copy
 
 import trufont.util.deco4class as deco4class
+import trufont.objects.undoredomgr as undoredomgr
 
 import logging
 
@@ -83,6 +84,12 @@ _plus.AddLineToPoint(23, 28)
 _point = CreatePath()
 _point.AddRectangle(21, 22, 5, 5)
 
+#-------------------------
+# Used by undoredo decorator
+#-------------------------
+def penTool_expand_params(obj, *args, **kwargs):
+    return obj.layer 
+#-------------------------
 
 # @deco4class.decorator_classfunc('OnPaint', 'addCursor', 'pointCursor', 'addCursor', 'OnKeyDown', 'OnKeyUp')
 class PenTool(BaseTool):
@@ -208,21 +215,28 @@ class PenTool(BaseTool):
     def OnKeyDown(self, event):
         key = event.GetKeyCode()
         if key == wx.WXK_ALT:
+            logging.debug("PENTOOL: OnKeyDown ALT")
             self.updateOnCurveSmoothness(False)
         elif key == wx.WXK_SPACE and self.targetPath is not None:
             self.shouldMoveOnCurve = True
+            logging.debug("PENTOOL: OnKeyDown SPACE")
         else:
             super().OnKeyDown(event)
 
     def OnKeyUp(self, event):
         key = event.GetKeyCode()
         if key == wx.WXK_ALT:
+            logging.debug("PENTOOL: OnKeyUp ALT")
             self.updateOnCurveSmoothness(True)
         elif key == wx.WXK_SPACE and self.targetPath is not None:
+            logging.debug("PENTOOL: OnKeyUp SPACE")
             self.shouldMoveOnCurve = False
         else:
             super().OnKeyUp(event)
 
+    # function and her decorator are called at the beginnig of left down mouse 
+    @undoredomgr.prepare_layer_decorate_undoredo(penTool_expand_params, name="draw_point",
+                                         paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseDown(self, event):
         if not event.LeftDown():
             super().OnMouseDown(event)
@@ -238,7 +252,7 @@ class PenTool(BaseTool):
         selPoint = self.selectedPoint()
         # if we click an on curve, join it at boundaries or break the path
         if isinstance(mouseItem, PointRecord):
-            logging.info("PENTOOL: OnMouseDown point record")
+            logging.debug("PENTOOL: OnMouseDown point record")
             mousePoint = mouseItem.point
             mousePath = mousePoint.path
             if atOpenBoundary(mousePoint):
@@ -250,27 +264,27 @@ class PenTool(BaseTool):
                         lastOn = selPoints[-1]
                         self.stashedOffCurve = (selPoint, lastOn.smooth)
                         lastOn.smooth = False
-                    logging.info("PENTOOL: OnMouseDown point record - join path")
+                    logging.debug("PENTOOL: OnMouseDown point record - join path")
                     joinPaths(selPath, selPoints[0] is selPoint, mousePath, mousePath.points[0] is mousePoint)
                     self.targetPath = selPath
             else:
-                logging.info("PENTOOL: OnMouseDown point record - break path")
+                logging.debug("PENTOOL: OnMouseDown point record - break path")
                 # the api could even just be the point...
                 breakPath(mousePath, mousePath.points.index(mousePoint))
             if selPoint:
                 selPoint.selected = False
             mousePoint.selected = True
         elif isinstance(mouseItem, SegmentRecord):
-            logging.info("PENTOOL: OnMouseDown segment record")
+            logging.debug("PENTOOL: OnMouseDown segment record")
             # sucks that we gotta reproject (canvas.segmentAt does it already),
             # save projection tValue in the SegmentRecord?
             _, _, t = mouseItem.segment.projectPoint(pos.x, pos.y)
-            logging.info("PENTOOL: OnMouseDown segment record - split segment")
+            logging.debug("PENTOOL: OnMouseDown segment record - split segment")
             segment = mouseItem.segments.splitSegment(mouseItem.index, t)
             layer.clearSelection()
             segment.onCurve.selected = True
         else:
-            logging.info("PENTOOL: other record")
+            logging.debug("PENTOOL: OnMouseDown other record")
             x, y = pos.x, pos.y
             # otherwise, add a point to current path if applicable
             if selPoint and atOpenBoundary(selPoint):
@@ -289,14 +303,16 @@ class PenTool(BaseTool):
                     pos = self.clampToOrigin(pos, wx.RealPoint(lastPoint.x, lastPoint.y))
                     x, y = pos.x, pos.y
                 pointType = "line"
+                logging.debug("PENTOOL: OnMouseDown line")
             # or create a new one
             else:
                 path = Path()
                 points = path.points
                 layer.paths.append(path)
                 pointType = "move"
+                logging.debug("PENTOOL: OnMouseDown move path")
             
-            logging.info("PENTOOL: OnMouseDown other record - add point")
+            logging.debug("PENTOOL: OnMouseDown other record - add point")
             # in any case, unselect all points (*click*) and enable new point
             layer.clearSelection()
             point = Point(x, y, pointType)
@@ -329,6 +345,7 @@ class PenTool(BaseTool):
         path = self.targetPath
         if path is None:
             return
+        logging.debug("PENTOOL: OnMotion")
         points = path.points
         # selected point
         pt = points[-1]
@@ -401,13 +418,20 @@ class PenTool(BaseTool):
                     otherSidePoint.y = 2 * onCurve.y - pos.y
         trufont.TruFont.updateUI()
 
-    def OnMouseUp(self, event):
-        if event.LeftUp():
+    # function and her decorator are called at the end of mouse move when leftup becomes up
+    @undoredomgr.perform_layer_decorate_undoredo(penTool_expand_params, name="draw_point",
+                                         operation="Draw point",
+                                         paths=True, guidelines=False, components=False, anchors=False)
+    def OnMouseUpLeftup(self, event):
             self.origin = None
             self.shouldMoveOnCurve = False
             self.stashedOffCurve = None
             self.targetPath = None
-            logging.info("PENTOOL: OnMouseUp end")
+            logging.debug("PENTOOL: OnMouseUp end")
+
+    def OnMouseUp(self, event):
+        if event.LeftUp():
+            self.OnMouseUpLeftup(event)
             # self.layer.endUndoGroup()
         else:
             super().OnMouseUp(event)
