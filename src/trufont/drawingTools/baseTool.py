@@ -2,7 +2,7 @@ import trufont
 from trufont.util import platformSpecific
 from trufont.util.drawing import CreatePath
 from trufont.util.canvasDelete import deleteUILayerSelection
-from trufont.util.canvasMove import moveUILayerSelection
+from trufont.util.canvasMove import moveFromKeysUILayerSelection
 from trufont.objects.undoredomgr import Action
 from tfont.objects import Point
 import wx
@@ -145,10 +145,10 @@ class BaseTool(object):
             else:
                 option = None
             # prepare undo
-            self.prepareUndo()
-            moveUILayerSelection(self.layer, dx, dy, option=option)
+            # self.prepareUndo()
+            moveFromKeysUILayerSelection(self.layer, dx, dy, option=option)
             #layer._parent is an instance of class Truglyph
-            self.performUndo("Move selection")
+            # self.performUndo("Move selection")
         elif event.IsKeyInCategory(wx.WXK_CATEGORY_CUT):
             deleteUILayerSelection(self.layer, breakPaths=event.AltDown())
         elif event.GetKeyCode() == wx.WXK_TAB:
