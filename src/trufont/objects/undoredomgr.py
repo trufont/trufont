@@ -5,6 +5,7 @@ import functools
 import itertools
 import os
 import pickle
+import copy
 
 from tfont.objects import Layer
 # import trufont.util.deco4class as deco4class
@@ -20,7 +21,7 @@ from numbers import Number
 from collections import Set, Mapping, deque
 
 def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
-    operation="None", paths=True, anchors=True, components=True, guidelines=True):
+                                    paths=True, anchors=True, components=True, guidelines=True):
     """ work with the methods of layer as below 
     layer.beginUndoGroup -> make a first sanpshot via layer.snaphot before a call to a decorated function 
     this snapshot is stored in a dict in layer object associated with key=name
@@ -39,16 +40,8 @@ def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
                 # get layer obj 
                 logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO:  name is {}".format(name)) 
                 params = func_get_layer(*args, **kwargs)
-                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: ->{}".format(params)) 
-                if isinstance(params, Tuple):
-                    layer = params[0]
-                    op = params[-1]
-                else:
-                    layer = params
-                    op = operation
-                undoredo = layer._parent.get_undoredo()
-
-                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: decorated on {}".format(op))
+                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
+                layer = params
 
                 logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: copy before func on name {}".format(name))
                 layer.beginUndoGroup(name, paths, anchors, components, guidelines)
@@ -69,7 +62,7 @@ def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
     return decorate_fn
 
 def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
-    operation="None", paths=True, anchors=True, components=True, guidelines=True):
+                                    operation="None", paths=True, anchors=True, components=True, guidelines=True):
     """ work with the methods of layer as below 
     layer.endUndoGroup -> make a new snapshot after the call to a decorated function
                         -> retrieve the original snapshot in the dict of layer with the key=name
@@ -88,8 +81,8 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
 
                 # get layer obj 
                 logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: name is {}".format(name)) 
-                pPERFORM = func_get_layer(*args, **kwargs)
-                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: {}->{}".format(params)) 
+                params = func_get_layer(*args, **kwargs)
+                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
                 if isinstance(params, Tuple):
                     layer = params[0]
                     op = params[-1]
@@ -103,15 +96,15 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
                 ret = fn(*args, **kwargs)
 
                 #save datas after function call
-                logging.debug("LAYER_DECORATE_UNDOREDO: copy after func on name {}".format(name)) 
-                undo, redo, datas = layer.endUndoGroup(name_group=name)
+                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: copy after func on name {}".format(name)) 
+                undo, redo, datas = layer.endUndoGroup(name)
 
                 # append action to undoredomgr
-                logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, undo, redo, datas))
+                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
+                undoredo.append_action(Action(op, undo, redo, *datas))
 
             except Exception as e:
-                logging.error("START_LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
+                logging.error("PERFORM_LAYER_DECORATE_UNDOREDO: exception {}".format(str(e)))
                 if ret is None:
                     ret = fn(*args, **kwargs)
             finally:
@@ -121,10 +114,10 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
 
     return decorate_fn
 
-NONAME='noname'
+NONAME='no_name'
 
 def layer_decorate_undoredo(func_get_layer: Callable,\
-	operation="None", paths=True, anchors=True, components=True, guidelines=True):
+	                        operation="None", paths=True, anchors=True, components=True, guidelines=True):
     """ work with the methods of layer as below 
     layer.snapshot      -> make a copy of the layer (partial or not)
     layer.setToSnapshot -> restore the copy of layer (partial or not)
@@ -146,7 +139,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
                 # get layer obj 
                 logging.debug("LAYER_DECORATE_UNDOREDO: get params") 
                 params = func_get_layer(*args, **kwargs)
-                logging.debug("LAYER_DECORATE_UNDOREDO: ->{}".format(params)) 
+                logging.debug("LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
                 if isinstance(params, Tuple):
                     layer = params[0]
                     op = params[-1]
@@ -167,11 +160,11 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
                 #save datas after function call
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
                 undo, redo, datas = layer.endUndoGroup(NONAME)
-                logging.debug("LAYER_DECORATE_UNDOREDO: all datas after func {}".format(datas)) 
+                # logging.debug("LAYER_DECORATE_UNDOREDO: all datas after func {}".format(datas)) 
 
                 # append action to undoredomgr
                 logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, undo, redo, datas))
+                undoredo.append_action(Action(op, undo, redo, *datas))
 
             except Exception as e:
                 logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
@@ -224,8 +217,9 @@ def _getsize(obj_0):
 class UndoRedoMgr(object):
     """ Manage memory and event abour undo/redo/append
     actions """
-
-    __slots__ = ("_logger", "_name", "_undo", "_redo", "_size",
+    NAMEPICKLE = "undoredo-{}.pickle"
+    
+    __slots__ = ("_logger", "_name", "_undo", "_redo", "_size", "_debug", 
                 "callback_on_activated", 
 				"callback_after_undo", "callback_after_redo",
                 "callback_after_append")
@@ -239,12 +233,21 @@ class UndoRedoMgr(object):
         self._undo = []
         self._redo = []
         self._size = 0
+        self._debug = False
         self.callback_on_activated = None
         self.callback_after_undo = None
         self.callback_after_redo = None
         self.callback_after_append = None
 		
-		
+    
+    @property
+    def debug(self):
+        return self._debug
+
+    @debug.setter
+    def debug(self, debug: bool):
+        self._debug = debug
+	
     def set_callback_on_activated(self, callback, *args, **kwargs):
         if isinstance(callback, Callable):
            self.callback_on_activated = functools.partial(callback, *args, *kwargs)
@@ -274,9 +277,10 @@ class UndoRedoMgr(object):
         self._undo.append(action)
         if self._redo:
             self._redo = []
-        self._size = _getsize(self)
         self._after_append_action()
-        self.save()
+        if self._debug:
+            self._size = _getsize(self)
+            self.save()
 
     def undo(self) -> Action:
         """ play undo, if undo stack is empty raises an exception (indexError)"""
@@ -295,7 +299,7 @@ class UndoRedoMgr(object):
 
     def redo(self) -> Action:
         """ play redo, if redo stack is empty raises an exception (indexError)"""
-        last_action  = self._redo.pop()
+        last_action  = self._redo.pop() 
         self._undo.append(last_action)
         self._after_append_action()
         self._after_redo()
@@ -322,13 +326,13 @@ class UndoRedoMgr(object):
         return self._redo[-1].operation 
 		
 
-    def show_undo(self) -> str:
-        """ show undo contents """
-        return "{} -> {}".format(self._name, str(self._undo))
+    # def show_undo(self) -> str:
+    #     """ show undo contents """
+    #     return "{} -> {}".format(self._name, str(self._undo))
 
-    def show_redo(self) -> str:
-        """ show redo contents """
-        return "{} -> {}".format(self._name, str(self._redo))
+    # def show_redo(self) -> str:
+    #     """ show redo contents """
+    #     return "{} -> {}".format(self._name, str(self._redo))
 
 
     def on_activated(self):
@@ -355,11 +359,13 @@ class UndoRedoMgr(object):
         save_path = os.path.join(os.getcwd(), 'pickles')
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-            logging.info("UNDOREDO: create pcikles filder as {}".format(folder))
+            logging.debug("UNDOREDO: create pickles folder as {}".format(folder))
 
-        all_actions = [(x.operation, x.args) \
-                        for x in itertools.chain(self._undo, self._redo)]
-        self._save_as_pickle(all_actions, save_path, "undoredo-{}.pickle".format(self._name))
+        all_actions = [(action.operation, action.args[0], action.args[-1]) 
+                            for action in itertools.chain(self._undo, self._redo)]
+        # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[0]))
+        # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[1]))
+        self._save_as_pickle(all_actions, save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
 
     def _save_as_pickle(self, tag:Any, path:str, name_pickle: str=None):
         """
@@ -375,13 +381,24 @@ class UndoRedoMgr(object):
         return name 
     
 
-    def load(self):
+    def load(self, layer: Layer):
         """ load to play now """
-        pass
+        save_path = os.path.join(os.getcwd(), 'pickles')
+        if os.path.exists(save_path):
+            my_list = self._read_from_pickle([], save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
+            for op, dundo, dredo in my_list:
+                cp_dundo = copy.deepcopy(dundo)
+                cp_dredo = copy.deepcopy(dredo)
+                logging.debug("UNDOREDO: load from pickle file as {} -> undo({})".format(op, cp_dredo))
+                f_undo = lambda: layer.setToSnapshot(cp_dundo)
+                f_redo = lambda: layer.setToSnapshot(cp_dredo)
+                self._undo.append(Action(op, f_undo, f_redo, (cp_dundo, cp_dredo)))
+                layer.setToSnapshot(cp_dredo)
+            self._size = _getsize(self)
+            self._after_append_action()
 
-    def read_from_pickle(self, tag: Any, path: str, name_pickle: str):
-        """
-        """
+    def _read_from_pickle(self, tag: Any, path: str, name_pickle: str):
+        """  load from a pickle  """
         name = os.path.join(path, name_pickle)
         if os.path.isfile(name):
             try:
