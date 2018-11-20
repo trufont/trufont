@@ -204,6 +204,8 @@ class FontWindow(wx.Frame):
         self.updateTitle()
 
         trufont.TruFont.addObserver("updateUI", self)
+
+        self.path = None
         
     @property
     def activeLayer(self) -> Optional[Layer]:
@@ -266,14 +268,16 @@ class FontWindow(wx.Frame):
         self.tabBar.addCanvasTab(canvas)
         # set an undoredo manager to that new glyph 
         if glyph:
-            glyph.setFrame(self)
             # may be undoredo already stores in local dict ?
             if glyph.name not in self.dict_undoredomdgr:
+                glyph.frame = self
+                glyph.debug = self._debug
                 self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
                 self._logger.debug("UNDOREDO: Append in dict from TruGlyph ('{}')".format(glyph.name))
-            self._logger.debug("UNDOREDO: class {} ->  ('{}') size is {} bytes".format(glyph.__class__.__name__, glyph.__slots__, sys.getsizeof(glyph)))
+                if self._debug:
+                    self._logger.debug("UNDOREDO: Load undoredo stack from disk")
+                    self.dict_undoredomdgr[glyph.name].load(self.activeLayer)
             tab.undoredo = glyph.get_undoredo()
-
         return canvas
 
     def save(self, path=None):
@@ -510,7 +514,7 @@ class FontWindow(wx.Frame):
 
     def OnUpdateUndoRedoMenu(self, undoredo: undoredomgr.UndoRedoMgr):
         """ update redo/undo status menu on each activation """
-        self._logger.info("UNDOREDO: OnUpdateUndoRedoMenu {}".format(undoredo.str_state()))
+        self._logger.debug("UNDOREDO: OnUpdateUndoRedoMenu {}".format(undoredo.str_state()))
         self.menu_undo.Enable(undoredo.can_undo())
         if undoredo.can_undo():
             self.menu_undo.SetText("Undo '{}'\tCtrl+Z".format(undoredo.undo_next()))
@@ -591,7 +595,7 @@ class FontWindow(wx.Frame):
             # wx.SendEvent(self, EVT_UPDATE_UNDOREDO)
             self.OnUpdateUndoRedoMenu(tab.undoredo)
         except Exception as e:
-            self._logger.info("UNDOREDO: exception on {}".format(str(e)))
+            self._logger.debug("UNDOREDO: exception on {}".format(str(e)))
 
         self.bookCtrl.Thaw()
         wx.PostEvent(self, ActiveLayerChangedEvent())
@@ -613,7 +617,10 @@ class FontWindow(wx.Frame):
             dialog.SetExtendedMessage(caption)
             ret = dialog.ShowModal()
         if ret == wx.ID_YES:
-            self.save()
+            if self.path:
+                self.save(self.path)
+            else:
+                self.OnSaveAs(None)
         elif ret == wx.ID_NO:
             return True
         return False
@@ -661,20 +668,19 @@ class FontWindow(wx.Frame):
         trufont.TruFont.openFont()
 
     def OnSave(self, event):
-        self.save()
+        if self.path:
+            self.save(self.path)
+        else:
+            self.OnSaveAs(event)
 
     def OnSaveAs(self, event):
-        with wx.FileDialog(
-            self,
-            tr("Save Font File"),
-            wildcard="Font Files (*.tfont)|*.tfont",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
-        ) as dialog:
+        with wx.FileDialog(self, tr("Save Font File"), wildcard="Font Files (*.tfont)|*.tfont",
+                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dialog:
             if dialog.ShowModal() == wx.ID_CANCEL:
                 return
-            path = dialog.GetPath()
-        self.save(path)
-        wx.GetApp().fileHistory.AddFileToHistory(path)
+            self.path = dialog.GetPath()
+        self.save(self.path)
+        wx.GetApp().fileHistory.AddFileToHistory(self.path)
         self.updateTitle()
 
     def OnRevert(self, event):
@@ -708,10 +714,10 @@ class FontWindow(wx.Frame):
         self.Refresh()
         try:
             action = tab.undoredo.undo()
-            self._logger.info("UNDOREDO: undo on {}".format(str(action.operation)))
+            self._logger.debug("UNDOREDO: undo on {}".format(str(action.operation)))
             call_func = action.callback_undo()
         except Exception as e:
-            self._logger.info("UNDOREDO: undo exception on {}".format(str(e)))
+            self._logger.debug("UNDOREDO: undo exception on {}".format(str(e)))
         self.OnUpdateUndoRedoMenu(tab.undoredo)
         trufont.TruFont.updateUI()
 
@@ -721,10 +727,10 @@ class FontWindow(wx.Frame):
         self.Refresh()
         try:
             action = tab.undoredo.redo()
-            self._logger.info("UNDOREDO: redo on {}".format(str(action.operation)))
+            self._logger.debug("UNDOREDO: redo on {}".format(str(action.operation)))
             action.callback_redo()
         except Exception as e:
-            self._logger.info("UNDOREDO: redo exception on {}".format(str(e)))
+            self._logger.debug("UNDOREDO: redo exception on {}".format(str(e)))
         self.OnUpdateUndoRedoMenu(tab.undoredo)
         trufont.TruFont.updateUI()
 
