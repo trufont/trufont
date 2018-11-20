@@ -382,7 +382,7 @@ class SelectionTool(BaseTool):
                 option = "slide"
             else:
                 option = None
-            self.prepareUndo()
+            # self.prepareUndo()
             moveUILayerSelection(layer, dx, dy, option=option)
         else:
             x2, y2 = pos.Get()
@@ -412,14 +412,20 @@ class SelectionTool(BaseTool):
                         point.selected = point in points
         trufont.TruFont.updateUI()
 
+    # function and her decorator are called at the end of mouse move when leftup becomes up
+    @undoredomgr.perform_layer_decorate_undoredo(selectionTool_expand_params, name="selection_move",
+                                         operation="Move selection",
+                                         paths=True, guidelines=False, components=False, anchors=False)
+    def OnMouseUpLeftUp(self, event):
+        self.maybeJoinPath(event.GetCanvasPosition())
+        self.mouseItem = None
+        self.oldPath = None
+        self.oldSelection = set()
+        self.rubberBandRect = None
+
     def OnMouseUp(self, event):
         if event.LeftUp():
-            self.maybeJoinPath(event.GetCanvasPosition())
-            self.mouseItem = None
-            self.oldPath = None
-            self.oldSelection = set()
-            self.rubberBandRect = None
-            self.performUndo("Move selection")
+            self.OnMouseUpLeftUp(event)
             self.canvas.Refresh()
             trufont.TruFont.updateUI()
         else:
