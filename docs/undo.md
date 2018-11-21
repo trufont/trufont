@@ -79,6 +79,10 @@ Here are some categories of font data that needs undo:
 - Kerning data
 - Feature data
 
+## Undo vs wxWidgets
+
+wxWidgets has support for undo via the wxCommandProcessor class. It largely seems to correspond to our proposed undo manager class. Still, I'm not convinced using this class will help us a lot, and that a Python implementation more targeted for our usage (while staying as abstract as practical) will be more flexible and efficient.
+
 ## Things to build
 
 - The undo manager class
@@ -99,7 +103,7 @@ We need to identify all places in the GUI code that initiate edit actions, and a
 - Using cut/copy/paste
 - Applying undo/redo
 
-## To Serialize or not to Serialize
+## To Serialize or Not To Serialize
 
 I’m not yet sure it will be necessary to store undo data on disk instead of in memory. Perhaps we should focus more on copyability of objects, rather than serializability. The undo manager could focus more on actions, and less on data.
 
@@ -108,13 +112,21 @@ I’m not yet sure it will be necessary to store undo data on disk instead of in
 The previous generation of TruFont (based on Qt) has an undo manager written by Lasse Fister: github.com/trufont/trufont/blob/master/Lib/trufont/objects/undoManager.py
 I don’t think this approach is abstract enough: this undo manager does work on glyphs, and has no abstraction beyond that.
 
+## BlackFoundry Undo Manager
+
+BlackFoundry started implementing Undo for TrueFont in their fork. So far it seems to work for most editing operations, but less so for drawing operations. This work is interesting and should be reviewed more carefully.
+
 ## Links & References
 
 Cocoa’s undo manager is documented here:
 <https://developer.apple.com/documentation/foundation/nsundomanager>
 
-Wx has some undo support:
+wxCommandProcessor class:
 <https://docs.wxwidgets.org/3.1/classwx_command_processor.html>
+
+BlackFoundry's fork:
+<https://github.com/BlackFoundry/trufont/tree/wx-bf>
+<https://github.com/BlackFoundry/tfont/tree/bf>
 
 Efficient text diff/patch library:
 <https://github.com/google/diff-match-patch>
