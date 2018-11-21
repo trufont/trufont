@@ -151,7 +151,7 @@ Dave also mentioned mercurial could be interesting for this, as its all python; 
 
 The Mercurial project should be studied for feasibility of using it for implementing undo or collaboration. Next step here is to find a good introduction on using the hg library outside of the Mercurial SCM.
 
-###Real-time Collaboration
+### Real-time Collaboration
 
 Some of the thoughts seem to go into the direction of real-time collaboration. Perhaps a good example of this is Google Docs: can such an approach work for font editing, and how should it be integrated into a tool such as TruFont?
 
