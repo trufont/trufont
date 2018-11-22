@@ -12,7 +12,7 @@ import logging.handlers
 STR_FMT = '%(asctime)s : %(levelname)s : %(filename)20s[%(lineno)03d)] : %(message)s'
 DATE_FMT = '%d/%m/%Y %H:%M:%S'
 
-LOGGER_BASE = "trufont"
+LOGGER_BASE =  __name__ # "trufont"
 LOGGER_LOGGING = LOGGER_BASE + ".logging"
 LOGGER_UNDOREDO = LOGGER_BASE + ".undoredomgr"
 LOGGER_CLASSFUNCS = LOGGER_BASE + ".classfuncs"
