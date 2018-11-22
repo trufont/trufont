@@ -145,10 +145,7 @@ class BaseTool(object):
             else:
                 option = None
             # prepare undo
-            # self.prepareUndo()
             moveFromKeysUILayerSelection(self.layer, dx, dy, option=option)
-            #layer._parent is an instance of class Truglyph
-            # self.performUndo("Move selection")
         elif event.IsKeyInCategory(wx.WXK_CATEGORY_CUT):
             deleteUILayerSelection(self.layer, breakPaths=event.AltDown())
         elif event.GetKeyCode() == wx.WXK_TAB:
@@ -175,9 +172,7 @@ class BaseTool(object):
                 layer.clearSelection()
                 newPoint.selected = True
         elif event.GetKeyCode() == wx.WXK_RETURN:
-            # layer = self.layer
             self.prepareUndo()
-            # layer.beginUndoGroup(paths=True, anchors=False, components=False, guidelines=False)
             # FIXME: can't we directly access the indices of the selected points?
             for path in self.layer.paths:
                 points = path.points
@@ -188,9 +183,6 @@ class BaseTool(object):
                         (points[(index+1)%len(points)].type is not None):
                         continue
                     point.smooth = not point.smooth
-
-            # undoLambda, redoLambda = layer.endUndoGroup()
-            # layer._parent.get_undoredo().append_action(Action("Toggle smooth", undoLambda, redoLambda))
             self.performUndo("Toggle smooth")
         else:
             event.Skip()

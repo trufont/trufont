@@ -159,12 +159,11 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
                 #save datas after function call
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
-                undo, redo, datas = layer.endUndoGroup(NONAME)
-                logging.debug("LAYER_DECORATE_UNDOREDO: all datas after func {}".format(datas)) 
+                undo_redo_and_the_rest = layer.endUndoGroup(NONAME)
 
                 # append action to undoredomgr
                 logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, undo, redo, *datas))
+                undoredo.append_action(Action(op, *undo_redo_and_the_rest))
 
             except Exception as e:
                 logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
