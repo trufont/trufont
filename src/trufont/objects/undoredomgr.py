@@ -160,7 +160,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
                 #save datas after function call
                 logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
                 undo, redo, datas = layer.endUndoGroup(NONAME)
-                # logging.debug("LAYER_DECORATE_UNDOREDO: all datas after func {}".format(datas)) 
+                logging.debug("LAYER_DECORATE_UNDOREDO: all datas after func {}".format(datas)) 
 
                 # append action to undoredomgr
                 logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
@@ -184,6 +184,9 @@ class Action(object):
         self.callback_undo = callback_undo
         self.callback_redo = callback_redo
         self.args = args
+
+    def __str__(self):
+        return "{}->{}".format(self.operation, *self.args)
 
 
 ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
@@ -361,7 +364,7 @@ class UndoRedoMgr(object):
             os.makedirs(save_path)
             logging.debug("UNDOREDO: create pickles folder as {}".format(folder))
 
-        all_actions = [(action.operation, action.args[0], action.args[-1]) 
+        all_actions = [(action.operation, *action.args) 
                             for action in itertools.chain(self._undo, self._redo)]
         # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[0]))
         # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[1]))
@@ -383,19 +386,30 @@ class UndoRedoMgr(object):
 
     def load(self, layer: Layer):
         """ load to play now """
+        logging.debug("UNDOREDO: ---------------- enter load")
         save_path = os.path.join(os.getcwd(), 'pickles')
         if os.path.exists(save_path):
             my_list = self._read_from_pickle([], save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
+            cp_dredo = None
             for op, dundo, dredo in my_list:
-                cp_dundo = copy.deepcopy(dundo)
-                cp_dredo = copy.deepcopy(dredo)
-                logging.debug("UNDOREDO: load from pickle file as {} -> undo({})".format(op, cp_dredo))
-                f_undo = lambda: layer.setToSnapshot(cp_dundo)
-                f_redo = lambda: layer.setToSnapshot(cp_dredo)
-                self._undo.append(Action(op, f_undo, f_redo, (cp_dundo, cp_dredo)))
-                layer.setToSnapshot(cp_dredo)
-            self._size = _getsize(self)
-            self._after_append_action()
+                logging.debug("UNDOREDO: load from pickle file on {}".format(op))
+                logging.debug("UNDOREDO: load from pickle file dundo->{}".format(dundo))
+                logging.debug("UNDOREDO: load from pickle file dredo->{}".format(dredo))
+                logging.debug("UNDOREDO: +++++++++++++++++++++++++++++++++++++++++++++++ ")
+
+                # cp_dundo = copy.deepcopy(dundo)
+                # cp_dredo = copy.deepcopy(dredo)
+                f_undo = lambda: layer.setToSnapshot(dundo)
+                f_redo = lambda: layer.setToSnapshot(dredo)
+                self._undo.append(Action(op, f_undo, f_redo, (dundo, dredo)))
+
+            if dredo:
+                logging.debug("UNDOREDO: load from pickles layer init-> {}".format(self._undo[0]))
+                logging.debug("UNDOREDO: load from pickles layer last-> {}".format(self._undo[-1]))
+                layer.setToSnapshot(dredo)
+                self._size = _getsize(self)
+            #cself._after_append_action()
+        logging.debug("UNDOREDO: ---------------- exit load")
 
     def _read_from_pickle(self, tag: Any, path: str, name_pickle: str):
         """  load from a pickle  """
