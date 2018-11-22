@@ -240,7 +240,11 @@ class UndoRedoMgr(object):
         self.callback_after_undo = None
         self.callback_after_redo = None
         self.callback_after_append = None
-		
+	
+    def __del__(self):
+        if self._debug:
+            self.save()
+
     
     @property
     def debug(self):
@@ -282,7 +286,6 @@ class UndoRedoMgr(object):
         self._after_append_action()
         if self._debug:
             self._size = _getsize(self)
-            self.save()
 
     def undo(self) -> Action:
         """ play undo, if undo stack is empty raises an exception (indexError)"""
@@ -328,15 +331,6 @@ class UndoRedoMgr(object):
         return self._redo[-1].operation 
 		
 
-    # def show_undo(self) -> str:
-    #     """ show undo contents """
-    #     return "{} -> {}".format(self._name, str(self._undo))
-
-    # def show_redo(self) -> str:
-    #     """ show redo contents """
-    #     return "{} -> {}".format(self._name, str(self._redo))
-
-
     def on_activated(self):
         if self.callback_on_activated:
             self.callback_on_activated()
@@ -363,11 +357,14 @@ class UndoRedoMgr(object):
             os.makedirs(save_path)
             logging.debug("UNDOREDO: create pickles folder as {}".format(folder))
 
-        all_actions = [(action.operation, *action.args) 
-                            for action in itertools.chain(self._undo, self._redo)]
-        logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[-1]))
-        # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[1]))
-        self._save_as_pickle(all_actions, save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
+        # needs to save only what there is in the _undo stack 
+        all_actions = [(action.operation, *action.args) for action in self._undo]
+        # ----------------   for action in itertools.chain(self._undo, self._redo)]
+        # show the last
+        if all_actions:
+            logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[-1]))
+            # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[1]))
+            self._save_as_pickle(all_actions, save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
 
     def _save_as_pickle(self, tag:Any, path:str, name_pickle: str=None):
         """
@@ -391,16 +388,13 @@ class UndoRedoMgr(object):
             my_list = self._read_from_pickle([], save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
             dredo = None
             for op, (dundo, dredo) in my_list:
-                # dundo, dredo = args
                 logging.debug("UNDOREDO: load from pickle file on {}".format(op))
-                logging.debug("UNDOREDO: load from pickle file dundo->{}".format(dundo))
-                logging.debug("UNDOREDO: load from pickle file dredo->{}".format(dredo))
+                logging.debug("UNDOREDO: load from pickle file dundo->{}".format(id(dundo)))
+                logging.debug("UNDOREDO: load from pickle file dredo->{}".format(id(dredo)))
                 logging.debug("UNDOREDO: +++++++++++++++++++++++++++++++++++++++++++++++ ")
-
-                # cp_dundo = copy.deepcopy(dundo)
-                # cp_dredo = copy.deepcopy(dredo)
-                f_undo = lambda: layer.setToSnapshot(dundo)
-                f_redo = lambda: layer.setToSnapshot(dredo)
+                # lambda: layer.setToSnapshot(dundo) -- DOES NOT WORK ?? WHY ???
+                f_undo = functools.partial(layer.setToSnapshot, dundo) 
+                f_redo = functools.partial(layer.setToSnapshot, dredo) 
                 self._undo.append(Action(op, f_undo, f_redo, (dundo, dredo)))
 
             if dredo:
