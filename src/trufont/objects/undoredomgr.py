@@ -101,7 +101,7 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
 
                 # append action to undoredomgr
                 logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, undo, redo, *datas))
+                undoredo.append_action(Action(op, undo, redo, datas))
 
             except Exception as e:
                 logging.error("PERFORM_LAYER_DECORATE_UNDOREDO: exception {}".format(str(e)))
@@ -185,7 +185,7 @@ class Action(object):
         self.args = args
 
     def __str__(self):
-        return "{}->{}".format(self.operation, *self.args)
+        return "op:'{}'->args:({})".format(self.operation, *self.args)
 
 
 ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
@@ -365,7 +365,7 @@ class UndoRedoMgr(object):
 
         all_actions = [(action.operation, *action.args) 
                             for action in itertools.chain(self._undo, self._redo)]
-        # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[0]))
+        logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[-1]))
         # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[1]))
         self._save_as_pickle(all_actions, save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
 
@@ -389,8 +389,9 @@ class UndoRedoMgr(object):
         save_path = os.path.join(os.getcwd(), 'pickles')
         if os.path.exists(save_path):
             my_list = self._read_from_pickle([], save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
-            cp_dredo = None
-            for op, dundo, dredo in my_list:
+            dredo = None
+            for op, (dundo, dredo) in my_list:
+                # dundo, dredo = args
                 logging.debug("UNDOREDO: load from pickle file on {}".format(op))
                 logging.debug("UNDOREDO: load from pickle file dundo->{}".format(dundo))
                 logging.debug("UNDOREDO: load from pickle file dredo->{}".format(dredo))
