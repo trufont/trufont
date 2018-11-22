@@ -237,16 +237,8 @@ class PenTool(BaseTool):
     # function and her decorator are called at the beginnig of left down mouse 
     @undoredomgr.prepare_layer_decorate_undoredo(penTool_expand_params, name="draw_point",
                                          paths=True, guidelines=False, components=False, anchors=False)
-    def OnMouseDown(self, event):
-        if not event.LeftDown():
-            super().OnMouseDown(event)
-            return
-        canvas = self.canvas
-        canvas.SetFocus()
+    def OnMouseDownLeftDown(self, event):
         layer = self.layer
-        if layer is None:
-            return
-        # self.layer.beginUndoGroup()
         self.origin = pos = event.GetCanvasPosition()
         mouseItem = self.mouseItem
         selPoint = self.selectedPoint()
@@ -322,6 +314,18 @@ class PenTool(BaseTool):
 
         trufont.TruFont.updateUI()
 
+    def OnMouseDown(self, event):
+        if not event.LeftDown():
+            super().OnMouseDown(event)
+            return
+        canvas = self.canvas
+        canvas.SetFocus()
+        layer = self.layer
+        if layer is None:
+            return
+        #something happens .....
+        self.OnMouseDownLeftDown(event)
+
     def OnMotion(self, event):
         canvas = self.canvas
         pos = event.GetCanvasPosition()
@@ -345,10 +349,10 @@ class PenTool(BaseTool):
         path = self.targetPath
         if path is None:
             return
-        logging.debug("PENTOOL: OnMotion")
         points = path.points
         # selected point
         pt = points[-1]
+        logging.debug("PENTOOL: OnMotion - pt.type -> {}".format(pt.type))
         if not path.open:
             if pt.type == "curve":
                 pt_ = points[-2]
@@ -356,6 +360,8 @@ class PenTool(BaseTool):
                     pt = pt_
         if pt.type is not None and not self.shouldMoveOnCurve:
             # don't make a curve until enough distance is reached
+            logging.debug("PENTOOL: OnMotion pt.type -> {} shouldBe {}".format(pt.type, 
+                                                                        self.shouldMoveOnCurve))
             diff = wx.RealPoint(event.GetPosition()) - canvas.canvasToClient(
                 self.origin
             )
@@ -382,6 +388,8 @@ class PenTool(BaseTool):
                 pt.selected = False
                 points[-2].selected = True
         else:
+            logging.debug("PENTOOL: OnMotion NOT - pt.type -> {} shouldBe {}".format(pt.type, 
+                                                                            self.shouldMoveOnCurve))
             if pt.type is not None:
                 onCurveIndex = -1
                 onCurve = pt
@@ -394,6 +402,7 @@ class PenTool(BaseTool):
             if event.ShiftDown():
                 pos = self.clampToOrigin(pos, wx.RealPoint(onCurve.x, onCurve.y))
             if self.shouldMoveOnCurve:
+                logging.debug("PENTOOL: OnMotion - shouldMoveOnCurve")
                 dx = pos.x - pt.x
                 dy = pos.y - pt.y
                 onCurve.x += dx
@@ -408,6 +417,7 @@ class PenTool(BaseTool):
                     next_.x += dx
                     next_.y += dy
             else:
+                logging.debug("PENTOOL:  OnMotion - Not shouldMoveOnCurve")
                 pt.x = pos.x
                 pt.y = pos.y
                 if path.open and len(points) >= 3 and onCurve.smooth:
