@@ -20,8 +20,8 @@ def path_expand_params(obj, *args, **kwargs):
     return obj._parent
 #-------------------------
 
-@undoredomgr.layer_decorate_undoredo(path_expand_params, operation="Break path", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
+# @undoredomgr.layer_decorate_undoredo(path_expand_params, operation="Break path", 
+#                                      paths=True, guidelines=False, components=False, anchors=False)
 def breakPath(path, index):
     points = path._points
     point = points[index]
@@ -39,14 +39,14 @@ def breakPath(path, index):
     # we should define __copy__ on Point to not have to do this
     otherPoint._parent = None
     otherPoint.selected = False
-    points.append(otherPoint)
+    # points.append(otherPoint)
     point.type = "move"
     points.applyChange()
 
 
 # Layer.joinPaths() ?
-@undoredomgr.layer_decorate_undoredo(path_expand_params, operation="Join paths", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
+# @undoredomgr.layer_decorate_undoredo(path_expand_params, operation="Join paths", 
+#                                      paths=True, guidelines=False, components=False, anchors=False)
 def joinPaths(path, atStart, otherPath, atOtherStart, mergeJoin=False):
     if path is otherPath:
         if atStart == atOtherStart:
