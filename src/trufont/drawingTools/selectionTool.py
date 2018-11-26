@@ -16,6 +16,7 @@ from wx import GetTranslation as tr
 import trufont.util.deco4class as deco4class
 import trufont.objects.undoredomgr as undoredomgr
 
+import logging
 # The icon for the tool's button
 _path = CreatePath()
 _path.MoveToPoint(3.018, 1.167)
@@ -52,6 +53,9 @@ _point.AddRectangle(19, 19, 5, 5)
 #-------------------------
 def selectionTool_expand_params(obj, *args, **kwargs):
     return obj.layer 
+
+def selectionTool2_expand_params(obj, *args, **kwargs):
+    return obj.layer, obj.operation 
 #-------------------------
 
 # @deco4class.decorator_classfunc()
@@ -71,6 +75,8 @@ class SelectionTool(BaseTool):
         # TODO flush on dpi change event. need wx 3.1 and beyond...
         self._cursor = None
         self._pointCursor = None
+
+        self.operation = None
 
     @property
     def cursor(self):
@@ -151,7 +157,7 @@ class SelectionTool(BaseTool):
         item_ = self.canvas.itemAt(pos, skipElement=item.point)
         if not (item_.__class__ is PointRecord and atOpenBoundary(item_.point)):
             return
-        # joinPaths is decorated
+        # joinPaths is 'undo/redo' decorated
         joinPaths(item.path, not item.index, item_.path, not item_.index, True)
         trufont.TruFont.updateUI()
 
@@ -262,29 +268,38 @@ class SelectionTool(BaseTool):
         if not event.LeftDown():
             super().OnMouseDown(event)
             return
+        logging.debug("SELECTIONTOOL: OnMouseDown init")
         canvas = self.canvas
         layer = self.layer
         self.origin = pos = event.GetCanvasPosition()
         item = self.mouseItem
         if item is not None:
             cls = item.__class__
+            logging.debug("SELECTIONTOOL: OnMouseDown item not none -> {}".format(cls))
             if cls is Component:
+                logging.debug("SELECTIONTOOL: OnMouseDown item not none is component")
                 self.deltaToComponent = pos - wx.RealPoint(*item.origin)
             elif cls is PointRecord:
+                logging.debug("SELECTIONTOOL: OnMouseDown item not none is point")
                 item = item.point
             elif cls is SegmentRecord:
+                logging.debug("SELECTIONTOOL: OnMouseDown item not none is segment")
                 # mouseDClick may be followed by mouseDown w/o mouseUp
                 return
             if event.ControlDown():
+                logging.debug("SELECTIONTOOL: OnMouseDown item not none invert selection")
                 item.selected = not item.selected
             else:
                 if not item.selected:
                     layer.clearSelection()
                     item.selected = True
         else:
+            logging.debug("SELECTIONTOOL: OnMouseDown searching item none")
             self.mouseItem = item = canvas.segmentAt(pos)
             handleSelection = False
+
             if item.__class__ is SegmentRecord:
+                logging.debug("SELECTIONTOOL: OnMouseDown item segment")
                 firstPoint = item.points[0]
                 self.deltaToSegment = pos - wx.RealPoint(firstPoint.x, firstPoint.y)
                 if event.AltDown() and item.segment.type != "curve":
@@ -294,11 +309,13 @@ class SelectionTool(BaseTool):
                 handleSelection = layer is not None
             if handleSelection:
                 if event.ControlDown():
+                    logging.debug("SELECTIONTOOL: OnMouseDown add all points")
                     self.oldSelection = {
                         elem for elem in layer.selection if elem.__class__ is Point
                     }
                 else:
                     layer.clearSelection()
+        logging.debug("SELECTIONTOOL: OnMouseDown save oldPath")
         if self.mouseItem is not None:
             self.oldPath = (layer.closedGraphicsPath, layer.openGraphicsPath)
         else:
@@ -306,6 +323,28 @@ class SelectionTool(BaseTool):
             self.rubberBandRect = x, y, x, y
         canvas.Refresh()
         canvas.SetFocus()
+
+    @undoredomgr.prepare_layer_decorate_undoredo(selectionTool_expand_params, name="selection_move",
+                                         paths=True, guidelines=False, components=False, anchors=False)
+    def addPointsLayerSelection(self, event, layer: Layer, x1: float, x2: float , y1: float, y2: float):
+        """ add points under the rect selection is selection set """
+        if x1 > x2:
+            x1, x2 = x2, x1
+        if y1 > y2:
+            y1, y2 = y2, y1
+        points = set()
+        for path in layer.paths:
+            for point in path.points:
+                if x1 <= point.x <= x2 and y1 <= point.y <= y2:
+                    points.add(point)
+        if event.ControlDown():
+            points ^= self.oldSelection
+        skipOffCurve = event.AltDown()
+        for path in layer.paths:
+            for point in path.points:
+                if skipOffCurve and point.type is None:
+                    continue
+                point.selected = point in points
 
     def OnMotion(self, event):
         canvas = self.canvas
@@ -327,6 +366,7 @@ class SelectionTool(BaseTool):
         layer = self.layer
         if item is not None:
             cls = item.__class__
+            # logging.debug("SELECTIONTOOL: OnMotion item not none {}".format(cls))
             if cls is GuidelineSegment:
                 item = item.guideline
                 angle = math.atan2(pos.y - item.y, pos.x - item.x)
@@ -382,46 +422,39 @@ class SelectionTool(BaseTool):
                 option = "slide"
             else:
                 option = None
-            # self.prepareUndo()
+            # start of move with OnMotion - This func is 'undo/redo' prepare_layer_.... decorated 
+            self.operation = "Move selection"
             moveUILayerSelection(layer, dx, dy, option=option)
         else:
+            # logging.debug("SELECTIONTOOL: OnMotion item is none")
             x2, y2 = pos.Get()
+            # logging.debug("SELECTIONTOOL: OnMotion item is none: point is: {}".format(pos.Get()))
             rubberBandRect = self.rubberBandRect
             if rubberBandRect is None:
                 self.rubberBandRect = x2, y2, x2, y2
                 return
             x1, y1, *_ = rubberBandRect
             self.rubberBandRect = x1, y1, x2, y2
-            if layer is not None:
-                if x1 > x2:
-                    x1, x2 = x2, x1
-                if y1 > y2:
-                    y1, y2 = y2, y1
-                points = set()
-                for path in layer.paths:
-                    for point in path.points:
-                        if x1 <= point.x <= x2 and y1 <= point.y <= y2:
-                            points.add(point)
-                if event.ControlDown():
-                    points ^= self.oldSelection
-                skipOffCurve = event.AltDown()
-                for path in layer.paths:
-                    for point in path.points:
-                        if skipOffCurve and point.type is None:
-                            continue
-                        point.selected = point in points
+            if layer:
+                # logging.debug("SELECTIONTOOL: OnMotion item is none: layer is: {}".format(layer))
+                # add points under the selection blue rect  
+                self.operation = "Update selection"
+                self.addPointsLayerSelection(event, layer, x1, x2, y1, y2)
+
         trufont.TruFont.updateUI()
 
     # function and her decorator are called at the end of mouse move when leftup becomes up
-    @undoredomgr.perform_layer_decorate_undoredo(selectionTool_expand_params, name="selection_move",
+    @undoredomgr.perform_layer_decorate_undoredo(selectionTool2_expand_params, name="selection_move",
                                          operation="Move selection",
                                          paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseUpLeftUp(self, event):
+        logging.debug("SELECTIONTOOL: OnMouseUp")
         self.maybeJoinPath(event.GetCanvasPosition())
         self.mouseItem = None
         self.oldPath = None
         self.oldSelection = set()
         self.rubberBandRect = None
+        self.operation = None
 
     def OnMouseUp(self, event):
         if event.LeftUp():
