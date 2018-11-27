@@ -97,6 +97,17 @@ def pathGraphicsPathFactory(path):
             if point.type == "curve":
                 graphicsPath.AddCurveToPoint(*stack)
                 stack = []
+            elif point.type == "qcurve":
+                if len(stack) == 4:
+                    graphicsPath.AddQuadCurveToPoint(*stack)
+                else:
+                    for offset in range(0, len(stack) - 4, 2):
+                        cx1, cy1, cx2, cy2 = stack[offset : offset + 4]
+                        graphicsPath.AddQuadCurveToPoint(
+                            cx1, cy1, (cx1 + cx2) / 2, (cy1 + cy2) / 2
+                        )
+                    graphicsPath.AddQuadCurveToPoint(*stack[-4:])
+                stack = []
     if not open_:
         graphicsPath.CloseSubpath()
     return graphicsPath
