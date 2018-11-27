@@ -218,7 +218,8 @@ Glitch Rewind version control, perhaps an inspiration?
 <https://medium.com/glitch/reinventing-version-control-with-glitch-rewind-914c350da442>
 
 Mercurial:
-<https://www.mercurial-scm.org>
+<https://www.mercurial-scm.org>
+
 ## Appendix & Related Topics
 
 ### Integrating undo mechanism with version control
