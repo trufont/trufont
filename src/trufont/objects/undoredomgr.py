@@ -10,7 +10,7 @@ import copy
 from tfont.objects import Layer
 # import trufont.util.deco4class as deco4class
 
-from typing import Optional, Any, Union, Tuple, Callable, Dict
+from typing import Optional, Any, Union, Tuple, Callable, Dict, List
 import functools
 import inspect
 
@@ -176,9 +176,18 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
     return decorate_fn
 
+def truglyph_decorate_undoredo(func_get_layer: Callable, operation="None", layer=True):
+    def decorate_fn(fn):
+        """ func decorate"""
+        @functools.wraps(fn)
+        def decorate_args(*args, **kwargs):
+            return fn(*args, **kwargs)
+        return decorate_args
+    return decorate_fn
+
 
 class Action(object):
-    def __init__(self, operation: str, callback_undo: Callable, callback_redo: Callable, *args):
+    def __init__(self, operation: str, callback_undo: Callable, callback_redo: Callable, *args: Tuple):
         self.operation = operation
         self.callback_undo = callback_undo
         self.callback_redo = callback_redo
@@ -222,9 +231,7 @@ class UndoRedoMgr(object):
     NAMEPICKLE = "undoredo-{}.pickle"
     
     __slots__ = ("_logger", "_name", "_undo", "_redo", "_size", "_debug", 
-                "callback_on_activated", 
-				"callback_after_undo", "callback_after_redo",
-                "callback_after_append")
+				"callback_after_undo", "callback_after_redo", "callback_after_append")
 
     def __init__(self, name: str, logger: logging.Logger=None):
         """ init for mgr: logger for messages
@@ -236,16 +243,10 @@ class UndoRedoMgr(object):
         self._redo = []
         self._size = 0
         self._debug = False
-        self.callback_on_activated = None
         self.callback_after_undo = None
         self.callback_after_redo = None
         self.callback_after_append = None
-	
-    def __del__(self):
-        if self._debug:
-            self.save()
-
-    
+	    
     @property
     def debug(self):
         return self._debug
@@ -253,31 +254,15 @@ class UndoRedoMgr(object):
     @debug.setter
     def debug(self, debug: bool):
         self._debug = debug
-	
-    def set_callback_on_activated(self, callback, *args, **kwargs):
-        if isinstance(callback, Callable):
-           self.callback_on_activated = functools.partial(callback, *args, *kwargs)
-
-
-    def set_callback_after_undo(self, callback, *args, **kwargs):
-        if isinstance(callback, Callable):
-           self.callback_after_undo = functools.partial(callback, *args, *kwargs)
-
-		
-    def set_callback_after_redo(self, callback, *args, **kwargs):
-        if isinstance(callback, Callable):
-	        self.callback_after_redo = functools.partial(callback, *args, *kwargs)
-
-
-    def set_callback_after_append(self, callback, *args, **kwargs):
-        if isinstance(callback, Callable):
-        	self.callback_after_append = functools.partial(callback, *args, *kwargs)
 
     def str_state(self) -> str:
         """ show state of mgr """
         return  "{}-size: {:.02f} Kb - UNDO[{}] - REDO[{}]".format(self._name, self._size/1024, 
                                                                    self.len_undo(), 
                                                                    self.len_redo())
+    # -------------
+    # append action 
+    
     def append_action(self, action: Action):
         """ append action to the undo stack """
         self._undo.append(action)
@@ -287,6 +272,18 @@ class UndoRedoMgr(object):
         if self._debug:
             self._size = _getsize(self)
 
+    def set_callback_after_append(self, callback, *args, **kwargs):
+        if isinstance(callback, Callable):
+            self.callback_after_append = functools.partial(callback, *args, *kwargs)
+
+    def _after_append_action(self):
+        """ play this partial function after append action"""
+        if self.callback_after_append:
+            self.callback_after_append()
+    
+    # -------------
+    # undo action
+
     def undo(self) -> Action:
         """ play undo, if undo stack is empty raises an exception (indexError)"""
         last_action = self._undo.pop()
@@ -294,13 +291,30 @@ class UndoRedoMgr(object):
         self._after_undo()
         return last_action
 
-    # def prepare_undo(self, name: str) -> bool:
-    #     """ set a marker string to play later a group of undo """
-    #     pass
+    def all_actions_undo(self) -> List[Action]:
+        return self._undo
 
-    # def perform_undo(self, to_name):
-    #     """ run undo from group of undo"""
-    #     pass    	
+    def can_undo(self) -> bool:
+        return self.len_undo() > 0
+
+    def len_undo(self) -> int:
+        """ show len of stack undo """
+        return len(self._undo)
+            
+    def next_undo_operation(self) -> str:
+        return self._undo[-1].operation if self.can_undo() else ""             
+
+    def set_callback_after_undo(self, callback, *args, **kwargs):
+        if isinstance(callback, Callable):
+           self.callback_after_undo = functools.partial(callback, *args, *kwargs)
+
+    def _after_undo(self):
+        """ play this partial function after an undo """        
+        if self.callback_after_undo:
+            self.callback_after_undo()
+        
+    # -------------
+    # redo action
 
     def redo(self) -> Action:
         """ play redo, if redo stack is empty raises an exception (indexError)"""
@@ -310,15 +324,8 @@ class UndoRedoMgr(object):
         self._after_redo()
         return last_action
 
-    def can_undo(self) -> bool:
-        return self.len_undo() > 0
-
-    def len_undo(self) -> int:
-        """ show len of stack undo """
-        return len(self._undo)
-			
-    def undo_next(self) -> str:
-        return self._undo[-1].operation 			
+    def all_actions_redo(self) -> List[Action]:
+        return self._redo
 
     def can_redo(self) -> bool:
         return self.len_redo() > 0
@@ -327,30 +334,22 @@ class UndoRedoMgr(object):
         """ show len of redo stack """
         return len(self._redo)
 
-    def redo_next(self) -> str:
-        return self._redo[-1].operation 
+    def next_redo_operation(self) -> str:
+        return self._redo[-1].operation if self.can_redo() else ""
 		
-
-    def on_activated(self):
-        if self.callback_on_activated:
-            self.callback_on_activated()
-		
-    def _after_append_action(self):
-        """ play this partial function after append action"""
-        if self.callback_after_append:
-            self.callback_after_append()
-	
-    def _after_undo(self):
-        """ play this partial function after an undo """    	
-        if self.callback_after_undo:
-            self.callback_after_undo()
+    def set_callback_after_redo(self, callback, *args, **kwargs):
+        if isinstance(callback, Callable):
+            self.callback_after_redo = functools.partial(callback, *args, *kwargs)
 
     def _after_redo(self):
         """ play this partial function after a redo"""
         if self.callback_after_redo:
             self.callback_after_redo()
-	
-    def save(self):
+    
+    # ---------------------------------------------
+    # Save and load part -> debug and unit tests	
+
+    def save(self, all_actions: List):
         """ save all datas to play again later """
         save_path = os.path.join(os.getcwd(), 'pickles')
         if not os.path.exists(save_path):
@@ -358,61 +357,42 @@ class UndoRedoMgr(object):
             logging.debug("UNDOREDO: create pickles folder as {}".format(folder))
 
         # needs to save only what there is in the _undo stack 
-        all_actions = [(action.operation, *action.args) for action in self._undo]
         # ----------------   for action in itertools.chain(self._undo, self._redo)]
         # show the last
         if all_actions:
-            logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[-1]))
+            logging.debug("UNDOREDO: save as pickle file - last action is {}".format(all_actions[-1]))
             # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[1]))
-            self._save_as_pickle(all_actions, save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
+            _save_as_pickle(all_actions, save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
 
-    def _save_as_pickle(self, tag:Any, path:str, name_pickle: str=None):
-        """
-        """
-        if name_pickle is None:
-            name_pickle = type(tag).__name__ +'.pickle'
-        name = os.path.join(path, name_pickle)
-        try:
-            with open(name, 'wb') as fp:
-                pickle.dump(tag, fp)
-        except Exception as e:
-            logging.error("UNDOREDO: pickle write error -> {}".format(str(e)))       
-        return name 
-    
 
-    def load(self, layer: Layer):
+    def load(self):
         """ load to play now """
         logging.debug("UNDOREDO: ---------------- enter load")
         save_path = os.path.join(os.getcwd(), 'pickles')
         if os.path.exists(save_path):
-            my_list = self._read_from_pickle([], save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
-            dredo = None
-            for op, (dundo, dredo) in my_list:
-                logging.debug("UNDOREDO: load from pickle file on {}".format(op))
-                logging.debug("UNDOREDO: load from pickle file dundo->{}".format(id(dundo)))
-                logging.debug("UNDOREDO: load from pickle file dredo->{}".format(id(dredo)))
-                logging.debug("UNDOREDO: +++++++++++++++++++++++++++++++++++++++++++++++ ")
-                # lambda: layer.setToSnapshot(dundo) -- DOES NOT WORK ?? WHY ???
-                f_undo = functools.partial(layer.setToSnapshot, dundo) 
-                f_redo = functools.partial(layer.setToSnapshot, dredo) 
-                self._undo.append(Action(op, f_undo, f_redo, (dundo, dredo)))
+            return _read_from_pickle([], save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
 
-            if dredo:
-                logging.debug("UNDOREDO: load from pickles layer init-> {}".format(self._undo[0]))
-                logging.debug("UNDOREDO: load from pickles layer last-> {}".format(self._undo[-1]))
-                layer.setToSnapshot(dredo)
-                self._size = _getsize(self)
-            #cself._after_append_action()
-        logging.debug("UNDOREDO: ---------------- exit load")
+def _save_as_pickle(tag:Any, path:str, name_pickle: str=None):
+    """
+    """
+    if name_pickle is None:
+        name_pickle = type(tag).__name__ +'.pickle'
+    name = os.path.join(path, name_pickle)
+    try:
+        with open(name, 'wb') as fp:
+            pickle.dump(tag, fp)
+    except Exception as e:
+        logging.error("UNDOREDO: pickle write error -> {}".format(str(e)))       
+    return name 
 
-    def _read_from_pickle(self, tag: Any, path: str, name_pickle: str):
-        """  load from a pickle  """
-        name = os.path.join(path, name_pickle)
-        if os.path.isfile(name):
-            try:
-                with open(name, 'rb') as fp:
-                    tag = pickle.load(fp)
-            except Exception as e:
-                logging.error("UNDOREDO: pickle read error -> {}".format(str(e)))       
-        return tag 
+def _read_from_pickle(tag: Any, path: str, name_pickle: str):
+    """  load from a pickle  """
+    name = os.path.join(path, name_pickle)
+    if os.path.isfile(name):
+        try:
+            with open(name, 'rb') as fp:
+                tag = pickle.load(fp)
+        except Exception as e:
+            logging.error("UNDOREDO: pickle read error -> {}".format(str(e)))       
+    return tag 
 
