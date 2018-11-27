@@ -1235,6 +1235,14 @@ class TransformHeader(wx.Panel):
         ctx.SetBrush(pressedBrush if pressedIndex == 12 else brush)
         ctx.DrawPath(path)
 
+#-------------------------
+# Used by undoredo decorator
+#-------------------------
+def layer_expand_params(obj, *args, **kwargs):
+    """ use by decorator to get three params as
+    layer, undoredomgr and operation """
+    return obj._layersView._activeLayer
+#-------------------------
 
 class LayersHeader(wx.Panel):
     def __init__(self, parent, font):
@@ -1259,6 +1267,7 @@ class LayersHeader(wx.Panel):
     # wx methods
     # ----------
 
+    @undoredomgr.truglyph_decorate_undoredo(layer_expand_params, operation="Add layer", layer=True)
     def DoCreateLayer(self):
         # this logic should probably be in the model
         view = self._layersView
