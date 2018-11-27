@@ -273,10 +273,10 @@ class FontWindow(wx.Frame):
                 glyph.frame = self
                 glyph.debug = self._debug
                 self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
-                self._logger.debug("UNDOREDO: Append in dict from TruGlyph ('{}')".format(glyph.name))
+                self._logger.debug("UNDOREDO_LOAD: Append in dict from TruGlyph ('{}')".format(glyph.name))
                 if self._debug:
-                    self._logger.debug("UNDOREDO: Load undoredo stack from disk")
-                    self.dict_undoredomdgr[glyph.name].load(self.activeLayer)
+                    self._logger.debug("UNDOREDO_LOAD: Load undoredo stack - Layer {}".format(self.activeLayer))
+                    glyph.load_from_undoredo(self.activeLayer)
             tab.undoredo = glyph.get_undoredo()
         return canvas
 
@@ -517,13 +517,13 @@ class FontWindow(wx.Frame):
         self._logger.debug("UNDOREDO: OnUpdateUndoRedoMenu {}".format(undoredo.str_state()))
         self.menu_undo.Enable(undoredo.can_undo())
         if undoredo.can_undo():
-            self.menu_undo.SetText("Undo '{}'\tCtrl+Z".format(undoredo.undo_next()))
+            self.menu_undo.SetText("Undo '{}'\tCtrl+Z".format(undoredo.next_undo_operation()))
         else:
             self.menu_undo.SetText("Undo\tCtrl+Z") 
 
         self.menu_redo.Enable(undoredo.can_redo())
         if undoredo.can_redo():
-            self.menu_redo.SetText("Redo '{}'\tCtrl+Shift+Z".format(undoredo.redo_next()))
+            self.menu_redo.SetText("Redo '{}'\tCtrl+Shift+Z".format(undoredo.next_redo_operation()))
         else:
             self.menu_redo.SetText("Redo\tCtrl+Shift+Z") 
 
