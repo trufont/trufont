@@ -179,7 +179,20 @@ undo as coherent and abstract as practical. Example actions:
 I’m not yet sure it will be necessary to store undo data on disk instead
 of in memory. Perhaps we should focus more on copyability of objects,
 rather than serializability. The undo manager could focus more on
-actions, and less on data.
+actions, and less on serialized objects.
+
+## Actions vs Serialization
+
+To handle the actual undo/redo actions, the "Command Patterns" is commonly
+used. [This article](http://www.informit.com/articles/article.aspx?p=2471643&seqNum=5)
+contains an explanation. In short, it's about tracking commands, and their
+reverse. We apply action `xyz` to the object, and action `abc` will reverse
+that operation.
+
+This approach should be compared to a more state-based approach, where one
+freezes the state of an object, which can then be used to reinstate that
+version of the object later. Serialization fits a model of version control
+better, but may be less efficient.
 
 ## TruFont Qt Undo Manager
 
