@@ -52,30 +52,30 @@ class TruGlyph(Glyph):
         return self._undoredo
 
     def load_from_undoredo(self, layer: Layer):
-        logging.debug("TRUGLYPH: ---------------- enter load debug is {} and layer {}".format(self._debug, layer))
+        logging.debug("TRUGLYPH: ---------------- enter load debug is {} and layer is {}".format(self._debug, layer))
         if self._debug:
-            if True:
-                all_actions = self.get_undoredo().load()
-               	logging.debug("TRUGLYPH: load from pickle file from undo -> {} items".format(len(all_actions)))
-                dredo = None
-                for op, (dundo, dredo) in all_actions: 
-                    # logging.debug("TRUGLYPH: load from pickle file on {}".format(op))
-                   	logging.debug("TRUGLYPH: load from pickle file dundo->{}".format(id(dundo)))
-                   	logging.debug("TRUGLYPH: load from pickle file dredo->{}".format(id(dredo)))
-                   	logging.debug("TRUGLYPH: +++++++++++++++++++++++++++++++++++++++++++++++ ")
-                   	# lambda: layer.setToSnapshot(dundo) -- DOES NOT WORK ?? WHY ???
-                   	f_undo = functools.partial(layer.setToSnapshot, dundo) 
-                   	f_redo = functools.partial(layer.setToSnapshot, dredo) 
-                   	self.get_undoredo().append_action(undoredomgr.Action(op, f_undo, f_redo, (dundo, dredo)))
+            all_actions = self.get_undoredo().load()
+            logging.debug("TRUGLYPH: load from pickle file from undo -> {} items".format(len(all_actions)))
+            dredo = None
+            for op, (dundo, dredo) in all_actions: 
+                # logging.debug("TRUGLYPH: load from pickle file on {}".format(op))
+                logging.debug("TRUGLYPH: load from pickle file dundo -> {}".format(id(dundo)))
+               	logging.debug("TRUGLYPH: load from pickle file dredo -> {}".format(id(dredo)))
+               	logging.debug("TRUGLYPH: +++++++++++++++++++++++++++++++++++++++++++++++ ")
+               	# lambda: layer.setToSnapshot(dundo) -- DOES NOT WORK ?? WHY ???
+               	f_undo = functools.partial(layer.setToSnapshot, dundo) 
+               	f_redo = functools.partial(layer.setToSnapshot, dredo) 
+               	self.get_undoredo().append_action(undoredomgr.Action(op, f_undo, f_redo, (dundo, dredo)))
 
-               	if dredo:
-                   	logging.debug("TRUGLYPH: load from pickles layer init-> {}".format(self.get_undoredo().all_actions_undo()[0]))
-                   	logging.debug("TRUGLYPH: load from pickles layer last-> {}".format(self.get_undoredo().all_actions_undo()[-1]))
-                   	layer.setToSnapshot(dredo)
+            if dredo:
+               	logging.debug("TRUGLYPH: load from pickles layer init-> {}".format(self.get_undoredo().all_actions_undo()[0]))
+               	logging.debug("TRUGLYPH: load from pickles layer last-> {}".format(self.get_undoredo().all_actions_undo()[-1]))
+               	layer.setToSnapshot(dredo)
        	logging.debug("TRUGLYPH: ---------------- exit load")
 
 
     def save_from_undoredo(self):
         if self._debug:
-            all_actions = [(action.operation, *action.args) for action in self.get_undoredo().all_actions_undo()]
+            # all_actions = [(action.operation, *action.args) for action in self.get_undoredo().all_actions_undo()]
+            all_actions = [action.datas_only() for action in self.get_undoredo().all_actions_undo()]
             self.get_undoredo().save(all_actions)
