@@ -196,32 +196,8 @@ class Action(object):
     def __str__(self):
         return "op:'{}'->args:({})".format(self.operation, *self.args)
 
-
-ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
-ITERITEMS = 'items'
-
-def _getsize(obj_0):
-    """Recursively iterate to sum size of object & members."""
-    _seen_ids = set()
-    def inner(obj):
-        obj_id = id(obj)
-        if obj_id in _seen_ids:
-            return 0
-        _seen_ids.add(obj_id)
-        size = sys.getsizeof(obj)
-        if isinstance(obj, ZERO_DEPTH_BASES):
-            pass # bypass remaining control flow and return
-        elif isinstance(obj, (tuple, list, Set, deque)):
-            size += sum(inner(i) for i in obj)
-        elif isinstance(obj, Mapping) or hasattr(obj, ITERITEMS):
-            size += sum(inner(k) + inner(v) for k, v in getattr(obj, ITERITEMS)())
-        # Check for custom object instances - may subclass above too
-        if hasattr(obj, '__dict__'):
-            size += inner(vars(obj))
-        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
-            size += sum(inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s))
-        return size
-    return inner(obj_0)
+    def datas_only(self):
+        return (self.operation, *self.args)
 
 
 # @deco4class.decorator_classfunc('len_undo', 'len_redo', 'show_undo', 'show_redo')
@@ -229,6 +205,7 @@ class UndoRedoMgr(object):
     """ Manage memory and event abour undo/redo/append
     actions """
     NAMEPICKLE = "undoredo-{}.pickle"
+    PICKLES_FOLDER = 'pickles'
     
     __slots__ = ("_logger", "_name", "_undo", "_redo", "_size", "_debug", 
 				"callback_after_undo", "callback_after_redo", "callback_after_append")
@@ -348,29 +325,27 @@ class UndoRedoMgr(object):
     
     # ---------------------------------------------
     # Save and load part -> debug and unit tests	
-
     def save(self, all_actions: List):
         """ save all datas to play again later """
-        save_path = os.path.join(os.getcwd(), 'pickles')
+        logging.debug("UNDOREDO: ---------------- enter save for {}".format(self._name))
+        save_path = os.path.join(os.getcwd(), UndoRedoMgr.PICKLES_FOLDER)
         if not os.path.exists(save_path):
             os.makedirs(save_path)
             logging.debug("UNDOREDO: create pickles folder as {}".format(folder))
 
-        # needs to save only what there is in the _undo stack 
-        # ----------------   for action in itertools.chain(self._undo, self._redo)]
-        # show the last
         if all_actions:
-            logging.debug("UNDOREDO: save as pickle file - last action is {}".format(all_actions[-1]))
-            # logging.debug("UNDOREDO: save as pickle file as {}".format(all_actions[1]))
             _save_as_pickle(all_actions, save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
 
 
     def load(self):
         """ load to play now """
-        logging.debug("UNDOREDO: ---------------- enter load")
-        save_path = os.path.join(os.getcwd(), 'pickles')
+        logging.debug("UNDOREDO: ---------------- enter load for {}".format(self._name))
+        save_path = os.path.join(os.getcwd(), UndoRedoMgr.PICKLES_FOLDER)
         if os.path.exists(save_path):
             return _read_from_pickle([], save_path, UndoRedoMgr.NAMEPICKLE.format(self._name))
+
+# ----------------------------------------------
+# sould be move to an another file, later ......
 
 def _save_as_pickle(tag:Any, path:str, name_pickle: str=None):
     """
@@ -396,3 +371,28 @@ def _read_from_pickle(tag: Any, path: str, name_pickle: str):
             logging.error("UNDOREDO: pickle read error -> {}".format(str(e)))       
     return tag 
 
+ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
+ITERITEMS = 'items'
+
+def _getsize(obj_0):
+    """Recursively iterate to sum size of object & members."""
+    _seen_ids = set()
+    def inner(obj):
+        obj_id = id(obj)
+        if obj_id in _seen_ids:
+            return 0
+        _seen_ids.add(obj_id)
+        size = sys.getsizeof(obj)
+        if isinstance(obj, ZERO_DEPTH_BASES):
+            pass # bypass remaining control flow and return
+        elif isinstance(obj, (tuple, list, Set, deque)):
+            size += sum(inner(i) for i in obj)
+        elif isinstance(obj, Mapping) or hasattr(obj, ITERITEMS):
+            size += sum(inner(k) + inner(v) for k, v in getattr(obj, ITERITEMS)())
+        # Check for custom object instances - may subclass above too
+        if hasattr(obj, '__dict__'):
+            size += inner(vars(obj))
+        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
+            size += sum(inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s))
+        return size
+    return inner(obj_0)
