@@ -2,7 +2,6 @@
 import logging
 import sys
 import functools
-import itertools
 import os
 import pickle
 import copy
@@ -11,7 +10,6 @@ from tfont.objects import Layer
 # import trufont.util.deco4class as deco4class
 
 from typing import Optional, Any, Union, Tuple, Callable, Dict, List
-import functools
 import inspect
 
 #import dataclasses
@@ -19,6 +17,11 @@ import inspect
 
 from numbers import Number
 from collections import Set, Mapping, deque
+import trufont
+
+# DISABLED_UNDOREDO = trufont.TruFont.settings["disable_undoredo"]
+#DISABLED_UNDERDO = trufont.TruFont._internal["disable_undoredo"]
+
 
 def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
                                     paths=True, anchors=True, components=True, guidelines=True):
@@ -33,18 +36,24 @@ def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
         @functools.wraps(fn)
         def decorate_args(*args, **kwargs):
             """ """
+            logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: disable_undoredo {}".format(trufont.TruFont._internal))
+            disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
             ret = None 
             try:
-                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
+                # underedo disable 
+                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                    logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
-                # get layer obj 
-                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO:  name is {}".format(name)) 
-                params = func_get_layer(*args, **kwargs)
-                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
-                layer = params
+                    # get layer obj 
+                    logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO:  name is {}".format(name)) 
+                    params = func_get_layer(*args, **kwargs)
+                    logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
+                    layer = params
 
-                logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: copy before func on name {}".format(name))
-                layer.beginUndoGroup(name, paths, anchors, components, guidelines)
+                    logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: copy before func on name {}".format(name))
+                    layer.beginUndoGroup(name, paths, anchors, components, guidelines)
+                else:
+                    logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: DISABLED on {}{}".format(fn.__name__, inspect.signature(fn)))
 
                 # call func
                 logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: call func")
@@ -70,38 +79,45 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
     """ 
     def decorate_fn(fn):
         """ func decorate"""
-        # logging.debug("DECORATE_UNDOREDO: on func: {}".format(fn.__name__))
 
         @functools.wraps(fn)
         def decorate_args(*args, **kwargs):
             """ """
+            logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: disable_undoredo {}".format(trufont.TruFont._internal))
+            disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
             ret = None 
             try:
-                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
+                # underedo enable 
+                if not disable_undoredo: #trufont.TruFont.settings["disable_undoredo"]:
+                    logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
-                # get layer obj 
-                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: name is {}".format(name)) 
-                params = func_get_layer(*args, **kwargs)
-                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
-                if isinstance(params, Tuple):
-                    layer = params[0]
-                    op = params[-1]
+                    # get layer obj 
+                    logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: name is {}".format(name)) 
+                    params = func_get_layer(*args, **kwargs)
+                    logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
+                    if isinstance(params, Tuple):
+                        layer = params[0]
+                        op = params[-1]
+                    else:
+                        layer = params
+                        op = operation
+
+                    undoredo = layer._parent.get_undoredo()
+                    # call PERFORM                
+                    logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: call func")
                 else:
-                    layer = params
-                    op = operation
+                    logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: DISABLED on {}{}".format(fn.__name__, inspect.signature(fn)))
 
-                undoredo = layer._parent.get_undoredo()
-                # call PERFORM                
-                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: call func")
                 ret = fn(*args, **kwargs)
 
-                #save datas after function call
-                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: copy after func on name {}".format(name)) 
-                undo, redo, datas = layer.endUndoGroup(name)
+                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                    #save datas after function call
+                    logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: copy after func on name {}".format(name)) 
+                    undo, redo, datas = layer.endUndoGroup(name)
 
-                # append action to undoredomgr
-                logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, undo, redo, datas))
+                    # append action to undoredomgr
+                    logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
+                    undoredo.append_action(Action(op, undo, redo, datas))
 
             except Exception as e:
                 logging.error("PERFORM_LAYER_DECORATE_UNDOREDO: exception {}".format(str(e)))
@@ -134,36 +150,43 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
             """ """
             ret = None 
             try:
-                logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
+                logging.debug("LAYER_DECORATE_UNDOREDO: disable_undoredo {}".format(trufont.TruFont._internal))
+                disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
+                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                    logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
-                # get layer obj 
-                logging.debug("LAYER_DECORATE_UNDOREDO: get params") 
-                params = func_get_layer(*args, **kwargs)
-                logging.debug("LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
-                if isinstance(params, Tuple):
-                    layer = params[0]
-                    op = params[-1]
+                    # get layer obj 
+                    logging.debug("LAYER_DECORATE_UNDOREDO: get params") 
+                    params = func_get_layer(*args, **kwargs)
+                    logging.debug("LAYER_DECORATE_UNDOREDO: {}->{}".format(func_get_layer.__name__, params)) 
+                    if isinstance(params, Tuple):
+                        layer = params[0]
+                        op = params[-1]
+                    else:
+                        layer = params
+                        op = operation
+                    undoredo = layer._parent.get_undoredo()
+
+                    logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}".format(op))
+
+                    logging.debug("LAYER_DECORATE_UNDOREDO: copy before func") 
+                    layer.beginUndoGroup(NONAME, paths, anchors, components, guidelines)
+
+                    # call func
+                    logging.debug("LAYER_DECORATE_UNDOREDO: call func")
                 else:
-                    layer = params
-                    op = operation
-                undoredo = layer._parent.get_undoredo()
+                    logging.debug("LAYER_DECORATE_UNDOREDO: DISABLED on {}{}".format(fn.__name__, inspect.signature(fn)))
 
-                logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}".format(op))
-
-                logging.debug("LAYER_DECORATE_UNDOREDO: copy before func") 
-                layer.beginUndoGroup(NONAME, paths, anchors, components, guidelines)
-
-                # call func
-                logging.debug("LAYER_DECORATE_UNDOREDO: call func")
                 ret = fn(*args, **kwargs)
 
-                #save datas after function call
-                logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
-                undo_redo_and_the_rest = layer.endUndoGroup(NONAME)
+                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                    #save datas after function call
+                    logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
+                    undo_redo_and_the_rest = layer.endUndoGroup(NONAME)
 
-                # append action to undoredomgr
-                logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
-                undoredo.append_action(Action(op, *undo_redo_and_the_rest))
+                    # append action to undoredomgr
+                    logging.debug("LAYER_DECORATE_UNDOREDO: create and append action on {}".format(op)) 
+                    undoredo.append_action(Action(op, *undo_redo_and_the_rest))
 
             except Exception as e:
                 logging.error("LAYER_DECORATE_UNDOREDO exception {}".format(str(e)))
@@ -176,11 +199,20 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
     return decorate_fn
 
-def truglyph_decorate_undoredo(func_get_layer: Callable, operation="None", layer=True):
+def truglyph_decorate_undoredo(func_get_truglyph: Callable, operation="None", layer=True):
     def decorate_fn(fn):
         """ func decorate"""
         @functools.wraps(fn)
         def decorate_args(*args, **kwargs):
+            # future implementation
+            logging.debug("TRUGLYPH_DECORATE_UNDOREDO: disable_undoredo {}".format(trufont.TruFont._internal))
+            disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
+            if not disable_undoredo:
+                # call func
+                logging.debug("TRUGLYPH_DECORATE_UNDOREDO: call func")
+            else:
+                logging.debug("TRUGLYPH_DECORATE_UNDOREDO: DISABLED on {}{}".format(fn.__name__, inspect.signature(fn)))
+
             return fn(*args, **kwargs)
         return decorate_args
     return decorate_fn

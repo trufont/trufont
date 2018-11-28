@@ -3,7 +3,10 @@ from tfont.objects import Glyph, Layer
 import trufont.objects.undoredomgr as undoredomgr
 from typing import Any, Tuple, List
 import functools
+import trufont
 import logging
+
+# DISABLED_UNDERDO = trufont.TruFont._internal["disable_undoredo"]
 
 class TruGlyph(Glyph):
     __slots__ = ("_logger", "_undoredo", "_frame", "_debug" )
@@ -52,8 +55,9 @@ class TruGlyph(Glyph):
         return self._undoredo
 
     def load_from_undoredo(self, layer: Layer):
-        logging.debug("TRUGLYPH: ---------------- enter load debug is {} and layer is {}".format(self._debug, layer))
-        if self._debug:
+        logging.debug("TRUGLYPH: disable_undoredo from {}".format(trufont.TruFont._internal))
+        disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
+        if not disable_undoredo and self._debug:
             all_actions = self.get_undoredo().load()
             logging.debug("TRUGLYPH: load from pickle file from undo -> {} items".format(len(all_actions)))
             dredo = None
@@ -75,7 +79,9 @@ class TruGlyph(Glyph):
 
 
     def save_from_undoredo(self):
-        if self._debug:
+        logging.debug("TRUGLYPH: disable_undoredo from {}".format(trufont.TruFont._internal))
+        disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
+        if not disable_undoredo and self._debug:
             # all_actions = [(action.operation, *action.args) for action in self.get_undoredo().all_actions_undo()]
             all_actions = [action.datas_only() for action in self.get_undoredo().all_actions_undo()]
             self.get_undoredo().save(all_actions)
