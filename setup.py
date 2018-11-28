@@ -25,6 +25,7 @@ setup(
         "fonttools>=3.9.1",
         "skia-pathops>=0.1.4",
         "wxPython>=4.0.3",
+		"click"
     ],
     platforms=["Win32", "Mac OS X", "Linux"],
     classifiers=[
