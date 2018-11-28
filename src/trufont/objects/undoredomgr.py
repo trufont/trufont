@@ -20,7 +20,7 @@ from collections import Set, Mapping, deque
 import trufont
 
 # DISABLED_UNDOREDO = trufont.TruFont.settings["disable_undoredo"]
-#DISABLED_UNDERDO = trufont.TruFont._internal["disable_undoredo"]
+# DISABLED_UNDERDO = trufont.TruFont._internal["disable_undoredo"]
 
 
 def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
