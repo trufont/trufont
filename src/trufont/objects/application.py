@@ -24,9 +24,9 @@ import logging
 
 
 class Application:
-    __slots__ = "_app", "_observers", "_settings", "_logger", "_debug", "_log"
+    __slots__ = "_app", "_observers", "_settings", "_internal", "_debug", "_logger"
 
-    def __init__(self, app, debug: bool=False, log: bool=False):
+    def __init__(self, app, **kwargs: dict):
         self._app = app
         self._settings = {
             "backgroundStrokeColor": (210, 210, 210, 255),
@@ -61,15 +61,15 @@ class Application:
             "tabWillClose": WeakSet(),
             "updateUI": WeakSet(),
         }
+        self._internal = kwargs
 
         # create a logger
-        self._log = log
-        if self._log:
+        if self._internal["log_rotating"]:
             self._logger = logstuff.create_timedrotating_logger("")
-        else:
+        if self._internal["log_screen"]:
             self._logger = logstuff.create_stream_logger("")
-        self._debug  = debug
-        self._logger.setLevel(logging.DEBUG if debug else logging.INFO)
+        self._debug  = self._internal["debug"]
+        self._logger.setLevel(logging.DEBUG if self._debug else logging.INFO)
         # DEBUG
 
     def __repr__(self):
