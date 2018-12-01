@@ -1,7 +1,8 @@
+import os
 from trufont import __version__
 from trufont.windows.fontWindow import FontWindow, prepareNewFont
 from typing import List, Optional
-from tfont.converters import TFontConverter
+from tfont.converters import TFontConverter, UFOConverter
 from tfont.objects import Font
 from weakref import WeakSet
 import wx
@@ -113,19 +114,35 @@ class Application:
             with wx.FileDialog(
                 None,
                 tr("Load Font File"),
-                wildcard="Font Files (*.tfont)|*.tfont",
+                wildcard=(
+                    "Font Files (*.tfont)|*.tfont|"
+                    "UFOs (*.ufo, *.ufoz, metainfo.plist)|*.ufo;*.ufoz;metainfo.plist"
+                ),
                 style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
             ) as dialog:
                 if dialog.ShowModal() == wx.ID_CANCEL:
-                    return
+                    return None
                 path = dialog.GetPath()
-        for window in wx.GetTopLevelWindows():
-            if isinstance(window, FontWindow):
-                if window._path == path:
-                    window.Raise()
-                    return
-        font = TFontConverter().open(path)
+
+        if path.endswith(".tfont"):
+            for window in wx.GetTopLevelWindows():
+                if isinstance(window, FontWindow):
+                    if window._path == path:
+                        window.Raise()
+                        return None
+            font = TFontConverter().open(path)
+        elif path.endswith((".ufo", ".ufoz")):
+            font = UFOConverter().open(path)
+        elif path.endswith("metainfo.plist"):
+            path = os.path.dirname(path)
+            font = UFOConverter().open(path)
+        else:
+            raise ValueError("Tried to import unknown file format.")
+
         wx.GetApp().fileHistory.AddFileToHistory(path)
+        # Importing and then saving should prompt the user to save in the native format.
+        if not path.endswith(".tfont"):
+            path = None
         FontWindow(None, font, path).Show()
         return font
 
