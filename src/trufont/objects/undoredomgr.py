@@ -291,6 +291,22 @@ class UndoRedoMgr(object):
         if self.callback_after_append:
             self.callback_after_append()
     
+
+    # -------------
+    # May be a context manager is a good id
+    # in prevision of start transaction:
+    # Ok diring undo/redo so commit 
+    # Ko during undo/redo so rollback
+    # 
+
+    def __enter__(self):
+        return self
+
+
+    def __exit__(self, type, value, traceback):
+        pass
+
+
     # -------------
     # undo action
  
