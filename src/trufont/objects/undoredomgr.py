@@ -19,7 +19,8 @@ from numbers import Number
 from collections import Set, Mapping, deque
 import trufont
 
-# DISABLED_UNDOREDO = trufont.TruFont.settings["disable_undoredo"]
+from contextlib import contextmanager
+
 # DISABLED_UNDERDO = trufont.TruFont._internal["disable_undoredo"]
 
 
@@ -41,7 +42,7 @@ def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
             ret = None 
             try:
                 # underedo disable 
-                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                if not disable_undoredo: 
                     logging.debug("PREPARE_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
                     # get layer obj 
@@ -88,7 +89,7 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
             ret = None 
             try:
                 # underedo enable 
-                if not disable_undoredo: #trufont.TruFont.settings["disable_undoredo"]:
+                if not disable_undoredo: 
                     logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
                     # get layer obj 
@@ -110,7 +111,7 @@ def perform_layer_decorate_undoredo(func_get_layer: Callable, name: str, \
 
                 ret = fn(*args, **kwargs)
 
-                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                if not disable_undoredo: 
                     #save datas after function call
                     logging.debug("PERFORM_LAYER_DECORATE_UNDOREDO: copy after func on name {}".format(name)) 
                     undo, redo, datas = layer.endUndoGroup(name)
@@ -152,7 +153,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
             try:
                 logging.debug("LAYER_DECORATE_UNDOREDO: disable_undoredo {}".format(trufont.TruFont._internal))
                 disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
-                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                if not disable_undoredo:
                     logging.debug("LAYER_DECORATE_UNDOREDO: decorated on {}{}".format(fn.__name__, inspect.signature(fn)))
 
                     # get layer obj 
@@ -179,7 +180,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
                 ret = fn(*args, **kwargs)
 
-                if not disable_undoredo: # trufont.TruFont.settings["disable_undoredo"]:
+                if not disable_undoredo: 
                     #save datas after function call
                     logging.debug("LAYER_DECORATE_UNDOREDO: copy after func") 
                     undo_redo_and_the_rest = layer.endUndoGroup(NONAME)
@@ -292,6 +293,22 @@ class UndoRedoMgr(object):
     
     # -------------
     # undo action
+ 
+    @contextmanager
+    def undo_ctx(self) -> Action:
+        """ play undo, as a context manager """
+        if not self.can_undo():
+            yield None
+        try:
+            last_action = self._undo.pop()
+            yield last_action
+
+        except Exception as e:
+            logging.error("UNDOREDOMGR: error on {}".format(str(e)))
+            # TO DO self._error()
+        else:
+            self._redo.append(last_action)
+            self._after_undo()
 
     def undo(self) -> Action:
         """ play undo, if undo stack is empty raises an exception (indexError)"""
@@ -324,6 +341,22 @@ class UndoRedoMgr(object):
         
     # -------------
     # redo action
+
+    @contextmanager
+    def redo_ctx(self) -> Action:
+        """ play undo, as a context manager """
+        if not self.can_redo():
+            yield None
+        try:
+            last_action = self._redo.pop()
+            yield last_action
+
+        except Exception as e:
+            logging.error("UNDOREDOMGR: error on redo {}".format(str(e)))
+            # TO DO self._error()
+        else:
+            self._undo.append(last_action)
+            self._after_redo()
 
     def redo(self) -> Action:
         """ play redo, if redo stack is empty raises an exception (indexError)"""

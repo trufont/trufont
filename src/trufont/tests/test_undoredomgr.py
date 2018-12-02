@@ -23,7 +23,7 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
 
 
     seq = 1
-    assert (mgr.can_redo() == False and mgr.can_redo() is not mgr.can_undo())
+    assert (mgr.can_redo() == False and mgr.can_undo() == False) 
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
 
     try: 
@@ -31,6 +31,23 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
     except Exception as e:
         logger.warning("Except - undo on an empty stack")
         assert isinstance(e, IndexError) and mgr.len_undo() == 0
+
+    seq += 1
+    with mgr.undo_ctx() as action:
+        pass
+    assert action is None
+    with mgr.redo_ctx() as action:
+        pass
+    assert action is None
+    logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
+
+    seq += 1
+    logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
+    mgr.append_action(undoredomgr.Action("A", None, None))
+    with mgr.undo_ctx() as action:
+        1/0
+    logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
+
 
     seq += 1
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
