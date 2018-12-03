@@ -121,7 +121,7 @@ class Application:
     def newFont(self) -> Font:
         font = Font()
         prepareNewFont(font)
-        FontWindow(None, font, None, self._logger, self._debug, self._disable_undoredo).Show()
+        FontWindow(None, font, None, self._logger, self._debug, False, self._disable_undoredo).Show()
         return font
 
     def openFont(self, path=None) -> Optional[Font]:
@@ -142,7 +142,7 @@ class Application:
                     return
         font = TFontConverter().open(path)
         wx.GetApp().fileHistory.AddFileToHistory(path)
-        FontWindow(None, font, path, self._logger, self._debug, self._disable_undoredo).Show()
+        FontWindow(None, font, path, self._logger, self._debug, False, self._disable_undoredo).Show()
         return font
 
     def removeObserver(self, key, observer):

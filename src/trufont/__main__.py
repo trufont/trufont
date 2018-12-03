@@ -15,7 +15,8 @@ import logging
 @click.option('--log_screen', is_flag=True, help='Enable log to screen')
 @click.option('--log_rotating', is_flag=True, help='Enable log in file')
 @click.option('--disable_undoredo', is_flag=True, help='Disable undo/redo system')
-def main(font_name: Optional[str], cwd: str, debug: bool, log_screen: bool, log_rotating: bool, disable_undoredo: bool):
+def main(font_name: Optional[str], cwd: str, debug: bool, log_screen: bool, log_rotating: bool, 
+    disable_undoredo: bool):
     """ """
     app = wx.App()
     app.SetAppDisplayName("TruFont")
