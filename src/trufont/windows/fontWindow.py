@@ -133,7 +133,8 @@ EVT_UPDATE_UNDOREDO = wx.lib.newevent.NewEvent()
 class FontWindow(wx.Frame):
     ACTIVE_LAYER_CHANGED = EVT_ACTIVE_LAYER_CHANGED
 
-    def __init__(self, parent, font, path=None, logger=None, debug=False, log=False, **kwargs):
+    def __init__(self, parent, font, path=None, logger=None, debug=False, log=False, disable_undoredo=False, 
+                **kwargs):
         super().__init__(parent, **kwargs)
         self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -146,6 +147,7 @@ class FontWindow(wx.Frame):
         # self data for logging and undoredo actons
         self._logger = logger
         self._debug = debug
+        self._disable_undoredo = disable_undoredo
         self._logwin = None
         self.dict_undoredomdgr = {}
         # self.Bind(EVT_UPDATE_UNDOREDO, self.OnUpdateUndoRedoMenu)
@@ -272,6 +274,7 @@ class FontWindow(wx.Frame):
             if glyph.name not in self.dict_undoredomdgr:
                 glyph.frame = self
                 glyph.debug = self._debug
+                glyph.disable_undoredo = self._disable_undoredo
                 self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
                 self._logger.debug("UNDOREDO_LOAD: Append in dict from TruGlyph ('{}')".format(glyph.name))
                 if self._debug:

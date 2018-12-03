@@ -8,9 +8,9 @@ import click
 from typing import Optional
 import logging
 
-@click.command() 
-@click.option('--font_name', default=None, help='Name of font to be opened')
-@click.option('--cwd', default=os.getcwd(), help='Set the current working directory')
+@click.command(help='font name to pass') 
+@click.argument('font_name', required=False, nargs=-1)
+@click.option('--cwd', default=os.getcwd(), help='Set the current working directory - cwd is default')
 @click.option('--debug', is_flag=True, help='Enable debug mode in log')
 @click.option('--log_screen', is_flag=True, help='Enable log to screen')
 @click.option('--log_rotating', is_flag=True, help='Enable log in file')

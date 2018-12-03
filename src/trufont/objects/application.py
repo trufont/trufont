@@ -24,7 +24,7 @@ import logging
 
 
 class Application:
-    __slots__ = "_app", "_observers", "_settings", "_internal", "_debug", "_logger"
+    __slots__ = ("_app", "_observers", "_settings", "_internal", "_debug", "_logger", "_disable_undoredo")
 
     def __init__(self, app, **kwargs: dict):
         self._app = app
@@ -70,8 +70,10 @@ class Application:
         if self._internal["log_screen"]:
             self._logger = logstuff.create_stream_logger("")
         self._debug  = self._internal["debug"]
-        self._logger.setLevel(logging.DEBUG if self._debug else logging.INFO)
+        self._disable_undoredo = self._internal["disable_undoredo"]
+
         # DEBUG
+        self._logger.setLevel(logging.DEBUG if self._debug else logging.INFO)
 
     def __repr__(self):
         return "%s(%s, %d fonts)" % (
@@ -119,7 +121,7 @@ class Application:
     def newFont(self) -> Font:
         font = Font()
         prepareNewFont(font)
-        FontWindow(None, font, None, self._logger, self._debug).Show()
+        FontWindow(None, font, None, self._logger, self._debug, self._disable_undoredo).Show()
         return font
 
     def openFont(self, path=None) -> Optional[Font]:
@@ -140,7 +142,7 @@ class Application:
                     return
         font = TFontConverter().open(path)
         wx.GetApp().fileHistory.AddFileToHistory(path)
-        FontWindow(None, font, path, self._logger, self._debug).Show()
+        FontWindow(None, font, path, self._logger, self._debug, self._disable_undoredo).Show()
         return font
 
     def removeObserver(self, key, observer):

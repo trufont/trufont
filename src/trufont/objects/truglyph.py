@@ -9,7 +9,7 @@ import logging
 # DISABLED_UNDERDO = trufont.TruFont._internal["disable_undoredo"]
 
 class TruGlyph(Glyph):
-    __slots__ = ("_logger", "_undoredo", "_frame", "_debug" )
+    __slots__ = ("_logger", "_undoredo", "_frame", "_debug", "_disable_undoredo" )
 
 
     """ class from tfontGlyph to intercep """
@@ -21,6 +21,7 @@ class TruGlyph(Glyph):
         self._undoredo = None
         self._frame = None
         self._debug = False
+        self._disable_undoredo = False
 
     def __del__(self):
         if self._debug:
@@ -46,7 +47,15 @@ class TruGlyph(Glyph):
     def debug(self, debug: bool):
         self._debug = debug
         self.get_undoredo().debug = debug
-    
+ 
+    @property
+    def disable_undoredo(self):
+        return self._disable_undoredo
+
+    @disable_undoredo.setter
+    def disable_undoredo(self, disable_undoredo: bool):
+        self._disable_undoredo = disable_undoredo
+
     def get_undoredo(self):
         if not self._undoredo:
             self._undoredo = undoredomgr.UndoRedoMgr(self.name, self._logger)
@@ -55,9 +64,8 @@ class TruGlyph(Glyph):
         return self._undoredo
 
     def load_from_undoredo(self, layer: Layer):
-        logging.debug("TRUGLYPH: disable_undoredo from {}".format(trufont.TruFont._internal))
-        disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
-        if not disable_undoredo and self._debug:
+        logging.debug("TRUGLYPH: disable_undoredo -> {}".format(self._disable_undoredo))
+        if not self._disable_undoredo and self._debug:
             all_actions = self.get_undoredo().load()
             logging.debug("TRUGLYPH: load from pickle file from undo -> {} items".format(len(all_actions)))
             dredo = None
@@ -79,9 +87,8 @@ class TruGlyph(Glyph):
 
 
     def save_from_undoredo(self):
-        logging.debug("TRUGLYPH: disable_undoredo from {}".format(trufont.TruFont._internal))
-        disable_undoredo = trufont.TruFont._internal["disable_undoredo"]
-        if not disable_undoredo and self._debug:
+        logging.debug("TRUGLYPH: disable_undoredo -> {}".format(self._disable_undoredo))
+        if not self._disable_undoredo and self._debug:
             # all_actions = [(action.operation, *action.args) for action in self.get_undoredo().all_actions_undo()]
             all_actions = [action.datas_only() for action in self.get_undoredo().all_actions_undo()]
             self.get_undoredo().save(all_actions)
