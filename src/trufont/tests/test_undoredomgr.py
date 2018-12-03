@@ -9,14 +9,15 @@ import trufont.util.deco4class as deco4class
 import trufont.util.loggingstuff as logstuff
 
 import trufont.objects.undoredomgr as undoredomgr
-
 # constants
-
 
 
 def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_UNDOREDO)):
     """ Untis Tests for UndoRedoMgr"""
+
+    logger.setLevel(logging.DEBUG)
     logger.info("======== Start of test")
+    logger.info(sys.version)
     mgr = undoredomgr.UndoRedoMgr("test", logger)
     mgr.set_callback_after_undo(print, "\t"*3, "callback on undo")
     mgr.set_callback_after_redo(print, "\t"*4, "CALLBACK ON REDO")
@@ -29,16 +30,19 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
     try: 
         mgr.undo()
     except Exception as e:
-        logger.warning("Except - undo on an empty stack")
+        logger.warning("{:02d} -> Except - undo on an empty stack".format(seq))
         assert isinstance(e, IndexError) and mgr.len_undo() == 0
 
     seq += 1
     with mgr.undo_ctx() as action:
-        pass
-    assert action is None
+        logger.warning("{:02d} -> Except - undo on an empty stack".format(seq))
+        # assert False
+	# assert action is not None
+
     with mgr.redo_ctx() as action:
-        pass
-    assert action is None
+        logger.warning("{:02d} -> Except - redo on an empty stack".format(seq))
+        # assert False
+    # assert action is not None
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
 
     seq += 1
@@ -106,3 +110,6 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
     
     logger.info("----------- End of test")
     
+
+if __name__ == "__main__":
+	test_undoredomgr()

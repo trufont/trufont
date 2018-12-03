@@ -3,11 +3,7 @@ import sys
 import logging
 import os
 
-from typing import Optional, Any, Union, Tuple
-
-import trufont.util.deco4class as deco4class
 import trufont.util.loggingstuff as logstuff
-
 import trufont.objects.undoredomgr as undoredomgr
 
 # constants
@@ -31,6 +27,11 @@ def test_action(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_UNDOR
     all = undo, redo, args 
     b = undoredomgr.Action(op, *all)
     logger.info("3-Action is {}".format(b))
+	
+    all = undo, redo, args 
+    b = undoredomgr.Action(op, *all).datas_only()
+    logger.info("4-Action, datas are {}".format(b))
+	
 
 
 if __name__ == "__main__":
