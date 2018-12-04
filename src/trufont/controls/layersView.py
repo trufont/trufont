@@ -3,6 +3,7 @@ from trufont.controls.colorButton import ColorButton
 from trufont.util.drawing import CreatePath
 import wx
 from wx import GetTranslation as tr
+import logging
 
 cellHeight = 28
 
@@ -162,19 +163,27 @@ class LayersView(wx.Window):
                 # TODO we can even more color picker to simple click
                 return
             rect.SetLeft(width - 26)
+
             if rect.Contains(pos):
+                logging.debug("LAYERVIEW: Show/Hide layer")
                 layer.visible = not layer.visible
                 trufont.TruFont.updateUI()
                 return
+
             if not layer.masterLayer:
                 rect.Offset(-24, 0)
                 if rect.Contains(pos):
-                    print("del")
+                    logging.debug("LAYERVIEW: Erase layer")
+                    pass
                     return
+
                 rect.Offset(24, 0)
+
             if fullRect.Contains(pos):
+                logging.debug("LAYERVIEW: Activate layer")
                 self._activeLayer = layer
                 return
+
             rect.Offset(0, 28)
             fullRect.Offset(0, 28)
             rect.SetLeft(12)
@@ -224,7 +233,7 @@ class LayersView(wx.Window):
         width, height = self.GetSize()
 
         for idx, layer in enumerate(layers):
-            hover = idx == self._underMouseLayer
+            hover = (idx == self._underMouseLayer)
             # background
             # TODO: add way to figure out if layer is current
             if hover or layer is activeLayer:
