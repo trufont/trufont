@@ -1,4 +1,5 @@
 import wx
+import logging
 
 ColorModifiedEvent, EVT_COLOR_MODIFIED = wx.lib.newevent.NewEvent()
 
@@ -50,6 +51,7 @@ class ColorButton(wx.Window):
 
     @staticmethod
     def DoDraw(parent, dc, rect, color):
+        logging.debug("COLORBUTTON: DoDraw")
         wx.RendererNative.Get().DrawTextCtrl(
             parent,
             dc,
@@ -96,6 +98,7 @@ class ColorButton(wx.Window):
             self.Refresh()
 
     def OnPaint(self, event):
-        dc = wx.PaintDC(self)
+        logging.debug("COLORBUTTON: onPaint")
+        dc = wx.GraphicsContext.Create(wx.PaintDC(self))
 
         self.DoDraw(dc, wx.Rect(0, 0, 28, 16), self._color)
