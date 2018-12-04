@@ -83,7 +83,8 @@ class BaseTool(object):
             dc.SelectObject(bitmap)
             dc.DrawBitmap(wx.Bitmap(image.Blur(shadowRadius)), 0, 0, True)
         # draw the cursor
-        ctx = all_actions_redo(dc)
+        # ctx = wx.GraphicsContext.Create(dc)
+        ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
         if s > 1:
             ctx.Scale(s, s)
         for path, f, s in cmds:
