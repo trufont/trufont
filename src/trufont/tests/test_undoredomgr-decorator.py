@@ -20,7 +20,7 @@ class FrameMock(object):
     def OnUpdateUndoRedoMenu(self, undoredo: undoredomgr.UndoRedoMgr):
         pass
 
-def test_decorator(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_UNDOREDO)):
+def test_decorator(logger: logging.Logger = logging.getLogger(__name__)):
     """ Untis Tests for UndoRedoMgr"""
     logger.info("======== Start of test")
     logger.info(sys.version)
@@ -57,28 +57,41 @@ def test_decorator(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_UN
                                 mgr.len_redo()))
 
     seq += 1
+    logger.info("TEST URM-DECO: {:02d} Starts this test".format(seq))
     try:
+        logger.info("TEST URM-DECO: {:02d} in this test #1".format(seq))
         for path in layer.paths:
             path.selected = True 
+        logger.info("TEST URM-DECO: {:02d} in this test #2".format(seq))
         propertiesView._alignVCenter(layer, tglyph, "None")
+        logger.info("TEST URM-DECO: {:02d} in this test #3".format(seq))
     except:
         logger.info("TEST URM-DECO: {:02d} Failed".format(seq))
         assert False
     else:
         logger.info("TEST URM-DECO: {:02d} Successed".format(seq))
+        logger.info("TEST URM-DECO: {:02d} Weel done !!!!".format(seq))
         assert True 
     logger.info("TEST URM-DECO: {:02d} -> undo: {} / redo: {}".format(seq, mgr.len_undo(), 
                                 mgr.len_redo()))
 
     seq += 1
+    logger.info("TEST URM-DECO: {:02d} Starts this test".format(seq))
     try:
+        logger.info("TEST URM-DECO: {:02d} in this test #1".format(seq))
         for path in layer.paths:
             path.selected = True 
+        logger.info("TEST URM-DECO: {:02d} in this test #2".format(seq))
         old_func = layer.snapshot
-        layer.snaphot = (lambda x: 1/0) 
-        propertiesView._alignVcenter(layer, tglyph, "None")
+        logger.info("TEST URM-DECO: {:02d} in this test #3".format(seq))
+        propertiesView.align_expand_params = print
+        logger.info("TEST URM-DECO: {:02d} in this test #3 on {}".format(seq, propertiesView.align_expand_params.__name__))
+        logger.info("TEST URM-DECO: {:02d} in this test #4".format(seq))
+        propertiesView._alignHCenter(layer, tglyph, "None")
+        logger.info("TEST URM-DECO: {:02d} in this test #5".format(seq))
     except:
         logger.info("TEST URM-DECO: {:02d} Failed".format(seq))
+        logger.info("TEST URM-DECO: {:02d} Weel done !!!!".format(seq))
         layer.snapshot = old_func
         assert True
     else:
@@ -89,4 +102,4 @@ def test_decorator(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_UN
 
 
 if __name__ == "__main__":
-    test_decorator(logstuff.create_stream_logger())
+    test_decorator(logstuff.create_stream_logger(""))
