@@ -190,8 +190,8 @@ def truglyph_decorate_undoredo(func_get_truglyph: Callable, operation="None", la
         @functools.wraps(fn)
         def decorate_args(*args, **kwargs):
             # future implementation
-            logging.debug("TRUGLYPH_DECORATE_UNDOREDO: disable_undoredo {}".format(trufont.TruFont._internal))
             disable_undoredo = False # TruGlhyph._disable_undoredo
+            logging.debug("TRUGLYPH_DECORATE_UNDOREDO: disable_undoredo {}".format(disable_undoredo))
 
             if disable_undoredo:
                 # call func
