@@ -96,7 +96,8 @@ class TabBar(wx.Window):
 
     def OnPaint(self, event):
         self._tabsRanges = {}
-        ctx = wx.GraphicsContext.Create(self)
+        # ctx = wx.GraphicsContext.Create(self)
+        ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
         font = self.GetFont()
         ctx.SetFont(font, wx.BLACK)
 

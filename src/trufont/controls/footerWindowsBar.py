@@ -37,7 +37,8 @@ class FooterStatusBar(wx.Panel):
         self.Refresh()
 
     def OnPaint(self, event):
-        ctx = wx.GraphicsContext.Create(self)
+        # ctx = wx.GraphicsContext.Create(self)
+        ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
         ctx.SetFont(self.GetFont(), self.GetForegroundColour())
 
         ctx.SetBrush(wx.Brush(self.GetBackgroundColour()))

@@ -82,7 +82,8 @@ class FeatureDropdown(wx.Window):
         self.pressed = not self._pressed
 
     def OnPaint(self, event):
-        ctx = wx.GraphicsContext.Create(self)
+        # ctx = wx.GraphicsContext.Create(self)
+        ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
         if self._pressed:
             backgroundColor = self._popup.GetBackgroundColour()
         else:

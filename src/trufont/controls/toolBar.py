@@ -154,7 +154,8 @@ class ToolBar(wx.Window):
         self._mouseDownTool = None
 
     def OnPaint(self, event):
-        ctx = wx.GraphicsContext.Create(self)
+        # ctx = wx.GraphicsContext.Create(self)
+        ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
 
         ctx.SetBrush(wx.Brush(self.GetBackgroundColour()))
         ctx.DrawRectangle(0, 0, *self.GetSize())

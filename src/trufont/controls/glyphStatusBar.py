@@ -138,7 +138,8 @@ class GlyphStatusBar(wx.Panel):
             self.Refresh()
 
     def OnPaint(self, event):
-        ctx = wx.GraphicsContext.Create(self)
+        # ctx = wx.GraphicsContext.Create(self)
+        ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
         ctx.SetFont(self.GetFont(), self.GetForegroundColour())
         canvas = self._canvas
         width, _ = self.GetSize()
