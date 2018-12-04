@@ -181,8 +181,8 @@ class LayersView(wx.Window):
 
     def OnLeftDClick(self, event):
         pos = event.GetPosition()
-        # ctx = wx.GraphicsContext.Create(self)
-        ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
+        ctx = wx.GraphicsContext.Create(self)
+        # ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
         ctx.SetFont(self.GetFont(), self.GetForegroundColour())
         rect = wx.Rect(12, 6, 16, 16)
         for i, layer in enumerate(self._layers):
