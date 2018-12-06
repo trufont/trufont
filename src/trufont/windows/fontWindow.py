@@ -126,6 +126,10 @@ class FontWindowTab(wx.Panel):
     # TODO: add more things like GetTextDirection etc.?
 
 
+def selectall_expand_params(obj, *args, **kwargs):
+    """Used on OnSelectAllwith Nothing to """
+    return obj.activeLayer    
+
 ActiveLayerChangedEvent, EVT_ACTIVE_LAYER_CHANGED = wx.lib.newevent.NewEvent()
 EVT_UPDATE_UNDOREDO = wx.lib.newevent.NewEvent()
 
@@ -779,18 +783,23 @@ class FontWindow(wx.Frame):
         else:
             layer = self.activeLayer
             if layer is None:
-                return
-            pathsAreSelected = True
-            for path in layer.paths:
-                if not path.selected:
-                    pathsAreSelected = False
-                    path.selected = True
-            if pathsAreSelected:
-                for anchor in layer.anchors:
-                    anchor.selected = True
-                for component in layer.components:
-                    component.selected = True
-            trufont.TruFont.updateUI()
+                return    
+            self.OnSelectAllFromLayer(layer)
+
+    @undoredomgr.layer_decorate_undoredo(selectall_expand_params, operation="Selection all", 
+                                     paths=True, guidelines=False, components=True, anchors=True)
+    def OnSelectAllFromLayer(self, layer: Layer):        
+        pathsAreSelected = True
+        for path in layer.paths:
+            if not path.selected:
+                pathsAreSelected = False
+                path.selected = True
+        if pathsAreSelected:
+            for anchor in layer.anchors:
+                anchor.selected = True
+            for component in layer.components:
+                component.selected = True
+        trufont.TruFont.updateUI()
 
     def OnFind(self, event):
         raise NotImplementedError
@@ -894,3 +903,6 @@ class FontWindow(wx.Frame):
         info.SetWebSite("https://trufont.github.io", tr("TruFont website"))
         info.SetDevelopers(list(authors()))
         wx.adv.AboutBox(info, self)
+
+
+
