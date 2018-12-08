@@ -148,7 +148,7 @@ class SelectionTool(BaseTool):
 
     def setStartPoint(self, *_):
         item = self.mouseItem
-        item.path.setStartPoint(item.index)
+        item.path.startAt(item.index)
         trufont.TruFont.updateUI()
 
     # events
