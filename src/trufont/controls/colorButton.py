@@ -1,4 +1,5 @@
 import wx
+import logging
 
 ColorModifiedEvent, EVT_COLOR_MODIFIED = wx.lib.newevent.NewEvent()
 
@@ -38,6 +39,7 @@ class ColorButton(wx.Window):
 
     @staticmethod
     def DoPickColor(parent, color):
+        logging.debug("BUTTONCOLOR_LAYER: DoPickColor")
         dialog = wx.ColourDialog(parent)
         data = dialog.GetColourData()
         # TODO: use SetChooseAlpha(True) in wx 3.1
@@ -50,6 +52,7 @@ class ColorButton(wx.Window):
 
     @staticmethod
     def DoDraw(parent, dc, rect, color):
+        logging.debug("BUTTONCOLOR_LAYER: DoDraw")
         wx.RendererNative.Get().DrawTextCtrl(
             parent,
             dc,
@@ -61,7 +64,7 @@ class ColorButton(wx.Window):
         rect = wx.Rect(rect)
         rect.Deflate(2, 2)
 
-        opaque = color is not None and color.Alpha() == wx.ALPHA_OPAQUE
+        opaque = color and color.Alpha() == wx.ALPHA_OPAQUE
         if not opaque:
             dc.SetBrush(wx.Brush(wx.Colour(214, 214, 214)))
             dc.SetClippingRegion(rect)
@@ -84,13 +87,13 @@ class ColorButton(wx.Window):
             cRect.Offset(-6, 6)
             dc.DrawRectangle(cRect)
             dc.DestroyClippingRegion()
-        if color is not None:
+        if color:
             dc.SetBrush(wx.Brush(wx.Colour(color)))
             dc.DrawRectangle(rect)
 
     def OnLeftDown(self, event):
         color = self.DoPickColor(self._color)
-        if color is not None:
+        if color:
             self._color = color
             wx.PostEvent(self, ColorModifiedEvent(color=self._color))
             self.Refresh()
@@ -98,4 +101,5 @@ class ColorButton(wx.Window):
     def OnPaint(self, event):
         dc = wx.PaintDC(self)
 
+        logging.debug("BUTTONCOLOR_LAYER: OnPaint")
         self.DoDraw(dc, wx.Rect(0, 0, 28, 16), self._color)

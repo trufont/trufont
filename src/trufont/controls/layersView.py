@@ -3,6 +3,7 @@ from trufont.controls.colorButton import ColorButton
 from trufont.util.drawing import CreatePath
 import wx
 from wx import GetTranslation as tr
+import logging
 
 cellHeight = 28
 
@@ -209,6 +210,7 @@ class LayersView(wx.Window):
             self.Refresh()
 
     def OnPaint(self, event):
+        logging.debug("LAYERVIEW: OnPaint")
         dc = wx.PaintDC(self)
         dc.SetBrush(wx.Brush(self.GetBackgroundColour()))
         dc.Clear()
@@ -228,7 +230,7 @@ class LayersView(wx.Window):
             # TODO: add way to figure out if layer is current
             if hover or layer is activeLayer:
                 if hover:
-                    color = wx.Colour(232, 232, 232)
+                    color = wx.Colour(232, 0, 0)
                 else:
                     color = wx.Colour(225, 225, 225)
                 ctx.SetBrush(wx.Brush(color))
