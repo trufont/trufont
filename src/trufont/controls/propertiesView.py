@@ -14,7 +14,7 @@ import wx
 from wx import GetTranslation as tr
 
 import logging
-from trufont.objects.truglyph import TruGlyph
+from trufont.objects.undoredoglyph import UndoRedoGlyph
 from typing import Any, Collection, Tuple, List, Dict, Callable
 
 import trufont.objects.undoredomgr as undoredomgr
@@ -49,13 +49,13 @@ path.CloseSubpath()
 #-------------------------
 # Used by undoredo decorator
 #-------------------------
-def align_expand_params(layer: Layer, tglyph: TruGlyph, operation: str):
+def align_expand_params(layer: Layer, glyph: UndoRedoGlyph, operation: str):
     """Used with align functions -  Nothing to """
     return layer    
 
 @undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Horiz Left", 
                                      paths=True, guidelines=False, components=False, anchors=False)
-def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
+def _alignHLeft(layer: Layer, tglyph: UndoRedoGlyph, operation: str):
     selectedPaths = []
     xMin_all = None
     for path in layer._paths:
@@ -76,7 +76,7 @@ def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
 
 @undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Horiz Center", 
                                      paths=True, guidelines=False, components=False, anchors=False)
-def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
+def _alignHCenter(layer: Layer, tglyph: UndoRedoGlyph, operation: str):
     selectedPaths = []
     xMin_all, xMax_all = None, None
     for path in layer._paths:
@@ -102,7 +102,7 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
 
 @undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Horiz Right", 
                                      paths=True, guidelines=False, components=False, anchors=False)
-def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
+def _alignHRight(layer: Layer, tglyph: UndoRedoGlyph, operation: str):
     selectedPaths = []
     xMax_all = None
     for path in layer._paths:
@@ -124,7 +124,7 @@ def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
 
 @undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Vert Top", 
                                      paths=True, guidelines=False, components=False, anchors=False)
-def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
+def _alignVTop(layer: Layer, tglyph: UndoRedoGlyph, operation: str):
     selectedPaths = []
     yMax_all = None
     for path in layer._paths:
@@ -145,7 +145,7 @@ def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
 
 @undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Vert Center", 
                                      paths=True, guidelines=False, components=False, anchors=False)
-def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
+def _alignVCenter(layer: Layer, tglyph: UndoRedoGlyph, operation: str):
     selectedPaths = []
     yMin_all, yMax_all = None, None
     for path in layer._paths:
@@ -171,7 +171,7 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
 
 @undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Vert Bottom", 
                                      paths=True, guidelines=False, components=False, anchors=False)
-def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
+def _alignVBottom(layer: Layer, tglyph: UndoRedoGlyph, operation: str):
     selectedPaths = []
     yMin_all = None
     for path in layer._paths:
@@ -1238,10 +1238,11 @@ class TransformHeader(wx.Panel):
 #-------------------------
 # Used by undoredo decorator
 #-------------------------
-def layer_expand_params(obj, *args, **kwargs):
+def glyph_expand_params(obj, *args, **kwargs):
     """ use by decorator to get three params as
     layer, undoredomgr and operation """
-    return obj._layersView._activeLayer
+    return obj._layersView._activeLayer._parent
+    
 #-------------------------
 
 class LayersHeader(wx.Panel):
@@ -1267,7 +1268,7 @@ class LayersHeader(wx.Panel):
     # wx methods
     # ----------
 
-    @undoredomgr.truglyph_decorate_undoredo(layer_expand_params, operation="Add layer", layer=True)
+    @undoredomgr.glyph_decorate_undoredo(glyph_expand_params, operation="Add layer", layer=True)
     def DoCreateLayer(self):
         # this logic should probably be in the model
         view = self._layersView

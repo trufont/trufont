@@ -9,7 +9,7 @@ import trufont.objects.undoredomgr as undoredomgr
 from tfont.objects import Layer
 from tfont.objects import Font
 
-from trufont.objects.truglyph import TruGlyph
+from trufont.objects.undoredoglyph import UndoRedoGlyph
 from trufont.controls import propertiesView
 
 def expand_param(Layer: Layer, *args, **kwargs):
@@ -28,7 +28,7 @@ def test_decorator(logger: logging.Logger = logging.getLogger(__name__)):
     font = Font()
     fontname = font.familyName
     char = name = "W"
-    tglyph = TruGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)])
+    tglyph = UndoRedoGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)])
     font.glyphs.append(tglyph)
     tglyph._parent = font
     tglyph.frame = FrameMock()

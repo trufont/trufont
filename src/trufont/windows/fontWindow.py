@@ -25,7 +25,7 @@ from trufont.windows.loggingWindows import LoggingWindow
 from tfont.converters import TFontConverter
 # from tfont.objects import Glyph, Layer
 from tfont.objects import Layer
-from trufont.objects.truglyph import TruGlyph
+from trufont.objects.undoredoglyph import UndoRedoGlyph
 from typing import Optional
 import wx
 import wx.adv
@@ -77,7 +77,7 @@ def prepareNewFont(font):
     fontname = font.familyName
     for char in string.ascii_uppercase + string.ascii_lowercase + " ":
         name = "space" if char == " " else char
-        glyphs.append(TruGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)]))
+        glyphs.append(UndoRedoGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)]))
 
 
 # @deco4class.decorator_classfunc()
@@ -280,7 +280,7 @@ class FontWindow(wx.Frame):
                 glyph.debug = self._debug
                 glyph.disable_undoredo = self._disable_undoredo
                 self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
-                self._logger.debug("UNDOREDO_LOAD: Append in dict from TruGlyph ('{}')".format(glyph.name))
+                self._logger.debug("UNDOREDO_LOAD: Append in dict from UndoRedoGlyph ('{}')".format(glyph.name))
                 if self._debug:
                     self._logger.debug("UNDOREDO_LOAD: Load undoredo stack - Layer {}".format(self.activeLayer))
                     glyph.load_from_undoredo(self.activeLayer)

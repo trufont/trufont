@@ -184,7 +184,7 @@ def layer_decorate_undoredo(func_get_layer: Callable,\
 
     return decorate_fn
 
-def truglyph_decorate_undoredo(func_get_truglyph: Callable, operation="None", layer=True):
+def glyph_decorate_undoredo(func_get_truglyph: Callable, operation="None", layer=True):
     def decorate_fn(fn):
         """ func decorate"""
         @functools.wraps(fn)
