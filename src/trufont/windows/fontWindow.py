@@ -202,8 +202,13 @@ class FontWindow(wx.Frame):
         mainSizer = workspSizer
         # Set sizer to honor minimum size, then resize to our preferred value
         self.SetSizerAndFit(mainSizer)
-        size = kwargs.get("size", (1262, 800))
-        self.SetSize(size)
+
+        if self._debug:
+            self.SetSize((400, 700))
+            self.SetPosition((900, 100))
+        else:
+            size = kwargs.get("size", (1262, 800))
+            self.SetSize(size)
 
         self.setupAccelerators()
         self.setupMenuBar()
