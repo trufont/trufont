@@ -192,7 +192,7 @@ class ShapesTool(BaseTool):
                     ]
                 )
             self.layer.paths.append(path)
-            path.selected = True
+            # path.selected = True
             trufont.TruFont.updateUI()
         self.origin = self.anchor = None
 
