@@ -153,37 +153,33 @@ class LayersView(wx.Window):
         self.Refresh()
 
     def OnLeftDown(self, event):
+        logging.debug("LAYERVIEW: OnLeftDown")
         pos = event.GetPosition()
         width, _ = self.GetSize()
         layers = self._layers
         rect = wx.Rect(12, 6, 16, 16)
         fullRect = wx.Rect(0, 0, width, 28)
+        logging.debug("LAYERVIEW: OnLeftDown rect {}, fullRect {}, pos {}".format(rect, fullRect, pos))
         for i, layer in enumerate(layers):
             if rect.Contains(pos):
                 # TODO we can even more color picker to simple click
+                logging.debug("LAYERVIEW: OnLeftDown pos in rect")
                 return
             rect.SetLeft(width - 26)
-
             if rect.Contains(pos):
-                logging.debug("LAYERVIEW: Show/Hide layer")
+                logging.debug("LAYERVIEW: OnLeftDown visible or not")
                 layer.visible = not layer.visible
                 trufont.TruFont.updateUI()
                 return
-
             if not layer.masterLayer:
                 rect.Offset(-24, 0)
                 if rect.Contains(pos):
-                    logging.debug("LAYERVIEW: Erase layer")
-                    pass
+                    logging.debug("LAYERVIEW: OnLeftDown - Del Layer .....")
                     return
-
                 rect.Offset(24, 0)
-
             if fullRect.Contains(pos):
-                logging.debug("LAYERVIEW: Activate layer")
                 self._activeLayer = layer
                 return
-
             rect.Offset(0, 28)
             fullRect.Offset(0, 28)
             rect.SetLeft(12)
@@ -191,12 +187,12 @@ class LayersView(wx.Window):
     def OnLeftDClick(self, event):
         pos = event.GetPosition()
         ctx = wx.GraphicsContext.Create(self)
-        # ctx = wx.GraphicsContext.Create(wx.PaintDC(self))
         ctx.SetFont(self.GetFont(), self.GetForegroundColour())
         rect = wx.Rect(12, 6, 16, 16)
         for i, layer in enumerate(self._layers):
             if rect.Contains(pos):
                 color = ColorButton.DoPickColor(self, wx.Colour(layer.color))
+                logging.debug("LAYERVIEW: OnLeftDClick - DoPickColor .....")
                 if color is not None:
                     layer.color = color.Get()
                     trufont.TruFont.updateUI()
@@ -204,6 +200,7 @@ class LayersView(wx.Window):
             rect.Offset(36, 0)
             rect.SetWidth(ctx.GetTextExtent(layer.name)[0])
             if rect.Contains(pos):
+                logging.debug("LAYERVIEW: OnLeftDClick - DoEditLayerName .....")
                 self.DoEditLayerName(i, layer)
                 return
             rect.Offset(-36, 28)
@@ -219,6 +216,7 @@ class LayersView(wx.Window):
             self.Refresh()
 
     def OnPaint(self, event):
+        logging.debug("LAYERVIEW: OnPaint")
         dc = wx.PaintDC(self)
         dc.SetBrush(wx.Brush(self.GetBackgroundColour()))
         dc.Clear()
@@ -233,14 +231,14 @@ class LayersView(wx.Window):
         width, height = self.GetSize()
 
         for idx, layer in enumerate(layers):
-            hover = (idx == self._underMouseLayer)
+            hover = idx == self._underMouseLayer
             # background
             # TODO: add way to figure out if layer is current
             if hover or layer is activeLayer:
                 if hover:
-                    color = wx.Colour(232, 232, 232)
+                    color = wx.Colour(232, 0, 0)
                 else:
-                    color = wx.Colour(225, 225, 225)
+                    color = wx.Colour(0, 225, 0)
                 ctx.SetBrush(wx.Brush(color))
                 ctx.DrawRectangle(0, 0, width, cellHeight)
             # lhs
@@ -249,10 +247,11 @@ class LayersView(wx.Window):
             color = layer.color
             masterLayer = layer.masterLayer
             origin = ctx.GetTransform().Get()[-2:]
-            if color is not None or hover or masterLayer:
-                if color is not None:
+            if color or hover or masterLayer:
+                if color:
                     color = wx.Colour(color)
-                ColorButton.DoDraw(self, dc, wx.Rect(*origin, 16, 16), color)
+                # ColorButton.DoDraw(self, dc, wx.Rect(*origin, 16, 16), color)
+                ColorButton.DoDraw(self, wx.PaintDC(self), wx.Rect(*origin, 16, 16), color)
             ctx.Translate(24, 0)
             if not masterLayer:
                 ctx.Translate(10, 0)
