@@ -251,7 +251,7 @@ class LayersView(wx.Window):
                 if color:
                     color = wx.Colour(color)
                 # ColorButton.DoDraw(self, dc, wx.Rect(*origin, 16, 16), color)
-                ColorButton.DoDraw(self, wx.PaintDC(self), wx.Rect(*origin, 16, 16), color)
+                ColorButton.DoDraw(self, wx.PaintDC(self), wx.Rect(*origin, 16, 16), wx.Colour(0, 0, 222))
             ctx.Translate(24, 0)
             if not masterLayer:
                 ctx.Translate(10, 0)
