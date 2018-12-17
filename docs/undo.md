@@ -197,7 +197,7 @@ better, but may be less efficient.
 ## TruFont Qt Undo Manager
 
 The previous generation of TruFont (based on Qt) has an undo manager
-written by Lasse Fister:
+written by Adrien Tétar:
 github.com/trufont/trufont/blob/master/Lib/trufont/objects/undoManager.py
 I don’t think this approach is abstract enough: this undo manager does
 work on glyphs, and has no abstraction beyond that.
