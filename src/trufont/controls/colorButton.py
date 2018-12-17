@@ -51,20 +51,23 @@ class ColorButton(wx.Window):
 
     @staticmethod
     def DoDraw(parent, dc, rect, color):
-        logging.debug("COLORBUTTON: DoDraw")
-        wx.RendererNative.Get().DrawTextCtrl(
-            parent,
-            dc,
-            rect
-            # wx.CONTROL_FOCUSED
-        )
+        logging.debug("COLORBUTTON: DoDraw - dc -> {}, rect -> {}, color-> {}".format(dc, rect, color))
+        dc = wx.ClientDC(parent)
+        logging.debug("COLORBUTTON: DoDraw - dc -> {}, rect -> {}, color-> {}".format(dc, rect, color))
+        # wx.RendererNative.Get().DrawTextCtrl(
+        #     parent,
+        #     dc,
+        #     rect
+        #     # wx.CONTROL_FOCUSED
+        # )
 
         dc.SetPen(wx.TRANSPARENT_PEN)
         rect = wx.Rect(rect)
         rect.Deflate(2, 2)
 
-        opaque = color is not None and color.Alpha() == wx.ALPHA_OPAQUE
+        opaque = color and color.Alpha() == wx.ALPHA_OPAQUE
         if not opaque:
+            logging.debug("COLORBUTTON: DoDraw - not opaque")
             dc.SetBrush(wx.Brush(wx.Colour(214, 214, 214)))
             dc.SetClippingRegion(rect)
             cRect = wx.Rect(rect)
@@ -86,7 +89,8 @@ class ColorButton(wx.Window):
             cRect.Offset(-6, 6)
             dc.DrawRectangle(cRect)
             dc.DestroyClippingRegion()
-        if color is not None:
+        if color:
+            logging.debug("COLORBUTTON: DoDraw - color")
             dc.SetBrush(wx.Brush(wx.Colour(color)))
             dc.DrawRectangle(rect)
 
@@ -99,6 +103,6 @@ class ColorButton(wx.Window):
 
     def OnPaint(self, event):
         logging.debug("COLORBUTTON: onPaint")
-        dc = wx.GraphicsContext.Create(wx.PaintDC(self))
+        # dc = wx.GraphicsContext.Create(wx.PaintDC(self))
 
-        self.DoDraw(dc, wx.Rect(0, 0, 28, 16), self._color)
+        self.DoDraw(wx.PaintDC(self), wx.Rect(0, 0, 28, 16), self._color)

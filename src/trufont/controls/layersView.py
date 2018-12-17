@@ -193,7 +193,7 @@ class LayersView(wx.Window):
             if rect.Contains(pos):
                 color = ColorButton.DoPickColor(self, wx.Colour(layer.color))
                 logging.debug("LAYERVIEW: OnLeftDClick - DoPickColor .....")
-                if color is not None:
+                if color:
                     layer.color = color.Get()
                     trufont.TruFont.updateUI()
                 return
@@ -251,7 +251,7 @@ class LayersView(wx.Window):
                 if color:
                     color = wx.Colour(color)
                 # ColorButton.DoDraw(self, dc, wx.Rect(*origin, 16, 16), color)
-                ColorButton.DoDraw(self, wx.PaintDC(self), wx.Rect(*origin, 16, 16), wx.Colour(0, 0, 222))
+                ColorButton.DoDraw(self, dc, wx.Rect(*origin, 16, 16), wx.Colour(0, 0, 222))
             ctx.Translate(24, 0)
             if not masterLayer:
                 ctx.Translate(10, 0)
