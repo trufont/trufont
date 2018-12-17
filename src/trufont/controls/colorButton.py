@@ -61,7 +61,7 @@ class ColorButton(wx.Window):
         #     # wx.CONTROL_FOCUSED
         # )
 
-        dc.SetPen(wx.TRANSPARENT_PEN)
+        # /dc.SetPen(wx.TRANSPARENT_PEN)
         rect = wx.Rect(rect)
         rect.Deflate(2, 2)
 
