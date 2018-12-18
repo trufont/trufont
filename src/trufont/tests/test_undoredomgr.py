@@ -21,7 +21,7 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
     mgr = undoredomgr.UndoRedoMgr("test", logger)
     mgr.set_callback_after_undo(print, "\t"*3, "callback on undo")
     mgr.set_callback_after_redo(print, "\t"*4, "CALLBACK ON REDO")
-
+    mgr.set_callback_error_undoredo(logging.error, "Error on Undo or Redo - Stacks are empty now")
 
     seq = 1
     assert (mgr.can_redo() == False and mgr.can_undo() == False) 
@@ -34,33 +34,28 @@ def test_undoredomgr(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_
         assert isinstance(e, IndexError) and mgr.len_undo() == 0
 
     seq += 1
-    with mgr.undo_ctx() as action:
-        logger.warning("{:02d} -> Except - undo on an empty stack".format(seq))
-        # assert False
-	# assert action is not None
-
-    with mgr.redo_ctx() as action:
-        logger.warning("{:02d} -> Except - redo on an empty stack".format(seq))
-        # assert False
-    # assert action is not None
+    try:
+        with mgr.undo_ctx() as action:
+            logger.warning("{:02d} -> Except - undo on an empty stack".format(seq))
+            # assert False
+    except Exception as e:    
+        assert isinstance(e, RuntimeError) and mgr.len_undo() == 0
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
 
     seq += 1
-    logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
     mgr.append_action(undoredomgr.Action("A", None, None))
     with mgr.undo_ctx() as action:
         1/0
+    assert (mgr.len_undo() == mgr.len_redo() == 0)
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
 
-
+ 
     seq += 1
-    logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
     logger.info(mgr.str_state())
     mgr.append_action(undoredomgr.Action("A", None, None))
     mgr.append_action(undoredomgr.Action("B", logger.info("test callback undo"), None))
     assert mgr.len_undo() == 2 and mgr.len_redo() == 0
     logger.info("{:02d} -> undo: {} / redo: {}".format(seq, mgr.all_actions_undo(), mgr.all_actions_redo()))
-
 
     seq += 1
     action = mgr.undo()
