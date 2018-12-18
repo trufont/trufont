@@ -226,7 +226,8 @@ class UndoRedoMgr(object):
     PICKLES_FOLDER = 'pickles'
     
     __slots__ = ("_logger", "_name", "_undo", "_redo", "_size", "_debug", 
-				"callback_after_undo", "callback_after_redo", "callback_after_append")
+				"callback_after_undo", "callback_after_redo", "callback_after_append",
+                "callback_error_undoredo")
 
     def __init__(self, name: str, logger: logging.Logger=None):
         """ init for mgr: logger for messages
@@ -241,6 +242,7 @@ class UndoRedoMgr(object):
         self.callback_after_undo = None
         self.callback_after_redo = None
         self.callback_after_append = None
+        self.callback_error_undoredo = None
 	    
     @property
     def debug(self):
@@ -255,6 +257,24 @@ class UndoRedoMgr(object):
         return  "{}-size: {:.02f} Kb - UNDO[{}] - REDO[{}]".format(self._name, self._size/1024, 
                                                                    self.len_undo(), 
                                                                    self.len_redo())
+
+    # -------------
+    # error parts 
+    
+    def set_callback_error_undoredo(self,  callback, *args, **kwargs):
+        if isinstance(callback, Callable):
+            self.callback_error_undoredo = functools.partial(callback, *args, *kwargs)
+
+    def _on_error_undoredo(self):
+        if self.callback_error_undoredo:
+            self.callback_error_undoredo()
+
+    def _erase_stacks(self):
+        self._undo = []
+        self._redo = []
+        if self._debug:
+            self._size = 0
+
     # -------------
     # append action 
     
@@ -276,18 +296,6 @@ class UndoRedoMgr(object):
         if self.callback_after_append:
             self.callback_after_append()
     
-
-    # -------------
-    # May be a context manager is a good idea
-    # in prevision of start transaction:
-    # Ok diring undo/redo so commit 
-    # Ko during undo/redo so rollback
-    # 
-    # def __enter__(self):
-    #     return self
-    # def __exit__(self, type, value, traceback):
-    #     return True
-
     # -------------
     # undo action
  
@@ -300,13 +308,14 @@ class UndoRedoMgr(object):
 
         except Exception as e:
             logging.error("UNDOREDOMGR: error on undo_ctx {}".format(str(e)))
-            # TO DO self._error()
+            self._on_error_undoredo()
+            self._erase_stacks()
         else:
-            logging.error("UNDOREDOMGR: done on undo_ctx {}")
+            logging.debug("UNDOREDOMGR: done on undo_ctx {}")
             self._redo.append(last_action)
             self._after_undo()
         finally:
-            logging.error("UNDOREDOMGR: finally on undo_ctx")
+            logging.debug("UNDOREDOMGR: finally on undo_ctx")
 
 
     def undo(self) -> Action:
@@ -350,12 +359,14 @@ class UndoRedoMgr(object):
 
         except Exception as e:
             logging.error("UNDOREDOMGR: error on redo_ctx {}".format(str(e)))
-            # TO DO self._error()
+            self._on_error_undoredo()
+            self._erase_stacks()
         else:
+            logging.debug("UNDOREDOMGR: done on undo_ctx {}")
             self._undo.append(last_action)
             self._after_redo()
         finally:
-            logging.error("UNDOREDOMGR: finally on redo_ctx")
+            logging.debug("UNDOREDOMGR: finally on redo_ctx")
 
     def redo(self) -> Action:
         """ play redo, if redo stack is empty raises an exception (indexError)"""
