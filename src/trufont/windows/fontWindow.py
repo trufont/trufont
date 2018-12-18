@@ -724,12 +724,17 @@ class FontWindow(wx.Frame):
         """ undo opertion let's go ....."""
         tab = self.bookCtrl.GetCurrentPage()
         self.Refresh()
-        try:
-            action = tab.undoredo.undo()
-            self._logger.debug("UNDOREDO: undo on {}".format(str(action.operation)))
-            call_func = action.callback_undo()
-        except Exception as e:
-            self._logger.debug("UNDOREDO: undo exception on {}".format(str(e)))
+        # try:
+        #     action = tab.undoredo.undo()
+        #     self._logger.debug("UNDOREDO: undo on {}".format(str(action.operation)))
+        #     call_func = action.callback_undo()
+        # except Exception as e:
+        #     self._logger.debug("UNDOREDO: undo exception on {}".format(str(e)))
+
+        if tab.undoredo.can_undo():
+            with tab.undoredo.undo_ctx() as action:
+                self._logger.debug("UNDOREDO: undo on {}".format(str(action.operation)))
+                action.callback_undo()
         self.OnUpdateUndoRedoMenu(tab.undoredo)
         trufont.TruFont.updateUI()
 
@@ -737,12 +742,17 @@ class FontWindow(wx.Frame):
     def OnRedo(self, event):
         tab = self.bookCtrl.GetCurrentPage()
         self.Refresh()
-        try:
-            action = tab.undoredo.redo()
-            self._logger.debug("UNDOREDO: redo on {}".format(str(action.operation)))
-            action.callback_redo()
-        except Exception as e:
-            self._logger.debug("UNDOREDO: redo exception on {}".format(str(e)))
+        # try:
+        #     action = tab.undoredo.redo()
+        #     self._logger.debug("UNDOREDO: redo on {}".format(str(action.operation)))
+        #     action.callback_redo()
+        # except Exception as e:
+        #     self._logger.debug("UNDOREDO: redo exception on {}".format(str(e)))
+        if tab.undoredo.can_redo():
+            with tab.undoredo.redo_ctx() as action:
+                self._logger.debug("UNDOREDO: redo on {}".format(str(action.operation)))
+                action.callback_redo()
+
         self.OnUpdateUndoRedoMenu(tab.undoredo)
         trufont.TruFont.updateUI()
 
@@ -794,16 +804,16 @@ class FontWindow(wx.Frame):
     @undoredomgr.layer_decorate_undoredo(selectall_expand_params, operation="Selection all", 
                                      paths=True, guidelines=False, components=True, anchors=True)
     def OnSelectAllFromLayer(self, layer: Layer):        
-        pathsAreSelected = True
+        # pathsAreSelected = True
         for path in layer.paths:
             if not path.selected:
                 pathsAreSelected = False
                 path.selected = True
-        if pathsAreSelected:
-            for anchor in layer.anchors:
-                anchor.selected = True
-            for component in layer.components:
-                component.selected = True
+        # if pathsAreSelected:
+        for anchor in layer.anchors:
+            anchor.selected = True
+        for component in layer.components:
+            component.selected = True
         trufont.TruFont.updateUI()
 
     def OnFind(self, event):
