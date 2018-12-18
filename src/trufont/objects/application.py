@@ -64,7 +64,7 @@ class Application:
         self._internal = kwargs
 
         # create a logger
-        self._logger = logging.getLogger()
+        self._logger = logstuff.create_default_logger()
         if self._internal["log_rotating"]:
             self._logger = logstuff.create_timedrotating_logger("")
         if self._internal["log_screen"]:

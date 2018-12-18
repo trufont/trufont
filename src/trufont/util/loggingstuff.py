@@ -17,23 +17,28 @@ LOGGER_LOGGING = LOGGER_BASE + ".logging"
 LOGGER_UNDOREDO = LOGGER_BASE + ".undoredomgr"
 LOGGER_CLASSFUNCS = LOGGER_BASE + ".classfuncs"
 
+def create_default_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT, 
+    date_fmt: str=DATE_FMT) -> logging.Logger:
+    """ Create a basicconfig  logger """
+    logging.basicConfig(format=fmt, datefmt=date_fmt, level=logging.INFO)
+    return logging.getLogger()
 
 def create_stream_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT, 
                         date_fmt: str=DATE_FMT) -> logging.Logger:
-    """ Create an local logger """
+    """ Create a local logger """
     logger = logging.getLogger(logger_name)
     hdlr = logging.StreamHandler(stream=sys.stdout)
     fmtr = logging.Formatter(fmt, date_fmt)
     hdlr.setFormatter(fmtr)
     logger.addHandler(hdlr)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     return logger
 
 
 def create_timedrotating_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT, 
                                 date_fmt: str=DATE_FMT) -> logging.Logger:
-    """ Create an TimedRotatingFileHandler on 7 daysfor a main logger """
+    """ Create a TimedRotatingFileHandler on 7 daysfor a main logger """
     logger = logging.getLogger(logger_name)
     where = os.getenv("trufont_logpath")
     # where are create log file
@@ -47,7 +52,7 @@ def create_timedrotating_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT,
     fmtr = logging.Formatter(fmt, date_fmt)
     hdlr.setFormatter(fmtr)
     logger.addHandler(hdlr)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     return logger
 
