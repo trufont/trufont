@@ -4,7 +4,7 @@ from trufont.util.drawing import CreatePath
 import wx
 from wx import GetTranslation as tr
 
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 
 _path = CreatePath()
 _path.MoveToPoint(1.0, 0.975)
@@ -77,9 +77,9 @@ class KnifeTool(BaseTool):
         else:
             super().OnMotion(event)
 
-    @undoredomgr.layer_decorate_undoredo((lambda *args, **kwargs: args[0].layer), 
-                                         operation="Knife cut selection",
-                                         paths=True, guidelines=False, components=False, anchors=False)
+    @undomanager.layer_decorate_undo((lambda *args, **kwargs: args[0].layer), 
+                                      operation="Knife cut selection",
+                                      paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseUpLeftUp(self, event):
         """ make thios method to be sure that the super().OnMouseUp() call do not 
         bloc process of wx msgs  """

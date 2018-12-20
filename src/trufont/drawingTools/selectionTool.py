@@ -4,7 +4,7 @@ import trufont
 # from trufont.controls.layerDialogs import AddComponentDialog, RenameDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects.misc import GuidelineSegment, PointRecord, SegmentRecord
-from trufont.objects.undoredomgr import Action
+from trufont.objects.undoManager import Action
 from trufont.util import platformSpecific
 from trufont.util.canvasMorph import atOpenBoundary, joinPaths
 from trufont.util.canvasMove import moveUILayerSelection, rotateUIPointAroundRefLine
@@ -14,7 +14,7 @@ import wx
 from wx import GetTranslation as tr
 
 import trufont.util.deco4class as deco4class
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 
 import logging
 # The icon for the tool's button
@@ -96,15 +96,15 @@ class SelectionTool(BaseTool):
         return cursor
 
     # helpers
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Create anchor", 
-                                         paths=False, guidelines=False, components=False, anchors=True)
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Create anchor", 
+                                     paths=False, guidelines=False, components=False, anchors=True)
     def createAnchor(self, *_):
         pos = self._cachedPos
         self.layer.anchors["new anchor"] = Anchor(pos.x, pos.y)
         trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Create component", 
-                                         paths=False, guidelines=False, components=True, anchors=False)
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Create component", 
+                                     paths=False, guidelines=False, components=True, anchors=False)
     def createComponent(self, *_):
         raise NotImplementedError
         layer = self.layer
@@ -113,31 +113,31 @@ class SelectionTool(BaseTool):
             layer.components.append(Component(newGlyph.name))
             trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Create guideline", 
-                                      paths=False, guidelines=True, components=False, anchors=False)
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Create guideline", 
+                                     paths=False, guidelines=True, components=False, anchors=False)
     def createGuideline(self, *_):
         pos = self._cachedPos
         self.layer.guidelines.append(Guideline(pos.x, pos.y, 0))
         trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Decompose component", 
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Decompose component", 
                                      paths=False, guidelines=False, components=True, anchors=False)
     def decomposeComponent(self, *_):
         item = self.mouseItem
         item.decompose()
         trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Lock component", 
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Lock component", 
                                      paths=False, guidelines=False, components=True, anchors=False)
     def lockComponent(self, *_):
         raise NotImplementedError
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Lock guideline", 
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Lock guideline", 
                                      paths=False, guidelines=True, components=False, anchors=False)
     def lockGuideline(self, *_):
         raise NotImplementedError
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Toggle guideline", 
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Toggle guideline", 
                                      paths=False, guidelines=True, components=False, anchors=False)
     def toggleGuideline(self, *_):
         item = self.mouseItem
@@ -164,8 +164,8 @@ class SelectionTool(BaseTool):
     def renameItem(self, item):
         raise NotImplementedError
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Reverse path", 
-                                         paths=True, guidelines=False, components=False, anchors=False)
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Reverse path", 
+                                     paths=True, guidelines=False, components=False, anchors=False)
     def reverse(self, *_):
         target = self._targetPath
         if target is not None:
@@ -182,8 +182,8 @@ class SelectionTool(BaseTool):
         self.layer.paths.applyChange()
         trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(selectionTool_expand_params, operation="Set start point", 
-                                         paths=True, guidelines=False, components=False, anchors=False)
+    @undomanager.layer_decorate_undo(selectionTool_expand_params, operation="Set start point", 
+                                     paths=True, guidelines=False, components=False, anchors=False)
     def setStartPoint(self, *_):
         item = self.mouseItem
         item.path.setStartPoint(item.index)
@@ -324,7 +324,7 @@ class SelectionTool(BaseTool):
         canvas.Refresh()
         canvas.SetFocus()
 
-    @undoredomgr.prepare_layer_decorate_undoredo(selectionTool_expand_params, name="selection_move",
+    @undomanager.prepare_layer_decorate_undo(selectionTool_expand_params, name="selection_move",
                                          paths=True, guidelines=False, components=False, anchors=False)
     def addPointsLayerSelection(self, event, layer: Layer, x1: float, x2: float , y1: float, y2: float):
         """ add points under the rect selection is selection set """
@@ -444,7 +444,7 @@ class SelectionTool(BaseTool):
         trufont.TruFont.updateUI()
 
     # function and her decorator are called at the end of mouse move when leftup becomes up
-    @undoredomgr.perform_layer_decorate_undoredo(selectionTool2_expand_params, name="selection_move",
+    @undomanager.perform_layer_decorate_undo(selectionTool2_expand_params, name="selection_move",
                                          operation="Move selection",
                                          paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseUpLeftUp(self, event):

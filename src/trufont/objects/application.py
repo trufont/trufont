@@ -64,11 +64,13 @@ class Application:
         self._internal = kwargs
 
         # create a logger
-        self._logger = logstuff.create_default_logger()
+        self._logger = None
         if self._internal["log_rotating"]:
-            self._logger = logstuff.create_timedrotating_logger("")
+            self._logger = logstuff.create_timedrotating_logger()
         if self._internal["log_screen"]:
-            self._logger = logstuff.create_stream_logger("")
+            self._logger = logstuff.create_stream_logger()
+        if not self._logger:
+            self._logger = logstuff.create_default_logger()
         self._debug  = self._internal["debug"]
         self._disable_undoredo = self._internal["disable_undoredo"]
 

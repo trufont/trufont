@@ -158,7 +158,7 @@ class Layer(object):
         return "<Layer-0x{:08X}>".format(id(self)) + "-".join(str(p) for p in self._paths) + str(self._bounds)
         
 def test_mydeepcopy2(log: logging.Logger=logger):
-    """ test a deepcopy with a UndoRedoGlyph """
+    """ test a deepcopy with a UndoableGlyph """
     log.info(sys.version)
     layer = Layer(None, 2,1)
     log.info("layer -> {}".format(layer))

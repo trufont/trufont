@@ -14,7 +14,7 @@ DATE_FMT = '%d/%m/%Y %H:%M:%S'
 
 LOGGER_BASE =  __name__ # "trufont"
 LOGGER_LOGGING = LOGGER_BASE + ".logging"
-LOGGER_UNDOREDO = LOGGER_BASE + ".undoredomgr"
+LOGGER_UNDOREDO = LOGGER_BASE + ".undoManager"
 LOGGER_CLASSFUNCS = LOGGER_BASE + ".classfuncs"
 
 def create_default_logger(logger_name: str=LOGGER_BASE, fmt: str=STR_FMT, 

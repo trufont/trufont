@@ -6,7 +6,7 @@ from trufont.util.drawing import CreatePath
 import wx
 from wx import GetTranslation as tr
 
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 
 
 
@@ -42,7 +42,7 @@ _path.CloseSubpath()
 #-------------------------
 def mouseup_expand_params(self, *args):
     """ use by decorator to get three params aselif 
-    layer, undoredomgr and operation """
+    layer, undomanager and operation """
     if self.drawRectangle:
         if self.linkAxes:
             operation = "Draw square"
@@ -156,8 +156,8 @@ class ShapesTool(BaseTool):
         else:
             super().OnMotion(event)
 
-    @undoredomgr.layer_decorate_undoredo(mouseup_expand_params, 
-                                         paths=True, guidelines=False, components=False, anchors=False)
+    @undomanager.layer_decorate_undo(mouseup_expand_params, 
+                                     paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseUpLeftUp(self, event):
         """ make thios method to be sure that the super().OnMouseUp() call do not 
         bloc process of wx msgs  """

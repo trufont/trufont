@@ -1,5 +1,5 @@
 from trufont.util import bezierMath
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 
 def nudgeUICurve(on1, off1, off2, on2, dx, dy):
     if on2.selected != on1.selected:
@@ -48,14 +48,14 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
 def move_params(layer: "Layer", *_, **__):
     return layer 
 
-@undoredomgr.layer_decorate_undoredo(move_params, operation="Move selection", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
+@undomanager.layer_decorate_undo(move_params, operation="Move selection", 
+                                paths=True, guidelines=False, components=False, anchors=False)
 def moveFromKeysUILayerSelection(layer, dx, dy, option=None):
     return _movebaseUILayerSelection(layer, dx, dy, option)
 
 
-@undoredomgr.prepare_layer_decorate_undoredo(move_params, name="selection_move",
-                                                paths=True, guidelines=False, components=False, anchors=False)
+@undomanager.prepare_layer_decorate_undo(move_params, name="selection_move",
+                                             paths=True, guidelines=False, components=False, anchors=False)
 def moveUILayerSelection(layer, dx, dy, option=None):
     return _movebaseUILayerSelection(layer, dx, dy, option)
 

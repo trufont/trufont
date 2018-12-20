@@ -25,13 +25,13 @@ from trufont.windows.loggingWindows import LoggingWindow
 from tfont.converters import TFontConverter
 # from tfont.objects import Glyph, Layer
 from tfont.objects import Layer
-from trufont.objects.undoredoglyph import UndoRedoGlyph
+from trufont.objects.undoableGlyph import UndoableGlyph
 from typing import Optional
 import wx
 import wx.adv
 from wx import GetTranslation as tr
 
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 import sys
 
 import trufont.util.deco4class as deco4class
@@ -77,7 +77,7 @@ def prepareNewFont(font):
     fontname = font.familyName
     for char in string.ascii_uppercase + string.ascii_lowercase + " ":
         name = "space" if char == " " else char
-        glyphs.append(UndoRedoGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)]))
+        glyphs.append(UndoableGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)]))
 
 
 # @deco4class.decorator_classfunc()
@@ -153,7 +153,7 @@ class FontWindow(wx.Frame):
         self._debug = debug
         self._disable_undoredo = disable_undoredo
         self._logwin = None
-        self.dict_undoredomdgr = {}
+        self.dict_undomanager = {}
         # self.Bind(EVT_UPDATE_UNDOREDO, self.OnUpdateUndoRedoMenu)
 
         self.toolBar = FontToolBar(self)
@@ -166,7 +166,7 @@ class FontWindow(wx.Frame):
         tab = FontWindowTab(self.bookCtrl)
 
         # undoredo for this font
-        tab.undoredo = undoredomgr.UndoRedoMgr(self._title, self._logger)
+        tab.undoredo = undomanager.UndoManager(self._title, self._logger)
 
         self.cellView = w = GlyphCellView(tab)
         self.cellView.glyphs = font._glyphs
@@ -280,16 +280,16 @@ class FontWindow(wx.Frame):
         # set an undoredo manager to that new glyph 
         if glyph:
             # may be undoredo already stores in local dict ?
-            if glyph.name not in self.dict_undoredomdgr:
+            if glyph.name not in self.dict_undomanager:
                 glyph.frame = self
                 glyph.debug = self._debug
                 glyph.disable_undoredo = self._disable_undoredo
-                self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
-                self._logger.debug("UNDOREDO_LOAD: Append in dict from UndoRedoGlyph ('{}')".format(glyph.name))
+                self.dict_undomanager[glyph.name] = glyph.get_undomanager()
+                self._logger.debug("UNDOREDO_LOAD: Append in dict from UndoableGlyph ('{}')".format(glyph.name))
                 if self._debug:
                     self._logger.debug("UNDOREDO_LOAD: Load undoredo stack - Layer {}".format(self.activeLayer))
-                    glyph.load_from_undoredo(self.activeLayer)
-            tab.undoredo = glyph.get_undoredo()
+                    glyph.load_from_undomanager(self.activeLayer)
+            tab.undoredo = glyph.get_undomanager()
         return canvas
 
     def save(self, path=None):
@@ -524,7 +524,7 @@ class FontWindow(wx.Frame):
         self.SetMenuBar(menuBar)
 # 
 
-    def OnUpdateUndoRedoMenu(self, undoredo: undoredomgr.UndoRedoMgr):
+    def OnUpdateUndoRedoMenu(self, undoredo: undomanager.UndoManager):
         """ update redo/undo status menu on each activation """
         self._logger.debug("UNDOREDO: OnUpdateUndoRedoMenu {}".format(undoredo.str_state()))
         self.menu_undo.Enable(undoredo.can_undo())
@@ -601,7 +601,7 @@ class FontWindow(wx.Frame):
         view = self.bookCtrl.GetCurrentPage().view
         self.toolBar.setParentControl(view)
         view.SetFocus()
-        # activate the undoredomgr of current tab (Here a glyph or the font) 
+        # activate the undomanager of current tab (Here a glyph or the font) 
         tab = self.bookCtrl.GetCurrentPage()
         try: 
             # wx.SendEvent(self, EVT_UPDATE_UNDOREDO)
@@ -801,7 +801,7 @@ class FontWindow(wx.Frame):
                 return    
             self.OnSelectAllFromLayer(layer)
 
-    @undoredomgr.layer_decorate_undoredo(selectall_expand_params, operation="Selection all", 
+    @undomanager.layer_decorate_undo(selectall_expand_params, operation="Selection all", 
                                      paths=True, guidelines=False, components=True, anchors=True)
     def OnSelectAllFromLayer(self, layer: Layer):        
         # pathsAreSelected = True
