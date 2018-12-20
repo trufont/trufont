@@ -232,7 +232,7 @@ class PenTool(BaseTool):
 
     # function and her decorator are called at the beginnig of left down mouse 
     @undomanager.prepare_layer_decorate_undo(penTool_expand_params, name="draw_point",
-                                         paths=True, guidelines=False, components=False, anchors=False)
+                                             paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseDownLeftDown(self, event):
         layer = self.layer
         logging.info("PENTOOL: OnMouseDown - {}".format("-"*25))
@@ -243,7 +243,7 @@ class PenTool(BaseTool):
         # logging.info("PENTOOL: OnMouseDown point selected is {}".format(selPoint))
         # if we click an on curve, join it at boundaries or break the path
         if isinstance(mouseItem, PointRecord):
-            # logging.info("PENTOOL: OnMouseDown point record")
+            logging.info("PENTOOL: OnMouseDown point record")
             mousePoint = mouseItem.point
             mousePath = mousePoint.path
             if atOpenBoundary(mousePoint):
@@ -270,13 +270,15 @@ class PenTool(BaseTool):
             # sucks that we gotta reproject (canvas.segmentAt does it already),
             # save projection tValue in the SegmentRecord?
             _, _, t = mouseItem.segment.projectPoint(pos.x, pos.y)
-            # logging.info("PENTOOL: OnMouseDown segment record - split segment")
+            logging.info("PENTOOL: OnMouseDown segment record - split segment")
             segment = mouseItem.segments.splitSegment(mouseItem.index, t)
             layer.clearSelection()
             segment.onCurve.selected = True
         else:
             x, y = pos.x, pos.y
-            # logging.info("PENTOOL: OnMouseDown other record - fromPoint -> {}".format(pos))
+            logging.info("PENTOOL: OnMouseDown other record - fromPoint -> {}".format(pos))
+            if selPoint:
+                logging.info("PENTOOL: OnMouseDown other record - atOpenB {}".format(atOpenBoundary(selPoint)))
             # otherwise, add a point to current path if applicable
             if selPoint and atOpenBoundary(selPoint):
                 # logging.info("PENTOOL: OnMouseDown - parent of selection is {}".format(selPoint.path))
