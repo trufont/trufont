@@ -20,7 +20,7 @@ from contextlib import contextmanager
 # 
 
 def prepare_layer_decorate_undo(func_get_layer: Callable, name: str, \
-                                    paths=True, anchors=True, components=True, guidelines=True):
+                                paths=True, anchors=True, components=True, guidelines=True):
     """ work with the methods of layer as below 
     layer.beginUndoGroup -> make a first sanpshot via layer.snaphot before a call to a decorated function 
     this snapshot is stored in a dict in layer object associated with key=name
@@ -63,7 +63,7 @@ def prepare_layer_decorate_undo(func_get_layer: Callable, name: str, \
     return decorate_fn
 
 def perform_layer_decorate_undo(func_get_layer: Callable, name: str, \
-                                    operation="None", paths=True, anchors=True, components=True, guidelines=True):
+                                operation="None", paths=True, anchors=True, components=True, guidelines=True):
     """ work with the methods of layer as below 
     layer.endUndoGroup -> make a new snapshot after the call to a decorated function
                         -> retrieve the original snapshot in the dict of layer with the key=name
@@ -91,7 +91,7 @@ def perform_layer_decorate_undo(func_get_layer: Callable, name: str, \
                     op = operation
                 undoredo = layer._parent.get_undomanager()
                 disable_undoredo = layer._parent._disable_undoredo
-                logging.debug("PREPARE_LAYER_DECORATE_UNDO: disable_undoredo {}".format(disable_undoredo))
+                logging.debug("PERFORM_LAYER_DECORATE_UNDO: disable_undoredo {}".format(disable_undoredo))
 
                 # underedo enable 
                 logging.debug("PERFORM_LAYER_DECORATE_UNDO: call func")
