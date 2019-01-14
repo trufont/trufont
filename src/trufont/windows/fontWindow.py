@@ -780,6 +780,10 @@ class FontWindow(wx.Frame):
             layer = self.activeLayer
             if layer is None:
                 return
+            undoredomgr.beginUndo(layer, paths=True, anchors=True, components=True, guidelines=True)
+            # A two-stages all-selection:
+            # 1. select all paths
+            # 2. if called a second time, select also all anchors and components
             pathsAreSelected = True
             for path in layer.paths:
                 if not path.selected:
@@ -790,6 +794,7 @@ class FontWindow(wx.Frame):
                     anchor.selected = True
                 for component in layer.components:
                     component.selected = True
+            undoredomgr.endUndo(layer, "Select All")
             trufont.TruFont.updateUI()
 
     def OnFind(self, event):

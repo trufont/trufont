@@ -288,6 +288,8 @@ class SelectionTool(BaseTool):
                 return
             if event.ControlDown():
                 logging.debug("SELECTIONTOOL: OnMouseDown item not none invert selection")
+		    # we probably don't want to undo/redo this, since it's just a
+		    # toggle: undo/redo is the same as ctrl-clicking again
                 item.selected = not item.selected
             else:
                 if not item.selected:
@@ -443,7 +445,7 @@ class SelectionTool(BaseTool):
 
         trufont.TruFont.updateUI()
 
-    # function and her decorator are called at the end of mouse move when leftup becomes up
+    # function and its decorator are called at the end of mouse move when leftup becomes up
     @undoredomgr.perform_layer_decorate_undoredo(selectionTool2_expand_params, name="selection_move",
                                          operation="Move selection",
                                          paths=True, guidelines=False, components=False, anchors=False)

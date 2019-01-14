@@ -17,6 +17,15 @@ from collections import Set, Mapping, deque
 
 from contextlib import contextmanager
 
+# utility functions to simplify access to a TFont's Layer begin/endUndoGroup()
+
+def beginUndo(layer : Layer, paths=True, anchors=True, components=True, guidelines=True):
+    layer.beginUndoGroup("utility_helper", paths, anchors, components, guidelines)
+
+def endUndo(layer : Layer, action_name : str):
+    undo_redo_and_the_rest = layer.endUndoGroup("utility_helper")
+    undoredo = layer._parent.get_undoredo()
+    undoredo.append_action(Action(action_name, *undo_redo_and_the_rest))
 # 
 
 def prepare_layer_decorate_undoredo(func_get_layer: Callable, name: str, \

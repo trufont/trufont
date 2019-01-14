@@ -234,7 +234,7 @@ class PenTool(BaseTool):
         else:
             super().OnKeyUp(event)
 
-    # function and her decorator are called at the beginnig of left down mouse 
+    # function and its decorator are called at the beginning of left down mouse
     @undoredomgr.prepare_layer_decorate_undoredo(penTool_expand_params, name="draw_point",
                                          paths=True, guidelines=False, components=False, anchors=False)
     def OnMouseDownLeftDown(self, event):
