@@ -4,32 +4,32 @@ import logging
 import os
 
 import trufont.util.loggingstuff as logstuff
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 
 # constants
 
 
 
 def test_action(logger: logging.Logger = logging.getLogger(logstuff.LOGGER_UNDOREDO)):
-    """ Untis Tests for UndoRedoMgr"""
+    """ Unit Tests for UndoManager"""
     logger.info("======== Start of test")
 
     op = "test"
     undo=1
     redo=2
     args=('tt', True)
-    a = undoredomgr.Action(op, undo, redo, args)
+    a = undomanager.Action(op, undo, redo, args)
     logger.info("1-Action is {}".format(a))
 
-    a = undoredomgr.Action(op, undo, redo, *args)
+    a = undomanager.Action(op, undo, redo, *args)
     logger.info("2-Action is {}".format(a))
 
     all = undo, redo, args 
-    b = undoredomgr.Action(op, *all)
+    b = undomanager.Action(op, *all)
     logger.info("3-Action is {}".format(b))
 	
     all = undo, redo, args 
-    b = undoredomgr.Action(op, *all).datas_only()
+    b = undomanager.Action(op, *all).datas_only()
     logger.info("4-Action, datas are {}".format(b))
 	
 

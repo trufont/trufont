@@ -3,7 +3,7 @@ from trufont.util import platformSpecific
 from trufont.util.drawing import CreatePath
 from trufont.util.canvasDelete import deleteUILayerSelection
 from trufont.util.canvasMove import moveFromKeysUILayerSelection
-from trufont.objects.undoredomgr import Action
+from trufont.objects.undoManager import Action
 from tfont.objects import Point
 import wx
 from wx import GetTranslation as tr
@@ -110,12 +110,13 @@ class BaseTool(object):
         Also layer.endUndoGroup() will be called once, and only if prepareUndo()
         was called."""
         if not self.preparedUndo and self.layer:
-            self.layer.beginUndoGroup(group_name)
+            self.layer.beginUndo(group_name)
             self.preparedUndo = True
 
     def performUndo(self, operation:str, group_name: str="unknown"):
         if self.preparedUndo and self.layer:
-            self.layer._parent.get_undoredo().append_action(Action(operation, *self.layer.endUndoGroup(group_name)))
+            action = Action(operation, *self.layer.endUndo(group_name))
+            self.layer._parent.get_undomanager().append_action(action)
             self.preparedUndo = False
 
     # we oughta eat the modifiers down/up events in baseTool to stop the
