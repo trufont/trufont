@@ -2,6 +2,40 @@
 
 ## Introduction to Undo Systems
 
+To the best of my knowledge, there are two main strategies to implement undo:
+
+- store snapshots of the data
+- record individual change operations or deltas
+
+Snapshot approach, advantages:
+
+- it's fairly simple
+- can have periods without undo recording and things still more or less work
+- a single snapshot is needed for both undo and redo
+- for a group of changes, only a single snapshot is needed
+
+Snapshot approach, disadvantages:
+
+- making a snapshot may be expensive, both in terms of computing as well as
+  memory usage
+- even for a tiny change, a whole snapshot is needed
+
+Recording individual changes, advantages:
+
+- not more information than necessary is stored onto the undo stack
+- small changes are fast to process
+
+Recording individual changes, disadvantages:
+
+- *everything* has to be recorded, or the undo data becomes invalid
+- two operations or deltas need to be recorded: forward and backward
+  (regular/inverse)
+- for a group of changes, all individual changes need to be stored and
+  replayed upon undo/redo: for a complex set of changes this can add
+  up to a lot of individual operations or deltas
+
+## Implementation
+
 An undo/redo stack is often implemented with as an “undo manager” class.
 In the case of an outline editor, a lot of data will simply be copied, as
 it’s not always possible to simply “perform the reverse operation”.
