@@ -36,15 +36,12 @@ Recording individual changes, disadvantages:
 
 ## Implementation
 
-An undo/redo stack is often implemented with as an “undo manager” class.
-In the case of an outline editor, a lot of data will simply be copied, as
-it’s not always possible to simply “perform the reverse operation”.
-Transformations are a good example of that. But also point behavior: when
-a handle is implicitly being moved because it has a “smooth” connection
-to another, the opposite movement may result in a different position of
-the “implied” movement due to rounding. So in general, we need to
-efficiently copy the complete previous state of an outline to be able to
-do undo reliably.
+An undo/redo stack is often implemented with as an “undo manager” class,
+that is responsible for keeping track of changes, and interaction with
+the UI. It sits between the object model and the user interface.
+
+If a snapshot approach is chosen, one could store deltas _between_ the
+snapshots, reducing resource usage.
 
 If diffing between versions can be done with text-representations of
 objects, the github.com/google/diff-match-patch library may be of
@@ -99,6 +96,9 @@ gained from pairing undo with the notification mechanism. A more general
 notification system may allow this more easily. (Needs more
 investigation: see the trufont.util.tracker module, and how it’s used in
 layer.paths.)
+
+The opposite it also possible: to build UI refresh on top of the undo
+system.
 
 ## Undo Manager API concepts
 
