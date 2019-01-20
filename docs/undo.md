@@ -262,6 +262,9 @@ unobtrusive way: <https://github.com/justvanrossum/jundo>
 
 ## Links & References
 
+Wikipedia's page on undo is a good reference for various approaches:
+<https://en.wikipedia.org/wiki/Undo>
+
 Cocoa’s undo manager is documented here:
 <https://developer.apple.com/documentation/foundation/nsundomanager>
 
