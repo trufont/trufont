@@ -243,6 +243,23 @@ it seems to work for most editing operations, but less so for drawing
 operations. This work is interesting and should be reviewed more
 carefully.
 
+## A data-oriented approach
+
+Raph Levien suggested an alternative approach that focuses on the data, which
+works by recording small deltas. This can be done in a generic way, if the
+underlying data can be viewed in a generic way — say as a JSON-like structure,
+composed of dictionaries, lists, strings and numbers.
+
+His full comment is worth reading and can be found here:
+<https://github.com/trufont/trufont/pull/614#issuecomment-446309637>
+
+Adrien Tétar responded with some notes here:
+<https://gist.github.com/adrientetar/aff333972a927c3d0a2c641c27ad605a>
+
+Just van Rossum wrote an experimental undo library that explores some of these
+ideas, aiming to make it easy to apply on an existing object model in an
+unobtrusive way: <https://github.com/justvanrossum/jundo>
+
 ## Links & References
 
 Cocoa’s undo manager is documented here:
