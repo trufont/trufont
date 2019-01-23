@@ -4,12 +4,12 @@ import logging
 import os
 
 import trufont.util.loggingstuff as logstuff
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 
 from tfont.objects import Layer
 from tfont.objects import Font
 
-from trufont.objects.truglyph import TruGlyph
+from trufont.objects.undoableGlyph import UndoableGlyph
 from trufont.controls import propertiesView
 
 def expand_param(Layer: Layer, *args, **kwargs):
@@ -17,18 +17,18 @@ def expand_param(Layer: Layer, *args, **kwargs):
 
 class FrameMock(object):
     
-    def OnUpdateUndoRedoMenu(self, undoredo: undoredomgr.UndoRedoMgr):
+    def OnUpdateUndoRedoMenu(self, undoredo: undomanager.UndoManager):
         pass
 
 def test_decorator(logger: logging.Logger = logging.getLogger(__name__)):
-    """ Untis Tests for UndoRedoMgr"""
+    """ Unit Tests for UndoManager"""
     logger.info("======== Start of test")
     logger.info(sys.version)
     logger.setLevel(logging.DEBUG)
     font = Font()
     fontname = font.familyName
     char = name = "W"
-    tglyph = TruGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)])
+    tglyph = UndoableGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)])
     font.glyphs.append(tglyph)
     tglyph._parent = font
     tglyph.frame = FrameMock()
@@ -41,11 +41,11 @@ def test_decorator(logger: logging.Logger = logging.getLogger(__name__)):
     # layer._parent = font
     # tglyph.layers.append(layer)
     layer = tglyph.layers[0]
-    tglyph.load_from_undoredo(layer)
+    tglyph.load_from_undomanager(layer)
     logger.info("TEST URM-DECO: layer is {}".format(layer))
 
     seq = 0
-    mgr = tglyph.get_undoredo()
+    mgr = tglyph.get_undomanager()
     logger.info("TEST URM-DECO: {:02d} -> undo: {} / redo: {}".format(seq, mgr.len_undo(), 
                                 mgr.len_redo()))
 

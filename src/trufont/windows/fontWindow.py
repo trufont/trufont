@@ -25,13 +25,13 @@ from trufont.windows.loggingWindows import LoggingWindow
 from tfont.converters import TFontConverter
 # from tfont.objects import Glyph, Layer
 from tfont.objects import Layer
-from trufont.objects.truglyph import TruGlyph
+from trufont.objects.undoableGlyph import UndoableGlyph
 from typing import Optional
 import wx
 import wx.adv
 from wx import GetTranslation as tr
 
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 import sys
 
 import trufont.util.deco4class as deco4class
@@ -77,7 +77,7 @@ def prepareNewFont(font):
     fontname = font.familyName
     for char in string.ascii_uppercase + string.ascii_lowercase + " ":
         name = "space" if char == " " else char
-        glyphs.append(TruGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)]))
+        glyphs.append(UndoableGlyph("{}-{}".format(fontname, name), unicodes=["%04X" % ord(char)]))
 
 
 # @deco4class.decorator_classfunc()
@@ -126,6 +126,10 @@ class FontWindowTab(wx.Panel):
     # TODO: add more things like GetTextDirection etc.?
 
 
+def selectall_expand_params(obj, *args, **kwargs):
+    """Used on OnSelectAllwith Nothing to """
+    return obj.activeLayer    
+
 ActiveLayerChangedEvent, EVT_ACTIVE_LAYER_CHANGED = wx.lib.newevent.NewEvent()
 EVT_UPDATE_UNDOREDO = wx.lib.newevent.NewEvent()
 
@@ -149,7 +153,7 @@ class FontWindow(wx.Frame):
         self._debug = debug
         self._disable_undoredo = disable_undoredo
         self._logwin = None
-        self.dict_undoredomdgr = {}
+        self.dict_undomanager = {}
         # self.Bind(EVT_UPDATE_UNDOREDO, self.OnUpdateUndoRedoMenu)
 
         self.toolBar = FontToolBar(self)
@@ -162,7 +166,7 @@ class FontWindow(wx.Frame):
         tab = FontWindowTab(self.bookCtrl)
 
         # undoredo for this font
-        tab.undoredo = undoredomgr.UndoRedoMgr(self._title, self._logger)
+        tab.undoredo = undomanager.UndoManager(self._title, self._logger)
 
         self.cellView = w = GlyphCellView(tab)
         self.cellView.glyphs = font._glyphs
@@ -198,8 +202,13 @@ class FontWindow(wx.Frame):
         mainSizer = workspSizer
         # Set sizer to honor minimum size, then resize to our preferred value
         self.SetSizerAndFit(mainSizer)
-        size = kwargs.get("size", (1262, 800))
-        self.SetSize(size)
+
+        if self._debug:
+            self.SetSize((400, 700))
+            self.SetPosition((900, 100))
+        else:
+            size = kwargs.get("size", (1262, 800))
+            self.SetSize(size)
 
         self.setupAccelerators()
         self.setupMenuBar()
@@ -271,16 +280,16 @@ class FontWindow(wx.Frame):
         # set an undoredo manager to that new glyph 
         if glyph:
             # may be undoredo already stores in local dict ?
-            if glyph.name not in self.dict_undoredomdgr:
+            if glyph.name not in self.dict_undomanager:
                 glyph.frame = self
                 glyph.debug = self._debug
                 glyph.disable_undoredo = self._disable_undoredo
-                self.dict_undoredomdgr[glyph.name] = glyph.get_undoredo()
-                self._logger.debug("UNDOREDO_LOAD: Append in dict from TruGlyph ('{}')".format(glyph.name))
+                self.dict_undomanager[glyph.name] = glyph.get_undomanager()
+                self._logger.debug("UNDOREDO_LOAD: Append in dict from UndoableGlyph ('{}')".format(glyph.name))
                 if self._debug:
                     self._logger.debug("UNDOREDO_LOAD: Load undoredo stack - Layer {}".format(self.activeLayer))
-                    glyph.load_from_undoredo(self.activeLayer)
-            tab.undoredo = glyph.get_undoredo()
+                    glyph.load_from_undomanager(self.activeLayer)
+            tab.undoredo = glyph.get_undomanager()
         return canvas
 
     def save(self, path=None):
@@ -515,7 +524,7 @@ class FontWindow(wx.Frame):
         self.SetMenuBar(menuBar)
 # 
 
-    def OnUpdateUndoRedoMenu(self, undoredo: undoredomgr.UndoRedoMgr):
+    def OnUpdateUndoRedoMenu(self, undoredo: undomanager.UndoManager):
         """ update redo/undo status menu on each activation """
         self._logger.debug("UNDOREDO: OnUpdateUndoRedoMenu {}".format(undoredo.str_state()))
         self.menu_undo.Enable(undoredo.can_undo())
@@ -592,7 +601,7 @@ class FontWindow(wx.Frame):
         view = self.bookCtrl.GetCurrentPage().view
         self.toolBar.setParentControl(view)
         view.SetFocus()
-        # activate the undoredomgr of current tab (Here a glyph or the font) 
+        # activate the undomanager of current tab (Here a glyph or the font) 
         tab = self.bookCtrl.GetCurrentPage()
         try: 
             # wx.SendEvent(self, EVT_UPDATE_UNDOREDO)
@@ -715,12 +724,17 @@ class FontWindow(wx.Frame):
         """ undo opertion let's go ....."""
         tab = self.bookCtrl.GetCurrentPage()
         self.Refresh()
-        try:
-            action = tab.undoredo.undo()
-            self._logger.debug("UNDOREDO: undo on {}".format(str(action.operation)))
-            call_func = action.callback_undo()
-        except Exception as e:
-            self._logger.debug("UNDOREDO: undo exception on {}".format(str(e)))
+        # try:
+        #     action = tab.undoredo.undo()
+        #     self._logger.debug("UNDOREDO: undo on {}".format(str(action.operation)))
+        #     call_func = action.callback_undo()
+        # except Exception as e:
+        #     self._logger.debug("UNDOREDO: undo exception on {}".format(str(e)))
+
+        if tab.undoredo.can_undo():
+            with tab.undoredo.undo_ctx() as action:
+                self._logger.debug("UNDOREDO: undo on {}".format(str(action.operation)))
+                action.callback_undo()
         self.OnUpdateUndoRedoMenu(tab.undoredo)
         trufont.TruFont.updateUI()
 
@@ -728,12 +742,17 @@ class FontWindow(wx.Frame):
     def OnRedo(self, event):
         tab = self.bookCtrl.GetCurrentPage()
         self.Refresh()
-        try:
-            action = tab.undoredo.redo()
-            self._logger.debug("UNDOREDO: redo on {}".format(str(action.operation)))
-            action.callback_redo()
-        except Exception as e:
-            self._logger.debug("UNDOREDO: redo exception on {}".format(str(e)))
+        # try:
+        #     action = tab.undoredo.redo()
+        #     self._logger.debug("UNDOREDO: redo on {}".format(str(action.operation)))
+        #     action.callback_redo()
+        # except Exception as e:
+        #     self._logger.debug("UNDOREDO: redo exception on {}".format(str(e)))
+        if tab.undoredo.can_redo():
+            with tab.undoredo.redo_ctx() as action:
+                self._logger.debug("UNDOREDO: redo on {}".format(str(action.operation)))
+                action.callback_redo()
+
         self.OnUpdateUndoRedoMenu(tab.undoredo)
         trufont.TruFont.updateUI()
 
@@ -779,18 +798,26 @@ class FontWindow(wx.Frame):
         else:
             layer = self.activeLayer
             if layer is None:
-                return
-            pathsAreSelected = True
-            for path in layer.paths:
-                if not path.selected:
-                    pathsAreSelected = False
-                    path.selected = True
-            if pathsAreSelected:
-                for anchor in layer.anchors:
-                    anchor.selected = True
-                for component in layer.components:
-                    component.selected = True
-            trufont.TruFont.updateUI()
+                return    
+            self.OnSelectAllFromLayer(layer)
+
+    @undomanager.layer_decorate_undo(selectall_expand_params, operation="Select all", 
+                                     paths=True, guidelines=False, components=True, anchors=True)
+    def OnSelectAllFromLayer(self, layer: Layer):        
+        # A two-stages all-selection:
+        # 1. select all paths
+        # 2. if called a second time, select also all anchors and components
+        pathsAreSelected = True
+        for path in layer.paths:
+            if not path.selected:
+                pathsAreSelected = False
+                path.selected = True
+        if pathsAreSelected:
+            for anchor in layer.anchors:
+                anchor.selected = True
+            for component in layer.components:
+                component.selected = True
+        trufont.TruFont.updateUI()
 
     def OnFind(self, event):
         raise NotImplementedError
@@ -894,3 +921,6 @@ class FontWindow(wx.Frame):
         info.SetWebSite("https://trufont.github.io", tr("TruFont website"))
         info.SetDevelopers(list(authors()))
         wx.adv.AboutBox(info, self)
+
+
+

@@ -39,6 +39,7 @@ class ColorButton(wx.Window):
 
     @staticmethod
     def DoPickColor(parent, color):
+        logging.debug("BUTTONCOLOR_LAYER: DoPickColor")
         dialog = wx.ColourDialog(parent)
         data = dialog.GetColourData()
         # TODO: use SetChooseAlpha(True) in wx 3.1
@@ -96,7 +97,7 @@ class ColorButton(wx.Window):
 
     def OnLeftDown(self, event):
         color = self.DoPickColor(self._color)
-        if color is not None:
+        if color:
             self._color = color
             wx.PostEvent(self, ColorModifiedEvent(color=self._color))
             self.Refresh()

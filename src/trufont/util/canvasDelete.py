@@ -3,13 +3,13 @@ from tfont.objects import Path
 
 # TODO: fold this into canvasOps when ready?
 import trufont.util.deco4class as deco4class
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 
 def expands_params(layer, origin="Delete selection", breakPaths=False):
     return layer, origin
 
 # @deco4class.func_decorator
-@undoredomgr.layer_decorate_undoredo(expands_params)
+@undomanager.layer_decorate_undo(expands_params)
 def deleteUILayerSelection(layer, origin="Delete selection", breakPaths=False):
     anchors = layer._anchors
     for name in list(anchors):

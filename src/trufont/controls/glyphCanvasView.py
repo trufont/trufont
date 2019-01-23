@@ -251,6 +251,7 @@ class GlyphCanvasView(GlyphContextView):
                     if dx * dx + dy * dy <= maxSqDist:
                         return SegmentRecord(segments, index)
         selection = layer.selection
+        # check if we have exactly one guideline selected
         if len(selection) == 1:
             guideline = next(iter(selection))
             if guideline.__class__ is not Guideline:
@@ -263,6 +264,7 @@ class GlyphCanvasView(GlyphContextView):
             guideline = next(guidelines, None)
             if guideline is None or next(guidelines, None) is not None:
                 return
+        # end of the check of exactly one guideline selected
         if guideline.selected:
             dl = sum(self.GetClientSize()) * self._inverseScale
             gx, gy = guideline.x, guideline.y
@@ -278,3 +280,5 @@ class GlyphCanvasView(GlyphContextView):
                 dy = py - y
                 if dx * dx + dy * dy <= maxSqDist:
                     return GuidelineSegment(guideline)
+        else:
+            print("This should never happen:")

@@ -14,10 +14,10 @@ import wx
 from wx import GetTranslation as tr
 
 import logging
-from trufont.objects.truglyph import TruGlyph
+from trufont.objects.undoableGlyph import UndoableGlyph
 from typing import Any, Collection, Tuple, List, Dict, Callable
 
-import trufont.objects.undoredomgr as undoredomgr
+import trufont.objects.undoManager as undomanager
 import trufont.util.func_copy as func_copy
 
 from tfont.converters.tfontConverter import TFontConverter
@@ -49,13 +49,13 @@ path.CloseSubpath()
 #-------------------------
 # Used by undoredo decorator
 #-------------------------
-def align_expand_params(layer: Layer, tglyph: TruGlyph, operation: str):
+def align_expand_params(layer: Layer, glyph: UndoableGlyph, operation: str):
     """Used with align functions -  Nothing to """
     return layer    
 
-@undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Horiz Left", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
-def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
+@undomanager.layer_decorate_undo(align_expand_params, operation="Align Horiz Left", 
+                                 paths=True, guidelines=False, components=False, anchors=False)
+def _alignHLeft(layer: Layer, tglyph: UndoableGlyph, operation: str):
     selectedPaths = []
     xMin_all = None
     for path in layer._paths:
@@ -74,9 +74,9 @@ def _alignHLeft(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = xMin_all - xMin
             path.transform(Transformation(xOffset=delta))
 
-@undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Horiz Center", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
-def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
+@undomanager.layer_decorate_undo(align_expand_params, operation="Align Horiz Center", 
+                                 paths=True, guidelines=False, components=False, anchors=False)
+def _alignHCenter(layer: Layer, tglyph: UndoableGlyph, operation: str):
     selectedPaths = []
     xMin_all, xMax_all = None, None
     for path in layer._paths:
@@ -100,9 +100,9 @@ def _alignHCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(xOffset=delta))
 
 
-@undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Horiz Right", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
-def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
+@undomanager.layer_decorate_undo(align_expand_params, operation="Align Horiz Right", 
+                                paths=True, guidelines=False, components=False, anchors=False)
+def _alignHRight(layer: Layer, tglyph: UndoableGlyph, operation: str):
     selectedPaths = []
     xMax_all = None
     for path in layer._paths:
@@ -122,9 +122,9 @@ def _alignHRight(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(xOffset=delta))
 
 
-@undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Vert Top", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
-def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
+@undomanager.layer_decorate_undo(align_expand_params, operation="Align Vert Top", 
+                                paths=True, guidelines=False, components=False, anchors=False)
+def _alignVTop(layer: Layer, tglyph: UndoableGlyph, operation: str):
     selectedPaths = []
     yMax_all = None
     for path in layer._paths:
@@ -143,9 +143,9 @@ def _alignVTop(layer: Layer, tglyph: TruGlyph, operation: str):
             delta = yMax_all - yMax
             path.transform(Transformation(yOffset=delta))
 
-@undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Vert Center", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
-def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
+@undomanager.layer_decorate_undo(align_expand_params, operation="Align Vert Center", 
+                                paths=True, guidelines=False, components=False, anchors=False)
+def _alignVCenter(layer: Layer, tglyph: UndoableGlyph, operation: str):
     selectedPaths = []
     yMin_all, yMax_all = None, None
     for path in layer._paths:
@@ -169,9 +169,9 @@ def _alignVCenter(layer: Layer, tglyph: TruGlyph, operation: str):
             path.transform(Transformation(yOffset=delta))
 
 
-@undoredomgr.layer_decorate_undoredo(align_expand_params, operation="Align Vert Bottom", 
-                                     paths=True, guidelines=False, components=False, anchors=False)
-def _alignVBottom(layer: Layer, tglyph: TruGlyph, operation: str):
+@undomanager.layer_decorate_undo(align_expand_params, operation="Align Vert Bottom", 
+                                 paths=True, guidelines=False, components=False, anchors=False)
+def _alignVBottom(layer: Layer, tglyph: UndoableGlyph, operation: str):
     selectedPaths = []
     yMin_all = None
     for path in layer._paths:
@@ -554,7 +554,7 @@ def _DrawText_Spacing(ctx, text, x, y, sp=1.2):
 #-------------------------
 def header_expand_params(obj, *args, **kwargs):
     """ use by decorator to get three params as
-    layer, undoredomgr and operation """
+    layer, undomanager and operation """
     return obj.layer, obj._tooltips[obj._underMouseBtn]
 #-------------------------
 
@@ -605,8 +605,8 @@ class TransformHeader(wx.Panel):
     def layer(self):
         return wx.GetTopLevelParent(self).activeLayer
 
-    @undoredomgr.layer_decorate_undoredo(header_expand_params, 
-                                         paths=True, guidelines=False, components=False, anchors=False)
+    @undomanager.layer_decorate_undo(header_expand_params, 
+                                     paths=True, guidelines=False, components=False, anchors=False)
     def binaryPathOp(self, func):
         layer = self.layer
         paths = layer._paths
@@ -631,8 +631,8 @@ class TransformHeader(wx.Panel):
         paths.extend(open_)
         trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(header_expand_params, 
-                                         paths=True, guidelines=False, components=False, anchors=False)
+    @undomanager.layer_decorate_undo(header_expand_params, 
+                                     paths=True, guidelines=False, components=False, anchors=False)
     def removeOverlap(self):
         layer = self.layer
         paths = layer._paths
@@ -651,8 +651,8 @@ class TransformHeader(wx.Panel):
         paths.extend(others)
         trufont.TruFont.updateUI()
 
-    @undoredomgr.layer_decorate_undoredo(header_expand_params, 
-                                         paths=True, guidelines=False, components=False, anchors=False)
+    @undomanager.layer_decorate_undo(header_expand_params, 
+                                     paths=True, guidelines=False, components=False, anchors=False)
     def transform(self, **kwargs):
         layer = self.layer
         transformation = Transformation(**kwargs)
@@ -1240,10 +1240,11 @@ class TransformHeader(wx.Panel):
 #-------------------------
 # Used by undoredo decorator
 #-------------------------
-def layer_expand_params(obj, *args, **kwargs):
+def glyph_expand_params(obj, *args, **kwargs):
     """ use by decorator to get three params as
-    layer, undoredomgr and operation """
-    return obj._layersView._activeLayer
+    layer, undomanager and operation """
+    return obj._layersView._activeLayer._parent
+    
 #-------------------------
 
 class LayersHeader(wx.Panel):
@@ -1269,7 +1270,7 @@ class LayersHeader(wx.Panel):
     # wx methods
     # ----------
 
-    @undoredomgr.truglyph_decorate_undoredo(layer_expand_params, operation="Add layer", layer=True)
+    @undomanager.undoableglyph_decorate_undo(glyph_expand_params, operation="Add layer", layer=True)
     def DoCreateLayer(self):
         # this logic should probably be in the model
         view = self._layersView
