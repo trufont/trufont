@@ -8,7 +8,7 @@ import click
 from typing import Optional
 import logging
 
-@click.command(help='font name to pass') 
+@click.command(help='path to font file to open') 
 @click.argument('font_name', required=False, nargs=-1)
 @click.option('--cwd', default=os.getcwd(), help='Set the current working directory - cwd is default')
 @click.option('--debug', is_flag=True, help='Enable debug mode in log')
@@ -44,7 +44,11 @@ def main(font_name: Optional[str], cwd: str, debug: bool, log_screen: bool, log_
     
     trufont.TruFont = TruFont = Application(app, **dict_args) 
     logging.info("MAIN: {}".format(dict_args))
-    TruFont.newFont()
+    print(type(font_name))
+    if font_name:
+        TruFont.openFont(font_name[0])
+    else:
+        TruFont.newFont()
     sys.exit(app.MainLoop())
 
 if __name__ == "__main__":
