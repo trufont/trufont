@@ -1,5 +1,5 @@
 pyqt5==5.9
-fonttools==3.17.0
+fonttools>=3.32.0
 ufoLib==2.1.1
 defcon==0.3.5
 defconQt==0.5.4
@@ -8,3 +8,4 @@ ufo2ft==0.6.2
 booleanOperations==0.7.1
 hsluv==0.0.2
 brotli==0.6.0
+fs>=2.2.0
