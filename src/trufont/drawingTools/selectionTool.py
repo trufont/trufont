@@ -66,9 +66,9 @@ class SelectionTool(BaseTool):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.origin = None
-        self.mouseItem = None
-        self.oldPath = None
+        self.origin = None # records the click position (on mouse down)
+        self.mouseItem = None # holds the item that was clicked on
+        self.oldPath = None # stores the graphics path before modification, so that it can be drawn gray while the user moves some points
         self.oldSelection = set()
         self.rubberBandRect = None
 
@@ -268,50 +268,46 @@ class SelectionTool(BaseTool):
         if not event.LeftDown():
             super().OnMouseDown(event)
             return
-        logging.debug("SELECTIONTOOL: OnMouseDown init")
         canvas = self.canvas
         layer = self.layer
         self.origin = pos = event.GetCanvasPosition()
-        item = self.mouseItem
-        if item is not None:
+        self.mouseItem = item = canvas.itemAt(pos)
+        if item is not None: # We have clicked on something already on the canvas
             cls = item.__class__
-            logging.debug("SELECTIONTOOL: OnMouseDown item not none -> {}".format(cls))
             if cls is Component:
-                logging.debug("SELECTIONTOOL: OnMouseDown item not none is component")
                 self.deltaToComponent = pos - wx.RealPoint(*item.origin)
             elif cls is PointRecord:
-                logging.debug("SELECTIONTOOL: OnMouseDown item not none is point")
                 item = item.point
             elif cls is SegmentRecord:
-                logging.debug("SELECTIONTOOL: OnMouseDown item not none is segment")
                 # mouseDClick may be followed by mouseDown w/o mouseUp
                 return
             if event.ControlDown():
-                logging.debug("SELECTIONTOOL: OnMouseDown item not none invert selection")
-		    # we probably don't want to undo/redo this, since it's just a
-		    # toggle: undo/redo is the same as ctrl-clicking again
+                # invert selection
+                # We probably don't want to undo/redo this, since it's just a
+                # toggle: undo/redo is the same as ctrl-clicking again
                 item.selected = not item.selected
-            else:
+            else: # regular mouse down: clear selection and select only the item
                 if not item.selected:
                     layer.clearSelection()
                     item.selected = True
-        else:
-            logging.debug("SELECTIONTOOL: OnMouseDown searching item none")
+        else: # we have clicked in an empty space (but possibly on a curve)
             self.mouseItem = item = canvas.segmentAt(pos)
             handleSelection = False
 
             if item.__class__ is SegmentRecord:
-                logging.debug("SELECTIONTOOL: OnMouseDown item segment")
-                firstPoint = item.points[0]
+                firstPoint = item.segments[item.index].points[0]
                 self.deltaToSegment = pos - wx.RealPoint(firstPoint.x, firstPoint.y)
                 if event.AltDown() and item.segment.type != "curve":
+                    # add two antennas in a segment which is currently linear
                     item.segment.addOffCurves()
                 handleSelection = not item.segment.selected
             elif item is None:
                 handleSelection = layer is not None
             if handleSelection:
-                if event.ControlDown():
-                    logging.debug("SELECTIONTOOL: OnMouseDown add all points")
+                if event.ControlDown(): # On a Mac, this is triggered using the 'command' modifier
+                    # Save the currently selected points in order to XOR them
+                    # with later selection process with the rubber band (see
+                    # [addPointsLayerSelection()])
                     self.oldSelection = {
                         elem for elem in layer.selection if elem.__class__ is Point
                     }
@@ -320,7 +316,7 @@ class SelectionTool(BaseTool):
         logging.debug("SELECTIONTOOL: OnMouseDown save oldPath")
         if self.mouseItem is not None:
             self.oldPath = (layer.closedGraphicsPath, layer.openGraphicsPath)
-        else:
+        else: # Start rubber banding
             x, y = pos.Get()
             self.rubberBandRect = x, y, x, y
         canvas.Refresh()
@@ -329,7 +325,7 @@ class SelectionTool(BaseTool):
     @undomanager.prepare_layer_decorate_undo(selectionTool_expand_params, name="selection_move",
                                          paths=True, guidelines=False, components=False, anchors=False)
     def addPointsLayerSelection(self, event, layer: Layer, x1: float, x2: float , y1: float, y2: float):
-        """ add points under the rect selection is selection set """
+        """ add points under the rect selection to selection set """
         if x1 > x2:
             x1, x2 = x2, x1
         if y1 > y2:
@@ -363,6 +359,7 @@ class SelectionTool(BaseTool):
             return
         if self.origin is None:
             return
+        # From here, LeftIsDown() == True
         pos = event.GetCanvasPosition()
         item = self.mouseItem
         layer = self.layer
@@ -410,7 +407,7 @@ class SelectionTool(BaseTool):
                 dy = pos.y - (oy + dc.y)
             elif cls is SegmentRecord:
                 ds = self.deltaToSegment
-                firstPoint = item.points[0]
+                firstPoint = item.segments[item.index].points[0]
                 dx = pos.x - (firstPoint.x + ds.x)
                 dy = pos.y - (firstPoint.y + ds.y)
             else:
