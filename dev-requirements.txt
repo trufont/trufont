@@ -1,2 +1,2 @@
 flake8==3.7.7
-pytest==3.2.3
+pytest==4.4.0
