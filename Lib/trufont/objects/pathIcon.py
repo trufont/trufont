@@ -3,7 +3,6 @@ from PyQt5.QtGui import QIcon, QIconEngine, QPainter, QPixmap
 
 
 class PathIconEngine(QIconEngine):
-
     def __init__(self, width=None, height=None):
         super().__init__()
         self._fillPaths = []
@@ -20,8 +19,7 @@ class PathIconEngine(QIconEngine):
         # TODO: add Mode, State
         self._fillPaths.append((path, color, antialiasing))
 
-    def addStrokePath(self, path, color=Qt.black, width=.9,
-                      antialiasing=False):
+    def addStrokePath(self, path, color=Qt.black, width=0.9, antialiasing=False):
         # TODO: add Mode, State
         self._strokePaths.append((path, color, width, antialiasing))
 
@@ -40,11 +38,11 @@ class PathIconEngine(QIconEngine):
         painter.save()
         size = self._size
         target = rect.size()
-        if not size.isNull() and (size.width(
-                ) > target.width() or size.height() > target.height()):
+        if not size.isNull() and (
+            size.width() > target.width() or size.height() > target.height()
+        ):
             sz = size.scaled(target, Qt.KeepAspectRatio)
-            width, height = sz.width(
-                ) / size.width(), sz.height() / size.height()
+            width, height = sz.width() / size.width(), sz.height() / size.height()
             # TODO: don't scale the painter, instead make a rect which
             # coordinates are used to paint in; this will ensure pixel
             # perfection
@@ -72,7 +70,6 @@ class PathIconEngine(QIconEngine):
 
 
 class PathIcon(QIcon):
-
     def __init__(self, *args):
         self._engine = PathIconEngine(*args)
         super().__init__(self._engine)

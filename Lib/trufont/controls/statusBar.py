@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QPainterPath
-from PyQt5.QtWidgets import (
-    QHBoxLayout, QLabel, QSpinBox, QSizePolicy, QWidget)
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QSpinBox, QWidget
+
 from trufont.controls.pathButton import PathButton
 
 __all__ = ["StatusBar"]
@@ -42,10 +42,7 @@ class StatusBar(QWidget):
 
         btnColor = QColor(126, 126, 126)
         minusButton = Button()
-        minusButton.setDrawingCommands([
-            QSize(23, 25),
-            (_minPath, '1', btnColor),
-        ])
+        minusButton.setDrawingCommands([QSize(23, 25), (_minPath, "1", btnColor)])
         minusButton.setProperty("delta", -10)
         minusButton.pressed.connect(self._sizeOffset)
         self.sizeEdit = QSpinBox(self)
@@ -54,10 +51,7 @@ class StatusBar(QWidget):
         self.sizeEdit.setFrame(False)
         self.sizeEdit.lineEdit().setAlignment(Qt.AlignCenter)
         plusButton = Button()
-        plusButton.setDrawingCommands([
-            QSize(23, 25),
-            (_plusPath, '1', btnColor),
-        ])
+        plusButton.setDrawingCommands([QSize(23, 25), (_plusPath, "1", btnColor)])
         plusButton.setProperty("delta", 10)
         plusButton.pressed.connect(self._sizeOffset)
 

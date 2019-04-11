@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QLineF, QPointF
+
 from trufont.objects.defcon import TContour
 from trufont.tools import bezierMath
 
@@ -12,10 +13,10 @@ def nudgeUICurve(on1, off1, off2, on2, delta):
         sign = -on1.selected or 1
         sdx, sdy = map(float(sign).__mul__, delta)
         # factor
-        xFactor = (on2.x - on1.x - sdx)
+        xFactor = on2.x - on1.x - sdx
         if xFactor:
             xFactor = (on2.x - on1.x) / xFactor
-        yFactor = (on2.y - on1.y - sdy)
+        yFactor = on2.y - on1.y - sdy
         if yFactor:
             yFactor = (on2.y - on1.y) / yFactor
         # apply
@@ -28,8 +29,7 @@ def nudgeUICurve(on1, off1, off2, on2, delta):
 
 
 def projectUIPointOnRefLine(x1, y1, x2, y2, pt):
-    x, y, t = bezierMath.lineProjection(
-        x1, y1, x2, y2, pt.x, pt.y, False)
+    x, y, t = bezierMath.lineProjection(x1, y1, x2, y2, pt.x, pt.y, False)
     # TODO: use grid precision ROUND
     pt.x = x  # round(x)
     pt.y = y  # round(y)
@@ -50,6 +50,7 @@ def rotateUIPointAroundRefLine(x1, y1, x2, y2, pt):
     # TODO: use grid precision ROUND
     pt.x = line.x2()  # round(line.x2())
     pt.y = line.y2()  # round(line.y2())
+
 
 # ----------
 # Main sauce
@@ -82,8 +83,11 @@ def UIMove(contour, delta, nudgePoints=False, slidePoints=False):
         if point.segmentType and not slidePoints:
             if point.selected:
                 # move previous point
-                if prev.segmentType is None and not prev.selected and \
-                        point.segmentType != "move":
+                if (
+                    prev.segmentType is None
+                    and not prev.selected
+                    and point.segmentType != "move"
+                ):
                     prev.move(delta)
                     didMove = True
                 # schedule the next point for move
@@ -107,8 +111,8 @@ def UIMove(contour, delta, nudgePoints=False, slidePoints=False):
     for point in contour:
         # slide points
         if secondPrevForSliding is not None and (
-                point.segmentType is None or
-                secondPrevForSliding.segmentType is None):
+            point.segmentType is None or secondPrevForSliding.segmentType is None
+        ):
             p1, p2, p3 = secondPrevForSliding, prev, point
             if p2.selected and p2.segmentType != "move":
                 if p1.selected or p3.selected:
@@ -135,8 +139,8 @@ def UIMove(contour, delta, nudgePoints=False, slidePoints=False):
             secondPrevForSliding = prev
         # rotation/projection across smooth onCurve
         if secondPrevForRotation is not None and (
-                point.segmentType is None or
-                secondPrevForRotation.segmentType is None):
+            point.segmentType is None or secondPrevForRotation.segmentType is None
+        ):
             p1, p2, p3 = secondPrevForRotation, prev, point
             if p2.selected:
                 if p1.segmentType is None:
@@ -175,10 +179,10 @@ def UIMove_buildContour(data):
 
 def UIMove_testContour(contour, data):
     assert len(contour) == len(data), "contour has len {}, expected {}".format(
-        len(contour), len(data))
+        len(contour), len(data)
+    )
     try:
-        for point, (
-                coords, segmentType, smooth, selected) in zip(contour, data):
+        for point, (coords, segmentType, smooth, selected) in zip(contour, data):
             # HACK: we round here for now
             point.x = round(point.x)
             point.y = round(point.y)
@@ -192,16 +196,23 @@ def UIMove_testContour(contour, data):
         print("contour gives:")
         print("[")
         for point in contour:
-            print("    (({}, {}), {}, {}, {}),".format(
-                point.x, point.y, repr(point.segmentType),
-                point.smooth, point.selected))
+            print(
+                "    (({}, {}), {}, {}, {}),".format(
+                    point.x,
+                    point.y,
+                    repr(point.segmentType),
+                    point.smooth,
+                    point.selected,
+                )
+            )
         print("]")
         print("expected:")
         print("[")
         for line in data:
-            print("    {},".format(line))
+            print(f"    {line},")
         print("]")
         print()
+
 
 # runner
 
@@ -213,6 +224,7 @@ def UIMove_runTests():
     UIMove_test_constrain_slidePoints()
     UIMove_test_constrain_smoothOffRotation()
     UIMove_test_constrain_smoothOnProjection()
+
 
 # tests
 
@@ -237,7 +249,7 @@ def UIMove_test_move():
             ((0, 0), "move", False, False),
             ((5, 5), "line", False, True),
             ((0, 3), "line", False, False),
-        ]
+        ],
     )
     contour[1].selected = False
     contour[2].selected = True
@@ -248,7 +260,7 @@ def UIMove_test_move():
             ((0, 0), "move", False, False),
             ((5, 5), "line", False, False),
             ((2, 6), "line", False, True),
-        ]
+        ],
     )
 
 
@@ -285,7 +297,7 @@ def UIMove_test_move_offWithOn():
             ((2, 3), None, False, False),
             ((0, 3), "curve", False, False),
             ((-2, 3), None, False, False),
-        ]
+        ],
     )
     contour[0].selected = False
     contour[2].selected = True
@@ -299,7 +311,7 @@ def UIMove_test_move_offWithOn():
             ((3, 5), None, False, True),
             ((1, 5), "curve", False, True),
             ((-1, 5), None, False, False),
-        ]
+        ],
     )
     contour[1].selected = True
     contour[3].smooth = True
@@ -312,7 +324,7 @@ def UIMove_test_move_offWithOn():
             ((4, 7), None, False, True),
             ((2, 7), "curve", True, True),
             ((0, 7), None, False, False),
-        ]
+        ],
     )
 
 
@@ -337,7 +349,7 @@ def UIMove_test_move_offAtStart():
             ((3, 4), None, False, True),
             ((2, 6), "curve", False, True),
             ((5, 1), "line", False, True),
-        ]
+        ],
     )
 
 
@@ -366,7 +378,7 @@ def UIMove_test_constrain_slidePoints():
             ((1, 3), None, False, False),
             ((0, 6), "curve", True, True),
             ((-1, 7), None, False, False),
-        ]
+        ],
     )
     contour[4].selected = True
     UIMove(contour, (2, 0), slidePoints=True)
@@ -378,7 +390,7 @@ def UIMove_test_constrain_slidePoints():
             ((1, 3), None, False, False),
             ((2, 6), "curve", True, True),
             ((2, 7), None, False, True),
-        ]
+        ],
     )
     contour[3].selected = False
     contour[4].selected = False
@@ -392,7 +404,7 @@ def UIMove_test_constrain_slidePoints():
             ((1, 3), None, False, False),
             ((2, 6), "curve", True, False),
             ((2, 7), None, False, False),
-        ]
+        ],
     )
     contour[4].segmentType = "line"
     contour[1].selected = False
@@ -406,7 +418,7 @@ def UIMove_test_constrain_slidePoints():
             ((1, 3), None, False, False),
             ((2, 6), "curve", True, False),
             ((0, 4), "line", False, True),
-        ]
+        ],
     )
     contour[4].segmentType = None
     contour[2].selected = True
@@ -420,7 +432,7 @@ def UIMove_test_constrain_slidePoints():
             ((5, 5), None, False, True),
             ((6, 8), "curve", True, True),
             ((4, 6), None, False, True),
-        ]
+        ],
     )
     contour[2].selected = False
     contour[4].selected = False
@@ -434,7 +446,7 @@ def UIMove_test_constrain_slidePoints():
             ((5, 5), None, False, False),
             ((2, 6), "curve", False, True),
             ((4, 6), None, False, False),
-        ]
+        ],
     )
 
 
@@ -470,7 +482,7 @@ def UIMove_test_constrain_smoothOffRotation():
             ((-1, 5), None, False, True),
             ((0, 3), "curve", True, False),
             ((1, 1), None, False, False),
-        ]
+        ],
     )
     contour[2].selected = False
     contour[1].selected = True
@@ -483,7 +495,7 @@ def UIMove_test_constrain_smoothOffRotation():
             ((-1, 5), None, False, False),
             ((0, 3), "curve", True, False),
             ((1, 1), None, False, False),
-        ]
+        ],
     )
     contour[1].selected = False
     contour[2].selected = True
@@ -497,7 +509,7 @@ def UIMove_test_constrain_smoothOffRotation():
             ((0, 7), None, False, True),
             ((1, 5), "curve", True, True),
             ((2, 3), None, False, False),
-        ]
+        ],
     )
     contour[3].selected = False
     contour[4].selected = True
@@ -510,7 +522,7 @@ def UIMove_test_constrain_smoothOffRotation():
             ((1, 9), None, False, True),
             ((1, 5), "curve", True, False),
             ((3, 5), None, False, True),
-        ]
+        ],
     )
 
 
@@ -551,7 +563,7 @@ def UIMove_test_constrain_smoothOnProjection():
             ((-2, 5), "curve", True, False),
             ((-4, 5), "line", True, False),
             ((-6, 5), None, False, False),
-        ]
+        ],
     )
     UIMove(contour, (5, -4))
     UIMove_testContour(
@@ -564,7 +576,7 @@ def UIMove_test_constrain_smoothOnProjection():
             ((-2, 5), "curve", True, False),
             ((-4, 5), "line", True, False),
             ((-6, 5), None, False, False),
-        ]
+        ],
     )
     contour[2].selected = False
     contour[0].selected = True
@@ -579,7 +591,7 @@ def UIMove_test_constrain_smoothOnProjection():
             ((-2, 5), "curve", True, False),
             ((-4, 5), "line", True, False),
             ((-6, 5), None, False, False),
-        ]
+        ],
     )
     contour[1].selected = True
     UIMove(contour, (1, 2))
@@ -593,7 +605,7 @@ def UIMove_test_constrain_smoothOnProjection():
             ((-2, 5), "curve", True, False),
             ((-4, 5), "line", True, False),
             ((-6, 5), None, False, False),
-        ]
+        ],
     )
     contour[0].selected = False
     contour[1].selected = False
@@ -609,7 +621,7 @@ def UIMove_test_constrain_smoothOnProjection():
             ((-2, 5), "curve", True, False),
             ((-4, 7), "line", True, True),
             ((-5, 8), None, False, False),
-        ]
+        ],
     )
     contour[4].smooth = False
     contour[6].segmentType = "line"
@@ -624,7 +636,7 @@ def UIMove_test_constrain_smoothOnProjection():
             ((-2, 5), "curve", False, False),
             ((-3, 9), "line", True, True),
             ((-5, 8), "line", False, False),
-        ]
+        ],
     )
     contour[5].selected = False
     contour[6].selected = True
@@ -639,5 +651,5 @@ def UIMove_test_constrain_smoothOnProjection():
             ((-2, 5), "curve", False, False),
             ((-3, 9), "line", True, False),
             ((-4, 10), "line", False, True),
-        ]
+        ],
     )

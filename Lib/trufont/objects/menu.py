@@ -8,13 +8,13 @@ Windows that want to plug-in their own menu entries must implement
 """
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMenuBar
+
 from trufont.tools import platformSpecific
 
 MAX_RECENT_FILES = 10
 
 
 class MenuBar(QMenuBar):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self._spawnElementsHint = True
@@ -53,7 +53,6 @@ class MenuBar(QMenuBar):
 
 
 class Menu(QMenu):
-
     def shouldSpawnElements(self):
         parent = self.parent()
         if parent is not None:
@@ -95,7 +94,7 @@ class Menu(QMenu):
             action.setEnabled(False)
 
 
-class Entries(object):
+class Entries:
     File = "&File"
     File_New = "&New…"
     File_Open = "&Open…"
@@ -172,7 +171,6 @@ _shortcuts = {
     Entries.File_Close: platformSpecific.closeKeySequence(),
     Entries.File_Export: "Ctrl+E",
     Entries.File_Exit: QKeySequence.Quit,
-
     Entries.Edit_Undo: QKeySequence.Undo,
     Entries.Edit_Redo: QKeySequence.Redo,
     Entries.Edit_Cut: QKeySequence.Cut,
@@ -182,7 +180,6 @@ _shortcuts = {
     Entries.Edit_Select_All: QKeySequence.SelectAll,
     Entries.Edit_Deselect: "Ctrl+D",
     Entries.Edit_Find: QKeySequence.Find,
-
     Entries.View_Zoom_In: QKeySequence.ZoomIn,
     Entries.View_Zoom_Out: QKeySequence.ZoomOut,
     Entries.View_Reset_Zoom: "Ctrl+0",
@@ -195,11 +192,9 @@ _shortcuts = {
     Entries.View_Show_Points: "Ctrl+Shift+N",
     Entries.View_Show_Metrics: "Ctrl+Shift+M",
     Entries.View_Show_Guidelines: "Ctrl+Shift+G",
-
     Entries.Font_Font_Info: "Ctrl+Alt+I",
     Entries.Font_Font_Features: "Ctrl+Alt+F",
     Entries.Font_Add_Glyphs: "Ctrl+G",
-
     Entries.Window_Minimize: "Ctrl+M",
     Entries.Window_Groups: "Ctrl+Alt+G",
     Entries.Window_Kerning: "Ctrl+Alt+K",

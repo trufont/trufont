@@ -1,5 +1,5 @@
 language: python
-python: 
+python:
   - "3.6"
 dist: trusty
 env:
@@ -24,7 +24,7 @@ before_script:
   # We run "headless" tests with xvfb (X Virtual Framebuffer)
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -e /etc/init.d/xvfb start; fi
   # Give xvfb some time to start
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi 
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi
 
 script:
   - flake8 --config=setup.cfg Lib/trufont

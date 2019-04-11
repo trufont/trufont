@@ -1,8 +1,7 @@
-from PyQt5.QtCore import Qt
-from defconQt.representationFactories.glyphViewFactory import (
-    OnlyComponentsQtPen)
+from defconQt.representationFactories.glyphViewFactory import OnlyComponentsQtPen
 from fontTools.misc.transform import Transform
 from fontTools.pens.qtPen import QtPen
+from PyQt5.QtCore import Qt
 from ufoLib.pointPen import PointToSegmentPen
 
 
@@ -11,6 +10,7 @@ def _reverseEnumerate(seq):
     for obj in reversed(seq):
         n -= 1
         yield n, obj
+
 
 # -------------------
 # selected components
@@ -34,6 +34,7 @@ def SelectedComponentsQPainterPathFactory(glyph):
     selectedPen.path.setFillRule(Qt.WindingFill)
     return (pen.path, selectedPen.path, originPts)
 
+
 # --------------
 # component path
 # --------------
@@ -44,6 +45,7 @@ def ComponentQPainterPathFactory(component):
     component.draw(pen)
     pen.path.setFillRule(Qt.WindingFill)
     return pen.path
+
 
 # ---------------
 # selection glyph
@@ -90,14 +92,17 @@ def FilterSelectionFactory(glyph):
                 if shouldMoveTo:
                     pen.beginPath()
                     pen.addPoint(
-                        (on.x, on.y), segmentType="move", smooth=on.smooth,
-                        name=on.name)
+                        (on.x, on.y), segmentType="move", smooth=on.smooth, name=on.name
+                    )
                     shouldMoveTo = False
                     continue
                 for point in segment:
                     pen.addPoint(
-                        (point.x, point.y), segmentType=point.segmentType,
-                        smooth=point.smooth, name=point.name)
+                        (point.x, point.y),
+                        segmentType=point.segmentType,
+                        smooth=point.smooth,
+                        name=point.name,
+                    )
             if not shouldMoveTo:
                 pen.endPath()
     # other stuff
@@ -121,6 +126,7 @@ def SelectedContoursQPainterPathFactory(glyph):
     path = copyGlyph.getRepresentation("defconQt.NoComponentsQPainterPath")
     return path
 
+
 # --------------------
 # curve path and lines
 # --------------------
@@ -135,7 +141,6 @@ def SplitLinesQPainterPathFactory(glyph):
 
 
 class SplitLinesFromPathQtPen(QtPen):
-
     def __init__(self, glyphSet, path=None):
         super().__init__(glyphSet, path)
         self.lines = []
@@ -165,8 +170,9 @@ class SplitLinesFromPathQtPen(QtPen):
 
     def _closePath(self):
         if self._initPos is not None and self._curPos != self._initPos:
-            self.lines.append((self._curPos[0], self._curPos[1],
-                               self._initPos[0], self._initPos[1]))
+            self.lines.append(
+                (self._curPos[0], self._curPos[1], self._initPos[0], self._initPos[1])
+            )
         self._initPos = None
 
     def _endPath(self):

@@ -1,6 +1,7 @@
+from math import sqrt
+
 from fontTools.misc import bezierTools
 from fontTools.pens.basePen import decomposeQuadraticSegment
-from math import sqrt
 
 # TODO: curve distance
 
@@ -43,6 +44,7 @@ def lineDistance(x1, y1, x2, y2, x, y):
     projX, projY, _ = lineProjection(x1, y1, x2, y2, x, y)
     return distance(x, y, projX, projY)
 
+
 # intersections
 
 
@@ -58,7 +60,8 @@ def curveIntersections(x1, y1, x2, y2, p1, p2, p3, p4):
     bx, by = x1 - x2, y2 - y1
     m = x1 * (y1 - y2) + y1 * (x2 - x1)
     a, b, c, d = bezierTools.calcCubicParameters(
-        (p1.x, p1.y), (p2.x, p2.y), (p3.x, p3.y), (p4.x, p4.y))
+        (p1.x, p1.y), (p2.x, p2.y), (p3.x, p3.y), (p4.x, p4.y)
+    )
 
     pc0 = by * a[0] + bx * a[1]
     pc1 = by * b[0] + bx * b[1]
@@ -141,7 +144,7 @@ def lineIntersection(x1, y1, x2, y2, x3, y3, x4, y4):
     By_Ay = y2 - y1
     Dx_Cx = x4 - x3
     Dy_Cy = y4 - y3
-    determinant = (-Dx_Cx * By_Ay + Bx_Ax * Dy_Cy)
+    determinant = -Dx_Cx * By_Ay + Bx_Ax * Dy_Cy
     if abs(determinant) < 1e-20:
         return None
     s = (-By_Ay * (x1 - x3) + Bx_Ax * (y1 - y3)) / determinant

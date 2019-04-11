@@ -1,15 +1,29 @@
-from PyQt5.QtCore import (
-    QDate, QDateTime, QLocale, QRegularExpression, QTime, Qt)
-from PyQt5.QtGui import (
-    QRegularExpressionValidator, QStandardItem, QStandardItemModel)
+from PyQt5.QtCore import QDate, QDateTime, QLocale, QRegularExpression, Qt, QTime
+from PyQt5.QtGui import QRegularExpressionValidator, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (
-    QCheckBox, QComboBox, QDateTimeEdit, QDialog, QDialogButtonBox,
-    QDoubleSpinBox, QGroupBox, QLabel, QLineEdit, QListView,
-    QPlainTextEdit, QVBoxLayout, QHBoxLayout, QFormLayout, QWidget,
-    QScrollArea, QSpacerItem, QSizePolicy, QSpinBox)
+    QCheckBox,
+    QComboBox,
+    QDateTimeEdit,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListView,
+    QPlainTextEdit,
+    QScrollArea,
+    QSizePolicy,
+    QSpacerItem,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
+
 from trufont.controls.nameTabWidget import NameTabWidget
 from trufont.objects import settings
-
 
 # TODO: add placeholder text (fallbacks) and update on font.info changed
 # TODO: add gasp/name entries
@@ -19,13 +33,11 @@ def TransparentScrollArea(parent=None):
     scrollArea = QScrollArea(parent)
     scrollArea.setFrameShape(scrollArea.NoFrame)
     scrollArea.setStyleSheet(".QScrollArea { background: transparent; }")
-    scrollArea.viewport().setStyleSheet(
-        ".QWidget { background: transparent; }")
+    scrollArea.viewport().setStyleSheet(".QWidget { background: transparent; }")
     return scrollArea
 
 
 class FontInfoWindow(QDialog):
-
     def __init__(self, font, parent=None):
         super().__init__(parent)
         self.font = font
@@ -37,7 +49,8 @@ class FontInfoWindow(QDialog):
         self.tabWidget.addNamedTab(PostScriptTab(self.font))
 
         buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self
+        )
 
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
@@ -46,8 +59,11 @@ class FontInfoWindow(QDialog):
         mainLayout.addWidget(self.tabWidget)
         mainLayout.addWidget(buttonBox)
 
-        self.setWindowTitle(self.tr("Font Info – {0} {1}").format(
-            self.font.info.familyName, self.font.info.styleName))
+        self.setWindowTitle(
+            self.tr("Font Info – {0} {1}").format(
+                self.font.info.familyName, self.font.info.styleName
+            )
+        )
 
         self.readSettings()
 
@@ -71,30 +87,31 @@ class FontInfoWindow(QDialog):
 
 
 class TabWidget(QWidget):
-
     def __init__(self, font, parent=None, name=None):
         self.name = name
         self.font = font
         super().__init__(parent)
 
         self.loadFunc = {
-            "s":   self.loadString,
-            "s+":  self.loadMultilineString,
-            "i":   self.loadInteger,
-            "pi":  self.loadPositiveInteger,
-            "if":  self.loadIntegerFloat,
+            "s": self.loadString,
+            "s+": self.loadMultilineString,
+            "i": self.loadInteger,
+            "pi": self.loadPositiveInteger,
+            "if": self.loadIntegerFloat,
             "pif": self.loadPositiveIntegerFloat,
             "if+": self.loadIntegerFloatList,
-            "b":   self.loadBoolean}
+            "b": self.loadBoolean,
+        }
         self.storeFunc = {
-            "s":   self.storeString,
-            "s+":  self.storeMultilineString,
-            "i":   self.storeInteger,
-            "pi":  self.storePositiveInteger,
-            "if":  self.storeIntegerFloat,
+            "s": self.storeString,
+            "s+": self.storeMultilineString,
+            "i": self.storeInteger,
+            "pi": self.storePositiveInteger,
+            "if": self.storeIntegerFloat,
             "pif": self.storePositiveIntegerFloat,
             "if+": self.storeIntegerFloatList,
-            "b":   self.storeBoolean}
+            "b": self.storeBoolean,
+        }
         self.attributeType = {}
 
     # Convenience method for loading simple optional attributes into a line
@@ -122,8 +139,9 @@ class TabWidget(QWidget):
 
     def store(self, attribute):
         if attribute not in self.attributeType:
-            raise ValueError("You can only store attributes that were "
-                             "previously `self.load()`ed.")
+            raise ValueError(
+                "You can only store attributes that were " "previously `self.load()`ed."
+            )
 
         attrtype = self.attributeType[attribute]
         self.storeFunc[attrtype](attribute)
@@ -220,12 +238,10 @@ class TabWidget(QWidget):
     storePositiveIntegerFloat = storeIntegerFloat
 
     def loadIntegerFloatList(self, attribute):
-        values = " ".join(str(val)
-                          for val in getattr(self.font.info, attribute))
+        values = " ".join(str(val) for val in getattr(self.font.info, attribute))
         edit = QLineEdit(values, self)
         validator = QRegularExpressionValidator(self)
-        validator.setRegularExpression(
-            QRegularExpression("(-?\d+([,.]\d+)?\s*)*"))
+        validator.setRegularExpression(QRegularExpression(r"(-?\d+([,.]\d+)?\s*)*"))
         edit.setValidator(validator)
         setattr(self, attribute + "Edit", edit)
         return edit
@@ -266,7 +282,6 @@ class TabWidget(QWidget):
 
 
 class GeneralTab(TabWidget):
-
     def __init__(self, font, parent=None):
         super().__init__(font, parent)
         self.name = self.tr("General")
@@ -278,8 +293,9 @@ class GeneralTab(TabWidget):
 
         # General general metadata
         g1FormLayout = QFormLayout()
-        g1FormLayout.setLabelAlignment(Qt.AlignRight | Qt.AlignTrailing |
-                                       Qt.AlignVCenter)
+        g1FormLayout.setLabelAlignment(
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
         familyNameLabel = QLabel(self.tr("Family name:"), self)
         edit = self.load("familyName", "s")
@@ -293,8 +309,12 @@ class GeneralTab(TabWidget):
         styleMapLayout = QHBoxLayout()
         self.styleMapFamilyEdit = QLineEdit(font.info.styleMapFamilyName, self)
         self.styleMapStyleDrop = QComboBox(self)
-        items = [self.tr("Regular"), self.tr("Italic"),
-                 self.tr("Bold"), self.tr("Bold Italic")]
+        items = [
+            self.tr("Regular"),
+            self.tr("Italic"),
+            self.tr("Bold"),
+            self.tr("Bold Italic"),
+        ]
         self.styleMapStyleDrop.insertItems(0, items)
         styleMapLabel.clicked.connect(self.styleMapFamilyEdit.setEnabled)
         styleMapLabel.clicked.connect(self.styleMapStyleDrop.setEnabled)
@@ -348,8 +368,9 @@ class GeneralTab(TabWidget):
 
         # General metrics metadata
         g2FormLayout = QFormLayout()
-        g2FormLayout.setLabelAlignment(Qt.AlignRight | Qt.AlignTrailing |
-                                       Qt.AlignVCenter)
+        g2FormLayout.setLabelAlignment(
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
         unitsPerEmLabel = QLabel(self.tr("Units per em:"), self)
         edit = self.load("unitsPerEm", "pif")
@@ -381,8 +402,9 @@ class GeneralTab(TabWidget):
 
         # Notes
         notesLayout = QFormLayout()
-        notesLayout.setLabelAlignment(Qt.AlignRight | Qt.AlignTrailing |
-                                      Qt.AlignVCenter)
+        notesLayout.setLabelAlignment(
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
         notesLayout.setRowWrapPolicy(QFormLayout.WrapAllRows)
 
         noteLabel = QLabel(self.tr("Notes:"), self)
@@ -399,8 +421,7 @@ class GeneralTab(TabWidget):
         self.store("styleName")
 
         font = self.font
-        if (self.styleMapFamilyEdit.isEnabled() and
-                self.styleMapStyleDrop.isEnabled()):
+        if self.styleMapFamilyEdit.isEnabled() and self.styleMapStyleDrop.isEnabled():
             font.info.styleMapFamilyName = self.styleMapFamilyEdit.text()
             styleNames = ["regular", "italic", "bold", "bold italic"]
             sn = styleNames[self.styleMapStyleDrop.currentIndex()]
@@ -413,8 +434,8 @@ class GeneralTab(TabWidget):
         self.store("versionMinor")
 
         font.info.openTypeHeadCreated = QLocale.c().toString(
-                self.dateCreatedEdit.dateTime(),
-                "yyyy/MM/dd hh:mm:ss")
+            self.dateCreatedEdit.dateTime(), "yyyy/MM/dd hh:mm:ss"
+        )
 
         self.store("unitsPerEm")
         self.store("italicAngle")
@@ -427,14 +448,12 @@ class GeneralTab(TabWidget):
 
 
 class LegalTab(TabWidget):
-
     def __init__(self, font, parent=None):
         super().__init__(font, parent)
         self.name = self.tr("Legal")
 
         mainLayout = QFormLayout(self)
-        mainLayout.setLabelAlignment(Qt.AlignRight | Qt.AlignTrailing |
-                                     Qt.AlignVCenter)
+        mainLayout.setLabelAlignment(Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
 
         designerLabel = QLabel(self.tr("Designer:"), self)
         edit = self.load("openTypeNameDesigner", "s")
@@ -486,7 +505,6 @@ class LegalTab(TabWidget):
 
 
 class OpenTypeTab(TabWidget):
-
     def __init__(self, font, parent=None):
         super().__init__(font, parent)
         self.name = self.tr("OpenType")
@@ -508,8 +526,7 @@ class OpenTypeTab(TabWidget):
         tableLayout.addWidget(self.setupVheaGroup())
         tableLayout.addWidget(self.setupOs2Group())
 
-        spacer = QSpacerItem(
-            10, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer = QSpacerItem(10, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
         tableLayout.addItem(spacer)
 
     def setupHeadGroup(self):
@@ -518,11 +535,15 @@ class OpenTypeTab(TabWidget):
 
         headAttributesLayout = QFormLayout()
         headAttributesLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("openTypeHeadLowestRecPPEM", "pi",
-                                self.tr("Lowest rec. PPEM:"),
-                                headAttributesLayout)
+        self.loadCustomIntoForm(
+            "openTypeHeadLowestRecPPEM",
+            "pi",
+            self.tr("Lowest rec. PPEM:"),
+            headAttributesLayout,
+        )
 
         flagsLabel = RCheckBox(self.tr("Flags:"))
         self.flagsEdit = BitListView(self)
@@ -531,15 +552,16 @@ class OpenTypeTab(TabWidget):
             self.tr("Bit 0: Baseline for font at y=0."),
             self.tr("Bit 1: Left sidebearing point at x=0."),
             self.tr("Bit 2: Instructions may depend on point size."),
-            self.tr("Bit 3: Force ppem to integer values for all "
-                    "internal scaler math."),
+            self.tr(
+                "Bit 3: Force ppem to integer values for all " "internal scaler math."
+            ),
             self.tr("Bit 4: Instructions may alter advance width."),
             self.tr("Bit 11: Font data is 'lossless'."),
             self.tr("Bit 12: Font converted."),
             self.tr("Bit 13: Font optimized for ClearType™."),
-            self.tr("Bit 14: Last Resort font.")]
-        itemToFlagMap = {0: 0, 1: 1, 2: 2, 3: 3,
-                         4: 4, 5: 11, 6: 12, 7: 13, 8: 14}
+            self.tr("Bit 14: Last Resort font."),
+        ]
+        itemToFlagMap = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 11, 6: 12, 7: 13, 8: 14}
         flags = self.font.info.openTypeHeadFlags
         model = QStandardItemModel(9, 1)
         for index, elem in enumerate(flagItems):
@@ -569,35 +591,54 @@ class OpenTypeTab(TabWidget):
 
         nameAttributesLayout = QFormLayout()
         nameAttributesLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("openTypeNamePreferredFamilyName", "s",
-                                self.tr("Pref. family name:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNamePreferredSubfamilyName", "s",
-                                self.tr("Pref. subfamily name:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNameCompatibleFullName", "s",
-                                self.tr("Compatible full name:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNameWWSFamilyName", "s",
-                                self.tr("WWS family name:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNameWWSSubfamilyName", "s",
-                                self.tr("WWS subfamily name:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNameVersion", "s",
-                                self.tr("Version:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNameUniqueID", "s",
-                                self.tr("Unique ID:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNameDescription", "s",
-                                self.tr("Description:"),
-                                nameAttributesLayout)
-        self.loadCustomIntoForm("openTypeNameSampleText", "s",
-                                self.tr("Sample text:"),
-                                nameAttributesLayout)
+        self.loadCustomIntoForm(
+            "openTypeNamePreferredFamilyName",
+            "s",
+            self.tr("Pref. family name:"),
+            nameAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeNamePreferredSubfamilyName",
+            "s",
+            self.tr("Pref. subfamily name:"),
+            nameAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeNameCompatibleFullName",
+            "s",
+            self.tr("Compatible full name:"),
+            nameAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeNameWWSFamilyName",
+            "s",
+            self.tr("WWS family name:"),
+            nameAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeNameWWSSubfamilyName",
+            "s",
+            self.tr("WWS subfamily name:"),
+            nameAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeNameVersion", "s", self.tr("Version:"), nameAttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeNameUniqueID", "s", self.tr("Unique ID:"), nameAttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeNameDescription",
+            "s",
+            self.tr("Description:"),
+            nameAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeNameSampleText", "s", self.tr("Sample text:"), nameAttributesLayout
+        )
 
         nameLayout.addLayout(nameAttributesLayout)
 
@@ -609,26 +650,36 @@ class OpenTypeTab(TabWidget):
 
         hheaAttributesLayout = QFormLayout()
         hheaAttributesLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("openTypeHheaAscender", "i",
-                                self.tr("Ascender:"),
-                                hheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeHheaDescender", "i",
-                                self.tr("Descender:"),
-                                hheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeHheaLineGap", "i",
-                                self.tr("LineGap:"),
-                                hheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeHheaCaretSlopeRise", "i",
-                                self.tr("caretSlopeRise:"),
-                                hheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeHheaCaretSlopeRun", "i",
-                                self.tr("caretSlopeRun:"),
-                                hheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeHheaCaretOffset", "i",
-                                self.tr("caretOffset:"),
-                                hheaAttributesLayout)
+        self.loadCustomIntoForm(
+            "openTypeHheaAscender", "i", self.tr("Ascender:"), hheaAttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeHheaDescender", "i", self.tr("Descender:"), hheaAttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeHheaLineGap", "i", self.tr("LineGap:"), hheaAttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeHheaCaretSlopeRise",
+            "i",
+            self.tr("caretSlopeRise:"),
+            hheaAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeHheaCaretSlopeRun",
+            "i",
+            self.tr("caretSlopeRun:"),
+            hheaAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeHheaCaretOffset",
+            "i",
+            self.tr("caretOffset:"),
+            hheaAttributesLayout,
+        )
 
         hheaLayout.addLayout(hheaAttributesLayout)
 
@@ -640,26 +691,45 @@ class OpenTypeTab(TabWidget):
 
         vheaAttributesLayout = QFormLayout()
         vheaAttributesLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("openTypeVheaVertTypoAscender", "i",
-                                self.tr("V. Ascender:"),
-                                vheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeVheaVertTypoDescender", "i",
-                                self.tr("V. Descender:"),
-                                vheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeVheaVertTypoLineGap", "i",
-                                self.tr("V. LineGap:"),
-                                vheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeVheaCaretSlopeRise", "i",
-                                self.tr("V. caretSlopeRise:"),
-                                vheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeVheaCaretSlopeRun", "i",
-                                self.tr("V. caretSlopeRun:"),
-                                vheaAttributesLayout)
-        self.loadCustomIntoForm("openTypeVheaCaretOffset", "i",
-                                self.tr("V. caretOffset:"),
-                                vheaAttributesLayout)
+        self.loadCustomIntoForm(
+            "openTypeVheaVertTypoAscender",
+            "i",
+            self.tr("V. Ascender:"),
+            vheaAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeVheaVertTypoDescender",
+            "i",
+            self.tr("V. Descender:"),
+            vheaAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeVheaVertTypoLineGap",
+            "i",
+            self.tr("V. LineGap:"),
+            vheaAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeVheaCaretSlopeRise",
+            "i",
+            self.tr("V. caretSlopeRise:"),
+            vheaAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeVheaCaretSlopeRun",
+            "i",
+            self.tr("V. caretSlopeRun:"),
+            vheaAttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeVheaCaretOffset",
+            "i",
+            self.tr("V. caretOffset:"),
+            vheaAttributesLayout,
+        )
 
         vheaLayout.addLayout(vheaAttributesLayout)
 
@@ -672,26 +742,31 @@ class OpenTypeTab(TabWidget):
 
         os2AttributesLayout = QFormLayout()
         os2AttributesLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("openTypeOS2VendorID", "s",
-                                self.tr("Vendor ID:"),
-                                os2AttributesLayout).setMaxLength(4)
+        self.loadCustomIntoForm(
+            "openTypeOS2VendorID", "s", self.tr("Vendor ID:"), os2AttributesLayout
+        ).setMaxLength(4)
 
         usWidthClassLabel = RCheckBox(self.tr("Width class:"))
         self.usWidthClassDrop = QComboBox(self)
         items = [
-            self.tr("Ultra-condensed"), self.tr("Extra-condensed"),
-            self.tr("Condensed"), self.tr("Semi-Condensed"),
-            self.tr("Medium (normal)"), self.tr("Semi-expanded"),
-            self.tr("Expanded"), self.tr("Extra-expanded"),
-            self.tr("Ultra-expanded")]
+            self.tr("Ultra-condensed"),
+            self.tr("Extra-condensed"),
+            self.tr("Condensed"),
+            self.tr("Semi-Condensed"),
+            self.tr("Medium (normal)"),
+            self.tr("Semi-expanded"),
+            self.tr("Expanded"),
+            self.tr("Extra-expanded"),
+            self.tr("Ultra-expanded"),
+        ]
         self.usWidthClassDrop.insertItems(0, items)
         usWidthClassLabel.clicked.connect(self.usWidthClassDrop.setEnabled)
         if font.info.openTypeOS2WidthClass:
             usWidthClassLabel.setChecked(True)
-            self.usWidthClassDrop.setCurrentIndex(
-                font.info.openTypeOS2WidthClass - 1)
+            self.usWidthClassDrop.setCurrentIndex(font.info.openTypeOS2WidthClass - 1)
         else:
             self.usWidthClassDrop.setEnabled(False)
             self.usWidthClassDrop.setCurrentIndex(4)
@@ -700,18 +775,24 @@ class OpenTypeTab(TabWidget):
         usWeightClassLabel = RCheckBox(self.tr("Weight class:"))
         self.usWeightClassDrop = QComboBox(self)
         items = [
-            self.tr("Thin"), self.tr("Extra-light (Ultra-light)"),
-            self.tr("Light"), self.tr("Normal (Regular)"),
-            self.tr("Medium"), self.tr("Semi-bold (Demi-bold)"),
-            self.tr("Bold"), self.tr("Extra-bold (Ultra-bold)"),
-            self.tr("Black (Heavy)")]
+            self.tr("Thin"),
+            self.tr("Extra-light (Ultra-light)"),
+            self.tr("Light"),
+            self.tr("Normal (Regular)"),
+            self.tr("Medium"),
+            self.tr("Semi-bold (Demi-bold)"),
+            self.tr("Bold"),
+            self.tr("Extra-bold (Ultra-bold)"),
+            self.tr("Black (Heavy)"),
+        ]
         self.usWeightClassDrop.insertItems(0, items)
         usWeightClassLabel.clicked.connect(self.usWeightClassDrop.setEnabled)
         wc = font.info.openTypeOS2WeightClass
         if wc and wc % 100 == 0:
             usWeightClassLabel.setChecked(True)
             self.usWeightClassDrop.setCurrentIndex(
-                font.info.openTypeOS2WeightClass / 100 - 1)
+                font.info.openTypeOS2WeightClass / 100 - 1
+            )
         else:
             self.usWeightClassDrop.setEnabled(False)
             self.usWeightClassDrop.setCurrentIndex(3)
@@ -720,14 +801,17 @@ class OpenTypeTab(TabWidget):
         fsSelectionLabel = RCheckBox(self.tr("fsSelection:"))
         fsSelection = font.info.openTypeOS2Selection
         self.fsSelectionList = BitListView(self)
-        self.fsSelectionList.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarAlwaysOff)
+        self.fsSelectionList.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         fsSelectionLabel.clicked.connect(self.fsSelectionList.setEnabled)
         items = [
-            self.tr("Bit 1 UNDERSCORE"), self.tr("Bit 2 NEGATIVE"),
-            self.tr("Bit 3 OUTLINED"), self.tr("Bit 4 STRIKEOUT"),
-            self.tr("Bit 7 USE_TYPO_METRICS"), self.tr("Bit 8 WWS"),
-            self.tr("Bit 9 OBLIQUE")]
+            self.tr("Bit 1 UNDERSCORE"),
+            self.tr("Bit 2 NEGATIVE"),
+            self.tr("Bit 3 OUTLINED"),
+            self.tr("Bit 4 STRIKEOUT"),
+            self.tr("Bit 7 USE_TYPO_METRICS"),
+            self.tr("Bit 8 WWS"),
+            self.tr("Bit 9 OBLIQUE"),
+        ]
         itemToFlagMap = {0: 1, 1: 2, 2: 3, 3: 4, 4: 7, 5: 8, 6: 9}
         # http://stackoverflow.com/a/26613163
         model = QStandardItemModel(7, 1)
@@ -757,18 +841,17 @@ class OpenTypeTab(TabWidget):
             self.tr("No embedding restrictions"),
             self.tr("Restricted embedding"),
             self.tr("Preview and print embedding allowed"),
-            self.tr("Editable embedding allowed")]
+            self.tr("Editable embedding allowed"),
+        ]
         self.noSubsettingBox = QCheckBox(self.tr("No subsetting"))
-        self.bitmapEmbeddingOnlyBox = QCheckBox(
-            self.tr("Bitmap embedding only"))
+        self.bitmapEmbeddingOnlyBox = QCheckBox(self.tr("Bitmap embedding only"))
         fsTypeLabel.clicked.connect(self.fsTypeDrop.setEnabled)
         fsTypeLabel.clicked.connect(self.noSubsettingBox.setEnabled)
         fsTypeLabel.clicked.connect(self.bitmapEmbeddingOnlyBox.setEnabled)
         fsTypeLabel.clicked.connect(
-            lambda: self._updateFsTypeVisibility(
-                self.fsTypeDrop.currentIndex()))
-        self.fsTypeDrop.currentIndexChanged[int].connect(
-            self._updateFsTypeVisibility)
+            lambda: self._updateFsTypeVisibility(self.fsTypeDrop.currentIndex())
+        )
+        self.fsTypeDrop.currentIndexChanged[int].connect(self._updateFsTypeVisibility)
         self.fsTypeDrop.insertItems(0, items)
         if fsType is not None:
             fsTypeLabel.setChecked(True)
@@ -790,70 +873,111 @@ class OpenTypeTab(TabWidget):
         panose = font.info.openTypeOS2Panose
         panoseLayout = QFormLayout()
         panoseLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
         panoseFamilyLabel = QLabel(self.tr("Family:"))
         panoseFamilyTypes = [
-            self.tr("Any"), self.tr("No fit"), self.tr("Text and display"),
-            self.tr("Script"), self.tr("Decorative"), self.tr("Pictorial")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Text and display"),
+            self.tr("Script"),
+            self.tr("Decorative"),
+            self.tr("Pictorial"),
+        ]
         self.panoseFamilyDrop = QComboBox(self)
         self.panoseFamilyDrop.insertItems(0, panoseFamilyTypes)
         panoseLayout.addRow(panoseFamilyLabel, self.panoseFamilyDrop)
         panoseSerifsLabel = QLabel(self.tr("Serifs:"))
         panoseSerifsTypes = [
-            self.tr("Any"), self.tr("No fit"), self.tr("Cove"),
-            self.tr("Obtuse cove"), self.tr("Square cove"),
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Cove"),
+            self.tr("Obtuse cove"),
+            self.tr("Square cove"),
             self.tr("Obtuse square cove"),
-            self.tr("Square"), self.tr("Thin"), self.tr("Bone"),
-            self.tr("Exaggerated"), self.tr("Triangle"),
-            self.tr("Normal sans-serif"), self.tr("Obtuse sans-serif"),
-            self.tr("Perp sans-serif"), self.tr("Flared"), self.tr("Rounded")]
+            self.tr("Square"),
+            self.tr("Thin"),
+            self.tr("Bone"),
+            self.tr("Exaggerated"),
+            self.tr("Triangle"),
+            self.tr("Normal sans-serif"),
+            self.tr("Obtuse sans-serif"),
+            self.tr("Perp sans-serif"),
+            self.tr("Flared"),
+            self.tr("Rounded"),
+        ]
         self.panoseSerifsDrop = QComboBox(self)
         self.panoseSerifsDrop.insertItems(0, panoseSerifsTypes)
         panoseLayout.addRow(panoseSerifsLabel, self.panoseSerifsDrop)
         panoseWeightLabel = QLabel(self.tr("Weight:"))
         panoseWeightTypes = [
-            self.tr("Any"), self.tr("No fit"),
-            self.tr("Very light"), self.tr("Light"), self.tr("Thin"),
-            self.tr("Book"), self.tr("Medium"), self.tr("Demibold"),
-            self.tr("Bold"), self.tr("Heavy"), self.tr("Black"),
-            self.tr("Nord")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Very light"),
+            self.tr("Light"),
+            self.tr("Thin"),
+            self.tr("Book"),
+            self.tr("Medium"),
+            self.tr("Demibold"),
+            self.tr("Bold"),
+            self.tr("Heavy"),
+            self.tr("Black"),
+            self.tr("Nord"),
+        ]
         self.panoseWeightDrop = QComboBox(self)
         self.panoseWeightDrop.insertItems(0, panoseWeightTypes)
         panoseLayout.addRow(panoseWeightLabel, self.panoseWeightDrop)
         panoseProportionLabel = QLabel(self.tr("Proportion:"))
         panoseProportionTypes = [
-            self.tr("Any"), self.tr("No fit"),
-            self.tr("Old style"), self.tr("Modern"), self.tr("Even width"),
-            self.tr("Expanded"), self.tr("Condensed"),
-            self.tr("Very expanded"), self.tr("Very condensed"),
-            self.tr("Monospaced")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Old style"),
+            self.tr("Modern"),
+            self.tr("Even width"),
+            self.tr("Expanded"),
+            self.tr("Condensed"),
+            self.tr("Very expanded"),
+            self.tr("Very condensed"),
+            self.tr("Monospaced"),
+        ]
         self.panoseProportionDrop = QComboBox(self)
         self.panoseProportionDrop.insertItems(0, panoseProportionTypes)
         panoseLayout.addRow(panoseProportionLabel, self.panoseProportionDrop)
         panoseContrastLabel = QLabel(self.tr("Contrast:"))
         panoseContrastTypes = [
-            self.tr("Any"), self.tr("No fit"),
-            self.tr("None"), self.tr("Very low"), self.tr("Low"),
-            self.tr("Medium low"), self.tr("Medium"), self.tr("Medium high"),
-            self.tr("High"), self.tr("Very high")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("None"),
+            self.tr("Very low"),
+            self.tr("Low"),
+            self.tr("Medium low"),
+            self.tr("Medium"),
+            self.tr("Medium high"),
+            self.tr("High"),
+            self.tr("Very high"),
+        ]
         self.panoseContrastDrop = QComboBox(self)
         self.panoseContrastDrop.insertItems(0, panoseContrastTypes)
         panoseLayout.addRow(panoseContrastLabel, self.panoseContrastDrop)
         panoseStrokeVariationLabel = QLabel(self.tr("Stroke variation:"))
         panoseStrokeVariationTypes = [
-            self.tr("Any"), self.tr("No fit"),
-            self.tr("Gradual/diagonal"), self.tr("Gradual/transitional"),
-            self.tr("Gradual/vertical"), self.tr("Gradual/horizontal"),
-            self.tr("Rapid/vertical"), self.tr("Rapid/horizontal"),
-            self.tr("Instant/vertical")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Gradual/diagonal"),
+            self.tr("Gradual/transitional"),
+            self.tr("Gradual/vertical"),
+            self.tr("Gradual/horizontal"),
+            self.tr("Rapid/vertical"),
+            self.tr("Rapid/horizontal"),
+            self.tr("Instant/vertical"),
+        ]
         self.panoseStrokeVariationDrop = QComboBox(self)
-        self.panoseStrokeVariationDrop.insertItems(
-            0, panoseStrokeVariationTypes)
-        panoseLayout.addRow(panoseStrokeVariationLabel,
-                            self.panoseStrokeVariationDrop)
+        self.panoseStrokeVariationDrop.insertItems(0, panoseStrokeVariationTypes)
+        panoseLayout.addRow(panoseStrokeVariationLabel, self.panoseStrokeVariationDrop)
         panoseArmStyleLabel = QLabel(self.tr("Arm style:"))
         panoseArmStyleTypes = [
-            self.tr("Any"), self.tr("No fit"),
+            self.tr("Any"),
+            self.tr("No fit"),
             self.tr("Straight arms/horizontal"),
             self.tr("Straight arms/wedge"),
             self.tr("Straight arms/vertical"),
@@ -863,41 +987,64 @@ class OpenTypeTab(TabWidget):
             self.tr("Nonstraight arms/wedge"),
             self.tr("Nonstraight arms/vertical"),
             self.tr("Nonstraight arms/single-serif"),
-            self.tr("Nonstraight arms/double-serif")]
+            self.tr("Nonstraight arms/double-serif"),
+        ]
         self.panoseArmStyleDrop = QComboBox(self)
         self.panoseArmStyleDrop.insertItems(0, panoseArmStyleTypes)
         panoseLayout.addRow(panoseArmStyleLabel, self.panoseArmStyleDrop)
         panoseLetterformLabel = QLabel(self.tr("Letterform:"))
         panoseLetterformTypes = [
-            self.tr("Any"), self.tr("No fit"),
-            self.tr("Normal/contact"), self.tr("Normal/weighted"),
-            self.tr("Normal/boxed"), self.tr("Normal/flattened"),
-            self.tr("Normal/rounded"), self.tr("Normal/off center"),
-            self.tr("Normal/square"), self.tr("Oblique/contact"),
-            self.tr("Oblique/weighted"), self.tr("Oblique/boxed"),
-            self.tr("Oblique/flattened"), self.tr("Oblique/rounded"),
-            self.tr("Oblique/off center"), self.tr("Oblique/square")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Normal/contact"),
+            self.tr("Normal/weighted"),
+            self.tr("Normal/boxed"),
+            self.tr("Normal/flattened"),
+            self.tr("Normal/rounded"),
+            self.tr("Normal/off center"),
+            self.tr("Normal/square"),
+            self.tr("Oblique/contact"),
+            self.tr("Oblique/weighted"),
+            self.tr("Oblique/boxed"),
+            self.tr("Oblique/flattened"),
+            self.tr("Oblique/rounded"),
+            self.tr("Oblique/off center"),
+            self.tr("Oblique/square"),
+        ]
         self.panoseLetterformDrop = QComboBox(self)
         self.panoseLetterformDrop.insertItems(0, panoseLetterformTypes)
         panoseLayout.addRow(panoseLetterformLabel, self.panoseLetterformDrop)
         panoseMidlineLabel = QLabel(self.tr("Midline:"))
         panoseMidlineTypes = [
-            self.tr("Any"), self.tr("No fit"),
-            self.tr("Standard/trimmed"), self.tr("Standard/pointed"),
-            self.tr("Standard/serifed"), self.tr("High/trimmed"),
-            self.tr("High/pointed"), self.tr("High/serifed"),
-            self.tr("Constant/trimmed"), self.tr("Constant/pointed"),
-            self.tr("Constant/serifed"), self.tr("Low/trimmed"),
-            self.tr("Low/pointed"), self.tr("Low/serifed")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Standard/trimmed"),
+            self.tr("Standard/pointed"),
+            self.tr("Standard/serifed"),
+            self.tr("High/trimmed"),
+            self.tr("High/pointed"),
+            self.tr("High/serifed"),
+            self.tr("Constant/trimmed"),
+            self.tr("Constant/pointed"),
+            self.tr("Constant/serifed"),
+            self.tr("Low/trimmed"),
+            self.tr("Low/pointed"),
+            self.tr("Low/serifed"),
+        ]
         self.panoseMidlineDrop = QComboBox(self)
         self.panoseMidlineDrop.insertItems(0, panoseMidlineTypes)
         panoseLayout.addRow(panoseMidlineLabel, self.panoseMidlineDrop)
         panoseXHeightLabel = QLabel(self.tr("x-Height:"))
         panoseXHeightTypes = [
-            self.tr("Any"), self.tr("No fit"),
-            self.tr("Constant/small"), self.tr("Constant/standard"),
-            self.tr("Constant/large"), self.tr("Ducking/small"),
-            self.tr("Ducking/standard"), self.tr("Ducking/large")]
+            self.tr("Any"),
+            self.tr("No fit"),
+            self.tr("Constant/small"),
+            self.tr("Constant/standard"),
+            self.tr("Constant/large"),
+            self.tr("Ducking/small"),
+            self.tr("Ducking/standard"),
+            self.tr("Ducking/large"),
+        ]
         self.panoseXHeightDrop = QComboBox(self)
         self.panoseXHeightDrop.insertItems(0, panoseXHeightTypes)
         panoseLayout.addRow(panoseXHeightLabel, self.panoseXHeightDrop)
@@ -943,13 +1090,17 @@ class OpenTypeTab(TabWidget):
             self.tr("Latin Extended-A (0100–017F)"),
             self.tr("Latin Extended-B (0180–024F)"),
             self.tr("IPA Extensions (0250–02AF, 1D00–1D7F, 1D80–1DBF)"),
-            self.tr("Spacing Modifier Letters, Modifier Tone Letters "
-                    "(02B0–02FF, A700–A71F)"),
+            self.tr(
+                "Spacing Modifier Letters, Modifier Tone Letters "
+                "(02B0–02FF, A700–A71F)"
+            ),
             self.tr("Combining Diacritical Marks (0300–036F, 1DC0–1DFF)"),
             self.tr("Greek and Coptic (0370–03FF)"),
             self.tr("Coptic (2C80–2CFF)"),
-            self.tr("Cyrillic and extensions (0400–04FF, 0500–052F, "
-                    "2DE0–2DFF, A640–A69F)"),
+            self.tr(
+                "Cyrillic and extensions (0400–04FF, 0500–052F, "
+                "2DE0–2DFF, A640–A69F)"
+            ),
             self.tr("Armenian (0530–058F)"),
             self.tr("Hebrew (0590–05FF)"),
             self.tr("Vai (A500–A63F)"),
@@ -969,20 +1120,18 @@ class OpenTypeTab(TabWidget):
             self.tr("Georgian (10A0–10FF, 2D00–2D2F)"),
             self.tr("Balinese (1B00–1B7F)"),
             self.tr("Hangul Jamo (1100–11FF)"),
-            self.tr("Latin Extended Additional (1E00–1EFF, 2C60–2C7F, "
-                    "A720–A7FF)"),
+            self.tr("Latin Extended Additional (1E00–1EFF, 2C60–2C7F, " "A720–A7FF)"),
             self.tr("Greek Extended (1F00–1FFF)"),
             self.tr("Punctuation (2000–206F, 2E00–2E7F)"),
             self.tr("Superscripts And Subscripts (2070–209F)"),
             self.tr("Currency Symbols (20A0–20CF)"),
-            self.tr("Combining Diacritical Marks For Symbols "
-                    "(20D0–20FF)"),
+            self.tr("Combining Diacritical Marks For Symbols " "(20D0–20FF)"),
             self.tr("Letterlike Symbols (2100–214F)"),
             self.tr("Number Forms (2150–218F)"),
-            self.tr("Arrows (2190–21FF, 27F0–27FF, 2900–297F, "
-                    "2B00–2BFF)"),
-            self.tr("Mathematical Operators (2200–22FF, 2A00–2AFF, "
-                    "27C0–27EF, 2980–29FF)"),
+            self.tr("Arrows (2190–21FF, 27F0–27FF, 2900–297F, " "2B00–2BFF)"),
+            self.tr(
+                "Mathematical Operators (2200–22FF, 2A00–2AFF, " "27C0–27EF, 2980–29FF)"
+            ),
             self.tr("Miscellaneous Technical (2300–23FF)"),
             self.tr("Control Pictures (2400–243F)"),
             self.tr("Optical Character Recognition (2440–245F)"),
@@ -1003,9 +1152,11 @@ class OpenTypeTab(TabWidget):
             self.tr("Hangul Syllables (AC00–D7AF)"),
             self.tr("Non-Plane 0 * (D800–DFFF)"),
             self.tr("Phoenician (10900–1091F)"),
-            self.tr("CJK Unified Ideographs (2E80–2EFF, 2F00–2FDF, "
-                    "2FF0–2FFF, 3190–319F, 3400–4DBF, 4E00–9FFF, "
-                    "20000–2A6DF)"),
+            self.tr(
+                "CJK Unified Ideographs (2E80–2EFF, 2F00–2FDF, "
+                "2FF0–2FFF, 3190–319F, 3400–4DBF, 4E00–9FFF, "
+                "20000–2A6DF)"
+            ),
             self.tr("Private Use Area (plane 0) (E000–F8FF)"),
             self.tr("CJK Strokes (31C0–31EF, F900–FAFF, 2F800–2FA1F)"),
             self.tr("Alphabetic Presentation Forms (FB00–FB4F)"),
@@ -1030,16 +1181,19 @@ class OpenTypeTab(TabWidget):
             self.tr("Mongolian (1800–18AF)"),
             self.tr("Braille Patterns (2800–28FF)"),
             self.tr("Yi Syllables (A000–A48F, A490–A4CF)"),
-            self.tr("Tagalog, Hanunoo, Buhid, Tagbanwa (1700–171F, "
-                    "1720–173F, 1740–175F, 1760–177F)"),
+            self.tr(
+                "Tagalog, Hanunoo, Buhid, Tagbanwa (1700–171F, "
+                "1720–173F, 1740–175F, 1760–177F)"
+            ),
             self.tr("Old Italic (10300–1032F)"),
             self.tr("Gothic (10330–1034F)"),
             self.tr("Deseret (10400–1044F)"),
-            self.tr("Greek and Byzantine Musical Symbols (1D000–1D0FF, "
-                    "1D100–1D1FF, 1D200–1D24F)"),
+            self.tr(
+                "Greek and Byzantine Musical Symbols (1D000–1D0FF, "
+                "1D100–1D1FF, 1D200–1D24F)"
+            ),
             self.tr("Mathematical Alphanumeric Symbols (1D400–1D7FF)"),
-            self.tr("Private Use (planes 15 and 16) "
-                    "(FF000–FFFFD, 100000–10FFFD)"),
+            self.tr("Private Use (planes 15 and 16) " "(FF000–FFFFD, 100000–10FFFD)"),
             self.tr("Variation Selectors (FE00–FE0F, E0100–E01EF)"),
             self.tr("Tags (E0000–E007F)"),
             self.tr("Limbu (1900–194F)"),
@@ -1050,8 +1204,9 @@ class OpenTypeTab(TabWidget):
             self.tr("Tifinagh (2D30–2D7F)"),
             self.tr("Yijing Hexagram Symbols (4DC0–4DFF)"),
             self.tr("Syloti Nagri (A800–A82F)"),
-            self.tr("Linear B, Aegean Numbers (10000–1007F, "
-                    "10080–100FF, 10100–1013F)"),
+            self.tr(
+                "Linear B, Aegean Numbers (10000–1007F, " "10080–100FF, 10100–1013F)"
+            ),
             self.tr("Ancient Greek Numbers (10140–1018F)"),
             self.tr("Ugaritic (10380–1039F)"),
             self.tr("Old Persian (103A0–103DF)"),
@@ -1071,15 +1226,15 @@ class OpenTypeTab(TabWidget):
             self.tr("Cham (AA00–AA5F)"),
             self.tr("Ancient Symbols (10190–101CF)"),
             self.tr("Phaistos Disc (101D0–101FF)"),
-            self.tr("Carian, Lycian, Lydian (102A0–102DF, 10280–1029F, "
-                    "10920–1093F)"),
-            self.tr("Domino tiles, Mahjong tiles (1F030–1F09F, "
-                    "1F000–1F02F)")]
+            self.tr(
+                "Carian, Lycian, Lydian (102A0–102DF, 10280–1029F, " "10920–1093F)"
+            ),
+            self.tr("Domino tiles, Mahjong tiles (1F030–1F09F, " "1F000–1F02F)"),
+        ]
         unicodeRanges = font.info.openTypeOS2UnicodeRanges
         self.unicodeRangesEdit = QListView(self)  # too long for BitListView
         self.unicodeRangesEdit.setMinimumHeight(200)
-        self.unicodeRangesEdit.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarAlwaysOff)
+        self.unicodeRangesEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         uRModel = QStandardItemModel(len(unicodeRangesItems), 1)
         for index, elem in enumerate(unicodeRangesItems):
             item = QStandardItem()
@@ -1134,12 +1289,12 @@ class OpenTypeTab(TabWidget):
             self.tr("Greek; former 437 G (737)"),
             self.tr("Arabic; ASMO 708 (708)"),
             self.tr("WE/Latin 1 (850)"),
-            self.tr("US (437)")]
+            self.tr("US (437)"),
+        ]
         codePageRanges = font.info.openTypeOS2CodePageRanges
         self.codePageRangesEdit = QListView(self)  # too long for BitListView
         self.codePageRangesEdit.setMinimumHeight(200)
-        self.codePageRangesEdit.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarAlwaysOff)
+        self.codePageRangesEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         cPRModel = QStandardItemModel(len(codePageRangesItems), 1)
         for index, elem in enumerate(codePageRangesItems):
             item = QStandardItem()
@@ -1163,54 +1318,89 @@ class OpenTypeTab(TabWidget):
             codePageRangesLabel.setChecked(True)
         else:
             self.codePageRangesEdit.setEnabled(False)
-        os2AttributesLayout.addRow(
-            codePageRangesLabel, self.codePageRangesEdit)
+        os2AttributesLayout.addRow(codePageRangesLabel, self.codePageRangesEdit)
 
-        self.loadCustomIntoForm("openTypeOS2TypoAscender", "i",
-                                self.tr("TypoAscender:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2TypoDescender", "i",
-                                self.tr("TypoDescender:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2TypoLineGap", "i",
-                                self.tr("TypoLineGap:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2WinAscent", "pi",
-                                self.tr("usWinAscent:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2WinDescent", "pi",
-                                self.tr("usWinDescent:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SubscriptXSize", "i",
-                                self.tr("ySubscriptXSize:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SubscriptYSize", "i",
-                                self.tr("ySubscriptYSize:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SubscriptXOffset", "i",
-                                self.tr("ySubscriptXOffset:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SubscriptYOffset", "i",
-                                self.tr("ySubscriptYOffset:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SuperscriptXSize", "i",
-                                self.tr("ySuperscriptXSize:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SuperscriptYSize", "i",
-                                self.tr("ySuperscriptYSize:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SuperscriptXOffset", "i",
-                                self.tr("ySuperscriptXOffset:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2SuperscriptYOffset", "i",
-                                self.tr("ySuperscriptYOffset:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2StrikeoutSize", "i",
-                                self.tr("yStrikeoutSize:"),
-                                os2AttributesLayout)
-        self.loadCustomIntoForm("openTypeOS2StrikeoutPosition", "i",
-                                self.tr("yStrikeoutPosition:"),
-                                os2AttributesLayout)
+        self.loadCustomIntoForm(
+            "openTypeOS2TypoAscender",
+            "i",
+            self.tr("TypoAscender:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2TypoDescender",
+            "i",
+            self.tr("TypoDescender:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2TypoLineGap", "i", self.tr("TypoLineGap:"), os2AttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2WinAscent", "pi", self.tr("usWinAscent:"), os2AttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2WinDescent", "pi", self.tr("usWinDescent:"), os2AttributesLayout
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SubscriptXSize",
+            "i",
+            self.tr("ySubscriptXSize:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SubscriptYSize",
+            "i",
+            self.tr("ySubscriptYSize:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SubscriptXOffset",
+            "i",
+            self.tr("ySubscriptXOffset:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SubscriptYOffset",
+            "i",
+            self.tr("ySubscriptYOffset:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SuperscriptXSize",
+            "i",
+            self.tr("ySuperscriptXSize:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SuperscriptYSize",
+            "i",
+            self.tr("ySuperscriptYSize:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SuperscriptXOffset",
+            "i",
+            self.tr("ySuperscriptXOffset:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2SuperscriptYOffset",
+            "i",
+            self.tr("ySuperscriptYOffset:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2StrikeoutSize",
+            "i",
+            self.tr("yStrikeoutSize:"),
+            os2AttributesLayout,
+        )
+        self.loadCustomIntoForm(
+            "openTypeOS2StrikeoutPosition",
+            "i",
+            self.tr("yStrikeoutPosition:"),
+            os2AttributesLayout,
+        )
 
         os2Layout.addLayout(os2AttributesLayout)
 
@@ -1231,8 +1421,7 @@ class OpenTypeTab(TabWidget):
         self.store("openTypeHeadLowestRecPPEM")
         if self.flagsEdit.isEnabled():
             headFlags = []
-            itemToFlagMap = {0: 0, 1: 1, 2: 2, 3: 3,
-                             4: 4, 5: 11, 6: 12, 7: 13, 8: 14}
+            itemToFlagMap = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 11, 6: 12, 7: 13, 8: 14}
             model = self.flagsEdit.model()
             for index in range(model.rowCount()):
                 item = model.item(index)
@@ -1302,14 +1491,14 @@ class OpenTypeTab(TabWidget):
             font.info.openTypeOS2Type = None
 
         if self.usWidthClassDrop.isEnabled():
-            font.info.openTypeOS2WidthClass = (
-                self.usWidthClassDrop.currentIndex() + 1)
+            font.info.openTypeOS2WidthClass = self.usWidthClassDrop.currentIndex() + 1
         else:
             font.info.openTypeOS2WidthClass = None
 
         if self.usWeightClassDrop.isEnabled():
             font.info.openTypeOS2WeightClass = (
-                (self.usWeightClassDrop.currentIndex() + 1) * 100)
+                self.usWeightClassDrop.currentIndex() + 1
+            ) * 100
         else:
             font.info.openTypeOS2WeightClass = None
 
@@ -1324,7 +1513,8 @@ class OpenTypeTab(TabWidget):
                 self.panoseArmStyleDrop.currentIndex(),
                 self.panoseLetterformDrop.currentIndex(),
                 self.panoseMidlineDrop.currentIndex(),
-                self.panoseXHeightDrop.currentIndex()]
+                self.panoseXHeightDrop.currentIndex(),
+            ]
             font.info.openTypeOS2Panose = panose
         else:
             font.info.openTypeOS2Panose = None
@@ -1376,7 +1566,6 @@ class OpenTypeTab(TabWidget):
 
 
 class PostScriptTab(TabWidget):
-
     def __init__(self, font, parent=None):
         super().__init__(font, parent)
         self.name = self.tr("PostScript")
@@ -1396,20 +1585,21 @@ class PostScriptTab(TabWidget):
         namingGroup = QGroupBox(self.tr("Naming"))
         namingLayout = QFormLayout(namingGroup)
         namingLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("postscriptFontName", "s",
-                                self.tr("FontName:"),
-                                namingLayout)
-        self.loadCustomIntoForm("postscriptFullName", "s",
-                                self.tr("FullName:"),
-                                namingLayout)
-        self.loadCustomIntoForm("postscriptWeightName", "s",
-                                self.tr("WeightName:"),
-                                namingLayout)
-        self.loadCustomIntoForm("postscriptUniqueID", "i",
-                                self.tr("UniqueID:"),
-                                namingLayout)
+        self.loadCustomIntoForm(
+            "postscriptFontName", "s", self.tr("FontName:"), namingLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptFullName", "s", self.tr("FullName:"), namingLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptWeightName", "s", self.tr("WeightName:"), namingLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptUniqueID", "i", self.tr("UniqueID:"), namingLayout
+        )
 
         tableLayout.addWidget(namingGroup)
 
@@ -1417,41 +1607,45 @@ class PostScriptTab(TabWidget):
         hintsGroup = QGroupBox(self.tr("Hints"))
         hintsLayout = QFormLayout(hintsGroup)
         hintsLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("postscriptBlueValues", "if+",
-                                self.tr("BlueValues:"),
-                                hintsLayout)
-        self.loadCustomIntoForm("postscriptOtherBlues", "if+",
-                                self.tr("OtherBlues:"),
-                                hintsLayout)
-        self.loadCustomIntoForm("postscriptFamilyBlues", "if+",
-                                self.tr("FamilyBlues:"),
-                                hintsLayout)
-        self.loadCustomIntoForm("postscriptFamilyOtherBlues", "if+",
-                                self.tr("FamilyOtherBlues:"),
-                                hintsLayout)
+        self.loadCustomIntoForm(
+            "postscriptBlueValues", "if+", self.tr("BlueValues:"), hintsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptOtherBlues", "if+", self.tr("OtherBlues:"), hintsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptFamilyBlues", "if+", self.tr("FamilyBlues:"), hintsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptFamilyOtherBlues",
+            "if+",
+            self.tr("FamilyOtherBlues:"),
+            hintsLayout,
+        )
 
-        self.loadCustomIntoForm("postscriptBlueFuzz", "if",
-                                self.tr("BlueFuzz:"),
-                                hintsLayout)
-        self.loadCustomIntoForm("postscriptBlueScale", "if",
-                                self.tr("BlueScale:"),
-                                hintsLayout)
-        self.loadCustomIntoForm("postscriptBlueShift", "if",
-                                self.tr("BlueShift:"),
-                                hintsLayout)
+        self.loadCustomIntoForm(
+            "postscriptBlueFuzz", "if", self.tr("BlueFuzz:"), hintsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptBlueScale", "if", self.tr("BlueScale:"), hintsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptBlueShift", "if", self.tr("BlueShift:"), hintsLayout
+        )
 
-        self.loadCustomIntoForm("postscriptStemSnapH", "if+",
-                                self.tr("StemSnapH:"),
-                                hintsLayout)
-        self.loadCustomIntoForm("postscriptStemSnapV", "if+",
-                                self.tr("StemSnapV:"),
-                                hintsLayout)
+        self.loadCustomIntoForm(
+            "postscriptStemSnapH", "if+", self.tr("StemSnapH:"), hintsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptStemSnapV", "if+", self.tr("StemSnapV:"), hintsLayout
+        )
 
-        self.loadCustomIntoForm("postscriptForceBold", "b",
-                                self.tr("ForceBold:"),
-                                hintsLayout)
+        self.loadCustomIntoForm(
+            "postscriptForceBold", "b", self.tr("ForceBold:"), hintsLayout
+        )
 
         tableLayout.addWidget(hintsGroup)
 
@@ -1459,26 +1653,33 @@ class PostScriptTab(TabWidget):
         metricsGroup = QGroupBox(self.tr("Metrics"))
         metricsLayout = QFormLayout(metricsGroup)
         metricsLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("postscriptDefaultWidthX", "if",
-                                self.tr("DefaultWidthX:"),
-                                metricsLayout)
-        self.loadCustomIntoForm("postscriptNominalWidthX", "if",
-                                self.tr("NominalWidthX:"),
-                                metricsLayout)
-        self.loadCustomIntoForm("postscriptUnderlineThickness", "if",
-                                self.tr("UnderlineThickness:"),
-                                metricsLayout)
-        self.loadCustomIntoForm("postscriptUnderlinePosition", "if",
-                                self.tr("UnderlinePosition:"),
-                                metricsLayout)
-        self.loadCustomIntoForm("postscriptSlantAngle", "if",
-                                self.tr("SlantAngle:"),
-                                metricsLayout)
-        self.loadCustomIntoForm("postscriptIsFixedPitch", "b",
-                                self.tr("isFixedPitch:"),
-                                metricsLayout)
+        self.loadCustomIntoForm(
+            "postscriptDefaultWidthX", "if", self.tr("DefaultWidthX:"), metricsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptNominalWidthX", "if", self.tr("NominalWidthX:"), metricsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptUnderlineThickness",
+            "if",
+            self.tr("UnderlineThickness:"),
+            metricsLayout,
+        )
+        self.loadCustomIntoForm(
+            "postscriptUnderlinePosition",
+            "if",
+            self.tr("UnderlinePosition:"),
+            metricsLayout,
+        )
+        self.loadCustomIntoForm(
+            "postscriptSlantAngle", "if", self.tr("SlantAngle:"), metricsLayout
+        )
+        self.loadCustomIntoForm(
+            "postscriptIsFixedPitch", "b", self.tr("isFixedPitch:"), metricsLayout
+        )
 
         tableLayout.addWidget(metricsGroup)
 
@@ -1486,38 +1687,56 @@ class PostScriptTab(TabWidget):
         charactersGroup = QGroupBox(self.tr("Characters"))
         charactersLayout = QFormLayout(charactersGroup)
         charactersLayout.setLabelAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+        )
 
-        self.loadCustomIntoForm("postscriptDefaultCharacter", "s",
-                                self.tr("Default character:"),
-                                charactersLayout)
+        self.loadCustomIntoForm(
+            "postscriptDefaultCharacter",
+            "s",
+            self.tr("Default character:"),
+            charactersLayout,
+        )
 
         windowsCharacterSetLabel = RCheckBox(self.tr("Windows character set:"))
         self.windowsCharacterSetDrop = QComboBox(self)
         windowsCharacterSetLabel.clicked.connect(
-            self.windowsCharacterSetDrop.setEnabled)
+            self.windowsCharacterSetDrop.setEnabled
+        )
         items = [
-            self.tr("ANSI"), self.tr("Default"),
-            self.tr("Symbol"), self.tr("Macintosh"), self.tr("Shift JIS"),
-            self.tr("Hangul"), self.tr("Hangul (Johab)"), self.tr("GB2312"),
-            self.tr("Chinese BIG5"), self.tr("Greek"), self.tr("Turkish"),
-            self.tr("Vietnamese"), self.tr("Hebrew"), self.tr("Arabic"),
-            self.tr("Baltic"), self.tr("Bitstream"), self.tr("Cyrillic"),
-            self.tr("Thai"), self.tr("Eastern European"), self.tr("OEM")]
+            self.tr("ANSI"),
+            self.tr("Default"),
+            self.tr("Symbol"),
+            self.tr("Macintosh"),
+            self.tr("Shift JIS"),
+            self.tr("Hangul"),
+            self.tr("Hangul (Johab)"),
+            self.tr("GB2312"),
+            self.tr("Chinese BIG5"),
+            self.tr("Greek"),
+            self.tr("Turkish"),
+            self.tr("Vietnamese"),
+            self.tr("Hebrew"),
+            self.tr("Arabic"),
+            self.tr("Baltic"),
+            self.tr("Bitstream"),
+            self.tr("Cyrillic"),
+            self.tr("Thai"),
+            self.tr("Eastern European"),
+            self.tr("OEM"),
+        ]
         self.windowsCharacterSetDrop.insertItems(0, items)
         if font.info.postscriptWindowsCharacterSet is not None:
             windowsCharacterSetLabel.setChecked(True)
             self.windowsCharacterSetDrop.setCurrentIndex(
-                font.info.postscriptWindowsCharacterSet)
+                font.info.postscriptWindowsCharacterSet
+            )
         else:
             self.windowsCharacterSetDrop.setEnabled(False)
-        charactersLayout.addRow(windowsCharacterSetLabel,
-                                self.windowsCharacterSetDrop)
+        charactersLayout.addRow(windowsCharacterSetLabel, self.windowsCharacterSetDrop)
 
         tableLayout.addWidget(charactersGroup)
 
-        spacer = QSpacerItem(
-            10, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer = QSpacerItem(10, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
         tableLayout.addItem(spacer)
 
     def storeValues(self):
@@ -1548,10 +1767,10 @@ class PostScriptTab(TabWidget):
         font = self.font
         windowsCharacterSet = self.windowsCharacterSetDrop
         if windowsCharacterSet.isEnabled():
-            font.info.postscriptWindowsCharacterSet = (
-                windowsCharacterSet.currentIndex())
+            font.info.postscriptWindowsCharacterSet = windowsCharacterSet.currentIndex()
         else:
             font.info.postscriptWindowsCharacterSet = None
+
 
 # ------------------
 # Supporting widgets
@@ -1577,7 +1796,8 @@ class BitListView(QListView):
         if model:
             extraHeight = self.height() - self.viewport().height()
             vRect = self.visualRect(
-                model.index(model.rowCount() - 1, self.modelColumn()))
+                model.index(model.rowCount() - 1, self.modelColumn())
+            )
             hint.setHeight(vRect.y() + vRect.height() + extraHeight)
 
         return hint
@@ -1592,7 +1812,7 @@ class FloatSpinBox(QDoubleSpinBox):
     def textFromValue(self, value):
         decimalPoint = QLocale().decimalPoint()
         if value.is_integer():
-            return "{0}{1}".format(str(int(value)), decimalPoint)
+            return "{}{}".format(str(int(value)), decimalPoint)
         else:
             return str(value).replace(".", decimalPoint)
 

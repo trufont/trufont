@@ -1,8 +1,8 @@
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject
 import functools
 import pickle
 import weakref
 
+from PyQt5.QtCore import QCoreApplication, QObject, pyqtSignal
 
 tr = functools.partial(QCoreApplication.translate, "UndoManager")
 _valueNotifications = n = dict()
@@ -65,6 +65,7 @@ def _setGlyphContent(glyph, attr, value):
         glyph.image = image
     glyph.releaseHeldNotifications()
 
+
 # TODO: limit the number of elements
 
 
@@ -101,8 +102,7 @@ class UndoManager(QObject):
             elif attr == "image":
                 data = getattr(glyph, attr).getDataForSerialization()
             if data is None:
-                data = [item.getDataForSerialization(
-                    ) for item in getattr(glyph, attr)]
+                data = [item.getDataForSerialization() for item in getattr(glyph, attr)]
             self._dumps[name] = pickle.dumps(data)
             glyph.addObserver(self, "_contentChanged", name)
 
@@ -131,8 +131,7 @@ class UndoManager(QObject):
             if name not in self._stashedNotifications:
                 self._stashedNotifications[name] = data
             else:
-                self._stashedNotifications[name][
-                    "newValue"] = data["newValue"]
+                self._stashedNotifications[name]["newValue"] = data["newValue"]
         else:
             self._pushValueChange(name, data)
 
@@ -167,8 +166,7 @@ class UndoManager(QObject):
         if attr == "image":
             data = getattr(glyph, attr).getDataForSerialization()
         else:
-            data = [item.getDataForSerialization() for item in getattr(
-                glyph, attr)]
+            data = [item.getDataForSerialization() for item in getattr(glyph, attr)]
         newValue = self._dumps[name] = pickle.dumps(data)
         data = dict(oldValue=oldValue, newValue=newValue)
 

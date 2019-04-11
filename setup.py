@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
-
-with open('README.rst', 'r', encoding="utf-8") as f:
+with open("README.rst", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
@@ -16,11 +15,7 @@ setup(
     license="GNU LGPL v3/GNU GPL v3",
     package_dir={"": "Lib"},
     packages=find_packages("Lib"),
-    entry_points={
-        "gui_scripts": [
-            "trufont =  trufont.__main__:main"
-        ]
-    },
+    entry_points={"gui_scripts": ["trufont =  trufont.__main__:main"]},
     install_requires=[
         "pyqt5>=5.5.0",
         "fonttools>=3.17.0",
@@ -43,7 +38,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Intended Audience :: Developers",
         "Topic :: Text Processing :: Fonts",
-        'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
+        "Topic :: Multimedia :: Graphics :: Editors :: Vector-Based",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],

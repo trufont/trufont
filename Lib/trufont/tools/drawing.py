@@ -1,35 +1,34 @@
+import math
+
 from defconQt.tools import platformSpecific
 from defconQt.tools.drawing import (
-    colorToQColor, drawTextAtPoint, ellipsePath, lozengePath, rectanglePath,
-    trianglePath)
+    colorToQColor,
+    drawTextAtPoint,
+    ellipsePath,
+    lozengePath,
+    rectanglePath,
+    trianglePath,
+)
 from fontTools.misc.transform import Identity
 from PyQt5.QtCore import QLineF, QPointF, Qt
-from PyQt5.QtGui import (
-    QBrush, QColor, QPainter, QPainterPath, QPen, QTransform)
-import math
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QTransform
 
 # ------
 # Colors
 # ------
 
 _defaultColors = dict(
-
     # General
     # -------
-
     background=QColor(Qt.white),
-
     # Font
     # ----
-
     # guidelines
-    fontGuideline=QColor.fromRgbF(1, 0, 0, .5),
-
+    fontGuideline=QColor.fromRgbF(1, 0, 0, 0.5),
     # Glyph
     # -----
-
     # contour fill
-    glyphContourFill=QColor.fromRgbF(.95, .95, .95, .3),
+    glyphContourFill=QColor.fromRgbF(0.95, 0.95, 0.95, 0.3),
     # contour stroke
     glyphContourStroke=QColor(34, 34, 34),
     # component fill
@@ -46,10 +45,9 @@ _defaultColors = dict(
     # selection
     glyphSelection=QColor(145, 170, 196, 155),
     # guidelines
-    glyphGuideline=QColor.fromRgbF(.3, .4, .85, .5),
+    glyphGuideline=QColor.fromRgbF(0.3, 0.4, 0.85, 0.5),
     # marker
     glyphBluesMarker=QColor(235, 191, 202, 225),
-
     # grid
     gridColor=QColor(220, 220, 220),
 )
@@ -72,7 +70,7 @@ def drawLine(painter, x1, y1, x2, y2, lineWidth=0):
         # antialiased drawing blends a little in color with the background
         # reduce alpha before drawing aliased
         color = pen.color()
-        color.setAlphaF(.9 * color.alphaF())
+        color.setAlphaF(0.9 * color.alphaF())
         pen.setColor(color)
     pen.setWidthF(lineWidth)
     painter.setPen(pen)
@@ -81,11 +79,11 @@ def drawLine(painter, x1, y1, x2, y2, lineWidth=0):
 
 
 def drawGlyphWithAliasedLines(painter, glyph):
-    curvePath, lines = glyph.getRepresentation(
-        "TruFont.SplitLinesQPainterPath")
+    curvePath, lines = glyph.getRepresentation("TruFont.SplitLinesQPainterPath")
     painter.drawPath(curvePath)
     for x1, y1, x2, y2 in lines:
         drawLine(painter, x1, y1, x2, y2)
+
 
 # ----
 # Font
@@ -94,8 +92,9 @@ def drawGlyphWithAliasedLines(painter, glyph):
 # Guidelines
 
 
-def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
-                       drawText=True, color=None):
+def drawFontGuidelines(
+    painter, glyph, scale, rect, drawLines=True, drawText=True, color=None
+):
     """
     Draws the font guidelines of the Glyph_ *glyph* in the form of lines if
     *drawLines* is true and text if *drawText* is true using QPainter_
@@ -117,8 +116,9 @@ def drawFontGuidelines(painter, glyph, scale, rect, drawLines=True,
     _drawGuidelines(painter, glyph, scale, rect, font.guidelines, color=color)
 
 
-def drawGlyphGuidelines(painter, glyph, scale, rect, drawLines=True,
-                        drawText=True, color=None):
+def drawGlyphGuidelines(
+    painter, glyph, scale, rect, drawLines=True, drawText=True, color=None
+):
     if not (drawLines or drawText):
         return
     if color is None:
@@ -126,8 +126,17 @@ def drawGlyphGuidelines(painter, glyph, scale, rect, drawLines=True,
     _drawGuidelines(painter, glyph, scale, rect, glyph.guidelines, color=color)
 
 
-def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
-                    drawText=True, drawSelection=True, color=None):
+def _drawGuidelines(
+    painter,
+    glyph,
+    scale,
+    rect,
+    guidelines,
+    drawLines=True,
+    drawText=True,
+    drawSelection=True,
+    color=None,
+):
     if not (drawLines or drawText):
         return
     xMin, yMin, width, height = rect
@@ -148,7 +157,7 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
                 # make an infinite line that intersects *(line.x, line.y)*
                 # 1. make horizontal line from *(line.x, line.y)* of length
                 # *diagonal*
-                diagonal = math.sqrt(width**2 + height**2)
+                diagonal = math.sqrt(width ** 2 + height ** 2)
                 line1 = QLineF(line.x, line.y, line.x + diagonal, line.y)
                 # 2. set the angle
                 # defcon guidelines are clockwise
@@ -163,8 +172,7 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
         if drawLines:
             if line1 is not None:
                 # line
-                drawLine(
-                    painter, line1.x1(), line1.y1(), line1.x2(), line1.y2())
+                drawLine(painter, line1.x1(), line1.y1(), line1.x2(), line1.y2())
                 # point
                 x, y = line.x, line.y
                 smoothWidth = 8 * scale
@@ -200,15 +208,14 @@ def _drawGuidelines(painter, glyph, scale, rect, guidelines, drawLines=True,
                     textX = line.x + 6 * scale
                     textY = 0
                 xAlign = "left"
-            drawTextAtPoint(
-                painter, line.name, textX, textY, scale, xAlign=xAlign)
+            drawTextAtPoint(painter, line.name, textX, textY, scale, xAlign=xAlign)
         painter.restore()
+
 
 # Image
 
 
-def drawGlyphImage(
-        painter, glyph, scale, drawSelection=True, selectionColor=None):
+def drawGlyphImage(painter, glyph, scale, drawSelection=True, selectionColor=None):
     image = glyph.image
     pixmap = image.getRepresentation("defconQt.QPixmap")
     if pixmap is None:
@@ -229,16 +236,26 @@ def drawGlyphImage(
         painter.drawRect(pixmap.rect())
     painter.restore()
 
+
 # Fill and Stroke
 
 
 def drawGlyphFillAndStroke(
-        painter, glyph, scale, drawFill=True, drawStroke=True,
-        drawSelection=True, drawComponentFill=True,
-        drawComponentStroke=False,
-        contourFillColor=None, contourStrokeColor=None,
-        componentFillColor=None, componentStrokeColor=None,
-        selectionColor=None, partialAliasing=True):
+    painter,
+    glyph,
+    scale,
+    drawFill=True,
+    drawStroke=True,
+    drawSelection=True,
+    drawComponentFill=True,
+    drawComponentStroke=False,
+    contourFillColor=None,
+    contourStrokeColor=None,
+    componentFillColor=None,
+    componentStrokeColor=None,
+    selectionColor=None,
+    partialAliasing=True,
+):
     if glyph.template:
         if glyph.unicode is None:
             return
@@ -252,10 +269,10 @@ def drawGlyphFillAndStroke(
         font.setPointSize(height)
         painter.setFont(font)
         color = QColor(Qt.lightGray)
-        color.setAlphaF(.4)
+        color.setAlphaF(0.4)
         painter.setPen(color)
         metrics = painter.fontMetrics()
-        xOffset = - (metrics.width(text) - glyph.width) / 2
+        xOffset = -(metrics.width(text) - glyph.width) / 2
         painter.translate(xOffset, 0)
         painter.scale(1, -1)
         painter.drawText(0, 0, text)
@@ -271,7 +288,8 @@ def drawGlyphFillAndStroke(
     # get the paths
     contourPath = glyph.getRepresentation("defconQt.NoComponentsQPainterPath")
     componentPath, selectedComponentPath, originPts = glyph.getRepresentation(
-        "TruFont.SelectedComponentsQPainterPath")
+        "TruFont.SelectedComponentsQPainterPath"
+    )
     painter.save()
     # fill
     # contours
@@ -295,11 +313,9 @@ def drawGlyphFillAndStroke(
         selectedComponentFillColor.setBlue(0)
         painter.fillPath(componentPath, QBrush(componentFillColor))
         if drawSelection:
-            painter.fillPath(
-                selectedComponentPath, QBrush(selectedComponentFillColor))
+            painter.fillPath(selectedComponentPath, QBrush(selectedComponentFillColor))
         else:
-            painter.fillPath(
-                selectedComponentPath, QBrush(componentFillColor))
+            painter.fillPath(selectedComponentPath, QBrush(componentFillColor))
         # components origin
         # TODO: make this a parameter, disable on sizes < MinDetails
         if drawSelection:
@@ -313,8 +329,7 @@ def drawGlyphFillAndStroke(
             painter.restore()
     # selection
     if drawSelection:
-        selectionPath = glyph.getRepresentation(
-            "TruFont.SelectedContoursQPainterPath")
+        selectionPath = glyph.getRepresentation("TruFont.SelectedContoursQPainterPath")
         pen = QPen(selectionColor)
         pen.setWidthF(3.5 * scale)
         painter.setPen(pen)
@@ -349,15 +364,26 @@ def drawGlyphFillAndStroke(
         painter.drawPath(componentPath)
     painter.restore()
 
+
 # points
 
 
 def drawGlyphPoints(
-        painter, glyph, scale,
-        drawStartPoints=True, drawOnCurves=True, drawOffCurves=True,
-        drawCoordinates=False, drawSelection=True, drawBluesMarkers=True,
-        onCurveColor=None, onCurveSmoothColor=None, offCurveColor=None,
-        otherColor=None, backgroundColor=None):
+    painter,
+    glyph,
+    scale,
+    drawStartPoints=True,
+    drawOnCurves=True,
+    drawOffCurves=True,
+    drawCoordinates=False,
+    drawSelection=True,
+    drawBluesMarkers=True,
+    onCurveColor=None,
+    onCurveSmoothColor=None,
+    offCurveColor=None,
+    otherColor=None,
+    backgroundColor=None,
+):
     if onCurveColor is None:
         onCurveColor = defaultColor("glyphOnCurvePoints")
     if onCurveSmoothColor is None:
@@ -545,15 +571,24 @@ def drawGlyphPoints(
             if int(y) == y:
                 y = int(y)
             text = "%d  %d" % (x, y)
-            drawTextAtPoint(painter, text, posX, posY, scale,
-                            xAlign="center", yAlign="top")
+            drawTextAtPoint(
+                painter, text, posX, posY, scale, xAlign="center", yAlign="top"
+            )
         painter.restore()
+
 
 # Anchors
 
 
-def drawGlyphAnchors(painter, glyph, scale, drawAnchors=True,
-                     drawSelection=True, drawText=True, color=None):
+def drawGlyphAnchors(
+    painter,
+    glyph,
+    scale,
+    drawAnchors=True,
+    drawSelection=True,
+    drawText=True,
+    color=None,
+):
     if not glyph.anchors:
         return
     if color is None:
@@ -583,9 +618,9 @@ def drawGlyphAnchors(painter, glyph, scale, drawAnchors=True,
             # offset the drawing region from origin regardless of whether we
             # are aligning to top or bottom.
             y += 6 * scale
-            drawTextAtPoint(painter, name, x, y, scale,
-                            xAlign="center", yAlign="top")
+            drawTextAtPoint(painter, name, x, y, scale, xAlign="center", yAlign="top")
         painter.restore()
+
 
 # Grid
 
