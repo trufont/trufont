@@ -18,9 +18,8 @@ setup(
     entry_points={"gui_scripts": ["trufont =  trufont.__main__:main"]},
     install_requires=[
         "pyqt5>=5.5.0",
-        "fonttools>=3.17.0",
-        "ufoLib>=2.1.0",
-        "defcon>=0.3.4",
+        "fonttools[ufo]>=3.40.0",
+        "defcon>=0.6.0",
         "defconQt>=0.5.3",
         "ufo-extractor>=0.2.0",
         "ufo2ft>=0.5.3",

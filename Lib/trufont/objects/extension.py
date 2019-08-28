@@ -8,7 +8,7 @@ from collections.abc import Sequence
 
 from PyQt5.QtGui import QImageReader, QPixmap
 from PyQt5.QtWidgets import QApplication
-from ufoLib import UFOLibError, _getPlist, writePlistAtomically
+from fontTools.ufoLib import UFOLibError, _getPlist, writePlistAtomically
 
 LIB_PATH = "lib"
 INFO_FILENAME = "info.plist"

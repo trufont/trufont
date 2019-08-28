@@ -2,7 +2,7 @@ from defconQt.representationFactories.glyphViewFactory import OnlyComponentsQtPe
 from fontTools.misc.transform import Transform
 from fontTools.pens.qtPen import QtPen
 from PyQt5.QtCore import Qt
-from ufoLib.pointPen import PointToSegmentPen
+from fontTools.ufoLib.pointPen import PointToSegmentPen
 
 
 def _reverseEnumerate(seq):

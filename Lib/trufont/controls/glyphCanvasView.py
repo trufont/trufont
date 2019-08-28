@@ -23,7 +23,7 @@ from PyQt5.QtGui import (
     QTransform,
 )
 from PyQt5.QtWidgets import QApplication
-from ufoLib.glifLib import readGlyphFromString
+from fontTools.ufoLib.glifLib import readGlyphFromString
 
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects import settings

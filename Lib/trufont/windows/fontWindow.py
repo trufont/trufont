@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from ufoLib.glifLib import readGlyphFromString
+from fontTools.ufoLib.glifLib import readGlyphFromString
 
 from trufont.controls.exportDialog import ExportDialog
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
