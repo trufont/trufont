@@ -5,6 +5,15 @@ dist: trusty
 env:
   - DISPLAY=:99.0 LIBOVERLAY_SCROLLBAR=0
 
+# The following prevents Travis from running CI on pull requests that come from a
+# branch in the same repository. Without this, it will run the same CI for the
+# pull request branch _and_ the pull request itself, which makes no sense.
+branches:
+  only:
+    - master
+    # We want to build version tags as well.
+    - /^v\d+\.\d+.*$/
+
 before_install:
   # Check environment
   - echo $PATH
