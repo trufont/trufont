@@ -1,9 +1,10 @@
 language: python
 python:
   - "3.6"
-dist: trusty
-env:
-  - DISPLAY=:0.0 LIBOVERLAY_SCROLLBAR=0
+dist: xenial
+services:
+  # We run "headless" tests with xvfb (X Virtual Framebuffer)
+  - xvfb
 
 # The following prevents Travis from running CI on pull requests that come from a
 # branch in the same repository. Without this, it will run the same CI for the
@@ -27,13 +28,7 @@ before_install:
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
 
 install:
-  - pip3 install -v .
-
-before_script:
-  # We run "headless" tests with xvfb (X Virtual Framebuffer)
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -e /etc/init.d/xvfb start; fi
-  # Give xvfb some time to start
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi
+  - pip3 install .
 
 script:
   - flake8 --config=setup.cfg Lib/trufont
