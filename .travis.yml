@@ -26,12 +26,13 @@ before_install:
   # Print PyQt5 and SIP versions
   - python -c "import PyQt5.sip as sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
+  # Install libGL, required by Qt5
+  - sudo apt-get install -y -qq libegl1-mesa
 
 install:
   - pip3 install .
 
 script:
-  - trufont
   - flake8 --config=setup.cfg Lib/trufont
   - pytest
 
