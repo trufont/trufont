@@ -14,7 +14,7 @@ before_install:
   - pip3 install --upgrade setuptools wheel
   - pip3 install --upgrade -r dev-requirements.txt -r requirements.txt
   # Print PyQt5 and SIP versions
-  - python -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
+  - python -c "import PyQt5.sip as sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
 
 install:
