@@ -3,7 +3,7 @@ python:
   - "3.6"
 dist: trusty
 env:
-  - DISPLAY=:99.0 LIBOVERLAY_SCROLLBAR=0
+  - DISPLAY=:0.0 LIBOVERLAY_SCROLLBAR=0
 
 # The following prevents Travis from running CI on pull requests that come from a
 # branch in the same repository. Without this, it will run the same CI for the
