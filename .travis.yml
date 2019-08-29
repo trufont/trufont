@@ -1,7 +1,7 @@
 language: python
 python:
   - "3.6"
-dist: xenial
+dist: bionic
 services:
   # We run "headless" tests with xvfb (X Virtual Framebuffer)
   - xvfb
@@ -26,8 +26,8 @@ before_install:
   # Print PyQt5 and SIP versions
   - python -c "import PyQt5.sip as sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
-  # Install libGL, required by Qt5
-  - sudo apt-get install -y libgl1
+  # # Install libGL, required by Qt5
+  # - sudo apt-get install -y libgl1
 
 install:
   - pip3 install .
