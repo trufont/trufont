@@ -31,6 +31,7 @@ install:
   - pip3 install .
 
 script:
+  - trufont
   - flake8 --config=setup.cfg Lib/trufont
   - pytest
 
