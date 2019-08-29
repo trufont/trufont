@@ -6,9 +6,10 @@ import stat
 import traceback
 from collections.abc import Sequence
 
+import fontTools.misc.plistlib
 from PyQt5.QtGui import QImageReader, QPixmap
 from PyQt5.QtWidgets import QApplication
-from fontTools.ufoLib import UFOLibError, _getPlist, writePlistAtomically
+from fontTools.ufoLib import UFOLibError, _UFOBaseIO
 
 LIB_PATH = "lib"
 INFO_FILENAME = "info.plist"
@@ -229,7 +230,7 @@ class TExtensionReader:
             raise UFOLibError("The specified extension doesn't exist.")
         self._path = path
 
-    _getPlist = _getPlist
+    _getPlist = _UFOBaseIO._getPlist
 
     def _readInfo(self):
         data = self._getPlist(INFO_FILENAME, {})
@@ -285,7 +286,7 @@ class TExtensionWriter:
         self._makeDirectory()
         path = os.path.join(self._path, fileName)
         try:
-            data = writePlistAtomically(data, path)
+            data = fontTools.misc.plistlib.dump(data, path)
         except Exception:
             raise UFOLibError(
                 "The data for the file %s could not be written because it is "
