@@ -1,9 +1,10 @@
 from collections.abc import Iterable
 
 from defcon import Color
-from defconQt.tools.drawing import colorToQColor
 from PyQt5.QtCore import QByteArray, QSettings
 from PyQt5.QtGui import QColor
+
+from defconQt.tools.drawing import colorToQColor
 
 _metricsWindowComboBoxItems = [
     "abcdefghijklmnopqrstuvwxyz",

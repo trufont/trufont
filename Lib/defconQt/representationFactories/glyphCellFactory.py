@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, absolute_import
-from defconQt.tools import platformSpecific
-from defconQt.tools.drawing import colorToQColor
+from __future__ import absolute_import, division
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFontMetrics, QPainter, QPainterPath, QPixmap
+
+from defconQt.tools import platformSpecific
+from defconQt.tools.drawing import colorToQColor
 
 GlyphCellHeaderHeight = 13
 GlyphCellMinHeightForHeader = 40

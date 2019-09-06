@@ -1,7 +1,8 @@
-from defconQt.tools.drawing import applyEffectToPixmap
 from PyQt5.QtCore import QObject, Qt
 from PyQt5.QtGui import QColor, QCursor, QPainter, QPainterPath, QPixmap
 from PyQt5.QtWidgets import QApplication, QGraphicsDropShadowEffect
+
+from defconQt.tools.drawing import applyEffectToPixmap
 
 _path = QPainterPath()
 _path.moveTo(9, 7.3)

@@ -7,9 +7,9 @@ import traceback
 from collections.abc import Sequence
 
 import fontTools.misc.plistlib
+from fontTools.ufoLib import UFOLibError, _UFOBaseIO
 from PyQt5.QtGui import QImageReader, QPixmap
 from PyQt5.QtWidgets import QApplication
-from fontTools.ufoLib import UFOLibError, _UFOBaseIO
 
 LIB_PATH = "lib"
 INFO_FILENAME = "info.plist"

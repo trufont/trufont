@@ -1,12 +1,12 @@
 import bisect
 
-from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
-from defconQt.controls.listView import ListView
-from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QGridLayout, QPushButton, QRadioButton, QSizePolicy, QWidget
 
+from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
+from defconQt.controls.listView import ListView
+from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from trufont.controls.glyphStackWidget import GlyphStackWidget
 from trufont.objects import icons, settings
 from trufont.tools import platformSpecific

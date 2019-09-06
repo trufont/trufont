@@ -1,9 +1,10 @@
 import weakref
 
 from defcon.objects.base import BaseObject
-from defconQt.controls.glyphContextView import GlyphRecord
 from fontTools.ttLib import TTFont
 from ufo2ft.featureCompiler import FeatureCompiler
+
+from defconQt.controls.glyphContextView import GlyphRecord
 
 try:
     from harfbuzz import HARFBUZZ as HB

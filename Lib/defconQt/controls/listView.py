@@ -9,9 +9,11 @@ lists_.
 .. _lists: https://docs.python.org/3/tutorial/introduction.html#lists
 """
 from __future__ import absolute_import
+
+import collections
+
 from defcon import Font, Glyph
-from defconQt.tools import drawing
-from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, QModelIndex, Qt
+from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
     QAbstractItemView,
@@ -20,11 +22,12 @@ from PyQt5.QtWidgets import (
     QColorDialog,
     QProxyStyle,
     QStyle,
-    QStyleOption,
     QStyledItemDelegate,
+    QStyleOption,
     QTreeView,
 )
-import collections
+
+from defconQt.tools import drawing
 
 __all__ = ["ListView"]
 

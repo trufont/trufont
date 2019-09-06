@@ -1,7 +1,7 @@
-from defconQt.controls.featureCodeEditor import FeatureCodeEditor
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
 
+from defconQt.controls.featureCodeEditor import FeatureCodeEditor
 from trufont.controls.fileMessageBoxes import CloseMessageBox
 from trufont.objects import settings
 from trufont.objects.menu import Entries

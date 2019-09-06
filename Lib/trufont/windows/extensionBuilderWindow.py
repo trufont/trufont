@@ -1,6 +1,5 @@
 import os
 
-from defconQt.controls.listView import ListView
 from PyQt5.QtCore import QRegularExpression, QSize
 from PyQt5.QtGui import QRegularExpressionValidator
 from PyQt5.QtWidgets import (
@@ -17,6 +16,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
+from defconQt.controls.listView import ListView
 from trufont.controls.folderComboBox import FolderComboBox
 from trufont.objects.extension import TExtension
 

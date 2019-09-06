@@ -1,10 +1,10 @@
 import sys
 
-from defconQt.tools import platformSpecific as basePlatformSpecific
 from PyQt5.QtCore import QObject, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPalette, QTextBlockFormat, QTextCursor, QTextOption
 from PyQt5.QtWidgets import QCheckBox, QMainWindow, QPlainTextEdit, QPushButton
 
+from defconQt.tools import platformSpecific as basePlatformSpecific
 from trufont.objects import settings
 from trufont.tools import platformSpecific
 

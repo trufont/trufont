@@ -8,13 +8,15 @@ The *glyphLineView* submodule provides widgets that render a list of Glyph_ or
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division
+
 from defcon import Glyph
-from defconQt.controls.glyphCellView import cellGridColor
-from defconQt.tools import drawing, platformSpecific
-from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
+from PyQt5.QtCore import QRectF, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPainter, QPalette
 from PyQt5.QtWidgets import QScrollArea, QSizePolicy, QWidget
+
+from defconQt.controls.glyphCellView import cellGridColor
+from defconQt.tools import drawing, platformSpecific
 
 
 class GlyphLineWidget(QWidget):

@@ -8,20 +8,22 @@ in cells with their names drawn inside headers.
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division
+
+import time
+import unicodedata
+
 from defcon import Glyph
+from PyQt5.QtCore import QRectF, QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QCursor, QDrag, QPainter, QPainterPath, QPalette
+from PyQt5.QtWidgets import QApplication, QScrollArea, QSizePolicy, QWidget
+
 from defconQt.representationFactories.glyphCellFactory import (
     GlyphCellHeaderHeight,
     GlyphCellMinHeightForHeader,
 )
 from defconQt.tools import platformSpecific
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
-from PyQt5.QtCore import pyqtSignal, QRectF, QSize, Qt
-from PyQt5.QtGui import QColor, QCursor, QDrag, QPainter, QPainterPath, QPalette
-from PyQt5.QtWidgets import QApplication, QScrollArea, QSizePolicy, QWidget
-import time
-import unicodedata
-
 
 backgroundColor = Qt.white
 cellGridColor = QColor(190, 190, 190)

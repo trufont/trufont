@@ -2,11 +2,10 @@ import os
 import pickle
 from collections import OrderedDict
 
-from defconQt.controls.glyphCellView import GlyphCellView
-from defconQt.windows.baseWindows import BaseWindow
 from fontTools.feaLib.error import FeatureLibError
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.svgLib import SVGPath
+from fontTools.ufoLib.glifLib import readGlyphFromString
 from PyQt5.QtCore import QEvent, QMimeData, QObject, QSize, QStandardPaths, Qt
 from PyQt5.QtGui import QColor, QKeySequence, QPainter, QPainterPath
 from PyQt5.QtWidgets import (
@@ -19,8 +18,9 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from fontTools.ufoLib.glifLib import readGlyphFromString
 
+from defconQt.controls.glyphCellView import GlyphCellView
+from defconQt.windows.baseWindows import BaseWindow
 from trufont.controls.exportDialog import ExportDialog
 from trufont.controls.fileMessageBoxes import CloseMessageBox, ReloadMessageBox
 from trufont.controls.fontDialogs import AddGlyphsDialog, SortDialog

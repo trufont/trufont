@@ -6,9 +6,11 @@ The *baseCodeEditor* submodule
 The *baseCodeEditor* submodule provides language-agnostic code editor parts,
 including a search widget, goto dialog and code highlighter.
 """
-from __future__ import division, absolute_import
-from defconQt.tools import drawing, platformSpecific
-from PyQt5.QtCore import pyqtSignal, QRegularExpression, QSize, Qt
+from __future__ import absolute_import, division
+
+import re
+
+from PyQt5.QtCore import QRegularExpression, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import (
     QColor,
     QFontMetricsF,
@@ -26,7 +28,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-import re
+
+from defconQt.tools import drawing, platformSpecific
 
 __all__ = ["GotoLineDialog", "BaseCodeHighlighter", "BaseCodeEditor"]
 

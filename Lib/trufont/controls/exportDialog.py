@@ -1,6 +1,5 @@
 import os
 
-from defconQt.controls.roundedButtonSet import RoundedButtonSet as ButtonSet
 from PyQt5.QtCore import QDir, QFileSystemWatcher, QSize, QStandardPaths, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
@@ -18,6 +17,7 @@ from PyQt5.QtWidgets import (
 )
 from ufo2ft.fontInfoData import getAttrWithFallback
 
+from defconQt.controls.roundedButtonSet import RoundedButtonSet as ButtonSet
 from trufont.objects import icons, settings
 
 

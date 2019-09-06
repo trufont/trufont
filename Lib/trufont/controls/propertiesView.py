@@ -2,9 +2,6 @@ import functools
 import itertools
 
 import booleanOperations
-from defconQt.controls.colorVignette import ColorVignette
-from defconQt.controls.listView import ListView
-from defconQt.tools.drawing import colorToQColor
 from PyQt5.QtCore import QEvent, QLocale, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QRegularExpressionValidator
 from PyQt5.QtWidgets import (
@@ -20,15 +17,16 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from defconQt.controls.colorVignette import ColorVignette
+from defconQt.controls.listView import ListView
+from defconQt.tools.drawing import colorToQColor
 from trufont.controls.glyphAlignmentWidget import GlyphAlignmentWidget
 from trufont.controls.groupBox import GroupBox
 from trufont.controls.pathButton import PathButton
 from trufont.objects import icons
 from trufont.tools import platformSpecific
 from trufont.tools.colorGenerator import ColorGenerator
-
-# TODO: switch to QFormLayout
-from trufont.tools.rlabel import RLabel
+from trufont.tools.rlabel import RLabel  # TODO: switch to QFormLayout
 
 
 def Button(parent=None):

@@ -11,9 +11,11 @@ constructor.
 .. _QLineEdit: http://doc.qt.io/qt-5/qlineedit.html
 """
 from __future__ import absolute_import
-from defconQt.tools.textSplitter import splitText
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QComboBox, QLineEdit
+
+from defconQt.tools.textSplitter import splitText
 
 
 def _glyphs(self):

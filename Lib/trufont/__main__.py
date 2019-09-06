@@ -1,11 +1,11 @@
 import os
 import sys
 
-from defconQt import representationFactories as baseRepresentationFactories
 from PyQt5.QtCore import QCommandLineParser, QLibraryInfo, QLocale, Qt, QTranslator
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
+from defconQt import representationFactories as baseRepresentationFactories
 from trufont import __version__, representationFactories
 from trufont.objects import settings
 from trufont.objects.application import Application

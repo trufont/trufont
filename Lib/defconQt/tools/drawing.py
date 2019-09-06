@@ -12,11 +12,14 @@ Notes:
 - The *scale* argument is the factor to scale a glyph unit to a view unit
 
 """
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division
+
+import math
+
 from defcon import Color
 from fontTools.misc.transform import Identity
-from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
+from fontTools.pens.transformPen import TransformPen
 from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import (
     QBrush,
@@ -28,7 +31,6 @@ from PyQt5.QtGui import (
     QTransform,
 )
 from PyQt5.QtWidgets import QApplication, QGraphicsPixmapItem, QGraphicsScene
-import math
 
 # ------
 # Colors

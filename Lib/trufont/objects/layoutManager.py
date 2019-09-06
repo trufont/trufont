@@ -1,5 +1,6 @@
-from defconQt.controls.glyphContextView import GlyphRecord
 from PyQt5.QtCore import QObject
+
+from defconQt.controls.glyphContextView import GlyphRecord
 
 
 def _reverseEnumerate(seq):

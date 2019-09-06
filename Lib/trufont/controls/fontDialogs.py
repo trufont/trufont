@@ -1,4 +1,3 @@
-from defconQt.controls.colorVignette import ColorVignette
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import (
@@ -14,6 +13,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
+from defconQt.controls.colorVignette import ColorVignette
 from trufont.objects import settings
 
 sortItems = [

@@ -9,10 +9,13 @@ and a corresponding syntax highlighter.
 .. _`feature file`: http://www.adobe.com/devnet/opentype/afdko/topic_feature_file_syntax.html
 """
 from __future__ import absolute_import
-from defconQt.controls.baseCodeEditor import BaseCodeEditor, BaseCodeHighlighter
+
+import os
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QTextCharFormat, QTextCursor
-import os
+
+from defconQt.controls.baseCodeEditor import BaseCodeEditor, BaseCodeHighlighter
 
 # TODO: maybe move to tools/.
 keywordPatterns = [

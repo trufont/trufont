@@ -9,16 +9,19 @@ handles, components etc.).
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division
+
+import math
+
 from fontTools.pens.basePen import BasePen
-from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.qtPen import QtPen
+from fontTools.pens.transformPen import TransformPen
+from fontTools.ufoLib.pointPen import AbstractPointPen
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QGraphicsColorizeEffect
+
 from defconQt.tools.drawing import applyEffectToPixmap, colorToQColor
-from fontTools.ufoLib.pointPen import AbstractPointPen
-import math
 
 # -------------
 # no components

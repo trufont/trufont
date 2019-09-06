@@ -1,4 +1,3 @@
-from defconQt.controls.listView import ListView
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
@@ -24,6 +23,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from defconQt.controls.listView import ListView
 from trufont.controls.nameTabWidget import NameTabWidget
 from trufont.objects import icons, settings
 

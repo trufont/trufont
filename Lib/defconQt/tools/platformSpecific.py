@@ -15,9 +15,11 @@ Fear not, these occurrences are rather anecdotic as you may tell from the size
 of this file.
 """
 from __future__ import absolute_import
+
+import sys
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QFontDatabase
-import sys
 
 # ------
 # Colors

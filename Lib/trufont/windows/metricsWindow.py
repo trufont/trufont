@@ -1,9 +1,6 @@
 import os
 import re
 
-from defconQt.controls.glyphLineView import GlyphLineView, GlyphLineWidget
-from defconQt.controls.glyphSequenceEdit import GlyphSequenceComboBox, GlyphSequenceEdit
-from defconQt.windows.baseWindows import BaseWindow
 from PyQt5.QtCore import QEvent, QSize, QSizeF, QStandardPaths, Qt, pyqtSignal
 from PyQt5.QtGui import (
     QBrush,
@@ -32,6 +29,9 @@ from PyQt5.QtWidgets import (
     QWidgetAction,
 )
 
+from defconQt.controls.glyphLineView import GlyphLineView, GlyphLineWidget
+from defconQt.controls.glyphSequenceEdit import GlyphSequenceComboBox, GlyphSequenceEdit
+from defconQt.windows.baseWindows import BaseWindow
 from trufont.objects import settings
 from trufont.objects.defcon import TGlyph
 from trufont.resources import icons_db  # noqa

@@ -4,7 +4,8 @@ The *colorVignette* submodule
 -----------------------------
 """
 from __future__ import absolute_import
-from PyQt5.QtCore import pyqtSignal, QSize, Qt
+
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
     QColorDialog,

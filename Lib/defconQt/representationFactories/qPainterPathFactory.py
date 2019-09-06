@@ -17,6 +17,7 @@ You can then draw such paths on screen with the QPainter_ method
 .. _QPainterPath: http://doc.qt.io/qt-5/qpainterpath.html
 """
 from __future__ import absolute_import
+
 from fontTools.pens.qtPen import QtPen
 from PyQt5.QtCore import Qt
 

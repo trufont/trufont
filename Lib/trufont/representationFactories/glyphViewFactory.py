@@ -1,8 +1,9 @@
-from defconQt.representationFactories.glyphViewFactory import OnlyComponentsQtPen
 from fontTools.misc.transform import Transform
 from fontTools.pens.qtPen import QtPen
-from PyQt5.QtCore import Qt
 from fontTools.ufoLib.pointPen import PointToSegmentPen
+from PyQt5.QtCore import Qt
+
+from defconQt.representationFactories.glyphViewFactory import OnlyComponentsQtPen
 
 
 def _reverseEnumerate(seq):

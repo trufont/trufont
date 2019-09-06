@@ -8,11 +8,13 @@ various display parameters.
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import division, absolute_import
-from defconQt.tools import drawing, platformSpecific
-from PyQt5.QtCore import pyqtSignal, QEvent, QPoint, QPointF, QSize, Qt
+from __future__ import absolute_import, division
+
+from PyQt5.QtCore import QEvent, QPoint, QPointF, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QCursor, QPainter
 from PyQt5.QtWidgets import QPinchGesture, QScrollArea, QSizePolicy, QWidget
+
+from defconQt.tools import drawing, platformSpecific
 
 # TODO: when the scrollArea resizes, keep the view centered
 

@@ -1,3 +1,5 @@
+from PyQt5.QtCore import Qt
+
 from defconQt.representationFactories.glyphCellFactory import (
     GlyphCellFactoryDrawingController,
     GlyphCellHeaderHeight,
@@ -5,7 +7,6 @@ from defconQt.representationFactories.glyphCellFactory import (
     GlyphCellMinHeightForMetrics,
 )
 from defconQt.tools import platformSpecific
-from PyQt5.QtCore import Qt
 
 
 def TFGlyphCellFactory(

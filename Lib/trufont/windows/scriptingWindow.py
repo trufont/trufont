@@ -3,11 +3,6 @@ import tokenize
 import traceback
 from keyword import kwlist
 
-from defconQt.controls.baseCodeEditor import (
-    BaseCodeEditor,
-    BaseCodeHighlighter,
-    GotoLineDialog,
-)
 from PyQt5.QtCore import QDir, QSettings, QSize, Qt, QUrl, pyqtSignal
 from PyQt5.QtGui import (
     QColor,
@@ -33,6 +28,11 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from defconQt.controls.baseCodeEditor import (
+    BaseCodeEditor,
+    BaseCodeHighlighter,
+    GotoLineDialog,
+)
 from trufont.controls.clickLabel import ClickLabel
 from trufont.controls.fileMessageBoxes import CloseMessageBox
 from trufont.objects import settings

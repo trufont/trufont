@@ -1,6 +1,7 @@
-from PyQt5.QtCore import pyqtSignal, QEvent, QPoint, QPointF, QSize, Qt
+from PyQt5.QtCore import QEvent, QPoint, QPointF, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QCursor, QPainter
 from PyQt5.QtWidgets import QApplication, QWidget
+
 from defconQt.controls.glyphView import GlyphViewMinSizeForDetails, UIFont
 from defconQt.tools import drawing, platformSpecific
 

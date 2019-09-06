@@ -1,8 +1,7 @@
 import os
 
-from defconQt.controls.glyphContextView import GlyphContextView, GlyphFlags
-from defconQt.controls.glyphView import GlyphViewMinSizeForDetails
 from fontTools.svgLib import SVGPath
+from fontTools.ufoLib.glifLib import readGlyphFromString
 from PyQt5.QtCore import (
     QBuffer,
     QByteArray,
@@ -23,8 +22,9 @@ from PyQt5.QtGui import (
     QTransform,
 )
 from PyQt5.QtWidgets import QApplication
-from fontTools.ufoLib.glifLib import readGlyphFromString
 
+from defconQt.controls.glyphContextView import GlyphContextView, GlyphFlags
+from defconQt.controls.glyphView import GlyphViewMinSizeForDetails
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.objects import settings
 from trufont.objects.layoutManager import LayoutManager

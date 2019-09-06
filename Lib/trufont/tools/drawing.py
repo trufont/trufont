@@ -1,5 +1,9 @@
 import math
 
+from fontTools.misc.transform import Identity
+from PyQt5.QtCore import QLineF, QPointF, Qt
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QTransform
+
 from defconQt.tools import platformSpecific
 from defconQt.tools.drawing import (
     colorToQColor,
@@ -9,9 +13,6 @@ from defconQt.tools.drawing import (
     rectanglePath,
     trianglePath,
 )
-from fontTools.misc.transform import Identity
-from PyQt5.QtCore import QLineF, QPointF, Qt
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QTransform
 
 # ------
 # Colors

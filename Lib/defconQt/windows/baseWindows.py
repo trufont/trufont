@@ -31,6 +31,7 @@ its documentation for more details.
 .. _`Garbage Collector`: https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)
 """
 from __future__ import absolute_import
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 

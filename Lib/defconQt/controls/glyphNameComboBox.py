@@ -10,9 +10,11 @@ autocompletion from a Font_’s glyph names.
 .. _QComboBox: http://doc.qt.io/qt-5/qcombobox.html
 """
 from __future__ import absolute_import
-from defconQt.tools.textSplitter import splitText
+
 from PyQt5.QtCore import QStringListModel
-from PyQt5.QtWidgets import QCompleter, QComboBox
+from PyQt5.QtWidgets import QComboBox, QCompleter
+
+from defconQt.tools.textSplitter import splitText
 
 __all__ = ["GlyphNameComboBox"]
 
