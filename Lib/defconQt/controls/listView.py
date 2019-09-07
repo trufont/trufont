@@ -8,7 +8,7 @@ lists_.
 .. _lists: https://docs.python.org/3/tutorial/introduction.html#lists
 """
 
-import collections
+import collections.abc
 
 from defcon import Font, Glyph
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
@@ -235,7 +235,7 @@ class OneTwoListModel(AbstractListModel):
     def setList(self, lst):
         self.layoutAboutToBeChanged.emit()
         self._list = lst
-        if self._list and isinstance(self._list[0], collections.MutableSequence):
+        if self._list and isinstance(self._list[0], collections.abc.MutableSequence):
             self._is2D = True
         else:
             self._is2D = False
