@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *glyphSequenceEdit* submodule
 -----------------------------
@@ -10,7 +9,6 @@ constructor.
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 .. _QLineEdit: http://doc.qt.io/qt-5/qlineedit.html
 """
-from __future__ import absolute_import
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QComboBox, QLineEdit

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *glyphNameComboBox* submodule
 -----------------------------
@@ -9,7 +8,6 @@ autocompletion from a Font_’s glyph names.
 .. _Font: http://ts-defcon.readthedocs.org/en/ufo3/objects/font.html
 .. _QComboBox: http://doc.qt.io/qt-5/qcombobox.html
 """
-from __future__ import absolute_import
 
 from PyQt5.QtCore import QStringListModel
 from PyQt5.QtWidgets import QComboBox, QCompleter

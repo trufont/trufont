@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *glyphCellView* submodule
 -----------------------------
@@ -8,7 +7,6 @@ in cells with their names drawn inside headers.
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import absolute_import, division
 
 import time
 import unicodedata

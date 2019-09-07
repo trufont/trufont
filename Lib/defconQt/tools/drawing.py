@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *drawing* submodule
 --------------------------------
@@ -12,7 +11,6 @@ Notes:
 - The *scale* argument is the factor to scale a glyph unit to a view unit
 
 """
-from __future__ import absolute_import, division
 
 import math
 

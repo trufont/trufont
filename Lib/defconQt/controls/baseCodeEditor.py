@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *baseCodeEditor* submodule
 ------------------------------
@@ -6,7 +5,6 @@ The *baseCodeEditor* submodule
 The *baseCodeEditor* submodule provides language-agnostic code editor parts,
 including a search widget, goto dialog and code highlighter.
 """
-from __future__ import absolute_import, division
 
 import re
 

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFontMetrics, QPainter, QPainterPath, QPixmap
 

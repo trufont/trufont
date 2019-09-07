@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *glyphViewFactory* submodule
 -----------------------------
@@ -9,7 +8,6 @@ handles, components etc.).
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import absolute_import, division
 
 import math
 

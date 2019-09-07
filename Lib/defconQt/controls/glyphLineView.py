@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *glyphLineView* submodule
 -----------------------------
@@ -8,7 +7,6 @@ The *glyphLineView* submodule provides widgets that render a list of Glyph_ or
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import absolute_import, division
 
 from defcon import Glyph
 from PyQt5.QtCore import QRectF, QSize, Qt, pyqtSignal

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *glyphView* submodule
 -----------------------------
@@ -8,7 +7,6 @@ various display parameters.
 
 .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
 """
-from __future__ import absolute_import, division
 
 from PyQt5.QtCore import QEvent, QPoint, QPointF, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QCursor, QPainter

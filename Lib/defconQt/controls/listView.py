@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *listView* submodule
 ------------------------
@@ -8,7 +7,6 @@ lists_.
 
 .. _lists: https://docs.python.org/3/tutorial/introduction.html#lists
 """
-from __future__ import absolute_import
 
 import collections
 

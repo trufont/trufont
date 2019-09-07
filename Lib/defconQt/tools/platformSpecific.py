@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *platformSpecific* submodule
 --------------------------------
@@ -14,7 +13,6 @@ such code obvious and self-contained.
 Fear not, these occurrences are rather anecdotic as you may tell from the size
 of this file.
 """
-from __future__ import absolute_import
 
 import sys
 

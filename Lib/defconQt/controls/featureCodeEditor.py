@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *featureCodeEditor* submodule
 ---------------------------------
@@ -8,7 +7,6 @@ and a corresponding syntax highlighter.
 
 .. _`feature file`: http://www.adobe.com/devnet/opentype/afdko/topic_feature_file_syntax.html
 """
-from __future__ import absolute_import
 
 import os
 

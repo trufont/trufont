@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The *baseWindows* submodule
 ---------------------------
@@ -30,7 +29,6 @@ its documentation for more details.
 .. _QMainWindow: http://doc.qt.io/qt-5/qmainwindow.html
 .. _`Garbage Collector`: https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)
 """
-from __future__ import absolute_import
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget

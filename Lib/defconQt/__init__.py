@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 defconQt is a set of Qt widgets for use in defcon applications.
 """

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 def characterToGlyphName(c, cmap):
     v = ord(c)
     v = cmap.get(v)
