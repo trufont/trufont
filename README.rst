@@ -9,7 +9,7 @@ written with Python3, ufoLib, defcon and PyQt5.
 Getting started
 ~~~~~~~~~~~~~~~
 
-1. Install **Python 3.5** (or later):
+1. Install **Python 3.6** (or later):
 
    -  OS X: Install using `Homebrew <http://brew.sh/>`__:
       ``brew install python3``
