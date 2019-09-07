@@ -10,6 +10,11 @@ addons:
     packages:
       - libxkbcommon-x11-0  # To make Qt load for tests
 
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.cache/pre-commit
+
 # The following prevents Travis from running CI on pull requests that come from a
 # branch in the same repository. Without this, it will run the same CI for the
 # pull request branch _and_ the pull request itself, which makes no sense.
