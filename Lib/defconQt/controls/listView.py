@@ -34,7 +34,7 @@ class AbstractListModel(QAbstractTableModel):
     valueChanged = pyqtSignal(QModelIndex, object, object)
 
     def __init__(self, lst, parent=None):
-        super(AbstractListModel, self).__init__(parent)
+        super().__init__(parent)
         self._headerLabels = []
         self._inDrop = False
 
@@ -101,7 +101,7 @@ class AbstractListModel(QAbstractTableModel):
                 self.valueChanged.emit(index, oldValue, value)
             self.dataChanged.emit(index, index, [role])
             return True
-        return super(AbstractListModel, self).setData(index, value, role)
+        return super().setData(index, value, role)
 
     def columnCount(self, parent=QModelIndex()):
         # flat table
@@ -137,9 +137,7 @@ class AbstractListModel(QAbstractTableModel):
         # force column 0, we want to drag column onto the start of the
         # drop spot, otherwise it will be split between two new columns
         self._inDrop = True
-        result = super(AbstractListModel, self).dropMimeData(
-            data, action, row, 0, parent
-        )
+        result = super().dropMimeData(data, action, row, 0, parent)
         self._inDrop = False
         return result
 
@@ -164,12 +162,12 @@ class AbstractListModel(QAbstractTableModel):
                 return None
             else:
                 return self._headerLabels[section]
-        return super(AbstractListModel, self).headerData(section, orientation, role)
+        return super().headerData(section, orientation, role)
 
 
 class FlatListModel(AbstractListModel):
     def __init__(self, lst, columnCount=1, parent=None):
-        super(FlatListModel, self).__init__(lst, parent)
+        super().__init__(lst, parent)
         self._columns = columnCount
 
     def _data(self, row, column):
@@ -255,18 +253,18 @@ class ListItemDelegate(QStyledItemDelegate):
         elif isinstance(data, QColor):
             # we have our own ways
             return None
-        return super(ListItemDelegate, self).createEditor(parent, option, index)
+        return super().createEditor(parent, option, index)
 
     def displayText(self, value, locale):
         if isinstance(value, Font):
             info = value.info
-            return "%s %s" % (info.familyName, info.styleName)
+            return f"{info.familyName} {info.styleName}"
         elif isinstance(value, Glyph):
             return value.name
         elif isinstance(value, (QColor, bool)):
             # we'll paint those instead
             return None
-        return super(ListItemDelegate, self).displayText(value, locale)
+        return super().displayText(value, locale)
 
     def paint(self, painter, option, index):
         super().paint(painter, option, index)
@@ -308,9 +306,9 @@ class ListProxy(QProxyStyle):
             option_.rect.setLeft(0)
             if widget is not None:
                 option_.rect.setRight(widget.width())
-            super(ListProxy, self).drawPrimitive(element, option_, painter, widget)
+            super().drawPrimitive(element, option_, painter, widget)
         else:
-            super(ListProxy, self).drawPrimitive(element, option, painter, widget)
+            super().drawPrimitive(element, option, painter, widget)
 
 
 class ListView(QTreeView):
@@ -341,7 +339,7 @@ class ListView(QTreeView):
     oneTwoListModelClass = OneTwoListModel
 
     def __init__(self, parent=None):
-        super(ListView, self).__init__(parent)
+        super().__init__(parent)
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDragEnabled(False)
         self.setItemDelegate(ListItemDelegate())
@@ -394,7 +392,7 @@ class ListView(QTreeView):
         if model is None:
             return
         index = model.index(row, column)
-        super(ListView, self).setCurrentIndex(index)
+        super().setCurrentIndex(index)
 
     def selectedRows(self):
         selectionModel = self.selectionModel()
@@ -510,12 +508,12 @@ class ListView(QTreeView):
     # ----------
 
     def currentChanged(self, current, previous):
-        super(ListView, self).currentChanged(current, previous)
+        super().currentChanged(current, previous)
         model = self.model()
         self.currentItemChanged.emit(model.data(current))
 
     def selectionChanged(self, selected, deselected):
-        super(ListView, self).selectionChanged(selected, deselected)
+        super().selectionChanged(selected, deselected)
         self.selectionChanged_.emit()
 
     def dropEvent(self, event):
@@ -536,9 +534,9 @@ class ListView(QTreeView):
                     self.editorDestroyed(widget)
                     # store it
                     cachedWidgets.append((col, widget))
-            super(ListView, self).dropEvent(event)
+            super().dropEvent(event)
             for col, widget in cachedWidgets:
                 index = model.index(dropRow, col)
                 self.setIndexWidget(index, widget)
         else:
-            super(ListView, self).dropEvent(event)
+            super().dropEvent(event)

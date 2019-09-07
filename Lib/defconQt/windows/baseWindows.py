@@ -61,12 +61,12 @@ class BaseMainWindow(QMainWindow):
     """
 
     def __init__(self, parent=None, flags=Qt.Window):
-        super(BaseMainWindow, self).__init__(parent, flags)
+        super().__init__(parent, flags)
         self.setAttribute(Qt.WA_DeleteOnClose)
         _bootstrapGCCache(self)
 
     def closeEvent(self, event):
-        super(BaseMainWindow, self).closeEvent(event)
+        super().closeEvent(event)
         if event.isAccepted():
             _flushGCCache(self)
 
@@ -83,11 +83,11 @@ class BaseWindow(QWidget):
     """
 
     def __init__(self, parent=None, flags=Qt.Window):
-        super(BaseWindow, self).__init__(parent, flags)
+        super().__init__(parent, flags)
         self.setAttribute(Qt.WA_DeleteOnClose)
         _bootstrapGCCache(self)
 
     def closeEvent(self, event):
-        super(BaseWindow, self).closeEvent(event)
+        super().closeEvent(event)
         if event.isAccepted():
             _flushGCCache(self)

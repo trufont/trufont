@@ -19,7 +19,7 @@ __all__ = ["GlyphNameComboBox"]
 
 class GlyphNameCompleter(QCompleter):
     def __init__(self, font, parent=None):
-        super(GlyphNameCompleter, self).__init__(parent)
+        super().__init__(parent)
         self._font = font
         self.setCompletionMode(QCompleter.InlineCompletion)
 
@@ -48,7 +48,7 @@ class GlyphNameComboBox(QComboBox):
     splitTextFunction = splitText
 
     def __init__(self, font, parent=None):
-        super(GlyphNameComboBox, self).__init__(parent)
+        super().__init__(parent)
         self.setEditable(True)
         completer = GlyphNameCompleter(font)
         self.setCompleter(completer)

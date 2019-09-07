@@ -29,7 +29,7 @@ class GlyphSequenceComboBox(QComboBox):
     splitTextFunction = staticmethod(splitText)
 
     def __init__(self, font, parent=None):
-        super(GlyphSequenceComboBox, self).__init__(parent)
+        super().__init__(parent)
         # setEditable(True) must be called before self.completer()
         # otherwise it will return None
         self.setEditable(True)
@@ -51,7 +51,7 @@ class GlyphSequenceEdit(QLineEdit):
     splitTextFunction = staticmethod(splitText)
 
     def __init__(self, font, parent=None):
-        super(GlyphSequenceEdit, self).__init__(parent)
+        super().__init__(parent)
         self._font = font
 
     glyphs = _glyphs

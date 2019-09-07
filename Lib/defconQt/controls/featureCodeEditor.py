@@ -101,7 +101,7 @@ keywordPatterns = [
 
 class FeatureCodeHighlighter(BaseCodeHighlighter):
     def __init__(self, parent=None):
-        super(FeatureCodeHighlighter, self).__init__(parent)
+        super().__init__(parent)
 
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground(QColor(45, 95, 235))
@@ -133,7 +133,7 @@ class FeatureCodeEditor(BaseCodeEditor):
     openBlockDelimiter = "{"
 
     def __init__(self, parent=None):
-        super(FeatureCodeEditor, self).__init__(parent)
+        super().__init__(parent)
         self.highlighter = FeatureCodeHighlighter(self.document())
 
     def write(self, features):
@@ -198,7 +198,7 @@ class FeatureCodeEditor(BaseCodeEditor):
                 self.setTextCursor(cursor)
             cursor.endEditBlock()
         else:
-            super(FeatureCodeEditor, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def dragEnterEvent(self, event):
         if event.source() != self:
@@ -213,7 +213,7 @@ class FeatureCodeEditor(BaseCodeEditor):
                         event.acceptProposedAction()
                         break
                 return
-        super(FeatureCodeEditor, self).dragEnterEvent(event)
+        super().dragEnterEvent(event)
 
     def dropEvent(self, event):
         if event.source() != self:
@@ -243,4 +243,4 @@ class FeatureCodeEditor(BaseCodeEditor):
                     event.mouseButtons(),
                     event.keyboardModifiers(),
                 )
-        super(FeatureCodeEditor, self).dropEvent(event)
+        super().dropEvent(event)

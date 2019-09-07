@@ -25,7 +25,7 @@ class GlyphWidget(QWidget):
     pointSizeModified = pyqtSignal(int)
 
     def __init__(self, parent=None):
-        super(GlyphWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.setFocusPolicy(Qt.ClickFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -274,7 +274,7 @@ class GlyphWidget(QWidget):
                     QPoint(viewport.width() / 2, viewport.height() / 2)
                 )
             else:
-                raise ValueError("invalid anchor value: {}".format(anchor))
+                raise ValueError(f"invalid anchor value: {anchor}")
             scrollBarPos = QPointF(hSB.value(), vSB.value())
             deltaToPos = pos / oldScale
             delta = deltaToPos * (newScale - oldScale)
@@ -609,7 +609,7 @@ class GlyphWidget(QWidget):
         painter.restore()
 
     def resizeEvent(self, event):
-        super(GlyphWidget, self).resizeEvent(event)
+        super().resizeEvent(event)
         self._calculateDrawingRect()
 
     def sizeHint(self):
@@ -631,7 +631,7 @@ class GlyphWidget(QWidget):
         return QSize(width, height)
 
     def showEvent(self, event):
-        super(GlyphWidget, self).showEvent(event)
+        super().showEvent(event)
         if hasattr(self, "_fitViewport"):
             self._calculateDrawingRect()
             self.fitScaleBBox()
@@ -644,14 +644,14 @@ class GlyphWidget(QWidget):
             self.pointSizeModified.emit(self._impliedPointSize)
             event.accept()
         else:
-            super(GlyphWidget, self).wheelEvent(event)
+            super().wheelEvent(event)
 
 
 class GlyphView(QScrollArea):
     glyphWidgetClass = GlyphWidget
 
     def __init__(self, parent=None):
-        super(GlyphView, self).__init__(parent)
+        super().__init__(parent)
         self.grabGesture(Qt.PinchGesture)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)

@@ -135,7 +135,7 @@ class ExtensionBuilderWindow(QDialog):
         if path is None:
             return
         elements = []
-        for root, dirs, files in os.walk(path):
+        for root, _, files in os.walk(path):
             for file in files:
                 if os.path.splitext(file)[1] != ".py":
                     continue

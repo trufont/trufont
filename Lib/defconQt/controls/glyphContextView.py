@@ -353,7 +353,7 @@ class GlyphContextView(QWidget):
         elif anchor == "center":
             pos = QPoint(0.5 * self.width(), 0.5 * self.height())
         else:
-            raise ValueError("invalid anchor value: {}".format(anchor))
+            raise ValueError(f"invalid anchor value: {anchor}")
         deltaToPos = pos / oldScale - self._drawingOffset / oldScale
         delta = deltaToPos * (newScale - oldScale)
         self.setScale(newScale)
@@ -789,7 +789,7 @@ class GlyphContextView(QWidget):
         event.accept()
 
 
-class GlyphRecord(object):
+class GlyphRecord:
     __slots__ = ["glyph", "cluster", "xOffset", "yOffset", "xAdvance", "yAdvance"]
 
     def __init__(self):

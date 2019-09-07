@@ -51,7 +51,7 @@ class GotoLineDialog(QDialog):
     """
 
     def __init__(self, parent=None):
-        super(GotoLineDialog, self).__init__(parent)
+        super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle(self.tr("Go to…"))
 
@@ -91,7 +91,7 @@ class GotoLineDialog(QDialog):
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
-        super(LineNumberArea, self).__init__(editor)
+        super().__init__(editor)
 
     def sizeHint(self):
         return QSize(self.parent().lineNumberAreaWidth(), 0)
@@ -119,7 +119,7 @@ class BaseCodeHighlighter(QSyntaxHighlighter):
     """
 
     def __init__(self, parent=None):
-        super(BaseCodeHighlighter, self).__init__(parent)
+        super().__init__(parent)
         self._blockHighlightingRules = []
         self._highlightingRules = []
         self._visited = set()
@@ -189,7 +189,7 @@ class BaseCodeHighlighter(QSyntaxHighlighter):
                 overlap = True
         self._visited.add((start, start + count))
         if not overlap:
-            super(BaseCodeHighlighter, self).setFormat(start, count, *args)
+            super().setFormat(start, count, *args)
 
 
 # -------------------
@@ -242,7 +242,7 @@ class BaseCodeEditor(QPlainTextEdit):
     indentChanged = pyqtSignal(str)
 
     def __init__(self, parent=None):
-        super(BaseCodeEditor, self).__init__(parent)
+        super().__init__(parent)
         self.setFont(platformSpecific.fixedFont())
         self.setTabWidth(4)
         self._indent = "    "
@@ -431,7 +431,7 @@ class BaseCodeEditor(QPlainTextEdit):
         self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
 
     def resizeEvent(self, event):
-        super(BaseCodeEditor, self).resizeEvent(event)
+        super().resizeEvent(event)
         cr = self.contentsRect()
         self.lineNumbers.setGeometry(
             cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()
@@ -501,7 +501,7 @@ class BaseCodeEditor(QPlainTextEdit):
                 )
                 if cursor.selectedText() == self.openBlockDelimiter:
                     indentLvl += 1
-            super(BaseCodeEditor, self).keyPressEvent(event)
+            super().keyPressEvent(event)
             newLineSpace = "".join(self._indent for _ in range(indentLvl))
             cursor = self.textCursor()
             cursor.insertText(newLineSpace)
@@ -518,7 +518,7 @@ class BaseCodeEditor(QPlainTextEdit):
                 if cursor.selectedText() == self._indent:
                     cursor.removeSelectedText()
                 else:
-                    super(BaseCodeEditor, self).keyPressEvent(event)
+                    super().keyPressEvent(event)
         elif key == Qt.Key_Tab:
             cursor = self.textCursor()
             if cursor.hasSelection():
@@ -526,7 +526,7 @@ class BaseCodeEditor(QPlainTextEdit):
             else:
                 cursor.insertText(self._indent)
         else:
-            super(BaseCodeEditor, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     # --------------
     # Other builtins
@@ -537,7 +537,7 @@ class BaseCodeEditor(QPlainTextEdit):
         self.updateTabWidth()
 
     def setPlainText(self, text):
-        super(BaseCodeEditor, self).setPlainText(text)
+        super().setPlainText(text)
         if self._shouldGuessWhitespace and text is not None:
             indent = _guessMinWhitespace(text)
             self.setIndent(indent)
@@ -551,4 +551,4 @@ class BaseCodeEditor(QPlainTextEdit):
             font.setPointSize(newPointSize)
             self.setFont(font)
         else:
-            super(BaseCodeEditor, self).wheelEvent(event)
+            super().wheelEvent(event)

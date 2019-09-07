@@ -33,7 +33,7 @@ class ColorVignette(QWidget):
     colorChanged = pyqtSignal()
 
     def __init__(self, parent=None):
-        super(ColorVignette, self).__init__(parent)
+        super().__init__(parent)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._color = None
@@ -132,13 +132,13 @@ class ColorVignette(QWidget):
             else:
                 self.pickColor()
         else:
-            super(ColorVignette, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def mousePressEvent(self, event):
         if self._mayClearColor and event.modifiers() & Qt.AltModifier:
             self.setColor(None)
         else:
-            super(ColorVignette, self).mousePressEvent(event)
+            super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         self.pickColor()

@@ -80,7 +80,7 @@ def FilterSelectionFactory(glyph):
             segments = segments[lastSubcontour:] + segments[:lastSubcontour]
             # now draw filtered
             shouldMoveTo = True
-            for index, segment in enumerate(segments):
+            for segment in segments:
                 on = segment[-1]
                 if not on.selected:
                     if not shouldMoveTo:

@@ -34,7 +34,7 @@ class GlyphLineWidget(QWidget):
     selectionModified = pyqtSignal(object)  # Note: object because it can be None
 
     def __init__(self, parent=None):
-        super(GlyphLineWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setAttribute(Qt.WA_OpaquePaintEvent)
         self.setFocusPolicy(Qt.ClickFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -458,7 +458,7 @@ class GlyphLineWidget(QWidget):
                 glyphRecord = self._glyphRecords[self._selected]
                 self.glyphActivated.emit(glyphRecord.glyph)
         else:
-            super(GlyphLineWidget, self).mouseDoubleClickEvent(event)
+            super().mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event):
         if event.modifiers() & platformSpecific.scaleModifier():
@@ -470,7 +470,7 @@ class GlyphLineWidget(QWidget):
             self.pointSizeModified.emit(pointSize)
             event.accept()
         else:
-            super(GlyphLineWidget, self).wheelEvent(event)
+            super().wheelEvent(event)
 
     # --------
     # Painting
@@ -672,7 +672,7 @@ class GlyphLineWidget(QWidget):
                 glyph = self._glyphRecords[index].glyph
                 self.glyphActivated.emit(glyph)
         else:
-            super(GlyphLineWidget, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -686,7 +686,7 @@ class GlyphLineWidget(QWidget):
             self.selectionModified.emit(self._selected)
             self.update()
         else:
-            super(GlyphLineWidget, self).mousePressEvent(event)
+            super().mousePressEvent(event)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -887,7 +887,7 @@ class GlyphLineView(QScrollArea):
     glyphLineWidgetClass = GlyphLineWidget
 
     def __init__(self, parent=None):
-        super(GlyphLineView, self).__init__(parent)
+        super().__init__(parent)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setWidgetResizable(True)
@@ -1150,7 +1150,7 @@ class GlyphLineView(QScrollArea):
 # ------------------
 
 
-class GlyphRecord(object):
+class GlyphRecord:
     """
     A :class:`GlyphRecord` is a glyph data structure that can accomodate
     information suitable to text layout, namely positioning and alternates.

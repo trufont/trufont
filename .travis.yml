@@ -35,7 +35,7 @@ install:
   - pip3 install .
 
 script:
-  - flake8 --config=setup.cfg Lib/trufont
+  - pre-commit run -a
   - pytest
 
 deploy:

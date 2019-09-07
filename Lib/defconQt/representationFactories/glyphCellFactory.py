@@ -45,7 +45,7 @@ def GlyphCellFactory(
     return obj.getPixmap()
 
 
-class GlyphCellFactoryDrawingController(object):
+class GlyphCellFactoryDrawingController:
     """
     This draws the cell with the layers stacked in this order:
 
@@ -218,15 +218,13 @@ class GlyphCellFactoryDrawingController(object):
         xOffset, yOffset = self.xOffset, self.yOffset
         left = round((0 * scale) + xMin + xOffset)
         right = round((self.glyph.width * scale) + xMin + xOffset)
-        lines = set(
-            (
-                0,
-                font.info.descender,
-                font.info.xHeight,
-                font.info.capHeight,
-                font.info.ascender,
-            )
-        )
+        lines = {
+            0,
+            font.info.descender,
+            font.info.xHeight,
+            font.info.capHeight,
+            font.info.ascender,
+        }
         painter.save()
         painter.setPen(cellMetricsLineColor)
         painter.setRenderHint(QPainter.Antialiasing, False)

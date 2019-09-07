@@ -54,7 +54,7 @@ class GlyphCellWidget(QWidget):
     selectionChanged = pyqtSignal()
 
     def __init__(self, parent=None):
-        super(GlyphCellWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
         self.setFocusPolicy(Qt.ClickFocus)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -127,9 +127,9 @@ class GlyphCellWidget(QWidget):
         .. _Glyph: http://ts-defcon.readthedocs.org/en/ufo3/objects/glyph.html
         """
         currentSelection = [self._glyphs[index] for index in self._selection]
-        newSelection = set(
-            [glyphs.index(glyph) for glyph in currentSelection if glyph in glyphs]
-        )
+        newSelection = {
+            glyphs.index(glyph) for glyph in currentSelection if glyph in glyphs
+        }
         self._glyphs = glyphs
         self.setSelection(newSelection)
         self.adjustSize()
@@ -430,7 +430,7 @@ class GlyphCellWidget(QWidget):
             self.selectionChanged.emit()
             self.update()
         else:
-            super(GlyphCellWidget, self).mousePressEvent(event)
+            super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if event.buttons() & (Qt.LeftButton | Qt.RightButton):
@@ -457,7 +457,7 @@ class GlyphCellWidget(QWidget):
             self.selectionChanged.emit()
             self.update()
         else:
-            super(GlyphCellWidget, self).mouseMoveEvent(event)
+            super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() in (Qt.LeftButton, Qt.RightButton):
@@ -471,7 +471,7 @@ class GlyphCellWidget(QWidget):
                 self.update()
             self._oldSelection = None
         else:
-            super(GlyphCellWidget, self).mouseReleaseEvent(event)
+            super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         if event.button() in (Qt.LeftButton, Qt.RightButton):
@@ -479,7 +479,7 @@ class GlyphCellWidget(QWidget):
             if index is not None:
                 self.glyphActivated.emit(self._glyphs[index])
         else:
-            super(GlyphCellWidget, self).mouseDoubleClickEvent(event)
+            super().mouseDoubleClickEvent(event)
 
     def _findIndexForEvent(self, event, allowAllViewport=False):
         cellHeight, cellWidth = (
@@ -521,7 +521,7 @@ class GlyphCellWidget(QWidget):
         elif modifiers in (Qt.NoModifier, Qt.ShiftModifier):
             self._glyphNameInputEvent(event)
         else:
-            super(GlyphCellWidget, self).keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def _arrowKeyPressEvent(self, event):
         count = event.count()
@@ -648,7 +648,7 @@ class GlyphCellWidget(QWidget):
             # glyph reordering
             event.acceptProposedAction()
         else:
-            super(GlyphCellWidget, self).dragEnterEvent(event)
+            super().dragEnterEvent(event)
 
     def dragMoveEvent(self, event):
         pos = event.pos()
@@ -713,7 +713,7 @@ class GlyphCellView(QScrollArea):
     glyphCellWidgetClass = GlyphCellWidget
 
     def __init__(self, parent=None):
-        super(GlyphCellView, self).__init__(parent)
+        super().__init__(parent)
         self.setWidgetResizable(True)
 
         self._glyphCellWidget = self.glyphCellWidgetClass(self)

@@ -52,7 +52,7 @@ def OnlyComponentsQPainterPathFactory(glyph):
 
 class OnlyComponentsQtPen(BasePen):
     def __init__(self, glyphSet):
-        super(OnlyComponentsQtPen, self).__init__(glyphSet)
+        super().__init__(glyphSet)
         self.pen = QtPen(glyphSet)
         self.path = self.pen.path
 
