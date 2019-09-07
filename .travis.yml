@@ -5,6 +5,10 @@ dist: bionic
 services:
   # We run "headless" tests with xvfb (X Virtual Framebuffer)
   - xvfb
+addons:
+  apt:
+    packages:
+      - libxkbcommon-x11-0  # To make Qt load for tests
 
 # The following prevents Travis from running CI on pull requests that come from a
 # branch in the same repository. Without this, it will run the same CI for the
@@ -26,14 +30,11 @@ before_install:
   # Print PyQt5 and SIP versions
   - python -c "import PyQt5.sip as sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
-  # # Install libGL, required by Qt5
 
 install:
   - pip3 install .
 
 script:
-  - export QT_DEBUG_PLUGINS=1
-  - trufont
   - flake8 --config=setup.cfg Lib/trufont
   - pytest
 
