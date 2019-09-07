@@ -179,7 +179,7 @@ def QPixmapFactory(image):
     font = image.font
     if font is None:
         return None
-    layer = image.layer
+    _ = image.layer
     images = font.images
     if image.fileName not in images:
         return None

@@ -175,7 +175,7 @@ class GlyphCellFactoryDrawingController(object):
                 painter.fillRect(*(rect + (color,)))
         if self.shouldDrawHeader:
             if self.glyph.dirty:
-                x, y, w, h = rect
+                x, _, w, _ = rect
                 painter.fillRect(*(rect + (cellDirtyColor,)))
                 path = QPainterPath()
                 path.moveTo(x + w - 12, 0)
@@ -185,7 +185,7 @@ class GlyphCellFactoryDrawingController(object):
                 painter.fillPath(path, QColor(255, 0, 0, 170))
 
     def drawCellHorizontalMetrics(self, painter, rect):
-        xMin, yMin, width, height = rect
+        xMin, yMin, _, _ = rect
         glyph = self.glyph
         scale = self.scale
         xOffset = self.xOffset
@@ -212,7 +212,7 @@ class GlyphCellFactoryDrawingController(object):
         painter.restore()
 
     def drawCellVerticalMetrics(self, painter, rect):
-        xMin, yMin, width, height = rect
+        xMin, yMin, _, _ = rect
         font = self.font
         scale = self.scale
         xOffset, yOffset = self.xOffset, self.yOffset
@@ -271,7 +271,7 @@ class GlyphCellFactoryDrawingController(object):
         painter.fillRect(xMin, yMin, width, height, color)
 
     def drawCellHeaderText(self, painter, rect):
-        xMin, yMin, width, height = rect
+        _, _, width, height = rect
         metrics = QFontMetrics(headerFont)
         minOffset = painter.pen().width()
 

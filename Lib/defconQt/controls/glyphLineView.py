@@ -117,7 +117,7 @@ class GlyphLineWidget(QWidget):
         # font metrics
         upms = []
         descenders = []
-        for index, glyphRecord in enumerate(self._glyphRecords):
+        for glyphRecord in self._glyphRecords:
             glyph = glyphRecord.glyph
             font = glyph.font
             if font is not None:
