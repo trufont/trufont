@@ -22,7 +22,7 @@ branches:
   only:
     - master
     # We want to build version tags as well.
-    - /^v\d+\.\d+.*$/
+    - /^\d+\.\d+.*$/
 
 before_install:
   # Check environment
