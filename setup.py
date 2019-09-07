@@ -16,6 +16,7 @@ setup(
     package_dir={"": "Lib"},
     packages=find_packages("Lib"),
     entry_points={"gui_scripts": ["trufont =  trufont.__main__:main"]},
+    python_requires=">=3.5",
     install_requires=[
         "pyqt5>=5.5.0",
         "fonttools[ufo]>=3.40.0",
@@ -40,5 +41,4 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],
-    test_suite="tests",
 )
