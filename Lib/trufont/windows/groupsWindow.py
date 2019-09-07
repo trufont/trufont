@@ -1,21 +1,21 @@
+import bisect
+
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QGridLayout, QPushButton, QRadioButton, QSizePolicy, QWidget
+
 from defconQt.controls.glyphCellView import GlyphCellView, GlyphCellWidget
 from defconQt.controls.listView import ListView
 from defconQt.tools.glyphsMimeData import GlyphsMimeData
 from trufont.controls.glyphStackWidget import GlyphStackWidget
 from trufont.objects import icons, settings
 from trufont.tools import platformSpecific
-from PyQt5.QtCore import pyqtSignal, QSize, Qt
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import (
-    QGridLayout, QPushButton, QRadioButton, QSizePolicy, QWidget)
-import bisect
 
 _leftGroupPrefix = "public.kern1"
 _rightGroupPrefix = "public.kern2"
 
 
 class GroupsWindow(QWidget):
-
     def __init__(self, font, parent=None):
         super().__init__(parent, Qt.Window)
         self._autoDirection = True
@@ -84,8 +84,9 @@ class GroupsWindow(QWidget):
         if title is None:
             title = self.tr("Groups")
         if font is not None:
-            title = "%s – %s %s" % (
-                title, font.info.familyName, font.info.styleName)
+            title = "{} – {} {}".format(
+                title, font.info.familyName, font.info.styleName
+            )
         self.setWindowTitle(title)
 
     # -------------
@@ -100,8 +101,9 @@ class GroupsWindow(QWidget):
         name = self.groupsListView.currentValue()
         groupIsValid = name is not None and name in groups
         if groupIsValid:
-            glyphs = [self._font[gName] for gName in groups[
-                name] if gName in self._font]
+            glyphs = [
+                self._font[gName] for gName in groups[name] if gName in self._font
+            ]
         else:
             glyphs = []
         self.groupCellView.setAcceptDrops(groupIsValid)
@@ -114,8 +116,7 @@ class GroupsWindow(QWidget):
     # widgets
 
     def _alignmentChanged(self, alignRight):
-        self.stackWidget.setAlignment(
-            "right" if alignRight else "left")
+        self.stackWidget.setAlignment("right" if alignRight else "left")
         if alignRight:
             self.alignRightBox.blockSignals(True)
             self.alignRightBox.setChecked(True)

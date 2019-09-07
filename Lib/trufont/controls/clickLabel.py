@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal, QPoint, Qt
+from PyQt5.QtCore import QPoint, Qt, pyqtSignal
 from PyQt5.QtWidgets import QLabel
 
 

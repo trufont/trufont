@@ -1,24 +1,35 @@
+import os
+
 from PyQt5.QtCore import QDir, QFileSystemWatcher, QSize, QStandardPaths, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
-    QHBoxLayout, QLabel, QPushButton, QStyle, QVBoxLayout, QWidget)
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QStyle,
+    QVBoxLayout,
+    QWidget,
+)
+from ufo2ft.fontInfoData import getAttrWithFallback
+
 from defconQt.controls.roundedButtonSet import RoundedButtonSet as ButtonSet
 from trufont.objects import icons, settings
-from ufo2ft.fontInfoData import getAttrWithFallback
-import os
 
 
 class ExportDialog(QDialog):
-
     def __init__(self, font, parent=None):
         super().__init__(parent, Qt.MSWindowsFixedSizeDialogHint)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle(self.tr("Export…"))
 
         self._exportDirectory = QDir.toNativeSeparators(
-            QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[
-                0])
+            QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[0]
+        )
         self.baseName = getAttrWithFallback(font.info, "postscriptFontName")
 
         self.formatBtnSet = ButtonSet(self)
@@ -52,7 +63,8 @@ class ExportDialog(QDialog):
         self.exportDirButton = QPushButton(self)
         self.exportDirButton.setText(self.tr("Choose…"))
         self.exportDirButton.clicked.connect(
-            lambda: self.chooseExportDir(self.exportDirectory))
+            lambda: self.chooseExportDir(self.exportDirectory)
+        )
 
         # if files are to be overwritten, put up a warning
         # + use a file system watcher to avoid TOCTOU
@@ -127,13 +139,17 @@ class ExportDialog(QDialog):
     def readSettings(self):
         attrs = [
             (settings.exportFileFormats, self.formatBtnSet.setSelectedOptions),
-            (settings.exportCompressionFormats,
-             self.compressionBtnSet.setSelectedOptions),
+            (
+                settings.exportCompressionFormats,
+                self.compressionBtnSet.setSelectedOptions,
+            ),
             (settings.exportRemoveOverlap, self.removeOverlapBox.setChecked),
             (settings.exportAutohint, self.autohintBox.setChecked),
             (settings.exportUseDirectory, self.exportBox.setChecked),
-            (settings.exportDirectory, lambda attr: setattr(
-                self, "exportDirectory", attr)),
+            (
+                settings.exportDirectory,
+                lambda attr: setattr(self, "exportDirectory", attr),
+            ),
         ]
         for getValue, setter in attrs:
             value = getValue()
@@ -145,13 +161,14 @@ class ExportDialog(QDialog):
     def writeSettings(self):
         attrs = [
             (settings.setExportFileFormats, self.formatBtnSet.selectedOptions),
-            (settings.setExportCompressionFormats,
-             self.compressionBtnSet.selectedOptions),
+            (
+                settings.setExportCompressionFormats,
+                self.compressionBtnSet.selectedOptions,
+            ),
             (settings.setExportRemoveOverlap, self.removeOverlapBox.isChecked),
             (settings.setExportAutohint, self.autohintBox.isChecked),
             (settings.setExportUseDirectory, self.exportBox.isChecked),
-            (settings.setExportDirectory, lambda: getattr(
-                self, "exportDirectory")),
+            (settings.setExportDirectory, lambda: getattr(self, "exportDirectory")),
         ]
         for setValue, getter in attrs:
             value = getter()
@@ -182,8 +199,9 @@ class ExportDialog(QDialog):
         if givenDir is not None:
             dialog.setDirectory(givenDir)
         elif dialogDir is None:
-            dialog.setDirectory(QStandardPaths.standardLocations(
-                QStandardPaths.DocumentsLocation)[0])
+            dialog.setDirectory(
+                QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[0]
+            )
         dialog.setAcceptMode(QFileDialog.AcceptOpen)
         dialog.setFileMode(QFileDialog.Directory)
         ok = dialog.exec_()
@@ -196,8 +214,13 @@ class ExportDialog(QDialog):
 
     def updateExportStatus(self):
         value = self.exportBox.isChecked()
-        for w in (self.exportIcon, self.exportDirLabel, self.exportDirButton,
-                  self.warningIcon, self.warningLabel):
+        for w in (
+            self.exportIcon,
+            self.exportDirLabel,
+            self.exportDirButton,
+            self.warningIcon,
+            self.warningLabel,
+        ):
             w.setEnabled(value)
 
     def updateNumbers(self):
@@ -205,27 +228,28 @@ class ExportDialog(QDialog):
         compressionOptions = self.compressionBtnSet.selectedOptions()
         # number label
         count = len(formatOptions) * len(compressionOptions)
-        self.numberLabel.setText(self.tr(
-            "×%n font(s) with base name: {}*".format(self.baseName), n=count))
+        self.numberLabel.setText(
+            self.tr(f"×%n font(s) with base name: {self.baseName}*", n=count)
+        )
         # overwrite status
         # XXX: not DRY with the TFont.export logic
         count = 0
         # make a list out of this, otherwise we'll consume the iterator
         compressions = list(map(str.lower, compressionOptions))
         for format in map(str.lower, formatOptions):
-            filePath = os.path.join(self.exportDirectory, "{}.{}".format(
-                self.baseName, format))
+            filePath = os.path.join(self.exportDirectory, f"{self.baseName}.{format}")
             for compression in compressions:
                 fullPath = filePath
-                if compression != 'none':
-                    fullPath += ".{}".format(compression)
+                if compression != "none":
+                    fullPath += f".{compression}"
                 count += os.path.exists(fullPath)
         visible = bool(count)
         self.warningIcon.setVisible(visible)
         self.warningLabel.setVisible(visible)
         if visible:
             self.warningLabel.setText(
-                self.tr("%n file(s) will be overwritten.", n=count))
+                self.tr("%n file(s) will be overwritten.", n=count)
+            )
 
     def finish(self):
         self.accept()

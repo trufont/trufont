@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QObject, Qt
-from PyQt5.QtGui import QColor, QCursor, QPainter, QPixmap, QPainterPath
+from PyQt5.QtGui import QColor, QCursor, QPainter, QPainterPath, QPixmap
 from PyQt5.QtWidgets import QApplication, QGraphicsDropShadowEffect
+
 from defconQt.tools.drawing import applyEffectToPixmap
 
 _path = QPainterPath()
@@ -98,7 +99,7 @@ class BaseTool(QObject):
         painter.fillPath(whitePath, Qt.white)
         painter.end()
         effect = QGraphicsDropShadowEffect()
-        effect.setColor(QColor.fromRgbF(0, 0, 0, .3))
+        effect.setColor(QColor.fromRgbF(0, 0, 0, 0.3))
         effect.setBlurRadius(4)
         effect.setOffset(0, 1)
         pixmap = applyEffectToPixmap(pixmap, effect)

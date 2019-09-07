@@ -1,11 +1,11 @@
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QTreeView, QVBoxLayout, QWidget
+
 from trufont.objects import settings
 
 
 class KerningDictModel(QAbstractItemModel):
-
     def __init__(self, mapping={}, parent=None):
         super().__init__(parent)
         self.setupModelData(mapping)
@@ -77,16 +77,13 @@ class KerningDictModel(QAbstractItemModel):
 
 
 class KerningWindow(QWidget):
-
     def __init__(self, font, parent=None):
         super().__init__(parent, Qt.Window)
         self._font = font
-        self._font.kerning.addObserver(
-            self, "_kerningChanged", "Kerning.Changed")
+        self._font.kerning.addObserver(self, "_kerningChanged", "Kerning.Changed")
         self._font.info.addObserver(self, "_fontInfoChanged", "Info.Changed")
         self.kerningView = QTreeView(self)
-        self.kerningView.setModel(
-            KerningDictModel(font.kerning, self.kerningView))
+        self.kerningView.setModel(KerningDictModel(font.kerning, self.kerningView))
         self.kerningView.expandAll()
         metrics = self.kerningView.fontMetrics()
         self.kerningView.setColumnWidth(1, 8 * metrics.width("0"))
@@ -114,8 +111,9 @@ class KerningWindow(QWidget):
         if title is None:
             title = self.tr("Kerning")
         if font is not None:
-            title = "%s – %s %s" % (
-                title, font.info.familyName, font.info.styleName)
+            title = "{} – {} {}".format(
+                title, font.info.familyName, font.info.styleName
+            )
         self.setWindowTitle(title)
 
     # -------------

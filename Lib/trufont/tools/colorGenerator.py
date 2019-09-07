@@ -1,6 +1,7 @@
+import random
+
 from hsluv import hsluv_to_rgb
 from PyQt5.QtGui import QColor
-import random
 
 # http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/  # noqa
 golden_ratio_conjugate = 0.618033988749895
@@ -12,6 +13,7 @@ class ColorGenerator:
 
     .. _`HUSL color space`: http://www.husl-colors.org
     """
+
     seed = random.random()
     # http://www.husl-colors.org/syntax/
     minS = random.uniform(30, 70)
@@ -36,10 +38,10 @@ class ColorGenerator:
     def setSaturationFromRange(cls, lo, hi):
         rg = hi - lo
         cls.minS = random.uniform(lo, hi)
-        cls.maxS = cls.minS + round(min(3*rg/4, 100-hi))
+        cls.maxS = cls.minS + round(min(3 * rg / 4, 100 - hi))
 
     @classmethod
     def setLightnessFromRange(cls, lo, hi):
         rg = hi - lo
         cls.minL = random.uniform(lo, hi)
-        cls.maxL = cls.minL + round(min(3*rg/4, 100-hi))
+        cls.maxL = cls.minL + round(min(3 * rg / 4, 100 - hi))

@@ -1,8 +1,22 @@
+import functools
+import itertools
+
+import booleanOperations
 from PyQt5.QtCore import QEvent, QLocale, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QRegularExpressionValidator
 from PyQt5.QtWidgets import (
-    QApplication, QDoubleSpinBox, QGridLayout, QHeaderView, QLineEdit,
-    QScrollArea, QSizePolicy, QSpinBox, QVBoxLayout, QWidget)
+    QApplication,
+    QDoubleSpinBox,
+    QGridLayout,
+    QHeaderView,
+    QLineEdit,
+    QScrollArea,
+    QSizePolicy,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
+
 from defconQt.controls.colorVignette import ColorVignette
 from defconQt.controls.listView import ListView
 from defconQt.tools.drawing import colorToQColor
@@ -12,11 +26,7 @@ from trufont.controls.pathButton import PathButton
 from trufont.objects import icons
 from trufont.tools import platformSpecific
 from trufont.tools.colorGenerator import ColorGenerator
-# TODO: switch to QFormLayout
-from trufont.tools.rlabel import RLabel
-import booleanOperations
-import functools
-import itertools
+from trufont.tools.rlabel import RLabel  # TODO: switch to QFormLayout
 
 
 def Button(parent=None):
@@ -32,8 +42,7 @@ def _glyphHasSelection(glyph):
         for point in contour:
             if point.selected:
                 return True
-    for container in (
-            glyph.components, glyph.anchors, glyph.guidelines):
+    for container in (glyph.components, glyph.anchors, glyph.guidelines):
         for element in container:
             if element.selected:
                 return True
@@ -46,8 +55,7 @@ def _partialTransform(glyph, matrix):
         for point in contour:
             dirty = False
             if point.selected:
-                point.x, point.y = matrix.transformPoint(
-                    (point.x, point.y))
+                point.x, point.y = matrix.transformPoint((point.x, point.y))
                 dirty = True
             if dirty:
                 contour.dirty = True
@@ -64,7 +72,6 @@ def _partialTransform(glyph, matrix):
 
 
 class SpinBox(QDoubleSpinBox):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAlignment(Qt.AlignRight)
@@ -85,8 +92,13 @@ class SpinBox(QDoubleSpinBox):
                 self.stepBy(preDelta)
         if key_ is not None:
             event = event.__class__(
-                event.type(), key_, event.modifiers(), "",
-                event.isAutoRepeat(), event.count())
+                event.type(),
+                key_,
+                event.modifiers(),
+                "",
+                event.isAutoRepeat(),
+                event.count(),
+            )
         oldValue = self.value()
         super().keyPressEvent(event)
         if self.value() != oldValue:
@@ -107,7 +119,6 @@ class SpinBox(QDoubleSpinBox):
 
 
 class NumberBox(SpinBox):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAlignment(Qt.AlignLeft)
@@ -117,7 +128,6 @@ class NumberBox(SpinBox):
 
 
 class FillWidget(QWidget):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
@@ -128,7 +138,6 @@ class FillWidget(QWidget):
 
 
 class PropertiesWidget(QWidget):
-
     def __init__(self, font, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
@@ -140,7 +149,7 @@ class PropertiesWidget(QWidget):
         glyphGroup = GroupBox(self)
         glyphGroup.setTitle(self.tr("Glyph"))
         glyphLayout = QGridLayout()
-        zeroWidth = self.fontMetrics().width('0')
+        zeroWidth = self.fontMetrics().width("0")
         columnOneWidth = zeroWidth * (5 + 2 * platformSpecific.widen())
 
         nameLabel = RLabel(self.tr("Name"), self)
@@ -150,7 +159,8 @@ class PropertiesWidget(QWidget):
         self.unicodesEdit = QLineEdit(self)
         self.unicodesEdit.editingFinished.connect(self.writeUnicodes)
         unicodesRegExp = QRegularExpression(
-            "(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)")
+            "(|([a-fA-F0-9]{4,6})( ([a-fA-F0-9]{4,6}))*)"
+        )
         unicodesValidator = QRegularExpressionValidator(unicodesRegExp, self)
         self.unicodesEdit.setValidator(unicodesValidator)
         widthLabel = RLabel(self.tr("Width"), self)
@@ -160,17 +170,14 @@ class PropertiesWidget(QWidget):
         leftMarginLabel = RLabel(self.tr("Left"), self)
         self.leftMarginEdit = NumberBox(self)
         self.leftMarginEdit.setMaximumWidth(columnOneWidth)
-        self.leftMarginEdit.editingFinished.connect(
-            self.writeLeftMargin)
+        self.leftMarginEdit.editingFinished.connect(self.writeLeftMargin)
         rightMarginLabel = RLabel(self.tr("Right"), self)
         self.rightMarginEdit = NumberBox(self)
         self.rightMarginEdit.setMaximumWidth(columnOneWidth)
-        self.rightMarginEdit.editingFinished.connect(
-            self.writeRightMargin)
+        self.rightMarginEdit.editingFinished.connect(self.writeRightMargin)
         markColorLabel = RLabel(self.tr("Flag"), self)
         self.markColorWidget = ColorVignette(self)
-        self.markColorWidget.colorChanged.connect(
-            self.writeMarkColor)
+        self.markColorWidget.colorChanged.connect(self.writeMarkColor)
         self.markColorWidget.setMaximumWidth(columnOneWidth)
 
         line = 0
@@ -204,8 +211,7 @@ class PropertiesWidget(QWidget):
         # TODO: should this be implemented for partial selection?
         invScaleButton = Button(self)
         invScaleButton.setDrawingCommands(icons.dc_invscale())
-        invScaleButton.setToolTip(
-            self.tr("Scale down selection"))
+        invScaleButton.setToolTip(self.tr("Scale down selection"))
         invScaleButton.clicked.connect(self.scale)
         invScaleButton.setProperty("inverted", True)
         self.scaleXEdit = SpinBox(self)
@@ -216,8 +222,7 @@ class PropertiesWidget(QWidget):
         self.scaleXEdit.setValue(2)
         scaleButton = Button(self)
         scaleButton.setDrawingCommands(icons.dc_scale())
-        scaleButton.setToolTip(
-            self.tr("Scale up selection"))
+        scaleButton.setToolTip(self.tr("Scale up selection"))
         scaleButton.clicked.connect(self.scale)
         self.scaleYEdit = SpinBox(self)
         self.scaleYEdit.setMaximumWidth(columnTwoWidth)
@@ -228,8 +233,7 @@ class PropertiesWidget(QWidget):
 
         rotateButton = Button(self)
         rotateButton.setDrawingCommands(icons.dc_rotate())
-        rotateButton.setToolTip(
-            self.tr("Rotate selection counter-clockwise"))
+        rotateButton.setToolTip(self.tr("Rotate selection counter-clockwise"))
         rotateButton.clicked.connect(self.rotate)
         self.rotateEdit = SpinBox(self)
         self.rotateEdit.setMaximumWidth(columnTwoWidth)
@@ -240,15 +244,13 @@ class PropertiesWidget(QWidget):
         self.rotateEdit.setWrapping(True)
         invRotateButton = Button(self)
         invRotateButton.setDrawingCommands(icons.dc_invrotate())
-        invRotateButton.setToolTip(
-            self.tr("Rotate selection clockwise"))
+        invRotateButton.setToolTip(self.tr("Rotate selection clockwise"))
         invRotateButton.clicked.connect(self.rotate)
         invRotateButton.setProperty("inverted", True)
 
         invSkewButton = Button(self)
         invSkewButton.setDrawingCommands(icons.dc_invskew())
-        invSkewButton.setToolTip(
-            self.tr("Skew selection counter-clockwise"))
+        invSkewButton.setToolTip(self.tr("Skew selection counter-clockwise"))
         invSkewButton.clicked.connect(self.skew)
         invSkewButton.setProperty("inverted", True)
         self.skewEdit = SpinBox(self)
@@ -259,14 +261,12 @@ class PropertiesWidget(QWidget):
         self.skewEdit.setWrapping(True)
         skewButton = Button(self)
         skewButton.setDrawingCommands(icons.dc_skew())
-        skewButton.setToolTip(
-            self.tr("Skew selection clockwise"))
+        skewButton.setToolTip(self.tr("Skew selection clockwise"))
         skewButton.clicked.connect(self.skew)
 
         snapButton = Button(self)
         snapButton.setDrawingCommands(icons.dc_snap())
-        snapButton.setToolTip(
-            self.tr("Snap selection to precision"))
+        snapButton.setToolTip(self.tr("Snap selection to precision"))
         snapButton.clicked.connect(self.snap)
         self.snapEdit = SpinBox(self)
         self.snapEdit.setMaximumWidth(columnTwoWidth)
@@ -274,64 +274,52 @@ class PropertiesWidget(QWidget):
 
         unionButton = Button(self)
         unionButton.setDrawingCommands(icons.dc_union())
-        unionButton.setToolTip(
-            self.tr("Remove selection overlap"))
+        unionButton.setToolTip(self.tr("Remove selection overlap"))
         unionButton.clicked.connect(self.removeOverlap)
         subtractButton = Button(self)
         subtractButton.setDrawingCommands(icons.dc_subtract())
-        subtractButton.setToolTip(
-            self.tr("Subtract selected or top contour"))
+        subtractButton.setToolTip(self.tr("Subtract selected or top contour"))
         subtractButton.clicked.connect(self.subtract)
         intersectButton = Button(self)
         intersectButton.setDrawingCommands(icons.dc_intersect())
-        intersectButton.setToolTip(
-            self.tr("Intersect selected or top contour"))
+        intersectButton.setToolTip(self.tr("Intersect selected or top contour"))
         intersectButton.clicked.connect(self.intersect)
         xorButton = Button(self)
         xorButton.setDrawingCommands(icons.dc_xor())
-        xorButton.setToolTip(
-            self.tr("Xor selected or top contour"))
+        xorButton.setToolTip(self.tr("Xor selected or top contour"))
         xorButton.clicked.connect(self.xor)
         hMirrorButton = Button()
         hMirrorButton.setDrawingCommands(icons.dc_hmirror())
-        hMirrorButton.setToolTip(
-            self.tr("Mirror selection horizontally"))
+        hMirrorButton.setToolTip(self.tr("Mirror selection horizontally"))
         hMirrorButton.clicked.connect(self.hMirror)
         vMirrorButton = Button()
         vMirrorButton.setDrawingCommands(icons.dc_vmirror())
-        vMirrorButton.setToolTip(
-            self.tr("Mirror selection vertically"))
+        vMirrorButton.setToolTip(self.tr("Mirror selection vertically"))
         vMirrorButton.clicked.connect(self.vMirror)
 
         alignHLeftButton = Button(self)
         alignHLeftButton.setDrawingCommands(icons.dc_alignhleft())
-        alignHLeftButton.setToolTip(
-            self.tr("Push selection left"))
+        alignHLeftButton.setToolTip(self.tr("Push selection left"))
         alignHLeftButton.clicked.connect(self.alignHLeft)
         alignHCenterButton = Button(self)
         alignHCenterButton.setDrawingCommands(icons.dc_alignhcenter())
-        alignHCenterButton.setToolTip(
-            self.tr("Push selection to horizontal center"))
+        alignHCenterButton.setToolTip(self.tr("Push selection to horizontal center"))
         alignHCenterButton.clicked.connect(self.alignHCenter)
         alignHRightButton = Button(self)
         alignHRightButton.setDrawingCommands(icons.dc_alignhright())
-        alignHRightButton.setToolTip(
-            self.tr("Push selection right"))
+        alignHRightButton.setToolTip(self.tr("Push selection right"))
         alignHRightButton.clicked.connect(self.alignHRight)
         alignVTopButton = Button(self)
         alignVTopButton.setDrawingCommands(icons.dc_alignvtop())
-        alignVTopButton.setToolTip(
-            self.tr("Push selection top"))
+        alignVTopButton.setToolTip(self.tr("Push selection top"))
         alignVTopButton.clicked.connect(self.alignVTop)
         alignVCenterButton = Button(self)
         alignVCenterButton.setDrawingCommands(icons.dc_alignvcenter())
-        alignVCenterButton.setToolTip(
-            self.tr("Push selection to vertical center"))
+        alignVCenterButton.setToolTip(self.tr("Push selection to vertical center"))
         alignVCenterButton.clicked.connect(self.alignVCenter)
         alignVBottomButton = Button(self)
         alignVBottomButton.setDrawingCommands(icons.dc_alignvbottom())
-        alignVBottomButton.setToolTip(
-            self.tr("Push selection bottom"))
+        alignVBottomButton.setToolTip(self.tr("Push selection bottom"))
         alignVBottomButton.clicked.connect(self.alignVBottom)
 
         buttonsLayout = QGridLayout()
@@ -453,8 +441,7 @@ class PropertiesWidget(QWidget):
 
     def _subscribeToGlyph(self, glyph):
         if glyph is not None:
-            glyph.addObserver(
-                self, "_updateGlyphAttributes", "Glyph.Changed")
+            glyph.addObserver(self, "_updateGlyphAttributes", "Glyph.Changed")
 
     def _unsubscribeFromFont(self):
         font = self._font
@@ -467,8 +454,7 @@ class PropertiesWidget(QWidget):
         if font is not None:
             layerSet = font.layers
             if layerSet is not None:
-                layerSet.addObserver(
-                    self, "_updateLayerAttributes", "LayerSet.Changed")
+                layerSet.addObserver(self, "_updateLayerAttributes", "LayerSet.Changed")
 
     def _updateGlyph(self, *_):
         app = QApplication.instance()
@@ -495,8 +481,9 @@ class PropertiesWidget(QWidget):
             if glyph.rightMargin is not None:
                 rightMargin = round(glyph.rightMargin)
             foreGlyph = glyph.font[glyph.name]
-            unicodes = " ".join("%06X" % u if u > 0xFFFF else "%04X" %
-                                u for u in foreGlyph.unicodes)
+            unicodes = " ".join(
+                "%06X" % u if u > 0xFFFF else "%04X" % u for u in foreGlyph.unicodes
+            )
             width = round(foreGlyph.width)
             if foreGlyph.markColor is not None:
                 markColor = QColor.fromRgbF(*tuple(foreGlyph.markColor))
@@ -535,7 +522,7 @@ class PropertiesWidget(QWidget):
         self.layerSetView.setCurrentItem(currentRow, 0)
         self.layerSetView.blockSignals(False)
         if self._shouldEditLastName:
-            self.layerSetView.editItem(len(layers)-1, 1)
+            self.layerSetView.editItem(len(layers) - 1, 1)
             self._shouldEditLastName = False
 
     # ---------
@@ -632,8 +619,8 @@ class PropertiesWidget(QWidget):
             sY = self.scaleYEdit.value()
         if self.sender().property("inverted"):
             sX, sY = -sX, -sY
-        sX = 1 + .01 * sX
-        sY = 1 + .01 * sY
+        sX = 1 + 0.01 * sX
+        sY = 1 + 0.01 * sY
         # apply
         hasSelection = _glyphHasSelection(glyph)
         representation = "TruFont.FilterSelection" if hasSelection else None
@@ -836,9 +823,9 @@ class PropertiesWidget(QWidget):
         if not selectedContours:
             return
         glyph.holdNotifications()
-        xAvg_all = xMin_all + round(.5 * (xMax_all - xMin_all))
+        xAvg_all = xMin_all + round(0.5 * (xMax_all - xMin_all))
         for contour, xMin, xMax in selectedContours:
-            xAvg = xMin + round(.5 * (xMax - xMin))
+            xAvg = xMin + round(0.5 * (xMax - xMin))
             if xAvg != xAvg_all:
                 delta = xAvg_all - xAvg
                 contour.move((delta, 0))
@@ -923,9 +910,9 @@ class PropertiesWidget(QWidget):
         if not selectedContours:
             return
         glyph.holdNotifications()
-        yAvg_all = yMin_all + round(.5 * (yMax_all - yMin_all))
+        yAvg_all = yMin_all + round(0.5 * (yMax_all - yMin_all))
         for contour, yMin, yMax in selectedContours:
-            yAvg = yMin + round(.5 * (yMax - yMin))
+            yAvg = yMin + round(0.5 * (yMax - yMin))
             if yAvg != yAvg_all:
                 delta = yAvg_all - yAvg
                 contour.move((0, delta))
@@ -967,8 +954,7 @@ class PropertiesWidget(QWidget):
         name = "New layer"  # XXX: mangle
         self._shouldEditLastName = True
         layer = font.layers.newLayer(name)
-        layer.color = tuple(
-            itertools.chain(LayerColorGenerator.getColor(), (1,)))
+        layer.color = tuple(itertools.chain(LayerColorGenerator.getColor(), (1,)))
 
     def removeLayer(self):
         font = self._font
@@ -1040,9 +1026,11 @@ class PropertiesView(QScrollArea):
         # this works because QScrollArea.setWidget installs an eventFilter
         # on the widget
         if obj == self.widget() and event.type() == QEvent.Resize:
-            self.setMinimumWidth(self.widget().minimumSizeHint().width(
-                ))  # + self.verticalScrollBar().width())
+            self.setMinimumWidth(
+                self.widget().minimumSizeHint().width()
+            )  # + self.verticalScrollBar().width())
         return super().eventFilter(obj, event)
+
 
 # ---------------
 # Color generator
@@ -1056,7 +1044,7 @@ class LayerColorGenerator(ColorGenerator):
         (158, 206, 228),
         (233, 174, 200),
         (227, 191, 206),
-        (130, 223, 184)
+        (130, 223, 184),
     ]
     index = 0
 

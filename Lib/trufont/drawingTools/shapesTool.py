@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QRectF, Qt
-from PyQt5.QtGui import QPainter, QPalette, QPainterPath
-from PyQt5.QtWidgets import (
-    QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
+from PyQt5.QtGui import QPainter, QPainterPath, QPalette
+from PyQt5.QtWidgets import QApplication, QRubberBand, QStyle, QStyleOptionRubberBand
+
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import platformSpecific
 
@@ -64,7 +64,7 @@ class ShapesTool(BaseTool):
 
         # Draw ellipse if right mouse button was pressed
         if event.button() == Qt.RightButton:
-            handlePos = .55
+            handlePos = 0.55
             midX = (endX + startX) / 2
             midY = (endY + startY) / 2
             halfWidthX = (endX - startX) / 2
@@ -120,19 +120,17 @@ class ShapesTool(BaseTool):
             painter.save()
             painter.setRenderHint(QPainter.Antialiasing, False)
             painter.resetTransform()
-            widget.style().drawControl(
-                QStyle.CE_RubberBand, option, painter, widget)
+            widget.style().drawControl(QStyle.CE_RubberBand, option, painter, widget)
             painter.restore()
         else:
-            highlight = widget.palette(
-                ).color(QPalette.Active, QPalette.Highlight)
+            highlight = widget.palette().color(QPalette.Active, QPalette.Highlight)
             painter.save()
             painter.setRenderHint(QPainter.Antialiasing, False)
             pen = painter.pen()
             pen.setColor(highlight.darker(120))
             pen.setWidth(0)
             painter.setPen(pen)
-            highlight.setAlphaF(.35)
+            highlight.setAlphaF(0.35)
             painter.setBrush(highlight)
             painter.drawRect(rect)
             painter.restore()

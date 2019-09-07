@@ -1,13 +1,13 @@
-from defconQt.controls.featureCodeEditor import FeatureCodeEditor
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
+
+from defconQt.controls.featureCodeEditor import FeatureCodeEditor
 from trufont.controls.fileMessageBoxes import CloseMessageBox
 from trufont.objects import settings
 from trufont.objects.menu import Entries
 
 
 class FontFeaturesWindow(QMainWindow):
-
     def __init__(self, font=None, parent=None):
         super().__init__(parent)
 
@@ -43,7 +43,8 @@ class FontFeaturesWindow(QMainWindow):
         if font is None:
             font = self.font
         text = self.tr("{0} – {1} {2}").format(
-            title, font.info.familyName, font.info.styleName)
+            title, font.info.familyName, font.info.styleName
+        )
         self.setWindowTitle("[*]" + text)
 
     # -------------

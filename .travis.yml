@@ -1,9 +1,28 @@
 language: python
-python: 
+python:
   - "3.6"
-dist: trusty
-env:
-  - DISPLAY=:99.0 LIBOVERLAY_SCROLLBAR=0
+dist: bionic
+services:
+  # We run "headless" tests with xvfb (X Virtual Framebuffer)
+  - xvfb
+addons:
+  apt:
+    packages:
+      - libxkbcommon-x11-0  # To make Qt load for tests
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.cache/pre-commit
+
+# The following prevents Travis from running CI on pull requests that come from a
+# branch in the same repository. Without this, it will run the same CI for the
+# pull request branch _and_ the pull request itself, which makes no sense.
+branches:
+  only:
+    - master
+    # We want to build version tags as well.
+    - /^v\d+\.\d+.*$/
 
 before_install:
   # Check environment
@@ -14,20 +33,14 @@ before_install:
   - pip3 install --upgrade setuptools wheel
   - pip3 install --upgrade -r dev-requirements.txt -r requirements.txt
   # Print PyQt5 and SIP versions
-  - python -c "import sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
+  - python -c "import PyQt5.sip as sip; print(sip.__file__); print('sip version:', sip.SIP_VERSION_STR)"
   - python -c "from PyQt5 import Qt; print(Qt.__file__); print('PyQt5 version:', Qt.PYQT_VERSION_STR)"
 
 install:
-  - pip3 install -v .
-
-before_script:
-  # We run "headless" tests with xvfb (X Virtual Framebuffer)
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -e /etc/init.d/xvfb start; fi
-  # Give xvfb some time to start
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sleep 3; fi 
+  - pip3 install .
 
 script:
-  - flake8 --config=setup.cfg Lib/trufont
+  - pre-commit run -a
   - pytest
 
 deploy:

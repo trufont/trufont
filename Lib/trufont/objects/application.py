@@ -1,36 +1,42 @@
+import os
+
 from defcon.tools.notifications import NotificationCenter
 from PyQt5.QtCore import QEvent, QStandardPaths, Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QAction, QApplication, QFileDialog
+
 from trufont.controls.aboutDialog import AboutDialog
-from trufont.drawingTools.selectionTool import SelectionTool
+from trufont.drawingTools.knifeTool import KnifeTool
 from trufont.drawingTools.penTool import PenTool
 from trufont.drawingTools.rulerTool import RulerTool
-from trufont.drawingTools.knifeTool import KnifeTool
-from trufont.drawingTools.textTool import TextTool
+from trufont.drawingTools.selectionTool import SelectionTool
 from trufont.drawingTools.shapesTool import ShapesTool
-from trufont.windows.fontWindow import FontWindow
-from trufont.windows.extensionBuilderWindow import ExtensionBuilderWindow
-from trufont.windows.scriptingWindow import ScriptingWindow
-from trufont.windows.settingsWindow import SettingsWindow
+from trufont.drawingTools.textTool import TextTool
 from trufont.objects import settings
 from trufont.objects.defcon import TFont
 from trufont.objects.extension import TExtension
-from trufont.objects.menu import (
-    Entries, MAX_RECENT_FILES, globalMenuBar, MenuBar)
+from trufont.objects.menu import MAX_RECENT_FILES, Entries, MenuBar, globalMenuBar
 from trufont.tools import errorReports, glyphList, platformSpecific
-import os
+from trufont.windows.extensionBuilderWindow import ExtensionBuilderWindow
+from trufont.windows.fontWindow import FontWindow
+from trufont.windows.scriptingWindow import ScriptingWindow
+from trufont.windows.settingsWindow import SettingsWindow
 
 
 class Application(QApplication):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._currentGlyph = None
         self._currentFontWindow = None
         self._launched = False
         self._drawingTools = [
-            SelectionTool, PenTool, KnifeTool, RulerTool, ShapesTool, TextTool]
+            SelectionTool,
+            PenTool,
+            KnifeTool,
+            RulerTool,
+            ShapesTool,
+            TextTool,
+        ]
         self._extensions = []
         self.dispatcher = NotificationCenter()
         self.dispatcher.addObserver(self, "_fontWindowClosed", "fontWillClose")
@@ -94,7 +100,8 @@ class Application(QApplication):
     def postNotification(self, notification, data=None):
         dispatcher = self.dispatcher
         dispatcher.postNotification(
-            notification=notification, observable=self, data=data)
+            notification=notification, observable=self, data=data
+        )
 
     # ---------------
     # File management
@@ -107,8 +114,8 @@ class Application(QApplication):
                 glyphList_ = glyphList.parseGlyphList(glyphListPath)
             except Exception as e:
                 msg = self.tr(
-                    "The glyph list at {0} cannot "
-                    "be parsed and will be dropped.").format(glyphListPath)
+                    "The glyph list at {0} cannot " "be parsed and will be dropped."
+                ).format(glyphListPath)
                 errorReports.showWarningException(e, msg)
                 settings.removeGlyphListPath()
             else:
@@ -147,7 +154,7 @@ class Application(QApplication):
         if platformSpecific.useGlobalMenuBar():
             try:
                 self._menuBar
-            except:
+            except Exception:
                 self._menuBar = globalMenuBar()
             self._menuBar.resetState()
             return self._menuBar
@@ -161,7 +168,7 @@ class Application(QApplication):
         if menuBar is None:
             try:
                 menuBar = self._menuBar
-            except:
+            except Exception:
                 return
             menuBar.resetState()
         activeWindow = self.activeWindow()
@@ -188,18 +195,13 @@ class Application(QApplication):
         self.updateExtensions(scriptsMenu)
 
         windowMenu = menuBar.fetchMenu(Entries.Window)
-        if platformSpecific.windowCommandsInMenu(
-                ) and activeWindow is not None:
-            windowMenu.fetchAction(
-                Entries.Window_Minimize, activeWindow.showMinimized)
-            windowMenu.fetchAction(
-                Entries.Window_Minimize_All, self.minimizeAll)
-            windowMenu.fetchAction(
-                Entries.Window_Zoom, lambda: self.zoom(activeWindow))
+        if platformSpecific.windowCommandsInMenu() and activeWindow is not None:
+            windowMenu.fetchAction(Entries.Window_Minimize, activeWindow.showMinimized)
+            windowMenu.fetchAction(Entries.Window_Minimize_All, self.minimizeAll)
+            windowMenu.fetchAction(Entries.Window_Zoom, lambda: self.zoom(activeWindow))
         windowMenu.fetchAction(Entries.Window_Scripting, self.scripting)
         if self.outputWindow is not None:
-            windowMenu.fetchAction(
-                Entries.Window_Output, self.output)
+            windowMenu.fetchAction(Entries.Window_Output, self.output)
         # TODO: add a list of open windows in window menu, check active window
         # maybe add helper function that filters topLevelWidgets into windows
         # bc we need this in a few places
@@ -207,12 +209,14 @@ class Application(QApplication):
         helpMenu = menuBar.fetchMenu(Entries.Help)
         helpMenu.fetchAction(
             Entries.Help_Documentation,
-            lambda: QDesktopServices.openUrl(
-                QUrl("http://trufont.github.io/")))
+            lambda: QDesktopServices.openUrl(QUrl("http://trufont.github.io/")),
+        )
         helpMenu.fetchAction(
             Entries.Help_Report_An_Issue,
             lambda: QDesktopServices.openUrl(
-                QUrl("https://github.com/trufont/trufont/issues/new")))
+                QUrl("https://github.com/trufont/trufont/issues/new")
+            ),
+        )
         helpMenu.addSeparator()
         helpMenu.fetchAction(Entries.Help_About, self.about)
 
@@ -277,9 +281,9 @@ class Application(QApplication):
             return userPath
 
         appDataFolder = QStandardPaths.standardLocations(
-            QStandardPaths.AppLocalDataLocation)[0]
-        subFolder = os.path.normpath(os.path.join(
-            appDataFolder, name))
+            QStandardPaths.AppLocalDataLocation
+        )[0]
+        subFolder = os.path.normpath(os.path.join(appDataFolder, name))
 
         if not os.path.exists(subFolder):
             try:
@@ -291,8 +295,7 @@ class Application(QApplication):
         return subFolder
 
     def getExtensionsDirectory(self):
-        return self._getLocalDirectory(
-            "scripting/extensionsPath", "Extensions")
+        return self._getLocalDirectory("scripting/extensionsPath", "Extensions")
 
     def getScriptsDirectory(self):
         return self._getLocalDirectory("scripting/scriptsPath", "Scripts")
@@ -358,10 +361,10 @@ class Application(QApplication):
                     menuPath = entry.get("path")
                     shortcut = entry.get("shortcut")
                     parentMenu.addAction(
-                        menuName, getFunc(extension, menuPath), shortcut)
+                        menuName, getFunc(extension, menuPath), shortcut
+                    )
         menu.addSeparator()
-        menu.addAction(
-            self.tr(Entries.Scripts_Build_Extension), self.extensionBuilder)
+        menu.addAction(self.tr(Entries.Scripts_Build_Extension), self.extensionBuilder)
 
     # ----------------
     # Menu Bar entries
@@ -391,36 +394,50 @@ class Application(QApplication):
                 else:
                     ufoFormat = "metainfo.plist"
                     tfExtFormat = "info.plist"
-                fileFormats.extend([
-                    self.tr("UFO Fonts {}").format("(%s)" % ufoFormat),
-                    self.tr("TruFont Extension {}").format(
-                        "(%s)" % tfExtFormat)
-                ])
-                supportedFiles += "{} {} ".format(ufoFormat, tfExtFormat)
+                fileFormats.extend(
+                    [
+                        self.tr("UFO Fonts {}").format("(%s)" % ufoFormat),
+                        self.tr("TruFont Extension {}").format("(%s)" % tfExtFormat),
+                    ]
+                )
+                supportedFiles += f"{ufoFormat} {tfExtFormat} "
             if importFile:
                 # TODO: systematize this
-                fileFormats.extend([
-                    self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
-                    self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
-                    self.tr("ttx Font file {}").format("(*.ttx)"),
-                    self.tr("WOFF Font file {}").format("(*.woff *.woff2)"),
-                ])
+                fileFormats.extend(
+                    [
+                        self.tr("OpenType Font file {}").format("(*.otf *.ttf)"),
+                        self.tr("Type1 Font file {}").format("(*.pfa *.pfb)"),
+                        self.tr("ttx Font file {}").format("(*.ttx)"),
+                        self.tr("WOFF Font file {}").format("(*.woff *.woff2)"),
+                    ]
+                )
                 supportedFiles += "*.otf *.pfa *.pfb *.ttf *.ttx *.woff"
-            fileFormats.extend([
-                self.tr("All supported files {}").format(
-                    "(%s)" % supportedFiles.rstrip()),
-                self.tr("All files {}").format("(*.*)"),
-            ])
+            fileFormats.extend(
+                [
+                    self.tr("All supported files {}").format(
+                        "(%s)" % supportedFiles.rstrip()
+                    ),
+                    self.tr("All files {}").format("(*.*)"),
+                ]
+            )
             # dialog
             importKey = importFile and not openFile
-            state = settings.openFileDialogState(
-                ) if not importKey else settings.importFileDialogState()
-            directory = None if state else QStandardPaths.standardLocations(
-                QStandardPaths.DocumentsLocation)[0]
-            title = self.tr(
-                "Open File") if openFile else self.tr("Import File")
+            state = (
+                settings.openFileDialogState()
+                if not importKey
+                else settings.importFileDialogState()
+            )
+            directory = (
+                None
+                if state
+                else QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[
+                    0
+                ]
+            )
+            title = self.tr("Open File") if openFile else self.tr("Import File")
             dialog = QFileDialog(
-                self.activeWindow(), title, directory, ";;".join(fileFormats))
+                self.activeWindow(), title, directory, ";;".join(fileFormats)
+            )
             if state:
                 dialog.restoreState(state)
             dialog.setAcceptMode(QFileDialog.AcceptOpen)
@@ -482,9 +499,7 @@ class Application(QApplication):
             font = TFont(path)
             self._loadFont(font)
         except Exception as e:
-            msg = self.tr(
-                "There was an issue opening the font at {}.").format(
-                    path)
+            msg = self.tr("There was an issue opening the font at {}.").format(path)
             errorReports.showCriticalException(e, msg)
             return
         self.setCurrentFile(font.path)
@@ -493,8 +508,12 @@ class Application(QApplication):
         currentFont = self.currentFont()
         # Open new font in current font window if it contains an unmodified
         # empty font (e.g. after startup).
-        if currentFont is not None and currentFont.path is None and \
-                currentFont.binaryPath is None and currentFont.dirty is False:
+        if (
+            currentFont is not None
+            and currentFont.path is None
+            and currentFont.binaryPath is None
+            and currentFont.dirty is False
+        ):
             window = self._currentFontWindow
             window.setFont_(font)
         else:
@@ -526,8 +545,7 @@ class Application(QApplication):
     # Edit
 
     def settings(self):
-        if hasattr(self, '_settingsWindow') and \
-                self._settingsWindow.isVisible():
+        if hasattr(self, "_settingsWindow") and self._settingsWindow.isVisible():
             self._settingsWindow.raise_()
         else:
             self._settingsWindow = SettingsWindow()
@@ -538,7 +556,7 @@ class Application(QApplication):
     def extensionBuilder(self):
         # TODO: don't store, spawn window each time instead
         # or have tabs?
-        if not hasattr(self, '_extensionBuilderWindow'):
+        if not hasattr(self, "_extensionBuilderWindow"):
             self._extensionBuilderWindow = ExtensionBuilderWindow()
         if self._extensionBuilderWindow.isVisible():
             self._extensionBuilderWindow.raise_()
@@ -564,7 +582,7 @@ class Application(QApplication):
     def scripting(self):
         # TODO: don't store, spawn window each time instead
         # or have tabs?
-        if not hasattr(self, '_scriptingWindow'):
+        if not hasattr(self, "_scriptingWindow"):
             self._scriptingWindow = ScriptingWindow()
         if self._scriptingWindow.isVisible():
             self._scriptingWindow.raise_()
@@ -651,14 +669,23 @@ class Application(QApplication):
     def updateDrawingAttributes(self, menu):
         drawingAttributes = settings.drawingAttributes()
         elements = [
-            (Entries.View_Show_Points, (
-                "showGlyphOnCurvePoints", "showGlyphOffCurvePoints")),
-            (Entries.View_Show_Metrics, (
-                "showGlyphMetrics", "showFontVerticalMetrics",
-                "showFontPostscriptBlues")),
+            (
+                Entries.View_Show_Points,
+                ("showGlyphOnCurvePoints", "showGlyphOffCurvePoints"),
+            ),
+            (
+                Entries.View_Show_Metrics,
+                (
+                    "showGlyphMetrics",
+                    "showFontVerticalMetrics",
+                    "showFontPostscriptBlues",
+                ),
+            ),
             (Entries.View_Show_Images, ("showGlyphImage",)),
-            (Entries.View_Show_Guidelines, (
-                "showGlyphGuidelines", "showFontGuidelines")),
+            (
+                Entries.View_Show_Guidelines,
+                ("showGlyphGuidelines", "showFontGuidelines"),
+            ),
         ]
         for entry, attrs in elements:
             action = menu.fetchAction(entry)

@@ -1,6 +1,7 @@
+import os
+
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QComboBox, QFileDialog, QStyle
-import os
 
 
 class FolderComboBox(QComboBox):
@@ -46,8 +47,11 @@ class FolderComboBox(QComboBox):
             return
         # TODO: use app.activeWindow()?
         path = QFileDialog.getExistingDirectory(
-            self, self.tr("Choose Directory"), self._currentFolder,
-            QFileDialog.ShowDirsOnly)
+            self,
+            self.tr("Choose Directory"),
+            self._currentFolder,
+            QFileDialog.ShowDirsOnly,
+        )
         if path:
             self.setCurrentFolder(path)
         else:

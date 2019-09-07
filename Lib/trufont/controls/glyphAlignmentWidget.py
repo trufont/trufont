@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import QSizePolicy, QWidget
 
 
 class GlyphAlignmentWidget(QWidget):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -121,13 +120,14 @@ class GlyphAlignmentWidget(QWidget):
         padding = 1
         rect = event.rect()
         size = min(rect.height(), rect.width())
-        offset = round(.5 * (rect.width() - size))
+        offset = round(0.5 * (rect.width() - size))
         painter.translate(offset, 0)
         borderRect = rect.__class__(
             rect.left() + circleRadius + padding,
             rect.top() + circleRadius + padding,
             size - 2 * (circleRadius + padding),
-            size - 2 * (circleRadius + padding))
+            size - 2 * (circleRadius + padding),
+        )
         borderPath = QPainterPath()
         borderPath.addRect(*borderRect.getRect())
 
@@ -137,23 +137,24 @@ class GlyphAlignmentWidget(QWidget):
         for row in range(columnCount):
             for col in range(columnCount):
                 index = row * columnCount + col
-                x, y = padding + col * .5 * borderRect.width(
-                    ), padding + row * .5 * borderRect.height()
+                x, y = (
+                    padding + col * 0.5 * borderRect.width(),
+                    padding + row * 0.5 * borderRect.height(),
+                )
                 delta = selectedRadius - circleRadius
                 sx = x - delta
                 sy = y - delta
                 if self._alignment == index:
                     path = QPainterPath()
-                    path.addEllipse(
-                        sx, sy, 2 * selectedRadius, 2 * selectedRadius)
+                    path.addEllipse(sx, sy, 2 * selectedRadius, 2 * selectedRadius)
                     selectedPath = path
                 else:
                     path = QPainterPath()
-                    path.addEllipse(
-                        x, y, 2 * circleRadius, 2 * circleRadius)
+                    path.addEllipse(x, y, 2 * circleRadius, 2 * circleRadius)
                     radioPath.addPath(path)
-                self._alignmentPaths.append(QRectF(
-                    sx + offset, sy, 2 * selectedRadius, 2 * selectedRadius))
+                self._alignmentPaths.append(
+                    QRectF(sx + offset, sy, 2 * selectedRadius, 2 * selectedRadius)
+                )
         painter.drawPath(borderPath - radioPath)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillPath(radioPath, self._color)

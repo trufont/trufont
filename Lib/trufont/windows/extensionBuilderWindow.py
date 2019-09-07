@@ -1,18 +1,29 @@
-from defconQt.controls.listView import ListView
+import os
+
 from PyQt5.QtCore import QRegularExpression, QSize
 from PyQt5.QtGui import QRegularExpressionValidator
 from PyQt5.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
-    QFrame, QLabel, QLineEdit, QSizePolicy, QVBoxLayout)
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFormLayout,
+    QFrame,
+    QLabel,
+    QLineEdit,
+    QSizePolicy,
+    QVBoxLayout,
+)
+
+from defconQt.controls.listView import ListView
 from trufont.controls.folderComboBox import FolderComboBox
 from trufont.objects.extension import TExtension
-import os
 
 
 def VersionValidator(parent):
     validator = QRegularExpressionValidator(parent)
-    validator.setRegularExpression(
-        QRegularExpression("([0-9]+\\.[0-9]+\\.[0-9]+)?"))
+    validator.setRegularExpression(QRegularExpression("([0-9]+\\.[0-9]+\\.[0-9]+)?"))
     return validator
 
 
@@ -24,7 +35,6 @@ def HLine(parent):
 
 
 class ExtensionBuilderWindow(QDialog):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Extension Builder"))
@@ -45,10 +55,10 @@ class ExtensionBuilderWindow(QDialog):
 
         self.resourcesRootBox = FolderComboBox(self)
         self.resourcesRootBox.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Preferred)
+            QSizePolicy.Expanding, QSizePolicy.Preferred
+        )
         self.scriptRootBox = FolderComboBox(self)
-        self.scriptRootBox.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.scriptRootBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.scriptRootBox.currentFolderModified.connect(self.updateView)
         layout.addRow(self.tr("Resources root:"), self.resourcesRootBox)
         layout.addRow(self.tr("Script root:"), self.scriptRootBox)
@@ -58,8 +68,7 @@ class ExtensionBuilderWindow(QDialog):
         addScriptsLabel = QLabel(self.tr("Add script to main menu:"), self)
         self.addScriptsView = ListView(self)
         self.addScriptsView.setList([["", "", "", ""]])
-        self.addScriptsView.setHeaderLabels(
-            ["", "Script", "Menu name", "Shortcut"])
+        self.addScriptsView.setHeaderLabels(["", "Script", "Menu name", "Shortcut"])
         scriptLayout = QVBoxLayout()
         scriptLayout.addWidget(self.launchAtStartupBox)
         scriptLayout.addWidget(self.mainScriptDrop)
@@ -73,7 +82,8 @@ class ExtensionBuilderWindow(QDialog):
         layout.addRow(self.tr("Requires TruFont:"), self.tfVersionEdit)
 
         buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Save | QDialogButtonBox.Close, self)
+            QDialogButtonBox.Save | QDialogButtonBox.Close, self
+        )
         buttonBox.accepted.connect(self.saveFile)
         buttonBox.rejected.connect(self.close)
         layout.addRow(buttonBox)
@@ -109,7 +119,8 @@ class ExtensionBuilderWindow(QDialog):
 
         # TODO: switch to directory on platforms that need it
         dialog = QFileDialog(
-            self, self.tr("Save File"), None, "TruFont Extension (*.tfExt)")
+            self, self.tr("Save File"), None, "TruFont Extension (*.tfExt)"
+        )
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         ok = dialog.exec_()
         if ok:
@@ -118,24 +129,19 @@ class ExtensionBuilderWindow(QDialog):
 
     def updateView(self):
         path = self.scriptRootBox.currentFolder()
-        widgets = (
-            self.launchAtStartupBox,
-            self.mainScriptDrop,
-            self.addScriptsView,
-        )
+        widgets = (self.launchAtStartupBox, self.mainScriptDrop, self.addScriptsView)
         for widget in widgets:
             widget.setEnabled(path is not None)
         if path is None:
             return
         elements = []
-        for root, dirs, files in os.walk(path):
+        for root, _, files in os.walk(path):
             for file in files:
                 if os.path.splitext(file)[1] != ".py":
                     continue
-                name = os.path.join(root[len(path)+1:], file)
+                name = os.path.join(root[len(path) + 1 :], file)
                 self.mainScriptDrop.addItem(name)
-                elements.append(
-                    [False, name, None, ""])
+                elements.append([False, name, None, ""])
         self.addScriptsView.setList(elements)
         # TODO: should be done in the widget
         model = self.addScriptsView.model()

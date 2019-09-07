@@ -1,9 +1,0 @@
-include README.rst
-include INSTALL.md
-include LICENSE.GPLv3
-include LICENSE.LGPLv3
-include COPYRIGHT
-
-include requirements.txt
-
-recursive-include tests *.py

@@ -1,10 +1,12 @@
+import itertools
 from collections import OrderedDict
+
 from PyQt5.QtCore import QLineF, QPointF, Qt
 from PyQt5.QtGui import QColor, QPainterPath
 from PyQt5.QtWidgets import QApplication
+
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import bezierMath, drawing
-import itertools
 
 _path = QPainterPath()
 _path.moveTo(4.1, 19.94)
@@ -77,8 +79,7 @@ class RulerTool(BaseTool):
         line = self._rulerObject[0]
 
         # the default layer stores the width
-        defaultGlyph = self._glyph.layerSet.defaultLayer.get(
-            self._glyph.name)
+        defaultGlyph = self._glyph.layerSet.defaultLayer.get(self._glyph.name)
         if defaultGlyph is not None:
             width = defaultGlyph.width
             info = defaultGlyph.font.info
@@ -86,8 +87,15 @@ class RulerTool(BaseTool):
             descender = info.descender or -250
             for x in (0, width):
                 pt = bezierMath.lineIntersection(
-                    line.x1(), line.y1(), line.x2(), line.y2(),
-                    x, descender, x, ascender)
+                    line.x1(),
+                    line.y1(),
+                    line.x2(),
+                    line.y2(),
+                    x,
+                    descender,
+                    x,
+                    ascender,
+                )
                 if pt is not None:
                     self._appendIntersection(pt)
 
@@ -99,14 +107,28 @@ class RulerTool(BaseTool):
                 prev = segments[index - 1][-1]
                 if seg[-1].segmentType == "curve":
                     i = bezierMath.curveIntersections(
-                        line.x1(), line.y1(), line.x2(), line.y2(),
-                        prev, seg[0], seg[1], seg[2])
+                        line.x1(),
+                        line.y1(),
+                        line.x2(),
+                        line.y2(),
+                        prev,
+                        seg[0],
+                        seg[1],
+                        seg[2],
+                    )
                     for pt in i:
                         self._appendIntersection(pt)
                 elif len(seg) == 1:
                     pt = bezierMath.lineIntersection(
-                        line.x1(), line.y1(), line.x2(), line.y2(),
-                        prev.x, prev.y, seg[0].x, seg[0].y)
+                        line.x1(),
+                        line.y1(),
+                        line.x2(),
+                        line.y2(),
+                        prev.x,
+                        prev.y,
+                        seg[0].x,
+                        seg[0].y,
+                    )
                     if pt is not None:
                         self._appendIntersection(pt)
 
@@ -177,12 +199,10 @@ class RulerTool(BaseTool):
             painter.save()
             painter.setPen(color)
             drawing.drawLine(
-                painter, origin.x(), origin.y(), cursor.x(), cursor.y(), scale)
+                painter, origin.x(), origin.y(), cursor.x(), cursor.y(), scale
+            )
             # ellipses
-            ellipses = [
-                (origin.x(), origin.y()),
-                (cursor.x(), cursor.y()),
-            ]
+            ellipses = [(origin.x(), origin.y()), (cursor.x(), cursor.y())]
             path = QPainterPath()
             path.setFillRule(Qt.WindingFill)
             for x, y in itertools.chain(self._rulerPts.values(), ellipses):
@@ -204,7 +224,8 @@ class RulerTool(BaseTool):
                     d = str(round(line.length(), 1))
                     pos = (line.p1() + line.p2()) / 2
                     drawing.drawTextAtPoint(
-                        painter, d, pos.x(), pos.y(), scale, xAlign, yAlign)
+                        painter, d, pos.x(), pos.y(), scale, xAlign, yAlign
+                    )
                 line.setP1(p)
             xAlign, yAlign = "left", "top"
             dx = cursor.x() - origin.x()
@@ -213,5 +234,5 @@ class RulerTool(BaseTool):
                 xAlign = "right"
                 px = -px
             drawing.drawTextAtPoint(
-                painter, a, cursor.x() + px, cursor.y() + size, scale, xAlign,
-                yAlign)
+                painter, a, cursor.x() + px, cursor.y() + size, scale, xAlign, yAlign
+            )

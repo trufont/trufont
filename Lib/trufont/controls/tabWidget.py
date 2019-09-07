@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal, QEvent, QRect, QSize, Qt
+from PyQt5.QtCore import QEvent, QRect, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPainter, QPainterPath
 from PyQt5.QtWidgets import QSizePolicy, QToolTip, QWidget
 
@@ -21,6 +21,7 @@ class TabWidget(QWidget):
     """
     # TODO: RTL support?
     """
+
     currentTabChanged = pyqtSignal(int)
     tabRemoved = pyqtSignal(int)
 
@@ -47,8 +48,7 @@ class TabWidget(QWidget):
     def removeTab(self, index):
         del self._tabs[index]
         if self._currentTab >= index:
-            if self._currentTab == index and self._currentTab < len(
-                    self._tabs):
+            if self._currentTab == index and self._currentTab < len(self._tabs):
                 pass
             elif self._tabs:
                 self._currentTab -= 1
@@ -102,10 +102,8 @@ class TabWidget(QWidget):
 
     def _recalcTextWidth(self):
         count = len(self._tabs)
-        maxTextWidth = self.width() - count * (2 * sidePadding) - (
-            count - 1) * spacing
-        maxTextWidth -= (count - self._heroFirstTab) * (
-            crossMargin + crossSize)
+        maxTextWidth = self.width() - count * (2 * sidePadding) - (count - 1) * spacing
+        maxTextWidth -= (count - self._heroFirstTab) * (crossMargin + crossSize)
         oneWidth = maxTextWidth / count
         oneWidthInt = int(oneWidth)
         if oneWidthInt >= 148:
@@ -147,10 +145,7 @@ class TabWidget(QWidget):
     def mouseMoveEvent(self, event):
         if not hasattr(self, "_tabsRects"):
             return
-        elements = [
-            (self._closeRects, "_hoverClose"),
-            (self._tabsRects, "_hoverTab"),
-        ]
+        elements = [(self._closeRects, "_hoverClose"), (self._tabsRects, "_hoverTab")]
         changed = False
         for rects, attr in elements:
             selected = None
@@ -166,9 +161,7 @@ class TabWidget(QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            elements = [
-                (self._closeRects, self.removeTab),
-            ]
+            elements = [(self._closeRects, self.removeTab)]
             for rects, func in elements:
                 for recordIndex, rect in rects.items():
                     if QRect(*rect).contains(event.pos()):
@@ -178,8 +171,7 @@ class TabWidget(QWidget):
             super().mouseReleaseEvent(event)
 
     def leaveEvent(self, event):
-        elements = (
-            self._hoverTab, self._hoverClose)
+        elements = (self._hoverTab, self._hoverClose)
         if all(i is None for i in elements):
             return
         self._hoverTab = self._hoverClose = None
@@ -225,15 +217,16 @@ class TabWidget(QWidget):
             painter.translate(sidePadding, metrics.ascent() + topPadding)
             painter.setPen(textColor)
             painter.setRenderHint(QPainter.Antialiasing)
-            painter.drawText(0, 0, metrics.elidedText(
-                name, Qt.ElideRight, textWidth))
+            painter.drawText(0, 0, metrics.elidedText(name, Qt.ElideRight, textWidth))
             # cross
             if isClosable:
                 # 3px padding for click rect
                 self._closeRects[index] = (
                     left + textWidth + 2 * sidePadding - 3,
                     metrics.ascent() + topPadding - crossSize - 3,
-                    crossSize + 6, crossSize + 6)
+                    crossSize + 6,
+                    crossSize + 6,
+                )
                 if index == self._hoverClose:
                     color = QColor(254, 28, 28)
                 else:

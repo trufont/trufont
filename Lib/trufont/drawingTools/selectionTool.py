@@ -1,15 +1,23 @@
-from PyQt5.QtCore import QPointF, QRectF, Qt
-from PyQt5.QtGui import QColor, QPainter, QPalette, QPainterPath
-from PyQt5.QtWidgets import (
-    QMenu, QRubberBand, QStyle, QStyleOptionRubberBand, QApplication)
 from defcon import Anchor, Component, Glyph, Guideline
 from fontTools.pens.basePen import decomposeQuadraticSegment
+from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtGui import QColor, QPainter, QPainterPath, QPalette
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMenu,
+    QRubberBand,
+    QStyle,
+    QStyleOptionRubberBand,
+)
+
 from trufont.controls.glyphDialogs import AddComponentDialog, EditDialog
 from trufont.drawingTools.baseTool import BaseTool
 from trufont.tools import bezierMath, platformSpecific
 from trufont.tools.uiMethods import (
-    maybeProjectUISmoothPointOffcurve, moveUIGlyphElements,
-    unselectUIGlyphElements)
+    maybeProjectUISmoothPointOffcurve,
+    moveUIGlyphElements,
+    unselectUIGlyphElements,
+)
 
 arrowKeys = (Qt.Key_Left, Qt.Key_Up, Qt.Key_Right, Qt.Key_Down)
 navKeys = (Qt.Key_Less, Qt.Key_Greater)
@@ -46,9 +54,9 @@ def _pointWithinThreshold(x, y, curve, eps):
             pts.append((pt.x, pt.y))
         # draw
         for pt1, pt2 in decomposeQuadraticSegment(pts[1:]):
-            curvePath.quadTo(*pt1+pt2)
+            curvePath.quadTo(*pt1 + pt2)
         for pt1, pt2 in decomposeQuadraticSegment(list(reversed(pts[:-1]))):
-            curvePath.quadTo(*pt1+pt2)
+            curvePath.quadTo(*pt1 + pt2)
     return path.intersects(curvePath)
 
 
@@ -142,9 +150,10 @@ class SelectionTool(BaseTool):
         for contour in self._glyph:
             for index, point in enumerate(contour):
                 if point.segmentType == "line":
-                    prev = contour.getPoint(index-1)
+                    prev = contour.getPoint(index - 1)
                     dist = bezierMath.lineDistance(
-                        prev.x, prev.y, point.x, point.y, pos.x(), pos.y())
+                        prev.x, prev.y, point.x, point.y, pos.x(), pos.y()
+                    )
                     # TODO: somewhat arbitrary
                     if dist <= 3 * scale:
                         return [prev, point], contour
@@ -152,12 +161,12 @@ class SelectionTool(BaseTool):
                     if action == "insert":
                         continue
                     if point.segmentType == "curve":
-                        bez = [contour.getPoint(index-3+i) for i in range(4)]
+                        bez = [contour.getPoint(index - 3 + i) for i in range(4)]
                     else:
                         bez = [point]
                         i = 1
                         while i < 2 or point.segmentType is None:
-                            point = contour.getPoint(index-i)
+                            point = contour.getPoint(index - i)
                             bez.append(point)
                             i += 1
                         bez.reverse()
@@ -176,11 +185,10 @@ class SelectionTool(BaseTool):
             if action == "insert":
                 index = contour.index(point) or len(contour)
                 contour.holdNotifications()
-                for i, t in enumerate((.35, .65)):
+                for i, t in enumerate((0.35, 0.65)):
                     xt = prev.x + t * (point.x - prev.x)
                     yt = prev.y + t * (point.y - prev.y)
-                    contour.insertPoint(
-                        index+i, point.__class__((xt, yt)))
+                    contour.insertPoint(index + i, point.__class__((xt, yt)))
                 point.segmentType = "curve"
                 contour.releaseHeldNotifications()
                 return True
@@ -198,7 +206,7 @@ class SelectionTool(BaseTool):
         point = contour[index]
         if not (point.segmentType and contour.open):
             return
-        if index not in (0, len(contour)-1):
+        if index not in (0, len(contour) - 1):
             return
         widget = self.parent()
         items = widget.itemsAt(pos)
@@ -206,7 +214,7 @@ class SelectionTool(BaseTool):
             p = c[i]
             if p == point or not (p.segmentType and c.open):
                 continue
-            if i not in (0, len(c)-1):
+            if i not in (0, len(c) - 1):
                 continue
             if c != contour:
                 # TODO: blacklist single onCurve contours
@@ -295,15 +303,20 @@ class SelectionTool(BaseTool):
                 contour, index = item
                 targetContour = contour
                 if True or contour[index].segmentType is not None:  # XXX
-                    menu.addAction(self.tr("Set Start Point"),
-                                   lambda: self._setStartPoint(contour, index))
+                    menu.addAction(
+                        self.tr("Set Start Point"),
+                        lambda: self._setStartPoint(contour, index),
+                    )
             elif isinstance(item, Component):
-                menu.addAction(self.tr("Go To Glyph"),
-                               lambda: self._goToGlyph(item.baseGlyph))
-                menu.addAction(self.tr("Decompose"),
-                               lambda: self._glyph.decomposeComponent(item))
-                menu.addAction(self.tr("Decompose All"),
-                               self._glyph.decomposeAllComponents)
+                menu.addAction(
+                    self.tr("Go To Glyph"), lambda: self._goToGlyph(item.baseGlyph)
+                )
+                menu.addAction(
+                    self.tr("Decompose"), lambda: self._glyph.decomposeComponent(item)
+                )
+                menu.addAction(
+                    self.tr("Decompose All"), self._glyph.decomposeAllComponents
+                )
             elif isinstance(item, Guideline):
                 if isinstance(item.getParent(), Glyph):
                     text = self.tr("Make Global")
@@ -352,16 +365,16 @@ class SelectionTool(BaseTool):
                 offset = int(key == Qt.Key_Greater) or -1
                 newPoint = contour.getPoint(index + offset)
                 newPoint.selected = True
-                contour.postNotification(
-                    notification="Contour.SelectionChanged")
+                contour.postNotification(notification="Contour.SelectionChanged")
         elif key == Qt.Key_Return:
             self._glyph.beginUndoGroup()
             for contour in self._glyph:
                 for index, point in enumerate(contour):
                     changed = False
                     if point.segmentType is not None and point.selected:
-                        if all(contour.getPoint(
-                                index + d).segmentType for d in (-1, 1)):
+                        if all(
+                            contour.getPoint(index + d).segmentType for d in (-1, 1)
+                        ):
                             continue
                         point.smooth = not point.smooth
                         changed = True
@@ -391,8 +404,7 @@ class SelectionTool(BaseTool):
             else:
                 item.selected = True
             if contour is not None:
-                contour.postNotification(
-                    notification="Contour.SelectionChanged")
+                contour.postNotification(notification="Contour.SelectionChanged")
         else:
             action = "insert" if event.modifiers() & Qt.AltModifier else None
             segmentTuple = self._findSegmentUnderMouse(pos, action)
@@ -411,7 +423,8 @@ class SelectionTool(BaseTool):
                 self._shouldMove = True
         if self._mouseItem is not None or self._shouldMove:
             self._oldPath = self._glyph.getRepresentation(
-                "defconQt.NoComponentsQPainterPath")
+                "defconQt.NoComponentsQPainterPath"
+            )
         widget.update()
 
     def mouseMoveEvent(self, event):
@@ -437,10 +450,11 @@ class SelectionTool(BaseTool):
                         p_ = c[i]
                         if p_.segmentType is None:
                             for d in (-1, 1):
-                                p__ = c.getPoint(i+d)
+                                p__ = c.getPoint(i + d)
                                 if p__.segmentType is not None:
                                     canvasPos = self.clampToOrigin(
-                                        canvasPos, QPointF(p__.x, p__.y))
+                                        canvasPos, QPointF(p__.x, p__.y)
+                                    )
                                     p_.x = canvasPos.x()
                                     p_.y = canvasPos.y()
                                     c.dirty = True
@@ -458,12 +472,12 @@ class SelectionTool(BaseTool):
             canvasPos = event.localPos()
             self._rubberBandRect = QRectF(self._origin, canvasPos).normalized()
             items = widget.items(self._rubberBandRect)
-            points = set(c[i] for c, i in items["points"])
+            points = {c[i] for c, i in items["points"]}
             if event.modifiers() & Qt.ControlModifier:
                 points ^= self._oldSelection
             # TODO: fine-tune this more, maybe add optional args to items...
             if event.modifiers() & Qt.AltModifier:
-                points = set(pt for pt in points if pt.segmentType)
+                points = {pt for pt in points if pt.segmentType}
             if points != self._glyph.selection:
                 # TODO: doing this takes more time than by-contour
                 # discrimination for large point count
@@ -498,8 +512,7 @@ class SelectionTool(BaseTool):
                 contour, index = item
                 point = contour[index]
                 if point.segmentType is not None:
-                    if all(contour.getPoint(index + d).segmentType for d in (
-                            -1, 1)):
+                    if all(contour.getPoint(index + d).segmentType for d in (-1, 1)):
                         return
                     point.smooth = not point.smooth
                     contour.dirty = True
@@ -510,8 +523,7 @@ class SelectionTool(BaseTool):
         else:
             if self._performSegmentClick(event.localPos(), "selectContour"):
                 return
-            index = widget.indexForPoint(
-                widget.mapFromCanvas(event.localPos()))
+            index = widget.indexForPoint(widget.mapFromCanvas(event.localPos()))
             if index is not None:
                 # we're about to switch glyph, end undo group first
                 self._glyph.endUndoGroup()
@@ -556,19 +568,17 @@ class SelectionTool(BaseTool):
             painter.save()
             painter.setRenderHint(QPainter.Antialiasing, False)
             painter.resetTransform()
-            widget.style().drawControl(
-                QStyle.CE_RubberBand, option, painter, widget)
+            widget.style().drawControl(QStyle.CE_RubberBand, option, painter, widget)
             painter.restore()
         else:
-            highlight = widget.palette(
-                ).color(QPalette.Active, QPalette.Highlight)
+            highlight = widget.palette().color(QPalette.Active, QPalette.Highlight)
             painter.save()
             painter.setRenderHint(QPainter.Antialiasing, False)
             pen = painter.pen()
             pen.setColor(highlight.darker(120))
             pen.setWidth(0)
             painter.setPen(pen)
-            highlight.setAlphaF(.35)
+            highlight.setAlphaF(0.35)
             painter.setBrush(highlight)
             painter.drawRect(rect)
             painter.restore()

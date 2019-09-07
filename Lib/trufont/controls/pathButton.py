@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import QAbstractButton
 
 
 class PathButton(QAbstractButton):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         # TODO: make it TabFocus + make sure there's a corresponding visual cue
@@ -53,13 +52,14 @@ class PathButton(QAbstractButton):
         rect = event.rect()
         target = self.rect().size()
         size = self._drawingCommands[0]
-        if not size.isNull() and (size.width(
-                ) < target.width() or size.height() < target.height()):
+        if not size.isNull() and (
+            size.width() < target.width() or size.height() < target.height()
+        ):
             dx = dy = 0
             if size.width() < target.width():
-                dx = int(.5 * (target.width() - size.width()))
+                dx = int(0.5 * (target.width() - size.width()))
             if size.height() < target.height():
-                dy = int(.5 * (target.height() - size.height()))
+                dy = int(0.5 * (target.height() - size.height()))
             painter.translate(dx, dy)
         isDown = self.isDown() and self._isDownColor is not None
         if isDown and self._isDownColor.isValid():
@@ -69,7 +69,7 @@ class PathButton(QAbstractButton):
             painter.translate(0, target.height())
             painter.scale(1, -1)
         for path, cmd, color in self._drawingCommands[1:]:
-            if cmd == 'f':
+            if cmd == "f":
                 if isDown:
                     color = color.darker(120)
                 painter.save()
@@ -80,7 +80,7 @@ class PathButton(QAbstractButton):
                 if isDown:
                     color = color.darker(150)
                 painter.save()
-                if cmd[-1] == 'a':
+                if cmd[-1] == "a":
                     painter.setRenderHint(QPainter.Antialiasing)
                 pen = painter.pen()
                 pen.setColor(color)

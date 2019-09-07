@@ -1,26 +1,45 @@
+import os
+import re
+
+from PyQt5.QtCore import QEvent, QSize, QSizeF, QStandardPaths, Qt, pyqtSignal
+from PyQt5.QtGui import (
+    QBrush,
+    QColor,
+    QCursor,
+    QIcon,
+    QIntValidator,
+    QPainter,
+    QPalette,
+)
+from PyQt5.QtPrintSupport import QPrinter
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QComboBox,
+    QMenu,
+    QPushButton,
+    QSizePolicy,
+    QSlider,
+    QStyledItemDelegate,
+    QTableWidget,
+    QTableWidgetItem,
+    QToolBar,
+    QToolTip,
+    QVBoxLayout,
+    QWidgetAction,
+)
+
 from defconQt.controls.glyphLineView import GlyphLineView, GlyphLineWidget
-from defconQt.controls.glyphSequenceEdit import (
-    GlyphSequenceComboBox, GlyphSequenceEdit)
+from defconQt.controls.glyphSequenceEdit import GlyphSequenceComboBox, GlyphSequenceEdit
 from defconQt.windows.baseWindows import BaseWindow
 from trufont.objects import settings
 from trufont.objects.defcon import TGlyph
 from trufont.resources import icons_db  # noqa
-from PyQt5.QtCore import pyqtSignal, QEvent, QSize, QSizeF, QStandardPaths, Qt
-from PyQt5.QtGui import (
-    QBrush, QColor, QCursor, QIcon, QIntValidator, QPainter, QPalette)
-from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import (
-    QAbstractItemView, QApplication, QComboBox, QMenu, QPushButton,
-    QSlider, QStyledItemDelegate, QTableWidget, QTableWidgetItem,
-    QVBoxLayout, QSizePolicy, QToolBar, QToolTip, QWidgetAction)
-import os
-import re
 
 pointSizes = [50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500]
 
 
 class MetricsWindow(BaseWindow):
-
     def __init__(self, font, string=None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setAttribute(Qt.WA_DeleteOnClose, False)
@@ -28,8 +47,9 @@ class MetricsWindow(BaseWindow):
         if string is None:
             try:
                 import getpass
+
                 string = getpass.getuser()
-            except:
+            except Exception:
                 string = self.tr("World")
             string = self.tr("Hello {0}").format(string)
 
@@ -42,7 +62,8 @@ class MetricsWindow(BaseWindow):
         self.toolbar.pointSizeChanged.connect(self.lineView.setPointSize)
         self.toolbar.settingsChanged.connect(self.lineView.setSettings)
         self.toolbar.settingsChanged.connect(
-            lambda s: self.table.setKerningEnabled(s["showKerning"]))
+            lambda s: self.table.setKerningEnabled(s["showKerning"])
+        )
         self.lineView.glyphActivated.connect(self._glyphActivated)
         self.lineView.pointSizeModified.connect(self.toolbar.setPointSize)
         self.lineView.selectionModified.connect(self.table.setCurrentGlyph)
@@ -79,8 +100,9 @@ class MetricsWindow(BaseWindow):
         if title is None:
             title = self.tr("Metrics")
         if font is not None:
-            title = "%s – %s %s" % (
-                title, font.info.familyName, font.info.styleName)
+            title = "{} – {} {}".format(
+                title, font.info.familyName, font.info.styleName
+            )
         self.setWindowTitle(title)
 
     def setGlyphs(self, glyphs):
@@ -146,11 +168,8 @@ class MetricsWindow(BaseWindow):
 # Text to glyph names
 # -------------------
 
-escapeRep = {
-    "//": "/slash ",
-    "\\n": "\u2029",
-}
-escapeRep = dict((re.escape(k), v) for k, v in escapeRep.items())
+escapeRep = {"//": "/slash ", "\\n": "\u2029"}
+escapeRep = {re.escape(k): v for k, v in escapeRep.items()}
 escapeRe = re.compile("|".join(escapeRep.keys()))
 
 
@@ -180,8 +199,12 @@ def _textEscapeFunc(text):
 def _glyphs(self):
     text = self.text()
     glyphNames = self.splitTextFunction(
-        text, self._font.unicodeData, cmapFunc=_cmapFunc,
-        compileFunc=_stackCompileFunc, escapeFunc=_textEscapeFunc)
+        text,
+        self._font.unicodeData,
+        cmapFunc=_cmapFunc,
+        compileFunc=_stackCompileFunc,
+        escapeFunc=_textEscapeFunc,
+    )
     glyphs = []
     for glyphName in glyphNames:
         if glyphName == "\u2029":
@@ -205,18 +228,18 @@ class MetricsToolBar(QToolBar):
     """
     Emits *pointSizeChanged*.
     """
+
     glyphsChanged = pyqtSignal(list)
     settingsChanged = pyqtSignal(dict)
 
     def __init__(self, font, parent=None):
         super().__init__(parent)
-        auxiliaryWidth = self.fontMetrics().width('0') * 8
+        auxiliaryWidth = self.fontMetrics().width("0") * 8
         self.leftTextField = MetricsSequenceEdit(font, self)
         self.leftTextField.setMaximumWidth(auxiliaryWidth)
         self.textField = MetricsSequenceComboBox(font, self)
         # XXX: had to use Maximum because Preferred did extend the widget(?)
-        self.textField.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.textField.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
         self.rightTextField = MetricsSequenceEdit(font, self)
         self.rightTextField.setMaximumWidth(auxiliaryWidth)
         self.leftTextField.textEdited.connect(self.textField.editTextChanged)
@@ -237,17 +260,21 @@ class MetricsToolBar(QToolBar):
         self.configBar.setStyleSheet("padding: 2px 0px; padding-right: 10px")
         self.toolsMenu = QMenu(self)
         self._showKerning = self.toolsMenu.addAction(
-            self.tr("Show Kerning"), self._kerningVisibilityChanged)
+            self.tr("Show Kerning"), self._kerningVisibilityChanged
+        )
         self._showKerning.setCheckable(True)
         self._showMetrics = self.toolsMenu.addAction(
-            self.tr("Show Metrics"), self._controlsTriggered)
+            self.tr("Show Metrics"), self._controlsTriggered
+        )
         self._showMetrics.setCheckable(True)
         self.toolsMenu.addSeparator()
         self._verticalFlip = self.toolsMenu.addAction(
-            self.tr("Vertical Flip"), self._controlsTriggered)
+            self.tr("Vertical Flip"), self._controlsTriggered
+        )
         self._verticalFlip.setCheckable(True)
         self._wrapLines = self.toolsMenu.addAction(
-            self.tr("Wrap Lines"), self._controlsTriggered)
+            self.tr("Wrap Lines"), self._controlsTriggered
+        )
         self._wrapLines.setCheckable(True)
         self.toolsMenu.addSeparator()
         action = self.toolsMenu.addAction(self.tr("Line Height:"))
@@ -272,8 +299,7 @@ class MetricsToolBar(QToolBar):
         self.addWidget(self.configBar)
 
         app = QApplication.instance()
-        app.dispatcher.addObserver(
-            self, "_currentGlyphChanged", "currentGlyphChanged")
+        app.dispatcher.addObserver(self, "_currentGlyphChanged", "currentGlyphChanged")
 
         self.readSettings()
 
@@ -357,7 +383,6 @@ class MetricsToolBar(QToolBar):
 
 
 class MetricsLineWidget(GlyphLineWidget):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WA_KeyCompression)
@@ -370,11 +395,7 @@ class MetricsLineWidget(GlyphLineWidget):
         app = QApplication.instance()
         # TODO: no scale param with self._inverseScale? or getter function as
         # in glyphView?
-        data = dict(
-            widget=self,
-            painter=painter,
-            selected=selected,
-        )
+        data = dict(widget=self, painter=painter, selected=selected)
         app.postNotification("metricsViewDraw", data)
 
     # -------------
@@ -390,8 +411,7 @@ class MetricsLineWidget(GlyphLineWidget):
 
     def exportToPDF(self, path=None):
         if path is None:
-            desktop = QStandardPaths.standardLocations(
-                QStandardPaths.DesktopLocation)
+            desktop = QStandardPaths.standardLocations(QStandardPaths.DesktopLocation)
             path = os.path.join(desktop[0], "metricsWindow.pdf")
 
         printer = QPrinter(QPrinter.ScreenResolution)
@@ -460,19 +480,13 @@ class MetricsLineWidget(GlyphLineWidget):
         else:
             super().keyPressEvent(event)
         app = QApplication.instance()
-        data = dict(
-            event=event,
-            widget=self,
-        )
+        data = dict(event=event, widget=self)
         app.postNotification("metricsViewKeyPress", data)
 
     def keyReleaseEvent(self, event):
         super().keyReleaseEvent(event)
         app = QApplication.instance()
-        data = dict(
-            event=event,
-            widget=self,
-        )
+        data = dict(event=event, widget=self)
         app.postNotification("metricsViewKeyRelease", data)
 
 
@@ -495,7 +509,6 @@ class MetricsLineView(GlyphLineView):
 
 
 class MetricsTableItem(QTableWidgetItem):
-
     def setData(self, role, value):
         if role & Qt.EditRole:
             # don't set empty data
@@ -506,7 +519,6 @@ class MetricsTableItem(QTableWidgetItem):
 
 
 class MetricsTableItemDelegate(QStyledItemDelegate):
-
     def createEditor(self, parent, option, index):
         editor = super().createEditor(parent, option, index)
         # editor.setAlignment(Qt.AlignCenter)
@@ -552,8 +564,11 @@ class MetricsTable(QTableWidget):
         self.setAttribute(Qt.WA_KeyCompression)
         self.setItemDelegate(MetricsTableItemDelegate(self))
         data = [
-            None, self.tr("Width"), self.tr("Left"), self.tr("Right"),
-            self.tr("Kerning")
+            None,
+            self.tr("Width"),
+            self.tr("Left"),
+            self.tr("Right"),
+            self.tr("Kerning"),
         ]
         # Don't grey-out disabled cells
         palette = self.palette()
@@ -567,8 +582,8 @@ class MetricsTable(QTableWidget):
             self.setItem(index, 0, item)
         # let's use this one column to compute the width of others
         columnWidth = self.columnWidth(0)
-        self._cellWidth = .5 * columnWidth
-        self.setColumnWidth(0, .55 * columnWidth)
+        self._cellWidth = 0.5 * columnWidth
+        self.setColumnWidth(0, 0.55 * columnWidth)
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
         self._coloredColumn = None
@@ -682,8 +697,11 @@ class MetricsTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         coloredColumn = self._coloredColumn
         self.fillGlyphs()
-        if keepColor and coloredColumn is not None and \
-                coloredColumn < self.columnCount():
+        if (
+            keepColor
+            and coloredColumn is not None
+            and coloredColumn < self.columnCount()
+        ):
             self.colorColumn(coloredColumn)
         self.setEditTriggers(QAbstractItemView.CurrentChanged)
         self.blockSignals(False)

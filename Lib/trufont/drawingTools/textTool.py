@@ -1,8 +1,10 @@
+import unicodedata
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QKeySequence, QPainterPath
 from PyQt5.QtWidgets import QApplication
+
 from trufont.drawingTools.baseTool import BaseTool
-import unicodedata
 
 _path = QPainterPath()
 _path.moveTo(5.29, 17.96)
@@ -29,7 +31,8 @@ _path.closeSubpath()
 
 
 def _isUnicodeChar(text):
-        return len(text) and unicodedata.category(text) != "Cc"
+    return len(text) and unicodedata.category(text) != "Cc"
+
 
 # XXX: rewind the shaped string when metrics change/anchors are moved
 
@@ -126,6 +129,6 @@ class TextTool(BaseTool):
         painter.drawLine(-30, -25, 0, 0)
         painter.drawLine(0, 0, 30, -25)
         painter.drawLine(0, 0, 0, upm)
-        painter.drawLine(-30, upm+25, 0, upm)
-        painter.drawLine(0, upm, 30, upm+25)
+        painter.drawLine(-30, upm + 25, 0, upm)
+        painter.drawLine(0, upm, 30, upm + 25)
         painter.restore()

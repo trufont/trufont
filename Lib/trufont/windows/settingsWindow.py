@@ -1,17 +1,34 @@
-from defconQt.controls.listView import ListView
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog,
-    QDialogButtonBox, QFileDialog, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
-    QListWidget, QListWidgetItem, QMenu, QPlainTextEdit, QPushButton,
-    QSizePolicy, QSplitter, QVBoxLayout, QWidget)
+    QAbstractItemView,
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMenu,
+    QPlainTextEdit,
+    QPushButton,
+    QSizePolicy,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+
+from defconQt.controls.listView import ListView
 from trufont.controls.nameTabWidget import NameTabWidget
 from trufont.objects import icons, settings
 
 
 class SettingsWindow(QDialog):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Settings"))
@@ -21,8 +38,7 @@ class SettingsWindow(QDialog):
         self.tabWidget.addNamedTab(MetricsWindowTab(self))
         self.tabWidget.addNamedTab(MiscTab(self))
 
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -58,21 +74,18 @@ class SettingsWindow(QDialog):
 
 
 class GlyphSetTab(QWidget):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.name = self.tr("Glyph sets")
 
-        self.defaultGlyphSetBox = QCheckBox(
-            self.tr("Default glyph set:"), self)
+        self.defaultGlyphSetBox = QCheckBox(self.tr("Default glyph set:"), self)
         self.defaultGlyphSetDrop = QComboBox(self)
         self.defaultGlyphSetBox.toggled.connect(self.toggleGlyphSetDrop)
 
         self.glyphSetList = QListWidget(self)
         self.glyphSetList.setSortingEnabled(True)
         self.glyphSetContents = QPlainTextEdit(self)
-        self.glyphSetList.currentItemChanged.connect(
-            self.updateGlyphSetContents)
+        self.glyphSetList.currentItemChanged.connect(self.updateGlyphSetContents)
         self.glyphSetList.itemChanged.connect(self.renameGlyphSet)
         self._cachedName = None
         splitter = QSplitter(self)
@@ -87,7 +100,8 @@ class GlyphSetTab(QWidget):
         self.importButton = QPushButton(self.tr("Import"), self)
         importMenu = QMenu(self)
         importMenu.addAction(
-            self.tr("Import from Current Font"), self.importFromCurrentFont)
+            self.tr("Import from Current Font"), self.importFromCurrentFont
+        )
         self.importButton.setMenu(importMenu)
         self.glyphListBox = QCheckBox(self.tr("Glyph list path:"), self)
         self.glyphListEdit = QLineEdit(self)
@@ -156,7 +170,7 @@ class GlyphSetTab(QWidget):
 
     def importFromCurrentFont(self):
         font = QApplication.instance().currentFont()
-        name = "%s %s" % (font.info.familyName, font.info.styleName)
+        name = f"{font.info.familyName} {font.info.styleName}"
         self.addGlyphSet(font.glyphOrder, name)
 
     def toggleGlyphSetDrop(self):
@@ -181,7 +195,7 @@ class GlyphSetTab(QWidget):
             self.tr("All files {}").format("(*.*)"),
         )
         path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("Open File"), '', ";;".join(fileFormats)
+            self, self.tr("Open File"), "", ";;".join(fileFormats)
         )
         if path:
             self.glyphListEdit.setText(path)
@@ -233,7 +247,6 @@ class GlyphSetTab(QWidget):
 
 
 class MetricsWindowTab(QWidget):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.name = self.tr("Metrics Window")
@@ -294,7 +307,6 @@ class MetricsWindowTab(QWidget):
 
 
 class MiscTab(QWidget):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.name = self.tr("Misc")
@@ -304,8 +316,7 @@ class MiscTab(QWidget):
         self.markColorView.setDragEnabled(True)
         # HACK: we need a model before declaring headers
         self.markColorView.setList([])
-        self.markColorView.setHeaderLabels(
-            (self.tr("Color"), self.tr("Name")))
+        self.markColorView.setHeaderLabels((self.tr("Color"), self.tr("Name")))
         self.addItemButton = QPushButton(self)
         self.addItemButton.setIcon(icons.i_plus())
         self.addItemButton.clicked.connect(self.addItem)
@@ -314,7 +325,8 @@ class MiscTab(QWidget):
         self.removeItemButton.clicked.connect(self.removeItem)
 
         self.loadRecentFileBox = QCheckBox(
-            self.tr("Load most recent file on start"), self)
+            self.tr("Load most recent file on start"), self
+        )
 
         buttonsLayout = QHBoxLayout()
         buttonsLayout.setSizeConstraint(QHBoxLayout.SetMinimumSize)

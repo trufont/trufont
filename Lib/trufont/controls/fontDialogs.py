@@ -1,13 +1,31 @@
-from defconQt.controls.colorVignette import ColorVignette
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QGridLayout,
-    QGroupBox, QPlainTextEdit, QPushButton, QRadioButton, QVBoxLayout)
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QGridLayout,
+    QGroupBox,
+    QPlainTextEdit,
+    QPushButton,
+    QRadioButton,
+    QVBoxLayout,
+)
+
+from defconQt.controls.colorVignette import ColorVignette
 from trufont.objects import settings
 
-sortItems = ["alphabetical", "category", "unicode", "script", "suffix",
-             "decompositionBase", "weightedSuffix", "ligature"]
+sortItems = [
+    "alphabetical",
+    "category",
+    "unicode",
+    "script",
+    "suffix",
+    "decompositionBase",
+    "weightedSuffix",
+    "ligature",
+]
 
 
 class AddGlyphsDialog(QDialog):
@@ -38,8 +56,7 @@ class AddGlyphsDialog(QDialog):
         self.addAsTemplateBox.setChecked(True)
         self.sortFontBox = QCheckBox(self.tr("Sort font"), self)
         self.overrideBox = QCheckBox(self.tr("Override"), self)
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -97,7 +114,6 @@ class AddGlyphsDialog(QDialog):
 
 
 class SortDialog(QDialog):
-
     def __init__(self, desc=None, parent=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -105,8 +121,11 @@ class SortDialog(QDialog):
 
         self.smartSortBox = QRadioButton(self.tr("Canned sort"), self)
         self.smartSortBox.setToolTip(
-            self.tr("A combination of simple, complex and custom "
-                    "sorts that give optimized ordering results."))
+            self.tr(
+                "A combination of simple, complex and custom "
+                "sorts that give optimized ordering results."
+            )
+        )
         self.glyphSetBox = QRadioButton(self.tr("Glyph set"), self)
         self.glyphSetBox.toggled.connect(self.glyphSetToggle)
         self.glyphSetDrop = QComboBox(self)
@@ -142,8 +161,7 @@ class SortDialog(QDialog):
             line.append(QCheckBox(self.tr("Ascending"), self))
             line.append(QCheckBox(self.tr("Allow pseudo-unicode"), self))
             if self.customSortBox.isChecked():
-                line[0].setCurrentIndex(
-                    self.indexFromItemName(desc[i]["type"]))
+                line[0].setCurrentIndex(self.indexFromItemName(desc[i]["type"]))
                 line[1].setChecked(desc[i]["ascending"])
                 line[2].setChecked(desc[i]["allowPseudoUnicode"])
             else:
@@ -167,8 +185,7 @@ class SortDialog(QDialog):
                 btn.clicked.connect(self._deleteRow)
         self.customSortGroup.setLayout(self.customSortLayout)
 
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -229,21 +246,20 @@ class SortDialog(QDialog):
         if dialog.glyphSetBox.isChecked():
             data = dialog.glyphSetDrop.currentData()
             name = dialog.glyphSetDrop.currentText()
-            ret = [
-                dict(type="glyphSet", glyphs=data, name=name)
-            ]
+            ret = [dict(type="glyphSet", glyphs=data, name=name)]
         elif dialog.customSortBox.isChecked():
             descriptors = []
             for line in dialog.customDescriptors:
-                descriptors.append(dict(
-                    type=line[0].currentText(),
-                    ascending=line[1].isChecked(),
-                    allowPseudoUnicode=line[2].isChecked()))
+                descriptors.append(
+                    dict(
+                        type=line[0].currentText(),
+                        ascending=line[1].isChecked(),
+                        allowPseudoUnicode=line[2].isChecked(),
+                    )
+                )
             ret = descriptors
         else:
-            ret = [
-                dict(type="cannedDesign", allowPseudoUnicode=True)
-            ]
+            ret = [dict(type="cannedDesign", allowPseudoUnicode=True)]
         return (ret, result)
 
     def glyphSetToggle(self):

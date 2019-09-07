@@ -13,7 +13,7 @@ Getting started
 
    -  OS X: Install using `Homebrew <http://brew.sh/>`__:
       ``brew install python3``
-   -  Windows: Download installer from 
+   -  Windows: Download installer from
       `python.org/downloads <https://www.python.org/downloads/>`__
    -  Linux: It's usually packaged with the OS.
 
@@ -26,9 +26,9 @@ Getting started
 
       ``python3 -m venv ENV_DIR``
 
-      This creates a new ``ENV_DIR`` folder (you can choose the name 
-      you want). The ``bin`` subfolder (or ``Scripts`` if you are 
-      on Windows) contains a new ``python`` executable, and the 
+      This creates a new ``ENV_DIR`` folder (you can choose the name
+      you want). The ``bin`` subfolder (or ``Scripts`` if you are
+      on Windows) contains a new ``python`` executable, and the
       ``pip`` installer linked to that.
 
    -  Activate the newly created environment:
@@ -86,7 +86,7 @@ Here's a quick tutorial if you'd like to contribute to TruFont.
 
    Instead of copying `trufont` to your Python site-packages directory,
    this command only creates a link to the source directory inside the
-   git repository. You can then modify the code in place, or 
+   git repository. You can then modify the code in place, or
    synchronize the latest upstream changes (as in step 4) without
    having to re-install.
 

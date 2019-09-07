@@ -1,15 +1,15 @@
+import sys
+
+from PyQt5.QtCore import QObject, QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QPalette, QTextBlockFormat, QTextCursor, QTextOption
+from PyQt5.QtWidgets import QCheckBox, QMainWindow, QPlainTextEdit, QPushButton
+
 from defconQt.tools import platformSpecific as basePlatformSpecific
-from PyQt5.QtCore import pyqtSignal, QObject, QSize, Qt
-from PyQt5.QtGui import (
-    QColor, QPalette, QTextBlockFormat, QTextCursor, QTextOption)
-from PyQt5.QtWidgets import QCheckBox, QMainWindow, QPushButton, QPlainTextEdit
 from trufont.objects import settings
 from trufont.tools import platformSpecific
-import sys
 
 
 class OutputWindow(QMainWindow):
-
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Tool)
         self.outputEdit = OutputEdit(self)
@@ -74,7 +74,6 @@ class OutputWindow(QMainWindow):
 
 
 class OutputEdit(QPlainTextEdit):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFont(basePlatformSpecific.fixedFont())
@@ -95,13 +94,15 @@ class OutputEdit(QPlainTextEdit):
         fmt = endFormat.__class__()
         bgColor = self.palette().base().color()
         fgColor = self.palette().text().color()
-        bgFactor = .5
+        bgFactor = 0.5
         fgFactor = 1 - bgFactor
-        fmt.setForeground(QColor(
-            bgFactor * bgColor.red() + fgFactor * fgColor.red(),
-            bgFactor * bgColor.green() + fgFactor * fgColor.green(),
-            bgFactor * bgColor.blue() + fgFactor * fgColor.blue(),
-        ))
+        fmt.setForeground(
+            QColor(
+                bgFactor * bgColor.red() + fgFactor * fgColor.red(),
+                bgFactor * bgColor.green() + fgFactor * fgColor.green(),
+                bgFactor * bgColor.blue() + fgFactor * fgColor.blue(),
+            )
+        )
         textCursor.mergeCharFormat(fmt)
 
         textCursor.movePosition(QTextCursor.End)

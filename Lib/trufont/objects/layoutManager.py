@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QObject
+
 from defconQt.controls.glyphContextView import GlyphRecord
 
 
@@ -7,6 +8,7 @@ def _reverseEnumerate(seq):
     for obj in reversed(seq):
         n -= 1
         yield n, obj
+
 
 # TODO: support unencoded glyphs input
 # TODO: support RTL (caret)
@@ -88,7 +90,7 @@ class LayoutManager(QObject):
         if index is not None:
             glyphRecords = widget.glyphRecords()
             record = glyphRecords[index]
-            pos.setX(pos.x() + .5 * (record.xAdvance * widget.scale()))
+            pos.setX(pos.x() + 0.5 * (record.xAdvance * widget.scale()))
             halfIndex = widget.indexForPoint(pos)
             if halfIndex == index:
                 self._activeIndex = max(index - 1, 0)
@@ -103,7 +105,7 @@ class LayoutManager(QObject):
 
     def insert(self, content):
         if isinstance(content, list):
-            self._glyphList[self._caretIndex:self._caretIndex] = content
+            self._glyphList[self._caretIndex : self._caretIndex] = content
             self._caretIndex += len(content)
         else:
             self._glyphList.insert(self._caretIndex, content)
@@ -133,8 +135,9 @@ class LayoutManager(QObject):
         glyphRecords = self.parent().glyphRecords()
         glyphRecord = glyphRecords[index]
         atRightBoundary = self._caretIndex == len(self._glyphList)
-        if glyphRecord.cluster != self._caretIndex and not \
-                (atRightBoundary and index == len(glyphRecords) - 1):
+        if glyphRecord.cluster != self._caretIndex and not (
+            atRightBoundary and index == len(glyphRecords) - 1
+        ):
             return None
         dx = -glyphRecord.xOffset
         dy = -glyphRecord.yOffset
@@ -151,13 +154,13 @@ class LayoutManager(QObject):
         if engine is None:
             return None
         if hasattr(engine, "_layoutEngine"):
-            return 'compositor'
-        return 'harfbuzz'
+            return "compositor"
+        return "harfbuzz"
 
     def _shapeAndSetText(self):
         font = self._font
         records = font.engine.process(self._glyphList)
-        if self._shaper == 'compositor':
+        if self._shaper == "compositor":
             records_ = []
             index = 0
             for glyphRecord in records:

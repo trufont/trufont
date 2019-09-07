@@ -1,13 +1,15 @@
-from collections.abc import Sequence
-from PyQt5.QtGui import QImageReader, QPixmap
-from PyQt5.QtWidgets import QApplication
-from ufoLib import _getPlist, UFOLibError, writePlistAtomically
 import os
 import re
 import runpy
 import shutil
 import stat
 import traceback
+from collections.abc import Sequence
+
+import fontTools.misc.plistlib
+from fontTools.ufoLib import UFOLibError, _UFOBaseIO
+from PyQt5.QtGui import QImageReader, QPixmap
+from PyQt5.QtWidgets import QApplication
 
 LIB_PATH = "lib"
 INFO_FILENAME = "info.plist"
@@ -28,22 +30,23 @@ _infoProperties = {
     "versionPatch": "The extension major version number.",
 }
 
-_privateAttrsRe = re.compile(
-    "^[A-Za-z]{2,6}((?!-)\\.[A-Za-z0-9-]{1,63}(?<!-))+$")
+_privateAttrsRe = re.compile("^[A-Za-z]{2,6}((?!-)\\.[A-Za-z0-9-]{1,63}(?<!-))+$")
 
 
 def init_info_property(cls, name, doc):
-    setterName = '_set_{0}'.format(name)
-    getterName = '_get_{0}'.format(name)
+    setterName = f"_set_{name}"
+    getterName = f"_get_{name}"
 
     def getter(self):
         return self._info.get(name, None)
+
     getter.__name__ = getterName
 
     def setter(self, value):
         self._info[name] = value
         if value is None:
             del self._info[name]
+
     setter.__name__ = setterName
 
     prop = property(getter, setter, doc)
@@ -66,8 +69,7 @@ def remove_readonly(func, path, _):
 
 
 @init_info_properties
-class TExtension(object):
-
+class TExtension:
     def __init__(self, path=None):
         self._info = TExtensionInfo()
         self._path = path
@@ -94,8 +96,7 @@ class TExtension(object):
     def _get_tfVersion(self):
         if self.tfVersionMajor is None:
             return None
-        return Version(
-            (self.tfVersionMajor, self.tfVersionMinor, self.tfVersionPatch))
+        return Version((self.tfVersionMajor, self.tfVersionMinor, self.tfVersionPatch))
 
     def _set_tfVersion(self, value):
         if value is not None:
@@ -105,14 +106,15 @@ class TExtension(object):
         self.tfVersionMajor, self.tfVersionMinor, self.tfVersionPatch = value
 
     tfVersion = property(
-        _get_tfVersion, _set_tfVersion,
-        doc="The minimum required TruFont version number.")
+        _get_tfVersion,
+        _set_tfVersion,
+        doc="The minimum required TruFont version number.",
+    )
 
     def _get_version(self):
         if self.versionMajor is None:
             return None
-        return Version(
-            (self.versionMajor, self.versionMinor, self.versionPatch))
+        return Version((self.versionMajor, self.versionMinor, self.versionPatch))
 
     def _set_version(self, value):
         if value is not None:
@@ -121,8 +123,7 @@ class TExtension(object):
             value = (None, None, None)
         self.versionMajor, self.versionMinor, self.versionPatch = value
 
-    version = property(
-        _get_version, _set_version, doc="The extension version number.")
+    version = property(_get_version, _set_version, doc="The extension version number.")
 
     # settings and methods
 
@@ -161,14 +162,13 @@ class TExtension(object):
             libPath = os.path.join(self._path, LIB_PATH)
         writer.writeLib(libPath)
         writer.writeInfo(self._info)
-        writer.writeResources(
-            os.path.join(path, self._resourcesPath or RESOURCES_PATH))
+        writer.writeResources(os.path.join(path, self._resourcesPath or RESOURCES_PATH))
         # done
         self._path = path
 
-    def get(self, name, ext='*'):
+    def get(self, name, ext="*"):
         for file in os.listdir(self._path):
-            if ext == '*' or file.endswith(ext):
+            if ext == "*" or file.endswith(ext):
                 imageReader = QImageReader(file)
                 if imageReader:
                     return QPixmap.fromImageReader(imageReader)
@@ -181,8 +181,7 @@ class TExtension(object):
             fileName = os.path.basename(self._path)
         else:
             fileName = self.name or "Extension" + ".tfExt"
-        folder = os.path.join(
-            app.getExtensionsDirectory(), fileName)
+        folder = os.path.join(app.getExtensionsDirectory(), fileName)
         self.save(folder)
         app.registerExtension(self)
 
@@ -211,28 +210,27 @@ class TExtension(object):
         global_vars = app.globals()
         try:
             runpy.run_path(runPath, global_vars, self.name)
-        except:
+        except Exception:
             traceback.print_exc()
 
 
 class TExtensionInfo(dict):
-
     def __setitem__(self, key, value):
         if key not in _infoProperties.keys():
             if not _privateAttrsRe.match(key):
                 raise AttributeError(
-                    "Custom keys can only be added as reverse-domain names.")
+                    "Custom keys can only be added as reverse-domain names."
+                )
         super().__setitem__(key, value)
 
 
-class TExtensionReader(object):
-
+class TExtensionReader:
     def __init__(self, path):
         if not os.path.exists(path):
             raise UFOLibError("The specified extension doesn't exist.")
         self._path = path
 
-    _getPlist = _getPlist
+    _getPlist = _UFOBaseIO._getPlist
 
     def _readInfo(self):
         data = self._getPlist(INFO_FILENAME, {})
@@ -267,11 +265,11 @@ class TExtensionReader(object):
             except AttributeError:
                 raise UFOLibError(
                     "The supplied info object does not support setting a "
-                    "necessary attribute (%s)." % attr)
+                    "necessary attribute (%s)." % attr
+                )
 
 
-class TExtensionWriter(object):
-
+class TExtensionWriter:
     def __init__(self, path):
         self._path = path
         self._makeDirectory()
@@ -281,18 +279,19 @@ class TExtensionWriter(object):
         Write a property list. The errors that
         could be raised during the writing of
         a plist are unpredictable and/or too
-        large to list, so, a blind try: except:
+        large to list, so, a blind try: except Exception:
         is done. If an exception occurs, a
         UFOLibError will be raised.
         """
         self._makeDirectory()
         path = os.path.join(self._path, fileName)
         try:
-            data = writePlistAtomically(data, path)
-        except:
+            data = fontTools.misc.plistlib.dump(data, path)
+        except Exception:
             raise UFOLibError(
                 "The data for the file %s could not be written because it is "
-                "not properly formatted." % fileName)
+                "not properly formatted." % fileName
+            )
 
     def _makeDirectory(self, subDirectory=None):
         path = self._path
@@ -310,14 +309,13 @@ class TExtensionWriter(object):
         if os.path.exists(canonicalPath):
             try:
                 shutil.rmtree(canonicalPath, onerror=remove_readonly)
-            except:
+            except Exception:
                 raise UFOLibError("Couldn't delete existing script folder.")
         # move in
         try:
             shutil.copytree(origPath, canonicalPath)
-        except:
-            raise UFOLibError(
-                "Couldn't copy script files to the script folder.")
+        except Exception:
+            raise UFOLibError("Couldn't copy script files to the script folder.")
 
     def writeInfo(self, info):
         infoData = {}
@@ -336,7 +334,6 @@ class TExtensionWriter(object):
 
 
 class Version(str):
-
     def __new__(self, value):
         # convert from sequence
         if isinstance(value, Sequence) and not isinstance(value, str):

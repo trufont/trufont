@@ -1,21 +1,26 @@
 from PyQt5.QtCore import QEvent, QLocale, Qt
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWidgets import (
-    QDialog, QDialogButtonBox, QGridLayout, QLabel, QLineEdit, QListWidget,
-    QRadioButton)
+    QDialog,
+    QDialogButtonBox,
+    QGridLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QRadioButton,
+)
 
 
 class FindDialog(QDialog):
-    alphabetical = [
-        dict(type="alphabetical", allowPseudoUnicode=True)
-    ]
+    alphabetical = [dict(type="alphabetical", allowPseudoUnicode=True)]
 
     def __init__(self, currentGlyph, parent=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
         self.setWindowTitle(self.tr("Find…"))
         self._sortedGlyphNames = currentGlyph.font.unicodeData.sortGlyphNames(
-            currentGlyph.layer.keys(), self.alphabetical)
+            currentGlyph.layer.keys(), self.alphabetical
+        )
 
         layout = QGridLayout(self)
         self.glyphLabel = QLabel(self.tr("Glyph:"), self)
@@ -32,8 +37,7 @@ class FindDialog(QDialog):
         self.glyphList = QListWidget(self)
         self.glyphList.itemDoubleClicked.connect(self.accept)
 
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -75,11 +79,17 @@ class FindDialog(QDialog):
         else:
             text = self.glyphEdit.text()
             if beginsWith:
-                glyphs = [glyphName for glyphName in self._sortedGlyphNames
-                          if glyphName and glyphName.startswith(text)]
+                glyphs = [
+                    glyphName
+                    for glyphName in self._sortedGlyphNames
+                    if glyphName and glyphName.startswith(text)
+                ]
             else:
-                glyphs = [glyphName for glyphName in self._sortedGlyphNames
-                          if glyphName and text in glyphName]
+                glyphs = [
+                    glyphName
+                    for glyphName in self._sortedGlyphNames
+                    if glyphName and text in glyphName
+                ]
             self.glyphList.addItems(glyphs)
         self.glyphList.setCurrentRow(0)
 
@@ -97,7 +107,6 @@ class FindDialog(QDialog):
 
 
 class AddComponentDialog(FindDialog):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle(self.tr("Add component…"))
@@ -106,7 +115,6 @@ class AddComponentDialog(FindDialog):
 
 
 class LayerActionsDialog(QDialog):
-
     def __init__(self, currentGlyph, parent=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -123,14 +131,12 @@ class LayerActionsDialog(QDialog):
         copyBox.setChecked(True)
 
         self.layersList = QListWidget(self)
-        self.layersList.addItems(
-            layer.name for layer in self._workableLayers)
+        self.layersList.addItems(layer.name for layer in self._workableLayers)
         if self.layersList.count():
             self.layersList.setCurrentRow(0)
         self.layersList.itemDoubleClicked.connect(self.accept)
 
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
@@ -164,7 +170,6 @@ class LayerActionsDialog(QDialog):
 
 
 class EditDialog(QDialog):
-
     def __init__(self, parent=None, item=None):
         super().__init__(parent)
         self.setWindowModality(Qt.WindowModal)
@@ -183,8 +188,7 @@ class EditDialog(QDialog):
         self.yEdit = QLineEdit(self)
         self.yEdit.setValidator(validator)
 
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
