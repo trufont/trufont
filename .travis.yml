@@ -2,6 +2,10 @@ language: python
 python:
   - "3.6"
 dist: bionic
+env:
+  global:
+  - TWINE_USERNAME="anthrotype"
+  - secure: Wq6SwEAQVkWo7CgTNBFUYbYbN9GkEA8TcuJi7rdugruRHu5dvv2fHOCMzgG33xYDlBCJbb3KuAviLylpeNtDe+M34mcki3G2R9ovOxx9g2l213wklzGRfdovHAHo8kujRLPNWz/Qk5f8gkLXv6HrZGFZ37UTx9EKYJ6/K0oHPhJ2jlKLp/mJT/pxjauLewJvrcCRCg4hbJXTMY1Skk3ebpxAHv+7MqtWxeCgAtNUvL8LH4euCD6ZtqgAZY2kWaBfB0yQPbQiTvPgaq+N3YMOsq/FibtWrZC10CUcOFM0zLL6HyNKDIWkYxZ7vfFAOIB5lMD2Mul6MNBP4u6Im5wwg1tNQ+GaK/a7clXmuZ7y8QyxtEXHi7KaEYt4s1ZB1y79cctnpRY1j+NNoYrooyfCsy9ND7Gbw/zKHxmhIjZcmUd2JQqq2azkOZeFzYyyued+ZmOyF5+KrlOy418/yCQA4n27qclewjh3GpoEM9zogZAYcbtJGtEpiRCKCrYiDaIl81HwVvfgHShF3f8EY+AlASuor7yY+4NSVG0oVg3VXrbf7cLJ+NKPv5Hadu4URl7oPApMujC0svA83qiqzfbyxiQJiyAPp2rXTWtP5JSmV/+znlFFSyQ2Bm877YA/hdFk4UviZ+cBD2nx3tUFJvHRqGroypMX/uR1BI52s+u9ia0=
 services:
   # We run "headless" tests with xvfb (X Virtual Framebuffer)
   - xvfb
@@ -43,20 +47,17 @@ script:
   - pre-commit run -a
   - pytest
 
+# deploy sdist and wheel packages to PyPI on tags
+after_success:
+- |
+  if [[ $TRAVIS_TAG && $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
+    python -m pip install --upgrade pip setuptools setuptools_scm wheel twine
+    git fetch --unshallow
+    python setup.py sdist bdist_wheel
+    python -m twine upload dist/*.zip dist/*.whl
+  fi
+
 deploy:
-  # deploy sdist and wheel packages to PyPI on tags
-  - provider: pypi
-    server: https://upload.pypi.org/legacy/
-    on:
-      repo: trufont/trufont
-      tags: true
-      all_branches: true
-      python: 3.6
-    user: anthrotype
-    password:
-      secure: M/9CZvaOp6q61GpRTGur4XmWomTs+2d89k89Fk7tPH0zedQ0czEKzNu0UFCWLhvGa+cCvYj0fWOUIaoLngfxqgAHBovAKXryRdPgJIoBp2XOTJiSbHWoGOitzxQPrsxtK1H9HgaPCaKiey1Gbh5/GhA/PCJfzW6ZhU0PZ5QIF6l3xj1dtyRjXia87KxUIxNuRgLwiY0Mu6lM70qNdbAGKoXWm5vcIv+ne1KCS4O5e0Uztp2Sftb022Z9AT5wBEGlDPtZjMt3xNhY0FDZaj+fciynIr/KwEOSemU+fK50KoDQe4RXpOvQWoiQKafxBtcI/eCmw0ENYYTmzeypsqu3QM7iYrGBnYeruRrRsxnjI592Pm1kbATzJdg2sm2S8X4ZryfanlwuAjTvEqIwNY3nsvf8MJi7FLI5REYsf3DBTyEUKjpJJ1M8OzihLell5hPGl85GxxxWR+2VPW4V/pYShDaGQxL26fx41PLAKr7KOh6c00/iy+nsSDyQXo/JBPmzCbsM2KQWa8kPoP4jDSiy4vhHaN0t6E6kPya9ZlzCxSd20J147zja3vfw547Aira9BdHOIsTy13+gk4kZhinbb88jQSAvq/6YpBN0dNYNl2FlGt7C4p5MLc1jYrbbqPVS11Vin5CF1Iq7mBQmxDqf7pul44ylL8kLDFH6La9yP6Y=
-    distributions: sdist bdist_wheel
-    skip_upload_docs: true
   # also create a Github Release with the current tag
   - provider: releases
     api_key:
