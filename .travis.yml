@@ -56,14 +56,3 @@ after_success:
     python setup.py sdist bdist_wheel
     python -m twine upload dist/*.zip dist/*.whl
   fi
-
-deploy:
-  # also create a Github Release with the current tag
-  - provider: releases
-    api_key:
-      secure: A/a0IpTz1lCcrASVwriV0iLBNe8Q2gMQYOPS+8QHjS9O1R/hCL42CNc5h10zHN1zPrl19Rkocm4bEQIm1ExFqCF384dSv13LOlELX62fnDy8+rGRh7LysCPCEpk9PCngt8H4rtCXPJPE4P3guVfLLjWOCbT3vFm2IgwOTSOKARSfx2y4Akfas8w42zDqzsXCw1eMD0yGs6PIeqsJfEx3BBHjNvs7ikV6dZMAO1OaakQDdKIyPzQXiHAzJ0U5CZL46oVlXIHeqsO3yFXH/sxFNH1uPbK7stZy0Q/6WHB9a0dnDwR2QFMa8jaaAJItgeC3ppoWq4rMaybamvWUREzcI3XRLGuJwYWRZNTVjMKjasgmY0scWmtEwFsZxr9IBRjftq1jsBwp1pPW2NwE0uFmhkJJDua7fZ9qpnzvG+BVN7+u4+GtAu1l7SWWYde8WAXC3IKYY7kpgu14STAAGlOguvR/s1d1yx2vrj4jZoALsQRGjuhPv9twW6b1RPmHFupuiX2a3qbd3cm/LuTbSC9nPQn0NPdQ5kx6xodoEpZgh7IDcrIMG7tzG0VxtYiwTlJZVbAMBdTMojmZyRTq4+timVwsKMkBZid1ITbvimUnO6ycV77GYXPNoZQWkeKgtsR4VBPdDyI2/e9trrqAYqDIb+5zEpkJMBCc6wZZbYcmZo8=
-    on:
-      repo: trufont/trufont
-      tags: true
-      all_branches: true
-      python: 3.6
