@@ -8,7 +8,7 @@ appdirs==1.4.3            # via fs
 booleanoperations==0.8.2
 brotli==1.0.7
 compreffor==0.4.6.post1   # via ufo2ft
-cu2qu==1.6.5              # via ufo2ft
+cu2qu==1.6.6              # via ufo2ft
 defcon==0.6.0
 fonttools[ufo,unicode]==3.44.0
 fs==2.4.10                # via fonttools
