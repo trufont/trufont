@@ -86,6 +86,15 @@ class FontInfoWindow(QDialog):
     resizeEvent = moveEvent
 
 
+class QSpinBoxZeroPadded(QSpinBox):
+    def __init__(self, parent, digits):
+        self.padding_digits = digits
+        super().__init__(parent)
+
+    def textFromValue(self, value):
+        return str(value).zfill(self.padding_digits)
+
+
 class TabWidget(QWidget):
     def __init__(self, font, parent=None, name=None):
         self.name = name
@@ -97,6 +106,7 @@ class TabWidget(QWidget):
             "s+": self.loadMultilineString,
             "i": self.loadInteger,
             "pi": self.loadPositiveInteger,
+            "zpi": self.loadZeroPaddedPositiveInteger,
             "if": self.loadIntegerFloat,
             "pif": self.loadPositiveIntegerFloat,
             "if+": self.loadIntegerFloatList,
@@ -107,6 +117,7 @@ class TabWidget(QWidget):
             "s+": self.storeMultilineString,
             "i": self.storeInteger,
             "pi": self.storePositiveInteger,
+            "zpi": self.storePositiveInteger,
             "if": self.storeIntegerFloat,
             "pif": self.storePositiveIntegerFloat,
             "if+": self.storeIntegerFloatList,
@@ -195,6 +206,16 @@ class TabWidget(QWidget):
         if value is None:
             value = 0
         edit = QSpinBox(self)
+        edit.setRange(0, 2147483647)
+        edit.setValue(value)
+        setattr(self, attribute + "Edit", edit)
+        return edit
+
+    def loadZeroPaddedPositiveInteger(self, attribute, digits=3):
+        value = getattr(self.font.info, attribute)
+        if value is None:
+            value = 0
+        edit = QSpinBoxZeroPadded(self, digits)
         edit.setRange(0, 2147483647)
         edit.setValue(value)
         setattr(self, attribute + "Edit", edit)
@@ -337,7 +358,7 @@ class GeneralTab(TabWidget):
         versionLayout.setStretch(0, 1)
         versionDotLabel = QLabel(".", self)
         versionLayout.addWidget(versionDotLabel)
-        editMinor = self.load("versionMinor", "pi")
+        editMinor = self.load("versionMinor", "zpi")
         versionLayout.addWidget(editMinor)
         versionLayout.setStretch(2, 1)
         g1FormLayout.addRow(versionLabel, versionLayout)
