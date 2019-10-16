@@ -10,7 +10,7 @@ brotli==1.0.7
 compreffor==0.4.6.post1   # via ufo2ft
 cu2qu==1.6.6              # via ufo2ft
 defcon==0.6.0
-fonttools[unicode,ufo]==4.0.2
+fonttools[ufo,unicode]==3.44.0
 fs==2.4.11                # via fonttools
 hsluv==0.0.2
 pyclipper==1.1.0.post1    # via booleanoperations
