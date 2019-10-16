@@ -500,7 +500,61 @@ class OpenTypeTabTest(TabTestCase):
 
     # TODO: Panose
 
-    # TODO: ulUnicodeRange, ulCodePageRange
+    # TODO: ulUnicodeRange
+
+    def test_ulCodePageRange(self):
+        codePageRangesEdit = self.tab.codePageRangesEdit
+        codePageRangesEdit.setEnabled(True)
+        model = codePageRangesEdit.model()
+        for index in range(model.rowCount()):
+            model.item(index).setCheckState(Qt.Checked)
+        self.fontInfo.accept()
+
+        codePageRanges = self.font.info.openTypeOS2CodePageRanges
+        self.assertEqual(
+            codePageRanges,
+            [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                29,
+                30,
+                31,
+                48,
+                49,
+                50,
+                51,
+                52,
+                53,
+                54,
+                55,
+                56,
+                57,
+                58,
+                59,
+                60,
+                61,
+                62,
+                63,
+            ],
+        )
+
+        codePageRangesEdit.setEnabled(False)
+        self.fontInfo.accept()
+
+        self.assertIsNone(self.font.info.openTypeOS2CodePageRanges)
 
     def test_sTypoAscender(self):
         self.checkInteger("openTypeOS2TypoAscender")
