@@ -1563,7 +1563,7 @@ class OpenTypeTab(TabWidget):
                     elif index > 14:
                         bit += 14
                     elif index > 8:
-                        bit += 6
+                        bit += 7
                     codePageRanges.append(bit)
             font.info.openTypeOS2CodePageRanges = codePageRanges
         else:
