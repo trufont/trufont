@@ -1327,7 +1327,7 @@ class OpenTypeTab(TabWidget):
             elif index > 14:
                 bit += 14
             elif index > 8:
-                bit += 6
+                bit += 7
             if codePageRanges is not None and bit in codePageRanges:
                 item.setCheckState(Qt.Checked)
             else:
