@@ -40,6 +40,7 @@ class GlyphContextView(QWidget):
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.setFocusPolicy(Qt.ClickFocus)
         self.grabGesture(Qt.PanGesture)
+        self.grabGesture(Qt.PinchGesture)
         self._drawingOffset = QPoint()
         self._fitViewport = True
         self._glyphRecords = []
@@ -765,9 +766,18 @@ class GlyphContextView(QWidget):
 
     def event(self, event):
         if event.type() == QEvent.Gesture:
-            gesture = event.gesture(Qt.PanGesture)
-            if gesture:
-                self._drawingOffset += gesture.delta()
+            # Handle pan gestures
+            panGesture = event.gesture(Qt.PanGesture)
+            if panGesture:
+                self._drawingOffset += panGesture.delta()
+
+            # Handle pinch gestures
+            pinchGesture = event.gesture(Qt.PinchGesture)
+            if pinchGesture:
+                newScale = self._scale * pinchGesture.scaleFactor()
+                self.zoom(newScale, "cursor")
+                self.pointSizeModified.emit(self._impliedPointSize)
+
             return True
         return super().event(event)
 
