@@ -775,7 +775,7 @@ class GlyphContextView(QWidget):
             pinchGesture = event.gesture(Qt.PinchGesture)
             if pinchGesture:
                 newScale = self._scale * pinchGesture.scaleFactor()
-                self.zoom(newScale, 'cursor')
+                self.zoom(newScale, "cursor")
                 self.pointSizeModified.emit(self._impliedPointSize)
 
             return True
