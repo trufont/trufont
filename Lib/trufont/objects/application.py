@@ -389,11 +389,10 @@ class Application(QApplication):
             if openFile:
                 packageAsFile = platformSpecific.treatPackageAsFile()
                 if packageAsFile:
-                    ufoFormat = "*.ufo"
                     tfExtFormat = "*.tfExt"
                 else:
-                    ufoFormat = "metainfo.plist"
                     tfExtFormat = "info.plist"
+                ufoFormat = "metainfo.plist"
                 fileFormats.extend(
                     [
                         self.tr("UFO Fonts {}").format("(%s)" % ufoFormat),
