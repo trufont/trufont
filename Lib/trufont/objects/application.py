@@ -674,6 +674,10 @@ class Application(QApplication):
                 ("showGlyphOnCurvePoints", "showGlyphOffCurvePoints"),
             ),
             (
+                Entries.View_Show_Point_Coordinates,
+                ("showGlyphPointCoordinates",),
+            ),
+            (
                 Entries.View_Show_Metrics,
                 (
                     "showGlyphMetrics",

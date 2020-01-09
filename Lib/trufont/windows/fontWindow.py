@@ -264,6 +264,7 @@ class FontWindow(BaseWindow):
         viewMenu.fetchAction(Entries.View_Layer_Down, lambda: self.layerOffset(1))
         viewMenu.addSeparator()
         viewMenu.fetchAction(Entries.View_Show_Points)
+        viewMenu.fetchAction(Entries.View_Show_Point_Coordinates)
         viewMenu.fetchAction(Entries.View_Show_Metrics)
         viewMenu.fetchAction(Entries.View_Show_Images)
         viewMenu.fetchAction(Entries.View_Show_Guidelines)
