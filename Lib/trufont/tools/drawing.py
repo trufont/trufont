@@ -564,22 +564,9 @@ def drawGlyphPoints(
         font.setPointSize(7)
         painter.setFont(font)
         for x, y in points:
-            posX = x
-            # TODO: We use + here because we align on top. Consider abstracting
-            # yOffset.
-            posY = y + 6 * scale
-            x = round(x, 1)
-            if int(x) == x:
-                x = int(x)
-            y = round(y, 1)
-            if int(y) == y:
-                y = int(y)
-            text = "%d  %d" % (x, y)
-            drawTextAtPoint(
-                painter, text, posX, posY, scale, xAlign="center", yAlign="top"
-            )
+            drawPointText(painter, x, y, scale)
         painter.restore()
-    # coordinates
+    # handle coordinates
     if drawHandleCoordinates:
         painter.save()
         painter.setPen(otherColor)
@@ -587,19 +574,25 @@ def drawGlyphPoints(
         font.setPointSize(7)
         painter.setFont(font)
         for x, y in handles:
-            posX = x
-            posY = y + 6 * scale
-            x = round(x, 1)
-            if int(x) == x:
-                x = int(x)
-            y = round(y, 1)
-            if int(y) == y:
-                y = int(y)
-            text = "%d  %d" % (x, y)
-            drawTextAtPoint(
-                painter, text, posX, posY, scale, xAlign="center", yAlign="top"
-            )
+            drawPointText(painter, x, y, scale)
         painter.restore()
+
+
+def drawPointText(painter, x, y, scale):
+    posX = x
+    # TODO: We use + here because we align on top. Consider abstracting
+    # yOffset.
+    posY = y + 6 * scale
+    x = round(x, 1)
+    if int(x) == x:
+        x = int(x)
+    y = round(y, 1)
+    if int(y) == y:
+        y = int(y)
+    text = "%d  %d" % (x, y)
+    drawTextAtPoint(
+        painter, text, posX, posY, scale, xAlign="center", yAlign="top"
+    )
 
 
 # Anchors
