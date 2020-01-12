@@ -678,6 +678,10 @@ class Application(QApplication):
                 ("showGlyphPointCoordinates",),
             ),
             (
+                Entries.View_Show_Bezier_Handles_Coordinates,
+                ("showGlyphBezierHandlesCoordinates",),
+            ),
+            (
                 Entries.View_Show_Metrics,
                 (
                     "showGlyphMetrics",

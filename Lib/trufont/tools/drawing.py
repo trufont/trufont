@@ -377,6 +377,7 @@ def drawGlyphPoints(
     drawOnCurves=True,
     drawOffCurves=True,
     drawCoordinates=False,
+    drawHandleCoordinates=False,
     drawSelection=True,
     drawBluesMarkers=True,
     onCurveColor=None,
@@ -400,6 +401,7 @@ def drawGlyphPoints(
     # get the outline data
     outlineData = glyph.getRepresentation("defconQt.OutlineInformation")
     points = []
+    handles = []
     # blue zones markers
     if drawBluesMarkers and drawOnCurves:
         font = glyph.font
@@ -446,6 +448,7 @@ def drawGlyphPoints(
         painter.save()
         painter.setPen(otherColor)
         for x1, y1, x2, y2 in outlineData["bezierHandles"]:
+            handles.append((x2, y2))
             drawLine(painter, x1, y1, x2, y2)
         painter.restore()
     # on curve
@@ -564,6 +567,27 @@ def drawGlyphPoints(
             posX = x
             # TODO: We use + here because we align on top. Consider abstracting
             # yOffset.
+            posY = y + 6 * scale
+            x = round(x, 1)
+            if int(x) == x:
+                x = int(x)
+            y = round(y, 1)
+            if int(y) == y:
+                y = int(y)
+            text = "%d  %d" % (x, y)
+            drawTextAtPoint(
+                painter, text, posX, posY, scale, xAlign="center", yAlign="top"
+            )
+        painter.restore()
+    # coordinates
+    if drawHandleCoordinates:
+        painter.save()
+        painter.setPen(otherColor)
+        font = painter.font()
+        font.setPointSize(7)
+        painter.setFont(font)
+        for x, y in handles:
+            posX = x
             posY = y + 6 * scale
             x = round(x, 1)
             if int(x) == x:

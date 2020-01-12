@@ -132,6 +132,7 @@ class Entries:
     View_Layer_Down = "Layer &Down"
     View_Show_Points = "Show P&oints"
     View_Show_Point_Coordinates = "Show Point &Coordinates"
+    View_Show_Bezier_Handles_Coordinates = "Show &Bezier Handles Coordinates"
     View_Show_Metrics = "Show &Metrics"
     View_Show_Images = "Show &Images"
     View_Show_Guidelines = "Show &Guidelines"
@@ -254,6 +255,7 @@ def globalMenuBar():
     viewMenu.addSeparator()
     viewMenu.fetchAction(Entries.View_Show_Points)
     viewMenu.fetchAction(Entries.View_Show_Point_Coordinates)
+    viewMenu.fetchAction(Entries.View_Show_Bezier_Handles_Coordinates)
     viewMenu.fetchAction(Entries.View_Show_Metrics)
     viewMenu.fetchAction(Entries.View_Show_Images)
     viewMenu.fetchAction(Entries.View_Show_Guidelines)
