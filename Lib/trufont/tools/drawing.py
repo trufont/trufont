@@ -569,7 +569,7 @@ def drawGlyphPoints(
     # handle coordinates
     if drawHandleCoordinates:
         painter.save()
-        painter.setPen(otherColor)
+        painter.setPen(otherColor.lighter(135))
         font = painter.font()
         font.setPointSize(7)
         painter.setFont(font)
