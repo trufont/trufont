@@ -21,12 +21,12 @@ Dependencies can be fetched with `pip install -r requirements.txt`
 - cython & [booleanOperations]
 - [fontTools]
 - [ufoLib]
-- [defcon, python3-ufo3 branch]
+- [defcon]
 
 Optional:
 
-- [extractor, python3-ufo3 branch]
-- [ufo2fdk, python3-ufo3 branch]
+- [extractor]
+- [ufo2fdk]
 
 ## Install notes
 
@@ -44,7 +44,7 @@ Optional:
 [booleanOperations]: https://github.com/typemytype/booleanOperations
 [fontTools]: https://github.com/behdad/fonttools
 [ufoLib]: https://github.com/unified-font-object/ufoLib
-[defcon, python3-ufo3 branch]: https://github.com/trufont/defcon
-[extractor, python3-ufo3 branch]: https://github.com/trufont/extractor
-[ufo2fdk, python3-ufo3 branch]: https://github.com/trufont/ufo2fdk
+[defcon]: https://github.com/robotools/defcon
+[extractor]: https://github.com/robotools/extractor
+[ufo2fdk]: https://github.com/robotools/ufo2fdk
 [Homebrew]: http://brew.sh/
