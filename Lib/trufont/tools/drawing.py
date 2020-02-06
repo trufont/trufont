@@ -378,6 +378,7 @@ def drawGlyphPoints(
     drawOffCurves=True,
     drawCoordinates=False,
     drawHandleCoordinates=False,
+    drawCoordinatesOnSelection=False,
     drawSelection=True,
     drawBluesMarkers=True,
     onCurveColor=None,
@@ -507,6 +508,8 @@ def drawGlyphPoints(
                 smoothPaths[selected].addPath(pointPath)
             else:
                 paths[selected].addPath(pointPath)
+            if drawCoordinatesOnSelection and selected and not drawCoordinates:
+                drawPointText(painter, x, y, scale, ishandle=False)
         path, selectedPath = paths
         smoothPath, selectedSmoothPath = smoothPaths
         # fill
@@ -548,6 +551,8 @@ def drawGlyphPoints(
                 selectedPath.addPath(pointPath)
             else:
                 path.addPath(pointPath)
+            if drawCoordinatesOnSelection and selected and not drawHandleCoordinates:
+                drawPointText(painter, x, y, scale, ishandle=True)
         pen = QPen(offCurveColor)
         pen.setWidthF(2.5 * scale)
         painter.save()
@@ -559,26 +564,26 @@ def drawGlyphPoints(
     # coordinates
     if drawCoordinates:
         painter.save()
-        painter.setPen(otherColor)
-        font = painter.font()
-        font.setPointSize(7)
-        painter.setFont(font)
         for x, y in points:
-            drawPointText(painter, x, y, scale)
+            drawPointText(painter, x, y, scale, ishandle=False)
         painter.restore()
     # handle coordinates
     if drawHandleCoordinates:
         painter.save()
-        painter.setPen(otherColor.lighter(135))
-        font = painter.font()
-        font.setPointSize(7)
-        painter.setFont(font)
         for x, y in handles:
-            drawPointText(painter, x, y, scale)
+            drawPointText(painter, x, y, scale, ishandle=True)
         painter.restore()
 
 
-def drawPointText(painter, x, y, scale):
+def drawPointText(painter, x, y, scale, ishandle=False):
+    color = defaultColor("glyphOtherPoints")
+    font = painter.font()
+    font.setPointSize(7)
+    if ishandle:
+        color = color.lighter(135)
+    painter.setPen(color)
+    painter.setFont(font)
+
     posX = x
     # TODO: We use + here because we align on top. Consider abstracting
     # yOffset.
@@ -590,6 +595,7 @@ def drawPointText(painter, x, y, scale):
     if int(y) == y:
         y = int(y)
     text = "%d  %d" % (x, y)
+
     drawTextAtPoint(
         painter, text, posX, posY, scale, xAlign="center", yAlign="top"
     )

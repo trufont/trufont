@@ -191,6 +191,9 @@ class Application(QApplication):
         viewMenu = menuBar.fetchMenu(Entries.View)
         self.updateDrawingAttributes(viewMenu)
 
+        coordinatesSubmenu = viewMenu.fetchMenu(Entries.View_Show_Coordinates)
+        self.updateDrawingAttributes(coordinatesSubmenu)
+
         scriptsMenu = menuBar.fetchMenu(Entries.Scripts)
         self.updateExtensions(scriptsMenu)
 
@@ -674,6 +677,10 @@ class Application(QApplication):
                 ("showGlyphOnCurvePoints", "showGlyphOffCurvePoints"),
             ),
             (
+                Entries.View_Show_Coordinates_When_Selected,
+                ("showGlyphCoordinatesWhenSelected",),
+            ),
+            (
                 Entries.View_Show_Point_Coordinates,
                 ("showGlyphPointCoordinates",),
             ),
@@ -689,7 +696,10 @@ class Application(QApplication):
                     "showFontPostscriptBlues",
                 ),
             ),
-            (Entries.View_Show_Images, ("showGlyphImage",)),
+            (
+                Entries.View_Show_Images,
+                ("showGlyphImage",),
+            ),
             (
                 Entries.View_Show_Guidelines,
                 ("showGlyphGuidelines", "showFontGuidelines"),
