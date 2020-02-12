@@ -58,6 +58,7 @@ class GlyphContextView(QWidget):
             showGlyphOffCurvePoints=True,
             showGlyphPointCoordinates=False,
             showGlyphBezierHandlesCoordinates=False,
+            showGlyphCoordinatesWhenSelected=False,
             showGlyphAnchors=True,
             showGlyphMetrics=True,
             showGlyphGuidelines=True,
