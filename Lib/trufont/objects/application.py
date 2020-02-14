@@ -680,10 +680,7 @@ class Application(QApplication):
                 Entries.View_Show_Coordinates_When_Selected,
                 ("showGlyphCoordinatesWhenSelected",),
             ),
-            (
-                Entries.View_Show_Point_Coordinates,
-                ("showGlyphPointCoordinates",),
-            ),
+            (Entries.View_Show_Point_Coordinates, ("showGlyphPointCoordinates",)),
             (
                 Entries.View_Show_Bezier_Handles_Coordinates,
                 ("showGlyphBezierHandlesCoordinates",),
@@ -696,10 +693,7 @@ class Application(QApplication):
                     "showFontPostscriptBlues",
                 ),
             ),
-            (
-                Entries.View_Show_Images,
-                ("showGlyphImage",),
-            ),
+            (Entries.View_Show_Images, ("showGlyphImage",)),
             (
                 Entries.View_Show_Guidelines,
                 ("showGlyphGuidelines", "showFontGuidelines"),

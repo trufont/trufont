@@ -596,9 +596,7 @@ def drawPointText(painter, x, y, scale, ishandle=False):
         y = int(y)
     text = "%d  %d" % (x, y)
 
-    drawTextAtPoint(
-        painter, text, posX, posY, scale, xAlign="center", yAlign="top"
-    )
+    drawTextAtPoint(painter, text, posX, posY, scale, xAlign="center", yAlign="top")
 
 
 # Anchors

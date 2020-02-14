@@ -451,7 +451,7 @@ class FontWindow(BaseWindow):
         self._updateGlyphActions()
         # update slider
         if self.isGlyphTab():
-            lo, hi, unit = 0, 900000, " pt"
+            lo, hi, unit = 0, 900_000, " pt"
             widget = self.stackWidget.currentWidget()
             size = widget.pointSize()
         else:
