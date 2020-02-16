@@ -76,6 +76,14 @@ Here's a quick tutorial if you'd like to contribute to TruFont.
      git rebase upstream/master
      git push
 
+5. Install pre-commit. It will run some checks every time you are
+   about to commit something.
+
+   .. code::
+
+     pip install pre-commit
+     pre-commit install
+
 5. Now, you can create and checkout your new feature branch:
 
    ``git checkout -b my-cool-new-feature``
