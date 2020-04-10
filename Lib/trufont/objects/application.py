@@ -442,7 +442,7 @@ class Application(QApplication):
                 dialog.restoreState(state)
             dialog.setAcceptMode(QFileDialog.AcceptOpen)
             dialog.setFileMode(QFileDialog.ExistingFile)
-            dialog.setNameFilter(fileFormats[-2])
+            dialog.selectNameFilter(fileFormats[-2])
             ret = dialog.exec_()
             # save current directory
             # TODO: should open w/o file chooser also update current dir?
