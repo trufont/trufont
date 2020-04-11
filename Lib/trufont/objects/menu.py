@@ -63,7 +63,6 @@ class Menu(QMenu):
         if shortcut is None:
             shortcut = _shortcuts.get(text)
         text = _trMenuString(text)
-        action = None
         # cache lookup
         action = None
         for action_ in self.actions():
@@ -132,6 +131,10 @@ class Entries:
     View_Layer_Up = "Layer &Up"
     View_Layer_Down = "Layer &Down"
     View_Show_Points = "Show P&oints"
+    View_Show_Coordinates = "Show &Coordinates"
+    View_Show_Coordinates_When_Selected = "Show Coordinates When &Selected"
+    View_Show_Point_Coordinates = "Always Show &Point Coordinates"
+    View_Show_Bezier_Handles_Coordinates = "Always Show &Bezier Handles Coordinates"
     View_Show_Metrics = "Show &Metrics"
     View_Show_Images = "Show &Images"
     View_Show_Guidelines = "Show &Guidelines"
@@ -253,6 +256,10 @@ def globalMenuBar():
     viewMenu.fetchAction(Entries.View_Layer_Down)
     viewMenu.addSeparator()
     viewMenu.fetchAction(Entries.View_Show_Points)
+    coordinatesSubmenu = viewMenu.fetchMenu(Entries.View_Show_Coordinates)
+    coordinatesSubmenu.fetchAction(Entries.View_Show_Coordinates_When_Selected)
+    coordinatesSubmenu.fetchAction(Entries.View_Show_Point_Coordinates)
+    coordinatesSubmenu.fetchAction(Entries.View_Show_Bezier_Handles_Coordinates)
     viewMenu.fetchAction(Entries.View_Show_Metrics)
     viewMenu.fetchAction(Entries.View_Show_Images)
     viewMenu.fetchAction(Entries.View_Show_Guidelines)

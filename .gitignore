@@ -103,3 +103,6 @@ ENV/
 
 # VS Code
 .vscode
+
+# JetBrains
+.idea/

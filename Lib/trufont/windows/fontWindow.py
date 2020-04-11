@@ -264,6 +264,10 @@ class FontWindow(BaseWindow):
         viewMenu.fetchAction(Entries.View_Layer_Down, lambda: self.layerOffset(1))
         viewMenu.addSeparator()
         viewMenu.fetchAction(Entries.View_Show_Points)
+        coordinatesSubmenu = viewMenu.fetchMenu(Entries.View_Show_Coordinates)
+        coordinatesSubmenu.fetchAction(Entries.View_Show_Coordinates_When_Selected)
+        coordinatesSubmenu.fetchAction(Entries.View_Show_Point_Coordinates)
+        coordinatesSubmenu.fetchAction(Entries.View_Show_Bezier_Handles_Coordinates)
         viewMenu.fetchAction(Entries.View_Show_Metrics)
         viewMenu.fetchAction(Entries.View_Show_Images)
         viewMenu.fetchAction(Entries.View_Show_Guidelines)
@@ -447,7 +451,7 @@ class FontWindow(BaseWindow):
         self._updateGlyphActions()
         # update slider
         if self.isGlyphTab():
-            lo, hi, unit = 0, 900000, " pt"
+            lo, hi, unit = 0, 900_000, " pt"
             widget = self.stackWidget.currentWidget()
             size = widget.pointSize()
         else:

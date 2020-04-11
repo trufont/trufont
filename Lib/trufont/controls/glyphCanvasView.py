@@ -262,6 +262,12 @@ class GlyphCanvasView(GlyphContextView):
         drawOnCurves = self.drawingAttribute("showGlyphOnCurvePoints", flags)
         drawOffCurves = self.drawingAttribute("showGlyphOffCurvePoints", flags)
         drawCoordinates = self.drawingAttribute("showGlyphPointCoordinates", flags)
+        drawHandleCoordinates = self.drawingAttribute(
+            "showGlyphBezierHandlesCoordinates", flags
+        )
+        drawCoordinatesOnSelection = self.drawingAttribute(
+            "showGlyphCoordinatesWhenSelected", flags
+        )
         drawing.drawGlyphPoints(
             painter,
             glyph,
@@ -270,6 +276,8 @@ class GlyphCanvasView(GlyphContextView):
             drawOffCurves=drawOffCurves,
             drawStartPoints=drawStartPoints,
             drawCoordinates=drawCoordinates,
+            drawHandleCoordinates=drawHandleCoordinates,
+            drawCoordinatesOnSelection=drawCoordinatesOnSelection,
             backgroundColor=self._backgroundColor,
         )
 
