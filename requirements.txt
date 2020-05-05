@@ -10,14 +10,14 @@ brotli==1.0.7             # via fonttools
 compreffor==0.4.6.post1   # via ufo2ft
 cu2qu==1.6.7              # via ufo2ft
 defcon==0.6.0
-fonttools[ufo,lxml,type1,woff,unicode]==4.8.1
+fonttools[unicode,lxml,type1,woff,ufo]==4.9.0
 fs==2.4.11                # via fonttools
 hsluv==5.0.0
 lxml==4.5.0               # via fonttools
 pyclipper==1.1.0.post1    # via booleanoperations
 pyqt5-sip==12.7.0         # via pyqt5
 pyqt5==5.13.2
-pytz==2019.3              # via fs
+pytz==2020.1              # via fs
 six==1.14.0               # via fs
 ufo-extractor==0.3.0
 ufo2ft==2.13.0
