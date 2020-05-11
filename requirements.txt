@@ -4,7 +4,7 @@
 #
 #    pip-compile setup.py
 #
-appdirs==1.4.3            # via fs
+appdirs==1.4.4            # via fs
 booleanoperations==0.9.0
 brotli==1.0.7             # via fonttools
 compreffor==0.4.6.post1   # via ufo2ft
