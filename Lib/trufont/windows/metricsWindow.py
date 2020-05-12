@@ -354,6 +354,8 @@ class MetricsToolBar(QToolBar):
     def setPointSize(self, pointSize):
         self.comboBox.blockSignals(True)
         self.comboBox.setEditText(str(pointSize))
+        if pointSize in pointSizes:
+            self.comboBox.setCurrentIndex(pointSizes.index(pointSize))
         self.comboBox.blockSignals(False)
 
     def setText(self, text, left=None, right=None):
