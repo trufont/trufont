@@ -17,11 +17,13 @@ from trufont.windows.outputWindow import OutputWindow
 
 def main():
     global app
+
     # register representation factories
     baseRepresentationFactories.registerAllFactories()
     representationFactories.registerAllFactories()
     if hasattr(Qt, "AA_EnableHighDpiScaling"):
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    platformSpecific.setAppName()
     # initialize the app
     app = Application(sys.argv)
     app.setOrganizationName("TruFont")
