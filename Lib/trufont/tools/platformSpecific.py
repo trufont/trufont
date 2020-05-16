@@ -134,11 +134,12 @@ def setAppName():
         # Python 3: pip3 install pyobjc-framework-Cocoa
         try:
             from Foundation import NSBundle
+
             bundle = NSBundle.mainBundle()
             if bundle:
                 app_info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
                 if app_info:
-                    app_info['CFBundleName'] = "TruFont"
+                    app_info["CFBundleName"] = "TruFont"
         except ImportError as e:
             print(f"Could not set title: {e}")
             pass
