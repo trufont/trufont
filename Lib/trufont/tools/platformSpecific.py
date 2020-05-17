@@ -128,13 +128,8 @@ def windowCommandsInMenu():
 
 def setAppName():
     if sys.platform == "darwin":
-        # Adapted from https://stackoverflow.com/a/54755290
-        # Requires PyObjC
-        # Python 2 has PyObjC preinstalled.
-        # Python 3: pip3 install pyobjc-framework-Cocoa
         try:
             from Foundation import NSBundle
-
             bundle = NSBundle.mainBundle()
             if bundle:
                 app_info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
