@@ -130,6 +130,7 @@ def setAppName():
     if sys.platform == "darwin":
         try:
             from Foundation import NSBundle
+
             bundle = NSBundle.mainBundle()
             if bundle:
                 app_info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
