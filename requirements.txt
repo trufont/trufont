@@ -7,19 +7,19 @@
 appdirs==1.4.4            # via fs
 booleanoperations==0.9.0
 brotli==1.0.9             # via fonttools
-compreffor==0.4.6.post1   # via ufo2ft
+compreffor==0.5.1   # via ufo2ft
 cu2qu==1.6.7              # via ufo2ft
 defcon==0.7.2
-fonttools[unicode,ufo,type1,woff,lxml]==4.15.0
+fonttools[lxml,ufo,type1,woff,unicode]==4.18.2
 fs==2.4.11                # via fonttools
 hsluv==5.0.0
-lxml==4.5.2               # via fonttools
-pyclipper==1.2.0    # via booleanoperations
+lxml==4.6.2               # via fonttools
+pyclipper==1.2.1    # via booleanoperations
 pyqt5-sip==12.7.0         # via pyqt5
 pyqt5==5.13.2
-pytz==2020.1              # via fs
+pytz==2020.5              # via fs
 six==1.15.0               # via fs
 ufo-extractor==0.3.0
-ufo2ft==2.16.0
+ufo2ft==2.19.1
 unicodedata2==13.0.0.post2      # via fonttools
 zopfli==0.1.6             # via fonttools
