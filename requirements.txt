@@ -22,4 +22,4 @@ six==1.15.0               # via fs
 ufo-extractor==0.3.0
 ufo2ft==2.20.0
 unicodedata2==13.0.0.post2      # via fonttools
-zopfli==0.1.6             # via fonttools
+zopfli==0.1.8             # via fonttools
