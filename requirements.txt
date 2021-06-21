@@ -10,7 +10,7 @@ brotli==1.0.9             # via fonttools
 compreffor==0.5.1   # via ufo2ft
 cu2qu==1.6.7              # via ufo2ft
 defcon==0.8.1
-fonttools[lxml,ufo,type1,woff,unicode]==4.18.2
+fonttools[woff,ufo,type1,unicode,lxml]==4.24.4
 fs==2.4.11                # via fonttools
 hsluv==5.0.0
 lxml==4.6.2               # via fonttools
