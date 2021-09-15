@@ -361,6 +361,8 @@ class FontWindow(BaseWindow):
         index = self.stackWidget.currentIndex()
         if index:
             self.tabWidget.removeTab(index)
+        else:
+            self.close()
 
     def maybeSaveBeforeExit(self):
         if self._font.dirty:
