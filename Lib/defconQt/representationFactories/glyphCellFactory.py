@@ -4,7 +4,7 @@ from PyQt5.QtGui import QColor, QFontMetrics, QPainter, QPainterPath, QPixmap
 from defconQt.tools import platformSpecific
 from defconQt.tools.drawing import colorToQColor
 
-GlyphCellHeaderHeight = 15
+GlyphCellHeaderHeight = platformSpecific.glyphCellHeaderHeight()
 GlyphCellMinHeightForHeader = 40
 GlyphCellMinHeightForMetrics = 100
 
