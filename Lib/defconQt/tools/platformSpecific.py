@@ -82,6 +82,12 @@ def otherUIFont():
     return font
 
 
+def glyphCellHeaderHeight():
+    if sys.platform.startswith("linux"):
+        return 15
+    return 13
+
+
 # ----
 # Keys
 # ----
