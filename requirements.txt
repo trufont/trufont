@@ -13,7 +13,7 @@ defcon==0.7.2
 fonttools[lxml,ufo,type1,woff,unicode]==4.18.2
 fs==2.4.11                # via fonttools
 hsluv==5.0.0
-lxml==4.6.2               # via fonttools
+lxml==4.6.3               # via fonttools
 pyclipper==1.2.1    # via booleanoperations
 pyqt5-sip==12.7.0         # via pyqt5
 pyqt5==5.13.2
