@@ -92,6 +92,9 @@ class GlyphCellFactoryDrawingController:
         self.shouldDrawMarkColor = drawMarkColor
         self.shouldDrawMetrics = drawMetrics
 
+        fontMetrics = QFontMetrics(headerFont)
+        GlyphCellHeaderHeight = fontMetrics.height()
+
         self.headerAtBottom = True
         self.headerHeight = 0
         if drawHeader:
