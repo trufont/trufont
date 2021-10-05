@@ -93,7 +93,7 @@ class GlyphCellFactoryDrawingController:
         self.shouldDrawMetrics = drawMetrics
 
         fontMetrics = QFontMetrics(headerFont)
-        GlyphCellHeaderHeight = fontMetrics.height()
+        GlyphCellHeaderHeight = fontMetrics.height() + 3
 
         self.headerAtBottom = True
         self.headerHeight = 0
@@ -284,6 +284,6 @@ class GlyphCellFactoryDrawingController:
             0,
             width - 2,
             height - minOffset,
-            Qt.TextSingleLine | Qt.AlignCenter | Qt.AlignBottom,
+            Qt.TextSingleLine | Qt.AlignHCenter | Qt.AlignBottom,
             name,
         )
