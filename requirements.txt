@@ -14,7 +14,7 @@ fonttools[woff,type1,ufo,unicode,lxml]==4.27.1
 fs==2.4.13                # via fonttools
 hsluv==5.0.0
 lxml==4.6.3               # via fonttools
-pyclipper==1.2.1    # via booleanoperations
+pyclipper==1.3.0    # via booleanoperations
 pyqt5-sip==12.7.0         # via pyqt5
 pyqt5==5.13.2
 pytz==2020.5              # via fs
