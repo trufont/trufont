@@ -11,7 +11,7 @@ compreffor==0.5.1   # via ufo2ft
 cu2qu==1.6.7.post1              # via ufo2ft
 defcon==0.10.0
 fonttools[ufo,type1,woff,unicode,lxml]==4.29.1
-fs==2.4.11                # via fonttools
+fs==2.4.15                # via fonttools
 hsluv==5.0.0
 lxml==4.6.3               # via fonttools
 pyclipper==1.2.1    # via booleanoperations
