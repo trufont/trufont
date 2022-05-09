@@ -20,6 +20,6 @@ pyqt5==5.15.6
 pytz==2022.1              # via fs
 six==1.16.0               # via fs
 ufo-extractor==0.5.0
-ufo2ft==2.19.1
+ufo2ft==2.27.0
 unicodedata2==13.0.0.post2      # via fonttools
 zopfli==0.1.6             # via fonttools
