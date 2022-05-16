@@ -9,7 +9,7 @@ booleanoperations==0.9.0
 brotli==1.0.9             # via fonttools
 compreffor==0.5.1   # via ufo2ft
 cu2qu==1.6.7.post1              # via ufo2ft
-defcon==0.7.2
+defcon==0.10.1
 fonttools[lxml,ufo,type1,woff,unicode]==4.18.2
 fs==2.4.11                # via fonttools
 hsluv==5.0.0
