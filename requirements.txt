@@ -12,7 +12,7 @@ cu2qu==1.6.7.post2              # via ufo2ft
 defcon==0.10.2
 fonttools[woff,lxml,type1,ufo,unicode]==4.38.0
 fs==2.4.16                # via fonttools
-hsluv==5.0.0
+hsluv==5.0.3
 lxml==4.6.3               # via fonttools
 pyclipper==1.2.1    # via booleanoperations
 pyqt5-sip==12.7.0         # via pyqt5
