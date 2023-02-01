@@ -4,7 +4,7 @@ from PyQt5.QtGui import QColor, QFontMetrics, QPainter, QPainterPath, QPixmap
 from defconQt.tools import platformSpecific
 from defconQt.tools.drawing import colorToQColor
 
-GlyphCellHeaderHeight = platformSpecific.glyphCellHeaderHeight()
+GlyphCellHeaderHeight = 0
 GlyphCellMinHeightForHeader = 40
 GlyphCellMinHeightForMetrics = 100
 
@@ -91,6 +91,11 @@ class GlyphCellFactoryDrawingController:
         self.shouldDrawLayers = drawLayers
         self.shouldDrawMarkColor = drawMarkColor
         self.shouldDrawMetrics = drawMetrics
+
+        global GlyphCellHeaderHeight
+        if GlyphCellHeaderHeight == 0:
+            fontMetrics = QFontMetrics(headerFont)
+            GlyphCellHeaderHeight = fontMetrics.height() + 3
 
         self.headerAtBottom = True
         self.headerHeight = 0
@@ -281,6 +286,6 @@ class GlyphCellFactoryDrawingController:
             0,
             width - 2,
             height - minOffset,
-            Qt.TextSingleLine | Qt.AlignCenter | Qt.AlignBottom,
+            Qt.TextSingleLine | Qt.AlignHCenter | Qt.AlignBottom,
             name,
         )
