@@ -281,6 +281,6 @@ class GlyphCellFactoryDrawingController:
             0,
             width - 2,
             height - minOffset,
-            Qt.TextSingleLine | Qt.AlignCenter | Qt.AlignBottom,
+            int(Qt.TextSingleLine | Qt.AlignCenter | Qt.AlignBottom),
             name,
         )

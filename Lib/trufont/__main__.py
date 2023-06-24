@@ -18,6 +18,9 @@ from trufont.windows.outputWindow import OutputWindow
 def main():
     global app
 
+    # Exception handling
+    sys.excepthook = errorReports.exceptionCallback
+
     # register representation factories
     baseRepresentationFactories.registerAllFactories()
     representationFactories.registerAllFactories()
@@ -39,8 +42,6 @@ def main():
 
     # Install stream redirection
     app.outputWindow = OutputWindow()
-    # Exception handling
-    sys.excepthook = errorReports.exceptionCallback
 
     # Qt's translation for itself. May not be installed.
     qtTranslator = QTranslator()

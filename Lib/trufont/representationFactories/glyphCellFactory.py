@@ -58,7 +58,7 @@ class TFGlyphCellFactoryDrawingController(GlyphCellFactoryDrawingController):
         if self.shouldDrawTemplate and self.glyph.template:
             painter.save()
             font = platformSpecific.otherUIFont()
-            font.setPointSize(0.425 * self.height)
+            font.setPointSize(int(0.425 * self.height))
             painter.setFont(font)
             painter.setPen(Qt.lightGray)
             if self.glyph.unicode is not None:
@@ -70,7 +70,7 @@ class TFGlyphCellFactoryDrawingController(GlyphCellFactoryDrawingController):
                 0,
                 self.width,
                 self.height - GlyphCellHeaderHeight,
-                Qt.AlignVCenter | Qt.AlignCenter,
+                int(Qt.AlignVCenter | Qt.AlignCenter),
                 chr(uni),
             )
             painter.restore()

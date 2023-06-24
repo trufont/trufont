@@ -580,7 +580,7 @@ class MetricsTable(QTableWidget):
         for index, title in enumerate(data):
             item = MetricsTableItem(title)
             item.setFlags(Qt.NoItemFlags)
-            item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item.setTextAlignment(int(Qt.AlignRight | Qt.AlignVCenter))
             self.setItem(index, 0, item)
         # let's use this one column to compute the width of others
         columnWidth = self.columnWidth(0)

@@ -396,10 +396,11 @@ class GlyphCellWidget(QWidget):
         cellWidth, cellHeight = self._cellWidth, self._cellHeight
         scrollArea = self._scrollArea
 
-        x = (0.5 + index % self._columnCount) * cellWidth
-        y = (0.5 + index // self._columnCount) * cellHeight
         if scrollArea is not None:
-            scrollArea.ensureVisible(x, y, cellWidth, cellHeight)
+            x = (0.5 + index % self._columnCount) * cellWidth
+            y = (0.5 + index // self._columnCount) * cellHeight
+
+            scrollArea.ensureVisible(int(x), int(y), cellWidth, cellHeight)
 
     # mouse
 
@@ -433,7 +434,7 @@ class GlyphCellWidget(QWidget):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if event.buttons() & (Qt.LeftButton | Qt.RightButton):
+        if event.buttons() & int(Qt.LeftButton | Qt.RightButton):
             index = self._findIndexForEvent(event, True)
             if index == self._lastSelectedCell:
                 return

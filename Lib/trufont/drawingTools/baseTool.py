@@ -109,7 +109,7 @@ class BaseTool(QObject):
         painter.scale(1, -1)
         painter.fillPath(blackPath, Qt.black)
         painter.end()
-        return QCursor(pixmap, x, y)
+        return QCursor(pixmap, int(x), int(y))
 
     # events
 

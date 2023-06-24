@@ -284,7 +284,7 @@ class GlyphContextView(QWidget):
         dx = 0.5 * (fitWidth - glyph.width * self._scale) - otherWidth * self._scale
         dy = 0.5 * (fitHeight - height * self._scale) + top * self._scale
         # TODO: round?
-        self._drawingOffset = QPoint(dx, dy)
+        self._drawingOffset = QPoint(int(dx), int(dy))
         self.pointSizeModified.emit(self._impliedPointSize)
 
     def fitScaleBBox(self):
@@ -382,8 +382,8 @@ class GlyphContextView(QWidget):
                 break
             x += glyphRecord.xAdvance
             y += glyphRecord.yAdvance
-        x = x * self._scale + offset.x()
-        y = y * -self._scale + offset.y()
+        x = int(x * self._scale + offset.x())
+        y = int(y * -self._scale + offset.y())
         return pos.__class__(x, y)
 
     def mapToCanvas(self, pos, index=None):
@@ -412,14 +412,14 @@ class GlyphContextView(QWidget):
         origin = self.mapFromCanvas(QPointF(x, y))
         w *= self._scale
         h *= self._scale
-        return rect.__class__(origin.x(), origin.y() - h, w, h)
+        return rect.__class__(int(origin.x()), int(origin.y() - h), int(w), int(h))
 
     def mapRectToCanvas(self, rect):
         x, y, w, h = rect.getRect()
         origin = self.mapToCanvas(QPointF(x, y))
         w *= self._inverseScale
         h *= self._inverseScale
-        return rect.__class__(origin.x(), origin.y() - h, w, h)
+        return rect.__class__(int(origin.x()), int(origin.y() - h), int(w), int(h))
 
     # ---------------
     # Display Control

@@ -123,10 +123,10 @@ class GlyphAlignmentWidget(QWidget):
         offset = round(0.5 * (rect.width() - size))
         painter.translate(offset, 0)
         borderRect = rect.__class__(
-            rect.left() + circleRadius + padding,
-            rect.top() + circleRadius + padding,
-            size - 2 * (circleRadius + padding),
-            size - 2 * (circleRadius + padding),
+            int(rect.left() + circleRadius + padding),
+            int(rect.top() + circleRadius + padding),
+            int(size - 2 * (circleRadius + padding)),
+            int(size - 2 * (circleRadius + padding)),
         )
         borderPath = QPainterPath()
         borderPath.addRect(*borderRect.getRect())

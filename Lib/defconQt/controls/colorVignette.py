@@ -174,7 +174,7 @@ class ColorVignette(QWidget):
             painter.setRenderHint(QStylePainter.Antialiasing)
             painter.setClipRect(innerRect)
             bL = innerRect.bottomLeft()
-            bL.setY(bL.y() + 0.5)
+            bL.setY(int(bL.y() + 0.5))
             tR = innerRect.topRight()
             tR.setY(tR.y() + 1)
             painter.drawLine(bL, tR)
