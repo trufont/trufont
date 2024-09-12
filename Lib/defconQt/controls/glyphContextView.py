@@ -34,6 +34,7 @@ class GlyphFlags:
 class GlyphContextView(QWidget):
     activeGlyphChanged = pyqtSignal()
     pointSizeModified = pyqtSignal(int)
+    showCurvatureChanged = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -82,6 +83,7 @@ class GlyphContextView(QWidget):
         self._scale = 1.0
         self._inverseScale = 0.1
         self._impliedPointSize = 1000
+        self._curvatureScale = 0
 
         self._backgroundColor = Qt.white
 
@@ -206,6 +208,13 @@ class GlyphContextView(QWidget):
             self._scale = 0.01
         self._inverseScale = 1.0 / self._scale
         self._impliedPointSize = self._unitsPerEm * self._scale
+        self.update()
+
+    def curvatureScale(self):
+        return self._curvatureScale
+
+    def setCurvatureScale(self, scale):
+        self._curvatureScale = scale
         self.update()
 
     def glyphRecords(self):
@@ -666,11 +675,15 @@ class GlyphContextView(QWidget):
         )
 
     def drawCurvatures(self, painter, glyph, flags):
-        # TODO: let user adjust curve scale
-        scale = self._ascender * 2.5
+        curveFactor = 2.5 * 10 ** ((self._curvatureScale - 50) / 100)
+        curvatureScale = self._ascender * curveFactor
         drawCurvatures = self.drawingAttribute("showGlyphCurvatures", flags)
         drawing.drawGlyphCurvatures(
-            painter, glyph, scale, drawCurvatures=drawCurvatures
+            painter,
+            glyph,
+            self._inverseScale,
+            curvatureScale,
+            drawCurvatures=drawCurvatures,
         )
 
     def drawAnchors(self, painter, glyph, flags):
@@ -798,6 +811,8 @@ class GlyphContextView(QWidget):
                 self.pointSizeModified.emit(self._impliedPointSize)
 
             return True
+        elif event.type() == QEvent.Paint:
+            self.showCurvatureChanged.emit(self.showCurvatures())
         return super().event(event)
 
     def wheelEvent(self, event):

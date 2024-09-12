@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QColor, QPainter, QPainterPath
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QSpinBox, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QSpinBox, QWidget, QSlider
 
 from trufont.controls.pathButton import PathButton
 
@@ -26,6 +26,15 @@ def Button():
     return btn
 
 
+def Slider(parent):
+    slider = QSlider(Qt.Horizontal, parent)
+    slider.setFixedWidth(56)
+    slider.setMinimum(-100)
+    slider.setMaximum(100)
+    slider.setValue(0)
+    return slider
+
+
 class StatusBar(QWidget):
     """
     Use the *sizeChanged* signal for size changes.
@@ -39,6 +48,11 @@ class StatusBar(QWidget):
         self._shouldPropagateSize = True
 
         self.statusLabel = QLabel(self)
+
+        self.curveSlider = Slider(self)
+        self.curveSlider.setVisible(False)
+        self.curveSlider.valueChanged.connect(self._sliderValueChanged)
+        self._curvatureScale = self.curveSlider.value()
 
         btnColor = QColor(126, 126, 126)
         minusButton = Button()
@@ -57,6 +71,7 @@ class StatusBar(QWidget):
 
         layout = QHBoxLayout(self)
         layout.addWidget(self.statusLabel)
+        layout.addWidget(self.curveSlider)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         layout.addWidget(spacer)
@@ -67,6 +82,7 @@ class StatusBar(QWidget):
         layout.setSpacing(0)
 
         self.sizeChanged = self.sizeEdit.valueChanged
+        self.curvatureScaleChanged = self.curveSlider.valueChanged
 
     def text(self):
         return self.statusLabel.text()
@@ -79,6 +95,12 @@ class StatusBar(QWidget):
 
     def setTextVisible(self, value):
         self.statusLabel.setVisible(value)
+
+    def sliderVisible(self):
+        return self.curveSlider.isVisible()
+
+    def setSliderVisible(self, value):
+        self.curveSlider.setVisible(value)
 
     def minimumSize(self):
         return self.sizeEdit.minimum()
@@ -121,6 +143,12 @@ class StatusBar(QWidget):
         # nudge label w unclamped value
         self._sliderSizeChanged(value)
 
+    def curvatureScale(self):
+        return self.curveSlider.value()
+
+    def setCurvatureScale(self, value):
+        self.curveSlider.setValue(value)
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.fillRect(event.rect(), Qt.white)
@@ -133,3 +161,8 @@ class StatusBar(QWidget):
 
     def _sliderSizeChanged(self, value):
         self.sizeEdit.setValue(value)
+
+    def _sliderValueChanged(self, value):
+        if value != self._curvatureScale:
+            self._curvatureScale = value
+            self.curveSlider.valueChanged.emit(value)

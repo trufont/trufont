@@ -770,14 +770,14 @@ def drawGlyphPoints(
 # Curvature
 
 
-def toCurvaturePoint(crvData, curveScale):
+def toCurvaturePoint(crvData, crvScale):
     return (
-        crvData["x"] - crvData["dy"] * crvData["c"] * curveScale,
-        crvData["y"] + crvData["dx"] * crvData["c"] * curveScale,
+        crvData["x"] - crvData["dy"] * crvData["c"] * crvScale,
+        crvData["y"] + crvData["dx"] * crvData["c"] * crvScale,
     )
 
 
-def drawGlyphCurvatures(painter, glyph, scale, drawCurvatures=True):
+def drawGlyphCurvatures(painter, glyph, scale, curvatureScale, drawCurvatures=True):
     # Drawing piece-wise linear for now
     if drawCurvatures:
         curvatureData = glyph.getRepresentation("defconQt.CurvatureInformation")
@@ -789,7 +789,9 @@ def drawGlyphCurvatures(painter, glyph, scale, drawCurvatures=True):
         for curvatureInfo in curvatureData:
             # Curvature
             # Translate to points
-            curvaturePoints = [toCurvaturePoint(info, scale) for info in curvatureInfo]
+            curvaturePoints = [
+                toCurvaturePoint(info, curvatureScale) for info in curvatureInfo
+            ]
             # Path
             curvaturePath.moveTo(curvaturePoints[0][0], curvaturePoints[0][1])
             for pt in curvaturePoints[1:]:
@@ -805,13 +807,13 @@ def drawGlyphCurvatures(painter, glyph, scale, drawCurvatures=True):
 
         # Draw curvature
         curvePen = QPen(QColor.fromRgbF(1, 0, 0, 1))
-        curvePen.setWidth(1)
+        curvePen.setWidthF(1 * scale)
         painter.setPen(curvePen)
         painter.drawPath(curvaturePath)
 
         # Draw stems
         stemPen = QPen(QColor.fromRgbF(1, 0, 0, 0.7))
-        stemPen.setWidth(1)
+        stemPen.setWidthF(0.5 * scale)
         painter.setPen(stemPen)
         painter.drawPath(stemPath)
 

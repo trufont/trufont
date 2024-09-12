@@ -325,8 +325,8 @@ def drawGlyphFillAndStroke(
             pen.setWidth(0)
             painter.setPen(pen)
             for x, y in originPts:
-                painter.drawLine(x, y + 5 * scale, x, y)
-                painter.drawLine(x, y, x + 4.5 * scale, y)
+                painter.drawLine(QPointF(x, y + 5 * scale), QPointF(x, y))
+                painter.drawLine(QPointF(x, y), QPointF(x + 4.5 * scale, y))
             painter.restore()
     # selection
     if drawSelection:
@@ -659,9 +659,9 @@ def drawGrid(painter, scale, rect, color=None):
     pen.setWidth(0)
     painter.setPen(pen)
     while x > xMin:
-        painter.drawLine(x, yMin, x, yMax)
+        painter.drawLine(QPointF(x, yMin), QPointF(x, yMax))
         x -= 1
     while y > yMin:
-        painter.drawLine(xMin, y, xMax, y)
+        painter.drawLine(QPointF(xMin, y), QPointF(xMax, y))
         y -= 1
     painter.restore()
