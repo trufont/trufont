@@ -812,7 +812,7 @@ class OpenTypeTab(TabWidget):
         if wc and wc % 100 == 0:
             usWeightClassLabel.setChecked(True)
             self.usWeightClassDrop.setCurrentIndex(
-                font.info.openTypeOS2WeightClass / 100 - 1
+                int(font.info.openTypeOS2WeightClass / 100) - 1
             )
         else:
             self.usWeightClassDrop.setEnabled(False)
