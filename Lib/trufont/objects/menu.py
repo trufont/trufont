@@ -6,6 +6,7 @@ Windows that want to plug-in their own menu entries must implement
 - setMenuBar(menuBar)
 
 """
+
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMenuBar
 
@@ -135,6 +136,7 @@ class Entries:
     View_Show_Coordinates_When_Selected = "Show Coordinates When &Selected"
     View_Show_Point_Coordinates = "Always Show &Point Coordinates"
     View_Show_Bezier_Handles_Coordinates = "Always Show &Bezier Handles Coordinates"
+    View_Show_Curvatures = "Show C&urvatures"
     View_Show_Metrics = "Show &Metrics"
     View_Show_Images = "Show &Images"
     View_Show_Guidelines = "Show &Guidelines"
@@ -193,6 +195,7 @@ _shortcuts = {
     Entries.View_Layer_Up: "PgUp",
     Entries.View_Layer_Down: "PgDown",
     Entries.View_Show_Points: "Ctrl+Shift+N",
+    Entries.View_Show_Curvatures: "Ctrl+Shift+C",
     Entries.View_Show_Metrics: "Ctrl+Shift+M",
     Entries.View_Show_Guidelines: "Ctrl+Shift+G",
     Entries.Font_Font_Info: "Ctrl+Alt+I",
@@ -260,6 +263,7 @@ def globalMenuBar():
     coordinatesSubmenu.fetchAction(Entries.View_Show_Coordinates_When_Selected)
     coordinatesSubmenu.fetchAction(Entries.View_Show_Point_Coordinates)
     coordinatesSubmenu.fetchAction(Entries.View_Show_Bezier_Handles_Coordinates)
+    viewMenu.fetchAction(Entries.View_Show_Curvatures)
     viewMenu.fetchAction(Entries.View_Show_Metrics)
     viewMenu.fetchAction(Entries.View_Show_Images)
     viewMenu.fetchAction(Entries.View_Show_Guidelines)

@@ -1,6 +1,7 @@
 """
 Icon database, issues drawing commands. PathButton is a consumer.
 """
+
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QColor, QPainterPath, QTransform
 

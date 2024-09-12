@@ -268,6 +268,7 @@ class FontWindow(BaseWindow):
         coordinatesSubmenu.fetchAction(Entries.View_Show_Coordinates_When_Selected)
         coordinatesSubmenu.fetchAction(Entries.View_Show_Point_Coordinates)
         coordinatesSubmenu.fetchAction(Entries.View_Show_Bezier_Handles_Coordinates)
+        viewMenu.fetchAction(Entries.View_Show_Curvatures)
         viewMenu.fetchAction(Entries.View_Show_Metrics)
         viewMenu.fetchAction(Entries.View_Show_Images)
         viewMenu.fetchAction(Entries.View_Show_Guidelines)

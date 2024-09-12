@@ -19,6 +19,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QGraphicsColorizeEffect
 
+from defconQt.tools.curvature import getCurvature, getArcLength
 from defconQt.tools.drawing import applyEffectToPixmap, colorToQColor
 
 # -------------
@@ -168,6 +169,51 @@ class OutlineInformationPen(AbstractPointPen):
 
     def addComponent(self, baseGlyphName, transformation):
         self._rawComponentData.append((baseGlyphName, transformation))
+
+
+# --------------
+# curvature data
+# --------------
+
+
+def CurvatureInformationFactory(glyph):
+    font_info = glyph.getParent().info
+    scale = 2000 / font_info.ascender
+    pen = CurvatureInformationPen(glyph.layer, scale)
+    glyph.draw(pen)
+    return pen.getData()
+
+
+class CurvatureInformationPen(BasePen):
+    def __init__(self, glyphSet, scale):
+        super().__init__(glyphSet)
+        self._curvatureData = []
+        self._scale = scale
+
+    def _moveTo(self, pt):
+        # No curvature, nothing to do
+        pass
+
+    def _lineTo(self, pt):
+        # No curvature, nothing to do
+        pass
+
+    def _curveToOne(self, pt1, pt2, pt3):
+        pt0 = self._getCurrentPoint()
+
+        arcLength = getArcLength([pt0, pt1, pt2, pt3])
+        pieceCount = max(int(arcLength * self._scale / 10), 10)
+        # TODO: let user adjust density
+
+        px = (pt0[0], pt1[0], pt2[0], pt3[0])
+        py = (pt0[1], pt1[1], pt2[1], pt3[1])
+
+        tList = [i / pieceCount for i in range(pieceCount + 1)]
+
+        self._curvatureData.append([getCurvature(px, py, t) for t in tList])
+
+    def getData(self):
+        return self._curvatureData
 
 
 # -----

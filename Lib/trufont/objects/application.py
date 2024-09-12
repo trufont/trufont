@@ -416,7 +416,7 @@ class Application(QApplication):
                 )
                 supportedFiles += "*.otf *.pfa *.pfb *.ttf *.ttx *.woff"
             all_supported_types_filter = self.tr("All supported files {}").format(
-                "({})".format(supportedFiles.rstrip())
+                f"({supportedFiles.rstrip()})"
             )
             fileFormats.extend(
                 [all_supported_types_filter, self.tr("All files {}").format("(*.*)")]
@@ -699,6 +699,7 @@ class Application(QApplication):
                 ),
                 True,
             ),
+            (Entries.View_Show_Curvatures, ("showGlyphCurvatures",), True,),
             (Entries.View_Show_Images, ("showGlyphImage",), True,),
             (
                 Entries.View_Show_Guidelines,

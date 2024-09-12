@@ -60,6 +60,7 @@ class GlyphContextView(QWidget):
             showGlyphBezierHandlesCoordinates=False,
             showGlyphCoordinatesWhenSelected=False,
             showGlyphAnchors=True,
+            showGlyphCurvatures=True,
             showGlyphMetrics=True,
             showGlyphGuidelines=True,
             showGlyphImage=True,
@@ -505,6 +506,12 @@ class GlyphContextView(QWidget):
     def setShowPointCoordinates(self, value):
         self.setDefaultDrawingAttribute("showGlyphPointCoordinates", value)
 
+    def showCurvatures(self):
+        return self.defaultDrawingAttribute("showGlyphCurvatures")
+
+    def setShowCurvatures(self, value):
+        self.setDefaultDrawingAttribute("showGlyphCurvatures", value)
+
     def showAnchors(self):
         return self.defaultDrawingAttribute("showGlyphAnchors")
 
@@ -570,6 +577,8 @@ class GlyphContextView(QWidget):
             "showGlyphComponentStroke", flags
         ):
             self.drawStroke(painter, glyph, flags)
+        if self.drawingAttribute("showGlyphCurvatures", flags):
+            self.drawCurvatures(painter, glyph, flags)
         if self.drawingAttribute("showGlyphAnchors", flags):
             self.drawAnchors(painter, glyph, flags)
 
@@ -654,6 +663,14 @@ class GlyphContextView(QWidget):
             drawComponentsFill=False,
             drawStroke=drawStroke,
             drawComponentStroke=drawComponentStroke,
+        )
+
+    def drawCurvatures(self, painter, glyph, flags):
+        # TODO: let user adjust curve scale
+        scale = self._ascender * 2.5
+        drawCurvatures = self.drawingAttribute("showGlyphCurvatures", flags)
+        drawing.drawGlyphCurvatures(
+            painter, glyph, scale, drawCurvatures=drawCurvatures
         )
 
     def drawAnchors(self, painter, glyph, flags):
