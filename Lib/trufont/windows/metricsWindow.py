@@ -585,7 +585,7 @@ class MetricsTable(QTableWidget):
         # let's use this one column to compute the width of others
         columnWidth = self.columnWidth(0)
         self._cellWidth = 0.5 * columnWidth
-        self.setColumnWidth(0, 0.55 * columnWidth)
+        self.setColumnWidth(0, int(0.55 * columnWidth))
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
         self._coloredColumn = None
@@ -776,7 +776,7 @@ class MetricsTable(QTableWidget):
             kDisabled = not (index and self._kerningEnabled)
             # TODO: grey out cells when disabled
             self.setItem(4, index + 1, metricsTableItem(kValue, kDisabled))
-            self.setColumnWidth(index + 1, self._cellWidth)
+            self.setColumnWidth(index + 1, int(self._cellWidth))
             prevGlyph = glyph
 
     # ----------

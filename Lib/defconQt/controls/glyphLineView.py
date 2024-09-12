@@ -446,7 +446,7 @@ class GlyphLineWidget(QWidget):
                     curWidth += gWidth
                 width = max(curWidth, width)
             height += lines * self._pointSize * self._lineHeight
-        return QSize(width, height)
+        return QSize(int(width), int(height))
 
     # ------------
     # Input events
@@ -567,7 +567,7 @@ class GlyphLineWidget(QWidget):
                 drawing.drawLine(
                     painter, xMin + width, yMin, xMin + width, yMin + height
                 )
-            painter.fillRect(xMin, yMin, width, -26, selectionColor)
+            painter.fillRect(int(xMin), int(yMin), int(width), -26, selectionColor)
             painter.restore()
 
     def drawImage(self, painter, glyph, layerName, rect):

@@ -41,7 +41,7 @@ class GlyphContextView(QWidget):
         self.setFocusPolicy(Qt.ClickFocus)
         self.grabGesture(Qt.PanGesture)
         self.grabGesture(Qt.PinchGesture)
-        self._drawingOffset = QPoint()
+        self._drawingOffset = QPointF()
         self._fitViewport = True
         self._glyphRecords = []
         self._glyphRecordsRects = {}
@@ -284,7 +284,7 @@ class GlyphContextView(QWidget):
         dx = 0.5 * (fitWidth - glyph.width * self._scale) - otherWidth * self._scale
         dy = 0.5 * (fitHeight - height * self._scale) + top * self._scale
         # TODO: round?
-        self._drawingOffset = QPoint(int(dx), int(dy))
+        self._drawingOffset = QPointF(dx, dy)
         self.pointSizeModified.emit(self._impliedPointSize)
 
     def fitScaleBBox(self):
@@ -316,7 +316,7 @@ class GlyphContextView(QWidget):
         )
         dy = 0.5 * (fitHeight - glyphHeight * self._scale) + top * self._scale
         # TODO: round?
-        self._drawingOffset = QPoint(dx, dy)
+        self._drawingOffset = QPointF(dx, dy)
         self.pointSizeModified.emit(self._impliedPointSize)
 
     def scrollBy(self, point):
@@ -354,7 +354,7 @@ class GlyphContextView(QWidget):
         elif anchor == "cursor":
             pos = self.mapFromGlobal(QCursor.pos())
         elif anchor == "center":
-            pos = QPoint(0.5 * self.width(), 0.5 * self.height())
+            pos = QPointF(0.5 * self.width(), 0.5 * self.height())
         else:
             raise ValueError(f"invalid anchor value: {anchor}")
         deltaToPos = pos / oldScale - self._drawingOffset / oldScale
@@ -405,7 +405,7 @@ class GlyphContextView(QWidget):
                 break
             x -= glyphRecord.xAdvance
             y -= glyphRecord.yAdvance
-        return pos.__class__(x, y)
+        return pos.__class__(int(x), int(y))
 
     def mapRectFromCanvas(self, rect):
         x, y, w, h = rect.getRect()
@@ -795,7 +795,7 @@ class GlyphContextView(QWidget):
                 delta = event.angleDelta()
                 dx = delta.x() / 120 * QApplication.wheelScrollLines() * 8
                 dy = delta.y() / 120 * QApplication.wheelScrollLines() * 8
-                delta = QPoint(dx, dy)
+                delta = QPointF(dx, dy)
             self._drawingOffset += delta
             self.update()
         event.accept()
