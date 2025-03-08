@@ -143,6 +143,7 @@ class FontWindow(BaseWindow):
         self.statusBar.setMinimumSize(32)
         self.statusBar.setMaximumSize(128)
         self.statusBar.sizeChanged.connect(self._sizeChanged)
+        self.statusBar.curvatureScaleChanged.connect(self._curvatureScaleChanged)
 
         self.setFont_(font)
 
@@ -268,6 +269,7 @@ class FontWindow(BaseWindow):
         coordinatesSubmenu.fetchAction(Entries.View_Show_Coordinates_When_Selected)
         coordinatesSubmenu.fetchAction(Entries.View_Show_Point_Coordinates)
         coordinatesSubmenu.fetchAction(Entries.View_Show_Bezier_Handles_Coordinates)
+        viewMenu.fetchAction(Entries.View_Show_Curvatures)
         viewMenu.fetchAction(Entries.View_Show_Metrics)
         viewMenu.fetchAction(Entries.View_Show_Images)
         viewMenu.fetchAction(Entries.View_Show_Guidelines)
@@ -351,6 +353,7 @@ class FontWindow(BaseWindow):
         widget.glyphNamesChanged.connect(self._namesChanged)
         widget.pointSizeModified.connect(self.statusBar.setSize)
         widget.toolModified.connect(self.toolBar.setCurrentTool)
+        widget.showCurvatureChanged.connect(self.statusBar.setSliderVisible)
         # add
         self.tabWidget.addTab(_textForGlyphs([glyph]))
         self.stackWidget.addWidget(widget)
@@ -427,6 +430,11 @@ class FontWindow(BaseWindow):
         else:
             self.glyphCellView.setCellSize(size)
 
+    def _curvatureScaleChanged(self):
+        value = self.statusBar.curvatureScale()
+        widget = self.stackWidget.currentWidget()
+        widget.setCurvatureScale(value)
+
     def _tabChanged(self, index):
         self.statusBar.setShouldPropagateSize(not index)
         # we need to hide, then setParent, then show
@@ -456,9 +464,15 @@ class FontWindow(BaseWindow):
             lo, hi, unit = 0, 900_000, " pt"
             widget = self.stackWidget.currentWidget()
             size = widget.pointSize()
+
+            self.statusBar.setSliderVisible(widget.showCurvatures())
+            self.statusBar.setCurvatureScale(widget.curvatureScale())
         else:
             lo, hi, unit = 32, 128, None
             size = self.glyphCellView.cellSize()[0]
+
+            self.statusBar.setSliderVisible(False)
+
         self.statusBar.setMinimumSize(lo)
         self.statusBar.setMaximumSize(hi)
         self.statusBar.setSize(size)

@@ -5,6 +5,7 @@ from defconQt.representationFactories.glyphViewFactory import (
     NoComponentsQPainterPathFactory,
     OnlyComponentsQPainterPathFactory,
     OutlineInformationFactory,
+    CurvatureInformationFactory,
     QPixmapFactory,
 )
 from defconQt.representationFactories.qPainterPathFactory import QPainterPathFactory
@@ -17,6 +18,10 @@ _glyphFactories = {
     "defconQt.GlyphCell": (GlyphCellFactory, None),
     "defconQt.OutlineInformation": (
         OutlineInformationFactory,
+        ("Glyph.Changed", "Glyph.SelectionChanged"),
+    ),
+    "defconQt.CurvatureInformation": (
+        CurvatureInformationFactory,
         ("Glyph.Changed", "Glyph.SelectionChanged"),
     ),
 }

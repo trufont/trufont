@@ -767,6 +767,59 @@ def drawGlyphPoints(
         painter.restore()
 
 
+# Curvature
+
+
+def toCurvaturePoint(crvData, crvScale):
+    return (
+        crvData["x"] - crvData["dy"] * crvData["c"] * crvScale,
+        crvData["y"] + crvData["dx"] * crvData["c"] * crvScale,
+    )
+
+
+def drawGlyphCurvatures(painter, glyph, scale, curvatureScale, drawCurvatures=True):
+    # Drawing piece-wise linear for now
+    if drawCurvatures:
+        curvatureData = glyph.getRepresentation("defconQt.CurvatureInformation")
+
+        # Create Paths
+        curvaturePath = QPainterPath()
+        stemPath = QPainterPath()
+
+        for curvatureInfo in curvatureData:
+            # Curvature
+            # Translate to points
+            curvaturePoints = [
+                toCurvaturePoint(info, curvatureScale) for info in curvatureInfo
+            ]
+            # Path
+            curvaturePath.moveTo(curvaturePoints[0][0], curvaturePoints[0][1])
+            for pt in curvaturePoints[1:]:
+                curvaturePath.lineTo(pt[0], pt[1])
+
+            # Stems
+            for segPoint, crvPoint in zip(curvatureInfo, curvaturePoints):
+                stemPath.moveTo(segPoint["x"], segPoint["y"])
+                stemPath.lineTo(crvPoint[0], crvPoint[1])
+
+        # Draw
+        painter.save()
+
+        # Draw curvature
+        curvePen = QPen(QColor.fromRgbF(1, 0, 0, 1))
+        curvePen.setWidthF(1 * scale)
+        painter.setPen(curvePen)
+        painter.drawPath(curvaturePath)
+
+        # Draw stems
+        stemPen = QPen(QColor.fromRgbF(1, 0, 0, 0.7))
+        stemPen.setWidthF(0.5 * scale)
+        painter.setPen(stemPen)
+        painter.drawPath(stemPath)
+
+        painter.restore()
+
+
 # Anchors
 
 

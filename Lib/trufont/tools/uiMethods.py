@@ -1,6 +1,7 @@
 """
 UI-constrained point management methods.
 """
+
 import itertools
 
 from PyQt5.QtCore import QLineF, QPointF
